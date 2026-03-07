@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SACEM Dropbox Sign to ZIP Filezilla — BLZante Toolbox</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Syne+Mono&display=swap');
+
+:root {
+  --bg: #0d0d0d;
+  --surface: #161616;
+  --border: #2a2a2a;
+  --text: #f0ede6;
+  --muted: #888;
+  --accent: #e8c547;
+  --success: #4ecdc4;
+  --error: #ff6b6b;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Syne Mono', monospace;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 60px 60px;
+  opacity: 0.3;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Nav ── */
+nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28px 48px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  z-index: 1;
+}
+
+.nav-logo {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #fff;
+  text-decoration: none;
+  letter-spacing: 0.08em;
+}
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.65rem;
+  color: var(--muted);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.nav-back {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.65rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  transition: color 0.15s;
+}
+.nav-back:hover { color: var(--accent); }
+
+.nav-sep { color: var(--border); }
+
+/* ── Main container ── */
+.container {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 56px 48px 80px;
+  position: relative;
+  z-index: 1;
+  flex: 1;
+}
+
+/* ── Page title ── */
+.page-heading {
+  margin-bottom: 48px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 24px;
+}
+
+.page-heading h1 {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  line-height: 1.3;
+}
+
+/* ── Drop zone ── */
+.dropzone {
+  border: 1px dashed var(--border);
+  background: var(--surface);
+  padding: 48px 32px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.dropzone:hover, .dropzone.dragover {
+  border-color: var(--accent);
+  background: #1a1a0e;
+}
+
+.dropzone-icon { font-size: 2rem; margin-bottom: 12px; display: block; opacity: 0.4; }
+
+.dropzone-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.dropzone-sub {
+  font-size: 0.65rem;
+  color: var(--muted);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+input[type="file"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+  height: 100%;
+}
+
+/* ── File bar ── */
+.file-bar {
+  display: none;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  margin-top: 2px;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+.file-bar.visible { display: flex; }
+.file-bar .fname { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
+.file-bar .pages { color: var(--accent); white-space: nowrap; }
+
+/* ── Form section ── */
+.form-section { margin-top: 36px; display: none; }
+.form-section.visible { display: block; }
+
+.section-label {
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.field { display: flex; flex-direction: column; gap: 6px; }
+
+.field label {
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.field input {
+  font-family: 'Syne Mono', monospace;
+  font-size: 0.82rem;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s;
+}
+.field input:focus { border-color: var(--accent); }
+.field input.readonly { background: #111; color: var(--muted); cursor: default; }
+
+/* ── Segments ── */
+.segments-section { margin-top: 32px; }
+
+.segment-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  margin-bottom: 2px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.segment-card:hover { border-color: #444; }
+
+.segment-header {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  gap: 12px;
+}
+
+.seg-badge {
+  font-family: 'Syne Mono', monospace;
+  font-size: 0.65rem;
+  font-weight: 500;
+  padding: 3px 8px;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  border: 1px solid;
+}
+
+.seg-BDO  { color: var(--success); border-color: #1a3d3a; background: #0d1f1e; }
+.seg-CTR1 { color: var(--accent);  border-color: #4a3e10; background: #1a1508; }
+.seg-CTR2 { color: #f0a040;        border-color: #4a3010; background: #1a1008; }
+.seg-DIV  { color: var(--muted);   border-color: var(--border); background: #111; }
+
+.seg-name { flex: 1; font-size: 0.75rem; color: var(--text); }
+.seg-pages-display { font-size: 0.65rem; color: var(--muted); white-space: nowrap; }
+
+.segment-body {
+  padding: 0 16px 14px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.pages-input-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex: 1;
+}
+
+.pages-input-group label {
+  font-size: 0.62rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.page-input {
+  font-family: 'Syne Mono', monospace;
+  font-size: 0.82rem;
+  width: 60px;
+  padding: 7px 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  outline: none;
+  text-align: center;
+  transition: border-color 0.15s;
+}
+.page-input:focus { border-color: var(--accent); }
+
+.seg-desc { font-size: 0.65rem; color: var(--muted); flex: 2; line-height: 1.5; }
+
+/* ── Toggle ── */
+.seg-toggle { display: flex; align-items: center; }
+
+.toggle-switch { position: relative; width: 32px; height: 18px; cursor: pointer; }
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+
+.toggle-track {
+  position: absolute;
+  inset: 0;
+  background: #333;
+  border-radius: 9px;
+  transition: background 0.2s;
+}
+.toggle-track::after {
+  content: '';
+  position: absolute;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: #666;
+  top: 3px; left: 3px;
+  transition: transform 0.2s, background 0.2s;
+}
+.toggle-switch input:checked + .toggle-track { background: #2a2a10; }
+.toggle-switch input:checked + .toggle-track::after { transform: translateX(14px); background: var(--accent); }
+
+.seg-disabled { opacity: 0.35; }
+
+/* ── Generate button ── */
+.generate-btn {
+  margin-top: 32px;
+  width: 100%;
+  padding: 16px;
+  background: var(--accent);
+  color: #0d0d0d;
+  border: none;
+  cursor: pointer;
+  font-family: 'Syne', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  transition: opacity 0.2s;
+}
+.generate-btn:hover { opacity: 0.85; }
+.generate-btn:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; opacity: 1; }
+
+.btn-inner { display: flex; align-items: center; justify-content: center; gap: 8px; }
+
+/* ── Progress ── */
+.progress-bar { display: none; margin-top: 12px; height: 2px; background: var(--border); }
+.progress-bar.visible { display: block; }
+.progress-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.3s ease; }
+
+/* ── Status ── */
+.status { margin-top: 10px; font-size: 0.68rem; color: var(--muted); letter-spacing: 0.04em; min-height: 18px; }
+.status.error { color: var(--error); }
+.status.success { color: var(--success); }
+
+/* ── Result card ── */
+.result-card {
+  display: none;
+  margin-top: 24px;
+  border: 1px solid #1a3d3a;
+  background: #0d1a18;
+  padding: 20px;
+}
+.result-card.visible { display: block; }
+
+.result-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--success);
+  margin-bottom: 14px;
+}
+
+.result-files { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+
+.result-file {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.72rem;
+  color: var(--text);
+}
+
+.result-file .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--success); flex-shrink: 0; }
+
+.download-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: var(--success);
+  color: #0d0d0d;
+  border: none;
+  cursor: pointer;
+  font-family: 'Syne', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+.download-btn:hover { opacity: 0.85; }
+
+/* ── Reset ── */
+.reset-link {
+  display: block;
+  margin-top: 32px;
+  text-align: center;
+  font-size: 0.65rem;
+  color: var(--muted);
+  cursor: pointer;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transition: color 0.2s;
+}
+.reset-link:hover { color: var(--accent); }
+
+@media (max-width: 560px) {
+  nav { padding: 20px 24px; }
+  .container { padding: 40px 24px 60px; }
+  .field-row { grid-template-columns: 1fr; }
+  .segment-body { flex-direction: column; }
+}
+</style>
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="index.html">BLZante</a>
+  <div class="nav-right">
+    <a class="nav-back" href="index.html">← Toolbox</a>
+    <span class="nav-sep">/</span>
+    <span>SACEM Dropbox Sign to ZIP Filezilla</span>
+  </div>
+</nav>
+
+<div class="container">
+
+  <div class="page-heading">
+    <h1>SACEM Dropbox Sign<br>to ZIP Filezilla</h1>
+  </div>
+
+  <!-- DROP ZONE -->
+  <div class="dropzone" id="dropzone">
+    <input type="file" id="fileInput" accept=".pdf" />
+    <span class="dropzone-icon">📄</span>
+    <div class="dropzone-title">Déposer le PDF signé ici</div>
+    <div class="dropzone-sub">ou cliquer pour sélectionner</div>
+  </div>
+
+  <div class="file-bar" id="fileBar">
+    <span>📎</span>
+    <span class="fname" id="fileBarName"></span>
+    <span class="pages" id="fileBarPages"></span>
+  </div>
+
+  <!-- FORM -->
+  <div class="form-section" id="formSection">
+
+    <div class="section-label">Informations de l'œuvre</div>
+
+    <div class="field-row">
+      <div class="field">
+        <label>Titre de l'œuvre</label>
+        <input type="text" id="titreOeuvre" placeholder="ex: METAL" autocomplete="off" />
+      </div>
+      <div class="field">
+        <label>Date du dépôt</label>
+        <input type="text" id="dateDepot" class="readonly" readonly />
+      </div>
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label>Nom du ZIP (aperçu)</label>
+        <input type="text" id="zipPreview" class="readonly" readonly placeholder="AAAAMMJJ_TITRE.zip" />
+      </div>
+    </div>
+
+    <!-- SEGMENTS -->
+    <div class="segments-section">
+      <div class="section-label" style="margin-top:24px;">Découpage des pages</div>
+
+      <!-- BDO -->
+      <div class="segment-card" id="card-bdo">
+        <div class="segment-header">
+          <span class="seg-badge seg-BDO">BDO_001</span>
+          <span class="seg-name">Bulletin de déclaration</span>
+          <span class="seg-pages-display" id="disp-bdo">—</span>
+        </div>
+        <div class="segment-body">
+          <div class="pages-input-group">
+            <label>Page début</label>
+            <input type="number" class="page-input" id="bdo-start" min="1" value="1" />
+            <label>fin</label>
+            <input type="number" class="page-input" id="bdo-end" min="1" value="2" />
+          </div>
+          <span class="seg-desc">Formulaire SACEM recto-verso (généralement 2 pages)</span>
+        </div>
+      </div>
+
+      <!-- CTR_001 -->
+      <div class="segment-card" id="card-ctr1">
+        <div class="segment-header">
+          <span class="seg-badge seg-CTR1">CTR_001</span>
+          <span class="seg-name">Contrat de cession + adaptation audiovisuelle</span>
+          <span class="seg-pages-display" id="disp-ctr1">—</span>
+        </div>
+        <div class="segment-body">
+          <div class="pages-input-group">
+            <label>Page début</label>
+            <input type="number" class="page-input" id="ctr1-start" min="1" value="3" />
+            <label>fin</label>
+            <input type="number" class="page-input" id="ctr1-end" min="1" value="13" />
+          </div>
+          <span class="seg-desc">Contrat de cession d'édition + droit d'adaptation audiovisuelle</span>
+        </div>
+      </div>
+
+      <!-- CTR_002 -->
+      <div class="segment-card" id="card-ctr2">
+        <div class="segment-header">
+          <div class="seg-toggle">
+            <label class="toggle-switch">
+              <input type="checkbox" id="toggle-ctr2" checked />
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+          <span class="seg-badge seg-CTR2">CTR_002</span>
+          <span class="seg-name">Contrat de coédition</span>
+          <span class="seg-pages-display" id="disp-ctr2">—</span>
+        </div>
+        <div class="segment-body">
+          <div class="pages-input-group">
+            <label>Page début</label>
+            <input type="number" class="page-input" id="ctr2-start" min="1" value="14" />
+            <label>fin</label>
+            <input type="number" class="page-input" id="ctr2-end" min="1" value="19" />
+          </div>
+          <span class="seg-desc">Contrat de coédition entre éditeurs (optionnel)</span>
+        </div>
+      </div>
+
+      <!-- DIV_001 -->
+      <div class="segment-card" id="card-div">
+        <div class="segment-header">
+          <div class="seg-toggle">
+            <label class="toggle-switch">
+              <input type="checkbox" id="toggle-div" checked />
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+          <span class="seg-badge seg-DIV">DIV_001</span>
+          <span class="seg-name">Pistes d'audit Dropbox Sign</span>
+          <span class="seg-pages-display" id="disp-div">—</span>
+        </div>
+        <div class="segment-body">
+          <div class="pages-input-group">
+            <label>Page début</label>
+            <input type="number" class="page-input" id="div-start" min="1" value="20" />
+            <label>fin</label>
+            <input type="number" class="page-input" id="div-end" min="1" value="" placeholder="fin" />
+          </div>
+          <span class="seg-desc">Pistes d'audit électronique (jusqu'à la dernière page)</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- GENERATE -->
+    <button class="generate-btn" id="generateBtn">
+      <span class="btn-inner">
+        <span>⚡</span>
+        <span>Générer le ZIP SACEM</span>
+      </span>
+    </button>
+
+    <div class="progress-bar" id="progressBar">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+
+    <div class="status" id="statusMsg"></div>
+
+    <!-- RESULT -->
+    <div class="result-card" id="resultCard">
+      <div class="result-title">✓ ZIP prêt</div>
+      <div class="result-files" id="resultFiles"></div>
+      <a class="download-btn" id="downloadLink" href="#" download>
+        ⬇ Télécharger le ZIP
+      </a>
+    </div>
+
+    <span class="reset-link" id="resetLink">↺ Nouveau fichier</span>
+  </div>
+
+</div>
+
+<script>
+// ─── State ───────────────────────────────────────────────────────────────────
+let pdfBytes = null;
+let totalPages = 0;
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+function sanitizeTitle(str) {
+  return str
+    .toUpperCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // remove accents
+    .replace(/[^A-Z0-9_]/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_|_$/g, '')
+    .substring(0, 22);
+}
+
+function todayFormatted() {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const dd = String(d.getDate()).padStart(2,'0');
+  return `${y}${m}${dd}`;
+}
+
+function updateZipPreview() {
+  const t = sanitizeTitle(document.getElementById('titreOeuvre').value || '');
+  const date = document.getElementById('dateDepot').value;
+  document.getElementById('zipPreview').value = t ? `${date}_${t}.zip` : '';
+}
+
+function updatePageDisplays() {
+  const segments = [
+    { id: 'bdo',  dispId: 'disp-bdo' },
+    { id: 'ctr1', dispId: 'disp-ctr1' },
+    { id: 'ctr2', dispId: 'disp-ctr2' },
+    { id: 'div',  dispId: 'disp-div' },
+  ];
+  segments.forEach(s => {
+    const start = parseInt(document.getElementById(`${s.id}-start`).value) || 0;
+    const endEl = document.getElementById(`${s.id}-end`);
+    const end = parseInt(endEl.value) || (s.id === 'div' ? totalPages : 0);
+    const count = (start > 0 && end >= start) ? end - start + 1 : 0;
+    document.getElementById(s.dispId).textContent = count > 0 ? `${count} page${count>1?'s':''}` : '—';
+  });
+}
+
+function setProgress(pct, msg, type='') {
+  document.getElementById('progressFill').style.width = pct + '%';
+  const s = document.getElementById('statusMsg');
+  s.textContent = msg;
+  s.className = 'status ' + type;
+}
+
+function setSegmentEnabled(id, enabled) {
+  const card = document.getElementById(`card-${id}`);
+  const inputs = card.querySelectorAll('.page-input');
+  if (enabled) {
+    card.classList.remove('seg-disabled');
+    inputs.forEach(i => i.disabled = false);
+  } else {
+    card.classList.add('seg-disabled');
+    inputs.forEach(i => i.disabled = true);
+  }
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+document.getElementById('dateDepot').value = todayFormatted();
+
+document.getElementById('titreOeuvre').addEventListener('input', updateZipPreview);
+
+document.getElementById('toggle-ctr2').addEventListener('change', e => {
+  setSegmentEnabled('ctr2', e.target.checked);
+});
+document.getElementById('toggle-div').addEventListener('change', e => {
+  setSegmentEnabled('div', e.target.checked);
+});
+
+// Page input listeners
+['bdo','ctr1','ctr2','div'].forEach(id => {
+  ['start','end'].forEach(suffix => {
+    const el = document.getElementById(`${id}-${suffix}`);
+    if (el) el.addEventListener('input', updatePageDisplays);
+  });
+});
+
+// ─── File loading ─────────────────────────────────────────────────────────────
+async function loadFile(file) {
+  if (!file || file.type !== 'application/pdf') {
+    alert('Veuillez sélectionner un fichier PDF.');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    pdfBytes = new Uint8Array(e.target.result);
+
+    // Count pages using pdf-lib
+    try {
+      const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
+      totalPages = pdfDoc.getPageCount();
+    } catch(err) {
+      alert('Impossible de lire ce PDF: ' + err.message);
+      return;
+    }
+
+    // Show file bar
+    document.getElementById('fileBarName').textContent = file.name;
+    document.getElementById('fileBarPages').textContent = `${totalPages} pages`;
+    document.getElementById('fileBar').classList.add('visible');
+
+    // Auto-fill div end
+    document.getElementById('div-end').value = totalPages;
+
+    // Show form
+    document.getElementById('formSection').classList.add('visible');
+
+    // Auto-fill title from filename
+    const nameParts = file.name.replace('.pdf','').split(/[-_\s]/);
+    // Try to find the title (skip date-like parts)
+    const titleGuess = nameParts.filter(p => p.length > 2 && isNaN(p)).pop() || '';
+    if (titleGuess && !document.getElementById('titreOeuvre').value) {
+      document.getElementById('titreOeuvre').value = titleGuess;
+    }
+    updateZipPreview();
+    updatePageDisplays();
+
+    // Hide result if re-loading
+    document.getElementById('resultCard').classList.remove('visible');
+    document.getElementById('statusMsg').textContent = '';
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// Drop zone
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('fileInput');
+
+fileInput.addEventListener('change', e => {
+  if (e.target.files[0]) loadFile(e.target.files[0]);
+});
+
+dropzone.addEventListener('dragover', e => {
+  e.preventDefault();
+  dropzone.classList.add('dragover');
+});
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+dropzone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropzone.classList.remove('dragover');
+  if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
+});
+
+// ─── Generate ZIP ─────────────────────────────────────────────────────────────
+document.getElementById('generateBtn').addEventListener('click', async () => {
+  if (!pdfBytes) return;
+
+  const titre = sanitizeTitle(document.getElementById('titreOeuvre').value || '');
+  if (!titre) {
+    document.getElementById('statusMsg').textContent = '⚠ Veuillez saisir le titre de l\'œuvre.';
+    document.getElementById('statusMsg').className = 'status error';
+    return;
+  }
+
+  const date = document.getElementById('dateDepot').value;
+  const zipName = `${date}_${titre}.zip`;
+
+  // Read page ranges
+  const ranges = [];
+
+  const getRange = (id) => ({
+    start: parseInt(document.getElementById(`${id}-start`).value) - 1,
+    end:   parseInt(document.getElementById(`${id}-end`).value),
+  });
+
+  // BDO always
+  ranges.push({ name: `BDO_001_${titre}.pdf`, ...getRange('bdo') });
+
+  // CTR_001 always
+  ranges.push({ name: `CTR_001_${titre}.pdf`, ...getRange('ctr1') });
+
+  // CTR_002 optional
+  if (document.getElementById('toggle-ctr2').checked) {
+    ranges.push({ name: `CTR_002_${titre}.pdf`, ...getRange('ctr2') });
+  }
+
+  // DIV_001 optional
+  if (document.getElementById('toggle-div').checked) {
+    const divStart = parseInt(document.getElementById('div-start').value) - 1;
+    const divEnd = parseInt(document.getElementById('div-end').value) || totalPages;
+    ranges.push({ name: `DIV_001_${titre}.pdf`, start: divStart, end: divEnd });
+  }
+
+  // Validate
+  for (const r of ranges) {
+    if (r.start < 0 || r.end > totalPages || r.start >= r.end) {
+      setProgress(0, `⚠ Plage de pages invalide pour ${r.name}`, 'error');
+      return;
+    }
+  }
+
+  // Disable button
+  const btn = document.getElementById('generateBtn');
+  btn.disabled = true;
+  document.getElementById('progressBar').classList.add('visible');
+  document.getElementById('resultCard').classList.remove('visible');
+
+  try {
+    setProgress(10, 'Chargement du PDF source…');
+    const srcDoc = await PDFLib.PDFDocument.load(pdfBytes);
+
+    const zip = new JSZip();
+    const resultFiles = [];
+
+    for (let i = 0; i < ranges.length; i++) {
+      const r = ranges[i];
+      setProgress(10 + (i / ranges.length) * 70, `Extraction : ${r.name}`);
+
+      const newDoc = await PDFLib.PDFDocument.create();
+      const pageIndices = Array.from({length: r.end - r.start}, (_, k) => r.start + k);
+      const copiedPages = await newDoc.copyPages(srcDoc, pageIndices);
+      copiedPages.forEach(p => newDoc.addPage(p));
+
+      const pdfOut = await newDoc.save();
+      zip.file(r.name, pdfOut);
+      resultFiles.push({ name: r.name, pages: pageIndices.length });
+    }
+
+    setProgress(85, 'Compression du ZIP…');
+    const zipBlob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
+
+    setProgress(100, '');
+
+    // Result card
+    const filesHtml = resultFiles.map(f => `
+      <div class="result-file">
+        <span class="dot"></span>
+        <span>${f.name}</span>
+        <span style="color:var(--muted);margin-left:auto;">${f.pages} page${f.pages>1?'s':''}</span>
+      </div>
+    `).join('');
+    document.getElementById('resultFiles').innerHTML = filesHtml;
+
+    const url = URL.createObjectURL(zipBlob);
+    const link = document.getElementById('downloadLink');
+    link.href = url;
+    link.download = zipName;
+    link.textContent = `⬇ Télécharger ${zipName}`;
+    document.getElementById('resultCard').classList.add('visible');
+    setProgress(100, `✓ ${zipName} prêt`, 'success');
+
+  } catch(err) {
+    setProgress(0, '⚠ Erreur : ' + err.message, 'error');
+  }
+
+  btn.disabled = false;
+});
+
+// ─── Reset ────────────────────────────────────────────────────────────────────
+document.getElementById('resetLink').addEventListener('click', () => {
+  pdfBytes = null;
+  totalPages = 0;
+  fileInput.value = '';
+  document.getElementById('fileBar').classList.remove('visible');
+  document.getElementById('formSection').classList.remove('visible');
+  document.getElementById('resultCard').classList.remove('visible');
+  document.getElementById('titreOeuvre').value = '';
+  document.getElementById('zipPreview').value = '';
+  document.getElementById('statusMsg').textContent = '';
+  document.getElementById('progressBar').classList.remove('visible');
+  document.getElementById('progressFill').style.width = '0%';
+  document.getElementById('dateDepot').value = todayFormatted();
+  // Reset toggles
+  document.getElementById('toggle-ctr2').checked = true;
+  document.getElementById('toggle-div').checked = true;
+  setSegmentEnabled('ctr2', true);
+  setSegmentEnabled('div', true);
+});
+</script>
+</div><!-- /container -->
+</body>
+</html>

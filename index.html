@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BLZante Toolbox</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Syne+Mono&display=swap');
+
+:root {
+  --bg: #0d0d0d;
+  --border: #2a2a2a;
+  --text: #f0ede6;
+  --muted: #555;
+  --accent: #e8c547;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Syne', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 60px 60px;
+  opacity: 0.3;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.wrap { position: relative; z-index: 1; flex: 1; display: flex; flex-direction: column; }
+
+nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28px 48px;
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-logo {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #ffffff;
+  text-decoration: none;
+  letter-spacing: 0.08em;
+}
+
+.nav-label {
+  font-family: 'Syne Mono', monospace;
+  font-size: 0.72rem;
+  color: #aaa;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+main {
+  flex: 1;
+  padding: 64px 48px 80px;
+  max-width: 1100px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.page-title {
+  font-family: 'Syne Mono', monospace;
+  font-size: 0.72rem;
+  color: #aaa;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin-bottom: 48px;
+}
+
+.tools-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+}
+
+.tool-card {
+  background: var(--bg);
+  padding: 32px 28px;
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: relative;
+  overflow: hidden;
+  transition: background 0.2s;
+}
+
+.tool-card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.35s ease;
+}
+
+.tool-card:hover { background: #111; }
+.tool-card:hover::after { transform: scaleX(1); }
+.tool-card:hover .tool-arrow { color: var(--accent); transform: translate(3px, -3px); }
+
+.card-top {
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-start;
+}
+
+.tool-num {
+  font-family: 'Syne Mono', monospace;
+  font-size: 0.6rem;
+  color: var(--muted);
+  letter-spacing: 0.12em;
+}
+
+.tool-arrow {
+  font-size: 1rem;
+  color: var(--muted);
+  transition: transform 0.2s, color 0.2s;
+  line-height: 1;
+}
+
+.tool-name {
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+  color: #f0ede6;
+}
+
+.tool-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: auto;
+}
+
+.tag {
+  font-family: 'Syne Mono', monospace;
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  color: var(--muted);
+}
+
+.tag.hi { color: var(--accent); border-color: #4a3e10; }
+
+.tool-card.soon { opacity: 0.3; pointer-events: none; }
+
+.soon-badge {
+  font-family: 'Syne Mono', monospace;
+  font-size: 0.58rem;
+  color: var(--muted);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border: 1px solid var(--border);
+  padding: 2px 7px;
+  border-radius: 2px;
+}
+
+footer {
+  border-top: 1px solid var(--border);
+  padding: 20px 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.footer-copy, .footer-note {
+  font-family: 'Syne Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+}
+
+.footer-copy { color: #888; }
+.footer-note { color: #555; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+nav { animation: fadeUp 0.4s ease both; }
+.page-title { animation: fadeUp 0.4s 0.1s ease both; }
+.tool-card:nth-child(1) { animation: fadeUp 0.4s 0.15s ease both; }
+.tool-card:nth-child(2) { animation: fadeUp 0.4s 0.22s ease both; }
+
+@media (max-width: 600px) {
+  nav, main, footer { padding-left: 24px; padding-right: 24px; }
+  main { padding-top: 48px; }
+  .tools-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <nav>
+    <a class="nav-logo" href="index.html">BLZante</a>
+    <span class="nav-label">Toolbox</span>
+  </nav>
+
+  <main>
+    <div class="page-title">— Outils disponibles</div>
+    <div class="tools-grid">
+
+      <a class="tool-card" href="sacem_depot.html">
+        <div class="card-top">
+          <span class="tool-arrow">↗</span>
+        </div>
+        <div class="tool-name">SACEM Dropbox Sign<br>to ZIP Filezilla</div>
+      </a>
+
+    </div>
+  </main>
+
+  <footer>
+    <span class="footer-copy">BLZante Toolbox © 2026</span>
+    <span class="footer-note">Traitements 100% locaux</span>
+  </footer>
+
+</div>
+</body>
+</html>
