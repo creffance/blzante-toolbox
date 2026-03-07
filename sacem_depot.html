@@ -686,24 +686,27 @@ async function extractTitleFromPDF(bytes) {
     const page = await pdf.getPage(1);
     const content = await page.getTextContent();
 
-    // Reconstruct lines from text items
+    // Group text items into lines by Y position
     const items = content.items;
-    const lines = [];
-    let currentLine = '';
-    let lastY = null;
+    const lineMap = new Map();
 
     for (const item of items) {
-      const y = item.transform[5];
-      if (lastY !== null && Math.abs(y - lastY) > 3) {
-        if (currentLine.trim()) lines.push(currentLine.trim());
-        currentLine = '';
-      }
-      currentLine += item.str;
-      lastY = y;
+      const y = Math.round(item.transform[5]);
+      if (!lineMap.has(y)) lineMap.set(y, []);
+      lineMap.get(y).push(item);
     }
-    if (currentLine.trim()) lines.push(currentLine.trim());
 
-    // Find title: first non-empty line after "Commentaires"
+    // Sort lines top-to-bottom (descending Y in PDF coords)
+    const sortedYs = [...lineMap.keys()].sort((a, b) => b - a);
+    const lines = sortedYs.map(y =>
+      lineMap.get(y)
+        .sort((a, b) => a.transform[4] - b.transform[4])
+        .map(i => i.str)
+        .join('')
+        .trim()
+    ).filter(l => l.length > 0);
+
+    // Find title: first meaningful line after "Commentaires"
     let foundCommentaires = false;
     for (const line of lines) {
       if (!foundCommentaires) {
@@ -712,7 +715,16 @@ async function extractTitleFromPDF(bytes) {
       }
       if (line.length < 2) continue;
       if (/^[\d\/\s.:]+$/.test(line)) continue;
-      return line;
+
+      // Strip trailing numbers/dates/single chars (durée, date exploitation, etc.)
+      // Keep only the leading text portion before digits start
+      // e.g. "PROBLEME PROBLEME 02 38 CHANSON 07 11 2 0 2 5 x" → "PROBLEME PROBLEME"
+      const cleaned = line
+        .replace(/\s+\d[\d\s\/\.]*.*$/, '') // remove everything from first number sequence
+        .replace(/\s+[xX]\s*$/, '')          // remove trailing x
+        .trim();
+
+      if (cleaned.length >= 2) return cleaned;
     }
   } catch(e) {
     console.warn('extractTitleFromPDF error:', e);
