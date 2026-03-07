@@ -601,10 +601,10 @@ function sanitizeTitle(str) {
   return str
     .toUpperCase()
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // remove accents
-    .replace(/[^A-Z0-9_]/g, '_')
-    .replace(/_+/g, '_')
-    .replace(/^_|_$/g, '')
-    .substring(0, 22);
+    .replace(/[^A-Z0-9 ]/g, ' ')   // keep spaces, remove special chars
+    .replace(/ +/g, ' ')            // collapse multiple spaces
+    .trim()
+    .substring(0, 40);
 }
 
 function todayFormatted() {
