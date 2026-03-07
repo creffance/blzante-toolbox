@@ -6,6 +6,8 @@
 <title>SACEM Dropbox Sign to ZIP Filezilla — BLZante Toolbox</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Syne+Mono&display=swap');
 
@@ -676,6 +678,48 @@ document.getElementById('toggle-div').addEventListener('change', e => {
   });
 });
 
+// ─── Extract title from BDO text (page 1) via pdf.js ─────────────────────────
+async function extractTitleFromPDF(bytes) {
+  try {
+    const loadingTask = pdfjsLib.getDocument({ data: bytes });
+    const pdf = await loadingTask.promise;
+    const page = await pdf.getPage(1);
+    const content = await page.getTextContent();
+
+    // Reconstruct lines from text items
+    const items = content.items;
+    const lines = [];
+    let currentLine = '';
+    let lastY = null;
+
+    for (const item of items) {
+      const y = item.transform[5];
+      if (lastY !== null && Math.abs(y - lastY) > 3) {
+        if (currentLine.trim()) lines.push(currentLine.trim());
+        currentLine = '';
+      }
+      currentLine += item.str;
+      lastY = y;
+    }
+    if (currentLine.trim()) lines.push(currentLine.trim());
+
+    // Find title: first non-empty line after "Commentaires"
+    let foundCommentaires = false;
+    for (const line of lines) {
+      if (!foundCommentaires) {
+        if (line.includes('Commentaires')) foundCommentaires = true;
+        continue;
+      }
+      if (line.length < 2) continue;
+      if (/^[\d\/\s.:]+$/.test(line)) continue;
+      return line;
+    }
+  } catch(e) {
+    console.warn('extractTitleFromPDF error:', e);
+  }
+  return null;
+}
+
 // ─── File loading ─────────────────────────────────────────────────────────────
 async function loadFile(file) {
   if (!file || file.type !== 'application/pdf') {
@@ -688,8 +732,9 @@ async function loadFile(file) {
     pdfBytes = new Uint8Array(e.target.result);
 
     // Count pages using pdf-lib
+    let pdfDoc;
     try {
-      const pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
+      pdfDoc = await PDFLib.PDFDocument.load(pdfBytes);
       totalPages = pdfDoc.getPageCount();
     } catch(err) {
       alert('Impossible de lire ce PDF: ' + err.message);
@@ -707,19 +752,21 @@ async function loadFile(file) {
     // Show form
     document.getElementById('formSection').classList.add('visible');
 
-    // Auto-fill title from filename
-    const nameParts = file.name.replace('.pdf','').split(/[-_\s]/);
-    // Try to find the title (skip date-like parts)
-    const titleGuess = nameParts.filter(p => p.length > 2 && isNaN(p)).pop() || '';
-    if (titleGuess && !document.getElementById('titreOeuvre').value) {
-      document.getElementById('titreOeuvre').value = titleGuess;
+    // Extract title from BDO (page 1)
+    setProgress(0, 'Lecture du titre depuis le bulletin SACEM…');
+    const extractedTitle = await extractTitleFromPDF(pdfBytes);
+    if (extractedTitle) {
+      document.getElementById('titreOeuvre').value = extractedTitle;
+      setProgress(0, '');
+    } else {
+      setProgress(0, '⚠ Titre non détecté — à saisir manuellement.', 'error');
     }
+
     updateZipPreview();
     updatePageDisplays();
 
     // Hide result if re-loading
     document.getElementById('resultCard').classList.remove('visible');
-    document.getElementById('statusMsg').textContent = '';
   };
   reader.readAsArrayBuffer(file);
 }
