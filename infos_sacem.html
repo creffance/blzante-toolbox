@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Infos SACEM — BLZante Toolbox</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Syne+Mono&display=swap');
+
+:root {
+  --bg: #0a0a0a;
+  --surface: #141414;
+  --border: #262626;
+  --text: #e8e8e8;
+  --muted: #777;
+  --success: #4ade80;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Syne Mono', monospace;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 60px 60px;
+  opacity: 0.3;
+  pointer-events: none;
+  z-index: 0;
+}
+
+nav {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 28px 48px; border-bottom: 1px solid var(--border);
+  position: relative; z-index: 1;
+}
+.nav-logo {
+  font-family: 'Syne', sans-serif; font-size: 1.6rem; font-weight: 800;
+  color: #fff; text-decoration: none; letter-spacing: 0.08em;
+  display: flex; align-items: center; gap: 10px;
+}
+.nav-logo-img { height: 32px; width: auto; display: block; }
+.nav-right {
+  display: flex; align-items: center; gap: 12px;
+  font-size: 0.65rem; color: var(--muted); letter-spacing: 0.14em; text-transform: uppercase;
+}
+.nav-back { color: var(--muted); text-decoration: none; font-size: 0.65rem; letter-spacing: 0.14em; text-transform: uppercase; transition: color 0.15s; }
+.nav-back:hover { color: #fff; }
+.nav-sep { color: var(--border); }
+
+.container {
+  max-width: 800px; margin: 0 auto; padding: 56px 48px 80px;
+  position: relative; z-index: 1; flex: 1; width: 100%;
+}
+.page-heading { margin-bottom: 32px; border-bottom: 1px solid var(--border); padding-bottom: 24px; }
+.page-heading h1 {
+  font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 800;
+  letter-spacing: -0.01em; color: var(--text); line-height: 1.3;
+}
+
+.search-wrap { position: relative; margin-bottom: 24px; }
+.search-input {
+  width: 100%; font-family: 'Syne Mono', monospace; font-size: 0.82rem;
+  padding: 14px 16px 14px 40px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text); outline: none; transition: border-color 0.2s;
+}
+.search-input:focus { border-color: #555; }
+.search-input::placeholder { color: var(--muted); }
+.search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 0.9rem; opacity: 0.4; pointer-events: none; }
+.search-count { font-size: 0.62rem; color: var(--muted); letter-spacing: 0.1em; margin-bottom: 16px; }
+
+.section-label {
+  font-size: 0.62rem; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--muted); margin: 32px 0 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border);
+}
+.section-label:first-of-type { margin-top: 0; }
+
+.sw-list {
+  display: flex; flex-direction: column; gap: 1px;
+  background: var(--border); border: 1px solid var(--border); margin-bottom: 4px;
+}
+.sw-card { background: var(--bg); transition: background 0.15s; }
+.sw-card.hidden { display: none; }
+.sw-card:hover { background: #111; }
+.sw-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px; cursor: pointer; user-select: none;
+}
+.sw-header-left { display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
+.sw-chevron {
+  font-size: 1.1rem; color: var(--muted); transition: transform 0.2s;
+  flex-shrink: 0; width: 14px; text-align: center;
+}
+.sw-card.open .sw-chevron { transform: rotate(90deg); color: #fff; }
+.sw-display-name {
+  font-family: 'Syne', sans-serif; font-size: 0.92rem; font-weight: 700;
+  color: #fff; white-space: nowrap;
+}
+.sw-body { display: none; padding: 0 16px 18px 42px; }
+.sw-card.open .sw-body { display: block; }
+.sw-field {
+  display: flex; gap: 10px; padding: 5px 0; font-size: 0.72rem;
+  line-height: 1.5; border-bottom: 1px solid #1a1a1a;
+}
+.sw-label {
+  color: var(--muted); min-width: 130px; flex-shrink: 0;
+  text-transform: uppercase; font-size: 0.6rem; letter-spacing: 0.06em; padding-top: 2px;
+}
+.sw-value { color: #ccc; word-break: break-word; }
+
+.copy-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; background: transparent;
+  border: 1px solid var(--border); color: var(--muted);
+  cursor: pointer; font-size: 0.8rem; flex-shrink: 0; transition: all 0.2s;
+}
+.copy-btn:hover { border-color: #666; color: #fff; }
+.copy-btn.copied { border-color: var(--success); color: var(--success); }
+
+.coeditor-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-top: 12px; padding: 8px 14px;
+  background: transparent; border: 1px solid var(--border); color: var(--muted);
+  cursor: pointer; font-family: 'Syne Mono', monospace;
+  font-size: 0.62rem; letter-spacing: 0.06em; transition: all 0.2s;
+}
+.coeditor-link:hover { border-color: #666; color: #fff; }
+.coeditor-link.copied { border-color: var(--success); color: var(--success); }
+
+@media (max-width: 560px) {
+  nav { padding: 20px 24px; }
+  .container { padding: 40px 24px 60px; }
+  .sw-body { padding-left: 16px; }
+  .sw-field { flex-direction: column; gap: 2px; }
+  .sw-label { min-width: auto; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="index.html"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABoAAAAkCAIAAAAYWL1EAAABCGlDQ1BJQ0MgUHJvZmlsZQAAeJxjYGA8wQAELAYMDLl5JUVB7k4KEZFRCuwPGBiBEAwSk4sLGHADoKpv1yBqL+viUYcLcKakFicD6Q9ArFIEtBxopAiQLZIOYWuA2EkQtg2IXV5SUAJkB4DYRSFBzkB2CpCtkY7ETkJiJxcUgdT3ANk2uTmlyQh3M/Ck5oUGA2kOIJZhKGYIYnBncAL5H6IkfxEDg8VXBgbmCQixpJkMDNtbGRgkbiHEVBYwMPC3MDBsO48QQ4RJQWJRIliIBYiZ0tIYGD4tZ2DgjWRgEL7AwMAVDQsIHG5TALvNnSEfCNMZchhSgSKeDHkMyQx6QJYRgwGDIYMZAKbWPz9HbOBQAAAG/0lEQVR42o1WbUiTbRQ+z55tuc3vj6bkWqkVoSWWuVmmkoKESGoYmGZLBINJ0RfE0KwEPwL7EUI/JCz0RxEtgoIC031gZqXG0jSC2twKZbnmB6bbs+e8P47sHRq+7/lxc/M897nu69znXOe+GVhnLMv6fD4A2Lx5c0VFhVqtlkgkSqVSLBb39vZ2dnZaLBYAYBgGEWFjY1kWAMLCwhoaGmw2G66zhYWFtrY2sVhMiBthCYVCAMjLy/v69avf//79+zU1NVVVVbW1tXq9nj4ajcbw8HCGYfyIgfN/scrLyz0eDyLOzMx0dnampKRER0efP3/+yZMn3d3dhYWFJSUlbrcbEV+/fi0UCgUCwV84ElZRURHHcYj48OFDhUIBACdOnJibmwsMVqPRJCcnE+Lly5f9vhEREVFRUQAAAoEAAPbv37+wsICIjY2N9KWmpoYgvnz5cv369Rs3bjgcDkSMjY09deoUIv78+TMkJITYpaamarVaILZxcXFWqxUR29raiO/JkycJq6WlRa1W63Q6mUyWkJDg9Xrv3bsHALOzs4iYl5dHB1dRUWG1WldT+fTpU0S8e/cuYWVkZCwvLyPimTNncnJyKDT6Ozg46HQ6AeDNmzc8z1dXV5OLXq8fGBgAANi1axdFFBwcLBAIgoKCPn36hIharTYpKQkR5+fnm5qanj9/zrLss2fPEDE0NPTdu3eIWFlZyTBMRESE1+ttaGgAALh48SIi1tTU0D4XLlxAxOHhYQD48OEDIqamppaXlxuNRgCw2Wyzs7NJSUlE+eDBgwCg0+nsdntoaCgAgMlkcrlcYWFhDMNIpdKpqSmv15uZmUmsu7q6jh07hogqlYoy8ODBg5KSEkS0Wq1SqVQkEjmdzp6eHgCA0NDQlZWVjo4Oopaenu6nVlZWhoiJiYmZmZlZWVnp6ekej8fj8SQnJ5vNZkS8desWANTW1iJiUVERwzCgUqkQsbCwkPKdm5vL83xfX59AIAgLC/v48WNra+uOHTs0Gs3S0hK5abVaUptCoZBIJDMzM2NjY6sFp9FoEDEhIYHYbdmyBREHBgYI/cCBA4E1XFpaevToUZ/Ph4g6nQ4AmpubEbG1tXVVZPX19V6vNyQkxK9/s9k8NDQEAJs2bQIAtVo9MTGh1+v37t17+vRpwjWZTACQlpbm8XiGhobkcjkAFBcXQ1NT09zcnEgkAgAajx8/7vV6aQVtAAByubyrq4uwBgcH5XK5VCq1WCyIWF5eDgBZWVkmkwnOnTs3NzfnbzgsyzIM09fXNzw8rFQqhUKhUqmsr68nDSBid3d3UFAQAPT09CDi2NhYREQEAAwNDY2OjkJGRobb7Y6OjiY40lxSUtL8/Pzy8rLFYpmfnyeggYGBgoICItve3o6IHMeRyOrq6hCxt7cXWJadnJzMyspiWZZCo1GtVvszMDIycvbsWTpKgUBw584dwtJqtQCgUqn+/PnD83x/fz8AQGNjI6laLBZTQqmjZGdn5+fnp6Sk+E9w9+7dL1++pD2uXLkCAEql0m638zyPiAaDARiGkclkDoejrq6OgIRCIcuy1MX8tmfPnubmZpfLhYiLi4uVlZUAEBcXR9mgjmswGFazWVpaioirGg4wuVx+6NAhvV5PDYYCV6vVALB9+3bqFBzHUSUaDIZ/PV+9eoWIFovl8ePHer3ebDZbrVaKgmxqaqqhoUEikQBATk6O3W4nLET0wzEZGRk+n294eFihUOh0uuzs7JiYGJ7nFxcXXS7X79+/3W63w+F4//59b2/vr1+/AODq1as3b94UiUQ+n4+Oled5gUBgNBqhsrJyYWHB3wX919Jfr7rDhw+bTCYiS4wC5waDAYqLi+nT27dvNRpNTEzMepSQkJCCgoJHjx7RSo7jAg8hEE7IsiytUKlUKpVqdnZ2dHT08+fP09PTPp8vMjJy586daWlp27ZtI2ie5/1185eb2q8t2jAqKio/Pz8/P3/NOvrLsiyV5EZwZLQOEckz8BxJfPA/TEgQHMeR+OkhQ/40oZHneZr/BztaTR0l8EXgz+/6caMX0759+1JTUzs6OjiO+/btW3BwcHt7+/fv3yMjI8fGxiQSyfj4uM/nu337dmJios1mi46OXvu6ASBONptNKJPJxsfHW1pacnNz4+Pjjxw5Mjg46Ha7+/v7nU5nTEzM9PS0TCb78ePHyMjIxMTEtWvXqqqqOI5bI+rVBPA8L5FIEhMTFQrF5OTkpUuXHA6HSCTyer0ikUgkElVXVysUipycnJSUlPj4+KWlpRcvXlAlrIdjysrKenp6pqenY2NjnU7nysoKPbOkUqnL5YqNjaUq4Xk+PDzcbreHh4d7PJ6oqCgK0F9GJDIhz/NisXjr1q10jQVuFRkZuWZzeqVtIMR/ACfvUc9bOAzOAAAAAElFTkSuQmCC" alt="BLZante" class="nav-logo-img" /><span>BLZante</span></a>
+  <div class="nav-right">
+    <a class="nav-back" href="index.html">&larr; Toolbox</a>
+    <span class="nav-sep">/</span>
+    <span>Infos SACEM</span>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-heading"><h1>Infos SACEM<br>Songwriters &amp; Editeurs</h1></div>
+
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input type="text" class="search-input" id="searchInput" placeholder="Rechercher un songwriter, un éditeur, une société..." autocomplete="off" />
+  </div>
+  <div class="search-count" id="searchCount">39 fiches</div>
+
+  <div class="section-label">Songwriters</div>
+  <div class="sw-list" id="swList">
+    <div class="sw-card" data-search="2b jean-baptiste gnakouri 2b 06 bp 857 06, abidjan 06, côte d'ivoire 812718840 901686 / 1110847 jbgnak@gmail.com 85% blz publishing / 15% blzante (gestion séparée)">
+      <div class="sw-header">
+        <div class="sw-header-left">
+          <span class="sw-chevron">›</span>
+          <span class="sw-display-name">2B</span>
+        </div>
+        <button class="copy-btn" title="Copier les infos">
+          <span class="btn-icon">📋</span>
+        </button>
+      </div>
+      <div class="sw-body">
+        <div class="sw-field"><span class="sw-label">Prénom</span><span class="sw-value">Jean-Baptiste</span></div><div class="sw-field"><span class="sw-label">Nom</span><span class="sw-value">GNAKOURI</span></div><div class="sw-field"><span class="sw-label">Pseudo</span><span class="sw-value">2B</span></div><div class="sw-field"><span class="sw-label">Adresse</span><span class="sw-value">06 BP 857 06, Abidjan 06, Côte d'Ivoire</span></div><div class="sw-field"><span class="sw-label">IPI</span><span class="sw-value">812718840</span></div><div class="sw-field"><span class="sw-label">COAD</span><span class="sw-value">901686 / 1110847</span></div><div class="sw-field"><span class="sw-label">Email</span><span class="sw-value">jbgnak@gmail.com</span></div><div class="sw-field"><span class="sw-label">Éditeur</span><span class="sw-value">85% BLZ Publishing / 15% BLZante (gestion séparée)</span></div>
+        
+      </div>
+    </div>
+    <div class="sw-card" data-search="akatche benette séraphin koffi benette séraphin koffi dit "akatche" rufisque 2 almadies 2 cité spdi villa c10 a, dakar, sénégal benette seraphin koffi : 870903329 / akatche : 870903427 947207 bnthprod@gmail.com 85% blz publishing / 15% blzante (gestion séparée)">
+      <div class="sw-header">
+        <div class="sw-header-left">
+          <span class="sw-chevron">›</span>
+          <span class="sw-display-name">AKATCHE</span>
+        </div>
+        <button class="copy-btn" title="Copier les infos">
+          <span class="btn-icon">📋</span>
+        </button>
+      </div>
+      <div class="sw-body">
+        <div class="sw-field"><span class="sw-label">Prénom</span><span class="sw-value">Benette Séraphin</span></div><div class="sw-field"><span class="sw-label">Nom</span><span class="sw-value">KOFFI</span></div><div class="sw-field"><span class="sw-label">Pseudo</span><span class="sw-value">Benette Séraphin KOFFI dit "AKATCHE"</span></div><div class="sw-field"><span class="sw-label">Adresse</span><span class="sw-value">Rufisque 2 Almadies 2 Cité SPDI Villa C10 A, Dakar, Sénégal</span></div><div class="sw-field"><span class="sw-label">IPI</span><span class="sw-value">Benette Seraphin KOFFI : 870903329 / Akatche : 870903427</span></div><div class="sw-field"><span class="sw-label">COAD</span><span class="sw-value">947207</span></div><div class="sw-field"><span class="sw-label">Email</span><span class="sw-value">bnthprod@gmail.com</span></div><div class="sw-field"><span class="sw-label">Éditeur</span><span class="sw-value">85% BLZ Publishing / 15% BLZante (gestion séparée)</span></div>
+        
+      </div>
+    </div>
+    <div class="sw-card" data-search="ozzy antoine stroz 13 boulevard verdi, 83440 montauroux, france antoine stroz : 1070108997 1478206 ozzyouzou@gmail.com blzante (50%) / eca (gestion séparée)">
+      <div class="sw-header">
+        <div class="sw-header-left">
+          <span class="sw-chevron">›</span>
+          <span class="sw-display-name">OZZY</span>
+        </div>
+        <button class="copy-btn" title="Copier les infos">
+          <span class="btn-icon">📋</span>
+        </button>
+      </div>
+      <div class="sw-body">
+        <div class="sw-field"><span class="sw-label">Prénom</span><span class="sw-value">Antoine</span></div><div class="sw-field"><span class="sw-label">Nom</span><span class="sw-value">STROZ</span></div><div class="sw-field"><span class="sw-label">Adresse</span><span class="sw-value">13 Boulevard Verdi, 83440 Montauroux, France</span></div><div class="sw-field"><span class="sw-label">IPI</span><span class="sw-value">Antoine STROZ : 1070108997</span></div><div class="sw-field"><span class="sw-label">COAD</span><span class="sw-value">1478206</span></div><div class="sw-field"><span class="sw-label">Email</span><span class="sw-value">ozzyouzou@gmail.com</span></div><div class="sw-field"><span class="sw-label">Éditeur</span><span class="sw-value">BLZante (50%) / ECA (gestion séparée)</span></div>
+        
+      </div>
+    </div>
+    <div class="sw-card" data-search="bro elisa brolli 35 rue pelleport, 75020 paris, france 881178803 862875 brollisa@gmail.com 30% magnolias films / 70% blzante (gestion séparée) contact@projetscomplexes.com">
+      <div class="sw-header">
+        <div class="sw-header-left">
+          <span class="sw-chevron">›</span>
+          <span class="sw-display-name">BRO</span>
+        </div>
+        <button class="copy-btn" title="Copier les infos">
+          <span class="btn-icon">📋</span>
+        </button>
+      </div>
+      <div class="sw-body">
+        <div class="sw-field"><span class="sw-label">Prénom</span><span class="sw-value">Elisa</span></div><div class="sw-field"><span class="sw-label">Nom</span><span class="sw-value">BROLLI</span></div><div class="sw-field"><span class="sw-label">Adresse</span><span class="sw-value">35 rue Pelleport, 75020 Paris, France</span></div><div class="sw-field"><span class="sw-label">IPI</span><span class="sw-value">881178803</span></div><div class="sw-field"><span class="sw-label">COAD</span><span class="sw-value">862875</span></div><div class="sw-field"><span class="sw-label">Email</span><span class="sw-value">brollisa@gmail.com</span></div><div class="sw-field"><span class="sw-label">Éditeur</span><span class="sw-value">30% Magnolias Films / 70% BLZante (gestion séparée)</span></div><div class="sw-field"><span class="sw-label">Contact relecture</span><span class="sw-value">contact@projetscomplexes.com</span></div>
+        <button class="coeditor-link" data-coeditor="MAGNOLIAS FILMS" title="Copier infos MAGNOLIAS FILMS">📋 Copier infos MAGNOLIAS FILMS</button>
+      </div>
+    </div>
+    <div class="sw-card" data-search="cheri laurent grima chéri 229 rue marcadet, 75018 paris, france 1221249398 1567743 jesuischeri.music@gmail.com priscillia adam">
+      <div class="sw-header">
+        <div class="sw-header-left">
+          <span class="sw-chevron">›</span>
+          <span class="sw-display-name">CHERI</span>
+        </div>
+        <button class="copy-btn" title="Copier les infos">
+          <span class="btn-icon">📋</span>
+        </button>
+      </div>
+      <div class="sw-body">
+        <div class="sw-field"><span class="sw-label">Prénom</span><span class="sw-value">Laurent</span></div><div class="sw-field"><span class="sw-label">Nom</span><span class="sw-value">GRIMA</span></div><div class="sw-field"><span class="sw-label">Pseudo</span><span class="sw-value">Chéri</span></div><div class="sw-field"><span class="sw-label">Adresse</span><span class="sw-value">229 Rue Marcadet, 75018 Paris, France</span></div><div class="sw-field"><span class="sw-label">IPI</span><span class="sw-value">1221249398</span></div><div class="sw-field"><span class="sw-label">COAD</span><span class="sw-value">1567743</span></div><div class="sw-field"><span class="sw-label">Email</span><span class="sw-value">jesuischeri.music@gmail.com</span></div><div class="sw-field"><span class="sw-label">Contact relecture</span><span class="sw-value">Priscillia Adam</span></div>
+        
+      </div>
+    </div>
+    <div class="sw-card" data-search="dani terreur antonin boisadan dani terreur 1 passage rauche, 75011 paris, france antonin boisadan : 640745942 / dani terreur : 1035460490 542877 dani.terreur@gmail.com blzante 40% / smp 40% / soleil de minuit 20%">
+      <div class="sw-header">
+        <div class="sw-header-left">
+          <span class="sw-chevron">›</span>
+          <span class="sw-display-name">DANI TERREUR</span>
+        </div>
+        <button class="copy-btn" title="Copier les infos">
+          <span class="btn-icon">📋</span>
+        </button>
+      </div>
+      <div class="sw-body">
+        <div class="sw-field"><span class="sw-label">Prénom</span><span class="sw-value">Antonin</span></div><div class="sw-field"><span class="sw-label">Nom</span><span class="sw-value">BOISADAN</span></div><div class="sw-field"><span class="sw-label">Pseudo</span><span class="sw-value">Dani Terreur</span></div><div class="sw-field"><span class="sw-label">Adresse</span><span class="sw-value">1 passage Rauche, 75011 Paris, France</span></div><div class="sw-field"><span class="sw-label">IPI</span><span class="sw-value">Antonin BOISADAN : 640745942 / DANI TERREUR : 1035460490</span></div><div class="sw-field"><span class="sw-label">COAD</span><span class="sw-value">542877</span></div><div class="sw-field"><span class="sw-label">Email</span><span class="sw-value">dani.terreur@gmail.com</span></div><div class="sw-field"><span class="sw-label">Éditeur</span><span class="sw-value">BLZante 40% / SMP 40% / Soleil de Minuit 20%</span></div>
+        
+      </div>
+    </div>
+    <div class="sw-card" data-search="emy jo amenan emy josee orlane tiegbe emy jo 08 bp 154 abidjan 08, abidjan, côte d'ivoire 1323743469 2109322 tiegbeorlane6@gmail.com blzante / blz (50/50 gestion séparée) creff.pierre@gmail.com">
+      <div class="sw-header">
+        <div class="sw-header-left">
+          <span class="sw-chevron">›</span>
+          <span class="sw-display-name">EMY JO</span>
+        </div>
+        <button class="copy-btn" title="Copier les infos">
+          <span class="btn-icon">📋</span>
+        </button>
+      </div>
+      <div class="sw-body">
+        <div class="sw-field"><span class="sw-label">Prénom</span><span class="sw-value">Amenan Emy Josee Orlane</span></div><div class="sw-field"><span class="sw-label">Nom</span><span class="sw-value">TIEGBE</span></div><div class="sw-field"><span class="sw-label">Pseudo</span><span class="sw-value">EMY JO</span></div><div class="sw-field"><span class="sw-label">Adresse</span><span class="sw-value">08 BP 154 Abidjan 08, Abidjan, Côte d'Ivoire</span></div><div class="sw-field"><span class="sw-label">IPI</span><span class="sw-value">1323743469</span></div><div class="sw-field"><span class="sw-label">COAD</span><span class="sw-value">2109322</span></div><div class="sw-field"><span class="sw-label">Email</span><span class="sw-value">tiegbeorlane6@gmail.com</span></div><div class="sw-field"><span class="sw-label">Éditeur</span><span class="sw-value">BLZante / BLZ (50/50 gestion séparée)</span></div><div class="sw-field"><span class="sw-label">Contact relecture</span><span class="sw-value">creff.pierre@gmail.com</span></div>
+        
+      </div>
+    </div>
+    <div class="sw-card" data-search="gabriel mabilat gabriel mabilat 48, rue du chevalier de la barre, 75018 paris, france 686525602 689951 gabriel.mabilat@gmail.com blzante 100% creff.pierre@gmail.com / moinscplus@gmail.com">
+      <div class="sw-header">
+        <div class="sw-header-left">
+          <span class="sw-chevron">›</span>
+          <span class="sw-display-name">GABRIEL MABILAT</span>
+        </div>
+        <button class="copy-btn" title="Copier les infos">
+          <span class="btn-icon">📋</span>
+        </button>
+      </div>
+      <div class="sw-body">
+        <div class="sw-field"><span class="sw-label">Prénom</span><span class="sw-value">Gabriel</span></div><div class="sw-field"><span class="sw-label">Nom</span><span class="sw-value">MABILAT</span></div><div class="sw-field"><span class="sw-label">Adresse</span><span class="sw-value">48, rue du Chevalier de la Barre, 75018 Paris, France</span></div><div class="sw-field"><span class="sw-label">IPI</span><span class="sw-value">686525602</span></div><div class="sw-field"><span class="sw-label">COAD</span><span class="sw-value">689951</span></div><div class="sw-field"><span class="sw-label">Email</span><span class="sw-value">gabriel.mabilat@gmail.com</span></div><div class="sw-field"><span class="sw-label">Éditeur</span><span class="sw-value">BLZante 100%</span></div><div class="sw-field"><span class="sw-label">Contact relecture</span><span class="sw-value">creff.pierre@gmail.com / moinscplus@gmail.com</span></div>
+        
+      </div>
+    </div>
+    <div class="sw-card" data-search="hadrien mabilat hadrien mabilat 20, rue achille martinet, 75018 paris, france 686525700 689958 hadrienmabilat@gmail.com blzante 100% creff.pierre@gmail.com / moinscplus@gmail.com">
+      <div class="sw-header">
+        <div class="sw-header-left">
+          <span class="sw-chevron">›</span>
+          <span class="sw-display-name">HADRIEN MABILAT</span>
+        </div>
+        <button class="copy-btn" title="Copier les infos">
+          <span class="btn-icon">📋</span>
+        </button>
+      </div>
+      <div class="sw-body">
+        <div class="sw-field"><span class="sw-label">Prénom</span><span class="sw-value">Hadrien</span></div><div class="sw-field"><span class="sw-label">Nom</span><span class="sw-value">MABILAT</span></div><div class="sw-field"><span class="sw-label">Adresse</span><span class="sw-value">20, rue Achille Martinet, 75018 Paris, France</span></div><div class="sw-field"><span class="sw-label">IPI</span><span class="sw-value">686525700</span></div><div class="sw-field"><span class="sw-label">COAD</span><span class="sw-value">689958</span></div><div class="sw-field"><span class="sw-label">Email</span><span class="sw-value">hadrienmabilat@gmail.com</span></div><div class="sw-field"><span class="sw-label">Éditeur</span><span class="sw-value">BLZante 100%</span></div><div class="sw-field"><span class="sw-label">Contact relecture</span><span class="sw-value">creff.pierre@gmail.com / moinscplus@gmail.com</span></div>
+        
+      </div>
+    </div>
+    <div class="sw-card" data-search="hugo lardenet hugo lardenet 6 passage kracher, 75018 paris, france 1334686632 2148914 hugo.lardenet@gmail.com blzante 100% creff.pierre@gmail.com / louise.blzante@gmail.com / jean.dedeyan@sonymusicpub.com">
+      <div class="sw-header">
+        <div class="sw-header-left">
+          <span class="sw-chevron">›</span>
+          <span class="sw-display-name">HUGO LARDENET</span>
+        </div>
+        <button class="copy-btn" title="Copier les infos">
+          <span class="btn-icon">📋</span>
+        </button>
+      </div>
+      <div class="sw-body">
+        <div class="sw-field"><span class="sw-label">Prénom</span><span class="sw-value">Hugo</span></div><div class="sw-field"><span class="sw-label">Nom</span><span class="sw-value">LARDENET</span></div><div class="sw-field"><span class="sw-label">Adresse</span><span class="sw-value">6 passage Kracher, 75018 Paris, France</span></div><div class="sw-field"><span class="sw-label">IPI</span><span class="sw-value">1334686632</span></div><div class="sw-field"><span class="sw-label">COAD</span><span class="sw-value">2148914</span></div><div class="sw-field"><span class="sw-label">Email</span><span class="sw-value">hugo.lardenet@gmail.com</span></div><div class="sw-field"><span class="sw-label">Éditeur</span><span class="sw-value">BLZante 100%</span></div><div class="sw-field"><span class="sw-label">Contact relecture</span><span class="sw-value">creff.pierre@gmail.com / louise.blzante@gmail.com / jean.dedeyan@sonymusicpub.com</span></div>
+        
+      </div>
+    </div>
+    <div class="sw-card" data-search="ivy nathan pinel nathan pinel dit "ivy" 1 bis, rue de mouzaïa, 75019 paris, france nathan pinel : 1065718450 1470131 ivy.ivybeats@gmail.com 85% blz publishing / 15% blzante (gestion séparée) creff.pierre@gmail.com">
+      <div class="sw-header">
+        <div class="sw-header-left">
+          <span class="sw-chevron">›</span>
+          <span class="sw-display-name">IVY</span>
+        </div>
+        <button class="copy-btn" title="Copier les infos">
+          <span class="btn-icon">📋</span>
+        </button>
+      </div>
+      <div class="sw-body">
+        <div class="sw-field"><span class="sw-label">Prénom</span><span class="sw-value">Nathan</span></div><div class="sw-field"><span class="sw-label">Nom</span><span class="sw-value">PINEL</span></div><div class="sw-field"><span class="sw-label">Pseudo</span><span class="sw-value">Nathan PINEL dit "ivy"</span></div><div class="sw-field"><span class="sw-label">Adresse</span><span class="sw-value">1 bis, rue de Mouzaïa, 75019 Paris, France</span></div><div class="sw-field"><span class="sw-label">IPI</span><span class="sw-value">Nathan PINEL : 1065718450</span></div><div class="sw-field"><span class="sw-label">COAD</span><span class="sw-value">1470131</span></div><div class="sw-field"><span class="sw-label">Email</span><span class="sw-value">ivy.ivybeats@gmail.com</span></div><div class="sw-field"><span class="sw-label">Éditeur</span><span class="sw-value">85% BLZ Publishing / 15% BLZante (gestion séparée)</span></div><div class="sw-field"><span class="sw-label">Contact relecture</span><span class="sw-value">creff.pierre@gmail.com</span></div>
+        
+      </div>
+    </div>
+    <div class="sw-card" data-search="kev 117 kevin ilango kevin ilango dit "kev 117" 11, boulevard victor schoelcher, 77127 lieusaint, france kevin ilango : 887677846 / kev 117 : 1089373129 1230080 kevinilango111@gmail.com blz publishing (50%) / pluma (50% - gestion séparée)">
+      <div class="sw-header">
+        <div class="sw-header-left">
+          <span class="sw-chevron">›</span>
+          <span class="sw-display-name">KEV 117</span>
+        </div>
+        <button class="copy-btn" title="Copier les infos">
+          <span class="btn-icon">📋</span>
+        </button>
+      </div>
+      <div class="sw-body">
+        <div class="sw-field"><span class="sw-label">Prénom</span><span class="sw-value">Kevin</span></div><div class="sw-field"><span class="sw-label">Nom</span><span class="sw-value">ILANGO</span></div><div class="sw-field"><span class="sw-label">Pseudo</span><span class="sw-value">Kevin ILANGO dit "KEV 117"</span></div><div class="sw-field"><span class="sw-label">Adresse</span><span class="sw-value">11, Boulevard Victor Schoelcher, 77127 Lieusaint, France</span></div><div class="sw-field"><span class="sw-label">IPI</span><span class="sw-value">Kevin ILANGO : 887677846 / Kev 117 : 1089373129</span></div><div class="sw-field"><span class="sw-label">COAD</span><span class="sw-value">1230080</span></div><div class="sw-field"><span class="sw-label">Email</span><span class="sw-value">kevinilango111@gmail.com</span></div><div class="sw-field"><span class="sw-label">Éditeur</span><span class="sw-value">BLZ Publishing (50%) / Pluma (50% - gestion séparée)</span></div>
+        <button class="coeditor-link" data-coeditor="PLUMA" title="Copier infos PLUMA">📋 Copier infos PLUMA</button>
+      </div>
+    </div>
+    <div class="sw-card" data-search="laurina malaka laurina moisa 273 chemin de la folie, 42153 riorges, france 1199927389 1799895 suzonbernie@gmail.com blzante 50% / green piste records 50% moisamaeva@gmail.com">
+      <div class="sw-header">
+        <div class="sw-header-left">
+          <span class="sw-chevron">›</span>
+          <span class="sw-display-name">LAURINA MALAKA</span>
+        </div>
+        <button class="copy-btn" title="Copier les infos">
+          <span class="btn-icon">📋</span>
+        </button>
+      </div>
+      <div class="sw-body">
+        <div class="sw-field"><span class="sw-label">Prénom</span><span class="sw-value">Laurina</span></div><div class="sw-field"><span class="sw-label">Nom</span><span class="sw-value">MOISA</span></div><div class="sw-field"><span class="sw-label">Adresse</span><span class="sw-value">273 chemin de la Folie, 42153 Riorges, France</span></div><div class="sw-field"><span class="sw-label">IPI</span><span class="sw-value">1199927389</span></div><div class="sw-field"><span class="sw-label">COAD</span><span class="sw-value">1799895</span></div><div class="sw-field"><span class="sw-label">Email</span><span class="sw-value">suzonbernie@gmail.com</span></div><div class="sw-field"><span class="sw-label">Éditeur</span><span class="sw-value">BLZante 50% / Green Piste Records 50%</span></div><div class="sw-field"><span class="sw-label">Contact relecture</span><span class="sw-value">moisamaeva@gmail.com</span></div>
+        <button class="coeditor-link" data-coeditor="GREEN PISTE RECORDS" title="Copier infos GREEN PISTE RECORDS">📋 Copier infos GREEN PISTE RECORDS</button>
+      </div>
+    </div>
+    <div class="sw-card" data-search="leandre léandre villechaise 10 rue de la réunion, 75020 paris, france 884972864 1156002 leandre.pick@gmail.com blzante 100% jean smp / blzante.digital@gmail.com / louise.blzante@gmail.com">
+      <div class="sw-header">
+        <div class="sw-header-left">
+          <span class="sw-chevron">›</span>
+          <span class="sw-display-name">LEANDRE</span>
+        </div>
+        <button class="copy-btn" title="Copier les infos">
+          <span class="btn-icon">📋</span>
+        </button>
+      </div>
+      <div class="sw-body">
+        <div class="sw-field"><span class="sw-label">Prénom</span><span class="sw-value">Léandre</span></div><div class="sw-field"><span class="sw-label">Nom</span><span class="sw-value">VILLECHAISE</span></div><div class="sw-field"><span class="sw-label">Adresse</span><span class="sw-value">10 rue de la Réunion, 75020 Paris, France</span></div><div class="sw-field"><span class="sw-label">IPI</span><span class="sw-value">884972864</span></div><div class="sw-field"><span class="sw-label">COAD</span><span class="sw-value">1156002</span></div><div class="sw-field"><span class="sw-label">Email</span><span class="sw-value">leandre.pick@gmail.com</span></div><div class="sw-field"><span class="sw-label">Éditeur</span><span class="sw-value">BLZante 100%</span></div><div class="sw-field"><span class="sw-label">Contact relecture</span><span class="sw-value">Jean SMP / blzante.digital@gmail.com / louise.blzante@gmail.com</span></div>
+        
+      </div>
+    </div>
+    <div class="sw-card" data-search="leith ahmed ali ahmed ali dit "leith" 13, rue des frères d'astier de la vigerie, 75013 paris, france ali paris : 1052377572 / leith : 1052377474 1450327 leith101contact@gmail.com blz publishing / eca (50/50 - gestion séparée)">
+      <div class="sw-header">
+        <div class="sw-header-left">
+          <span class="sw-chevron">›</span>
+          <span class="sw-display-name">LEITH</span>
+        </div>
+        <button class="copy-btn" title="Copier les infos">
+          <span class="btn-icon">📋</span>
+        </button>
+      </div>
+      <div class="sw-body">
+        <div class="sw-field"><span class="sw-label">Prénom</span><span class="sw-value">Ahmed</span></div><div class="sw-field"><span class="sw-label">Nom</span><span class="sw-value">ALI</span></div><div class="sw-field"><span class="sw-label">Pseudo</span><span class="sw-value">Ahmed ALI dit "LEITH"</span></div><div class="sw-field"><span class="sw-label">Adresse</span><span class="sw-value">13, Rue des frères d'Astier de la Vigerie, 75013 Paris, France</span></div><div class="sw-field"><span class="sw-label">IPI</span><span class="sw-value">ALI PARIS : 1052377572 / LEITH : 1052377474</span></div><div class="sw-field"><span class="sw-label">COAD</span><span class="sw-value">1450327</span></div><div class="sw-field"><span class="sw-label">Email</span><span class="sw-value">leith101contact@gmail.com</span></div><div class="sw-field"><span class="sw-label">Éditeur</span><span class="sw-value">BLZ Publishing / ECA (50/50 - gestion séparée)</span></div>
+        
+      </div>
+    </div>
+    <div class="sw-card" data-search="matshimoto mathéo marie mathéo marie dit "matshimoto" 97, rue jean jaurès, 92270 bois colombes, france mathéo marie : 1007643880 / matshimoto : 1007644093 1369505 matshimoto.contact@gmail.com blz publishing 50% / eca 50% blz publishing + matshi">
+      <div class="sw-header">
+        <div class="sw-header-left">
+          <span class="sw-chevron">›</span>
+          <span class="sw-display-name">MATSHIMOTO</span>
+        </div>
+        <button class="copy-btn" title="Copier les infos">
+          <span class="btn-icon">📋</span>
+        </button>
+      </div>
+      <div class="sw-body">
+        <div class="sw-field"><span class="sw-label">Prénom</span><span class="sw-value">Mathéo</span></div><div class="sw-field"><span class="sw-label">Nom</span><span class="sw-value">MARIE</span></div><div class="sw-field"><span class="sw-label">Pseudo</span><span class="sw-value">Mathéo MARIE dit "MATSHIMOTO"</span></div><div class="sw-field"><span class="sw-label">Adresse</span><span class="sw-value">97, rue Jean Jaurès, 92270 Bois Colombes, France</span></div><div class="sw-field"><span class="sw-label">IPI</span><span class="sw-value">Mathéo MARIE : 1007643880 / MATSHIMOTO : 1007644093</span></div><div class="sw-field"><span class="sw-label">COAD</span><span class="sw-value">1369505</span></div><div class="sw-field"><span class="sw-label">Email</span><span class="sw-value">matshimoto.contact@gmail.com</span></div><div class="sw-field"><span class="sw-label">Éditeur</span><span class="sw-value">BLZ Publishing 50% / ECA 50%</span></div><div class="sw-field"><span class="sw-label">Contact relecture</span><span class="sw-value">BLZ Publishing + Matshi</span></div>
+        
+      </div>
+    </div>
+    <div class="sw-card" data-search="nolan nolan delepine nolan delepine dit "nolan d" 1 rue des tennis, 75018 paris, france nolan delepine : 1106787845 / nolan d : 1108607576 1557828 prodnoland@gmail.com blz publishing 65% / nolan d (eca) 35% pierre blz - creff.pierre@gmail.com">
+      <div class="sw-header">
+        <div class="sw-header-left">
+          <span class="sw-chevron">›</span>
+          <span class="sw-display-name">NOLAN</span>
+        </div>
+        <button class="copy-btn" title="Copier les infos">
+          <span class="btn-icon">📋</span>
+        </button>
+      </div>
+      <div class="sw-body">
+        <div class="sw-field"><span class="sw-label">Prénom</span><span class="sw-value">Nolan</span></div><div class="sw-field"><span class="sw-label">Nom</span><span class="sw-value">DELEPINE</span></div><div class="sw-field"><span class="sw-label">Pseudo</span><span class="sw-value">Nolan DELEPINE dit "NOLAN D"</span></div><div class="sw-field"><span class="sw-label">Adresse</span><span class="sw-value">1 rue des Tennis, 75018 Paris, France</span></div><div class="sw-field"><span class="sw-label">IPI</span><span class="sw-value">Nolan DELEPINE : 1106787845 / Nolan D : 1108607576</span></div><div class="sw-field"><span class="sw-label">COAD</span><span class="sw-value">1557828</span></div><div class="sw-field"><span class="sw-label">Email</span><span class="sw-value">prodnoland@gmail.com</span></div><div class="sw-field"><span class="sw-label">Éditeur</span><span class="sw-value">BLZ Publishing 65% / Nolan D (ECA) 35%</span></div><div class="sw-field"><span class="sw-label">Contact relecture</span><span class="sw-value">Pierre BLZ - creff.pierre@gmail.com</span></div>
+        
+      </div>
+    </div>
+    <div class="sw-card" data-search="pablo pablo cobo 12, rue paul bert, 93170 bagnolet, france 1129607066 1624935 murietarecord@gmail.com blz publishing (50%) / eca (50%) pierre creff (blz) - creff.pierre@gmail.com">
+      <div class="sw-header">
+        <div class="sw-header-left">
+          <span class="sw-chevron">›</span>
+          <span class="sw-display-name">PABLO</span>
+        </div>
+        <button class="copy-btn" title="Copier les infos">
+          <span class="btn-icon">📋</span>
+        </button>
+      </div>
+      <div class="sw-body">
+        <div class="sw-field"><span class="sw-label">Prénom</span><span class="sw-value">Pablo</span></div><div class="sw-field"><span class="sw-label">Nom</span><span class="sw-value">COBO</span></div><div class="sw-field"><span class="sw-label">Adresse</span><span class="sw-value">12, rue Paul Bert, 93170 Bagnolet, France</span></div><div class="sw-field"><span class="sw-label">IPI</span><span class="sw-value">1129607066</span></div><div class="sw-field"><span class="sw-label">COAD</span><span class="sw-value">1624935</span></div><div class="sw-field"><span class="sw-label">Email</span><span class="sw-value">murietarecord@gmail.com</span></div><div class="sw-field"><span class="sw-label">Éditeur</span><span class="sw-value">BLZ Publishing (50%) / ECA (50%)</span></div><div class="sw-field"><span class="sw-label">Contact relecture</span><span class="sw-value">Pierre CREFF (BLZ) - creff.pierre@gmail.com</span></div>
+        
+      </div>
+    </div>
+    <div class="sw-card" data-search="palmae naël diouane 12 rue louis blériot, 24330 bassillac, france nael diouane : 1115503503 1578080 palmae.contact@gmail.com blzante (50%) / eca 50% (gestion séparée)">
+      <div class="sw-header">
+        <div class="sw-header-left">
+          <span class="sw-chevron">›</span>
+          <span class="sw-display-name">PALMAE</span>
+        </div>
+        <button class="copy-btn" title="Copier les infos">
+          <span class="btn-icon">📋</span>
+        </button>
+      </div>
+      <div class="sw-body">
+        <div class="sw-field"><span class="sw-label">Prénom</span><span class="sw-value">Naël</span></div><div class="sw-field"><span class="sw-label">Nom</span><span class="sw-value">DIOUANE</span></div><div class="sw-field"><span class="sw-label">Adresse</span><span class="sw-value">12 rue Louis Blériot, 24330 Bassillac, France</span></div><div class="sw-field"><span class="sw-label">IPI</span><span class="sw-value">Nael DIOUANE : 1115503503</span></div><div class="sw-field"><span class="sw-label">COAD</span><span class="sw-value">1578080</span></div><div class="sw-field"><span class="sw-label">Email</span><span class="sw-value">palmae.contact@gmail.com</span></div><div class="sw-field"><span class="sw-label">Éditeur</span><span class="sw-value">BLZante (50%) / ECA 50% (gestion séparée)</span></div>
+        
+      </div>
+    </div>
+    <div class="sw-card" data-search="pierre-laurent faure pierre-laurent faure pierre laurent faure 11 rue de l'orillon, 75011 paris, france pierre laurent faure : 817635130 1092689 pierrelaurent.faure@parlonspeurec.com eca / parlons peu rec ec.composer@gmail.com / creff.pierre@gmail.com">
+      <div class="sw-header">
+        <div class="sw-header-left">
+          <span class="sw-chevron">›</span>
+          <span class="sw-display-name">PIERRE-LAURENT FAURE</span>
+        </div>
+        <button class="copy-btn" title="Copier les infos">
+          <span class="btn-icon">📋</span>
+        </button>
+      </div>
+      <div class="sw-body">
+        <div class="sw-field"><span class="sw-label">Prénom</span><span class="sw-value">Pierre-Laurent</span></div><div class="sw-field"><span class="sw-label">Nom</span><span class="sw-value">FAURE</span></div><div class="sw-field"><span class="sw-label">Pseudo</span><span class="sw-value">Pierre Laurent FAURE</span></div><div class="sw-field"><span class="sw-label">Adresse</span><span class="sw-value">11 rue de l'Orillon, 75011 Paris, France</span></div><div class="sw-field"><span class="sw-label">IPI</span><span class="sw-value">Pierre Laurent FAURE : 817635130</span></div><div class="sw-field"><span class="sw-label">COAD</span><span class="sw-value">1092689</span></div><div class="sw-field"><span class="sw-label">Email</span><span class="sw-value">pierrelaurent.faure@parlonspeurec.com</span></div><div class="sw-field"><span class="sw-label">Éditeur</span><span class="sw-value">ECA / Parlons Peu Rec</span></div><div class="sw-field"><span class="sw-label">Contact relecture</span><span class="sw-value">ec.composer@gmail.com / creff.pierre@gmail.com</span></div>
+        <button class="coeditor-link" data-coeditor="PARLONS PEU REC" title="Copier infos PARLONS PEU REC">📋 Copier infos PARLONS PEU REC</button>
+      </div>
+    </div>
+    <div class="sw-card" data-search="ritual x karim ahamada tabibou 3 rue de l'étang de la grange, 57950, montigny-lès-metz, france 1131411128 1628472 ritualbabyx@gmail.com blz publishing / out of the blue / ablodé (50/25/25) ritualbabyx@gmail.com">
+      <div class="sw-header">
+        <div class="sw-header-left">
+          <span class="sw-chevron">›</span>
+          <span class="sw-display-name">RITUAL X</span>
+        </div>
+        <button class="copy-btn" title="Copier les infos">
+          <span class="btn-icon">📋</span>
+        </button>
+      </div>
+      <div class="sw-body">
+        <div class="sw-field"><span class="sw-label">Prénom</span><span class="sw-value">Karim</span></div><div class="sw-field"><span class="sw-label">Nom</span><span class="sw-value">AHAMADA TABIBOU</span></div><div class="sw-field"><span class="sw-label">Adresse</span><span class="sw-value">3 rue de l'étang de la grange, 57950, Montigny-lès-Metz, France</span></div><div class="sw-field"><span class="sw-label">IPI</span><span class="sw-value">1131411128</span></div><div class="sw-field"><span class="sw-label">COAD</span><span class="sw-value">1628472</span></div><div class="sw-field"><span class="sw-label">Email</span><span class="sw-value">ritualbabyx@gmail.com</span></div><div class="sw-field"><span class="sw-label">Éditeur</span><span class="sw-value">BLZ Publishing / Out of the blue / Ablodé (50/25/25)</span></div><div class="sw-field"><span class="sw-label">Contact relecture</span><span class="sw-value">ritualbabyx@gmail.com</span></div>
+        <button class="coeditor-link" data-coeditor="OUT OF THE BLUE" title="Copier infos OUT OF THE BLUE">📋 Copier infos OUT OF THE BLUE</button>
+      </div>
+    </div>
+    <div class="sw-card" data-search="roi luis luis malapa luis malapa dit "le roi luis" 13 rue robineau, 75020 paris, france luis malapa : 1020240346 / le roi luis : 1024768856 1375364 luis.malapa@gmail.com blzante (80%) / luis malapa (eca - 20%) (gestion séparée) creff.pierre@gmail.com / luis.malapa@gmail.com">
+      <div class="sw-header">
+        <div class="sw-header-left">
+          <span class="sw-chevron">›</span>
+          <span class="sw-display-name">ROI LUIS</span>
+        </div>
+        <button class="copy-btn" title="Copier les infos">
+          <span class="btn-icon">📋</span>
+        </button>
+      </div>
+      <div class="sw-body">
+        <div class="sw-field"><span class="sw-label">Prénom</span><span class="sw-value">Luis</span></div><div class="sw-field"><span class="sw-label">Nom</span><span class="sw-value">MALAPA</span></div><div class="sw-field"><span class="sw-label">Pseudo</span><span class="sw-value">Luis MALAPA dit "LE ROI LUIS"</span></div><div class="sw-field"><span class="sw-label">Adresse</span><span class="sw-value">13 rue Robineau, 75020 Paris, France</span></div><div class="sw-field"><span class="sw-label">IPI</span><span class="sw-value">Luis MALAPA : 1020240346 / LE ROI LUIS : 1024768856</span></div><div class="sw-field"><span class="sw-label">COAD</span><span class="sw-value">1375364</span></div><div class="sw-field"><span class="sw-label">Email</span><span class="sw-value">luis.malapa@gmail.com</span></div><div class="sw-field"><span class="sw-label">Éditeur</span><span class="sw-value">BLZante (80%) / Luis MALAPA (ECA - 20%) (gestion séparée)</span></div><div class="sw-field"><span class="sw-label">Contact relecture</span><span class="sw-value">creff.pierre@gmail.com / luis.malapa@gmail.com</span></div>
+        
+      </div>
+    </div>
+    <div class="sw-card" data-search="sacha malaka sacha moisa 273 chemin de la folie, 42153 riorges, france 1199932792 1799994 malakasl.pro@gmail.com blzante 50% / green piste records 50% moisamaeva@gmail.com">
+      <div class="sw-header">
+        <div class="sw-header-left">
+          <span class="sw-chevron">›</span>
+          <span class="sw-display-name">SACHA MALAKA</span>
+        </div>
+        <button class="copy-btn" title="Copier les infos">
+          <span class="btn-icon">📋</span>
+        </button>
+      </div>
+      <div class="sw-body">
+        <div class="sw-field"><span class="sw-label">Prénom</span><span class="sw-value">Sacha</span></div><div class="sw-field"><span class="sw-label">Nom</span><span class="sw-value">MOISA</span></div><div class="sw-field"><span class="sw-label">Adresse</span><span class="sw-value">273 chemin de la Folie, 42153 Riorges, France</span></div><div class="sw-field"><span class="sw-label">IPI</span><span class="sw-value">1199932792</span></div><div class="sw-field"><span class="sw-label">COAD</span><span class="sw-value">1799994</span></div><div class="sw-field"><span class="sw-label">Email</span><span class="sw-value">malakasl.pro@gmail.com</span></div><div class="sw-field"><span class="sw-label">Éditeur</span><span class="sw-value">BLZante 50% / Green Piste Records 50%</span></div><div class="sw-field"><span class="sw-label">Contact relecture</span><span class="sw-value">moisamaeva@gmail.com</span></div>
+        <button class="coeditor-link" data-coeditor="GREEN PISTE RECORDS" title="Copier infos GREEN PISTE RECORDS">📋 Copier infos GREEN PISTE RECORDS</button>
+      </div>
+    </div>
+    <div class="sw-card" data-search="sebastien rousselet sébastien rousselet 133 avenue pasteur, 49100 angers, france 484540735 145899 sebasti1rousselet@gmail.com blzante (50%) / bonjour mon amour (50%) (gestion séparée) arthur@rossinante.paris / blzante.digital@gmail.com">
+      <div class="sw-header">
+        <div class="sw-header-left">
+          <span class="sw-chevron">›</span>
+          <span class="sw-display-name">SEBASTIEN ROUSSELET</span>
+        </div>
+        <button class="copy-btn" title="Copier les infos">
+          <span class="btn-icon">📋</span>
+        </button>
+      </div>
+      <div class="sw-body">
+        <div class="sw-field"><span class="sw-label">Prénom</span><span class="sw-value">Sébastien</span></div><div class="sw-field"><span class="sw-label">Nom</span><span class="sw-value">ROUSSELET</span></div><div class="sw-field"><span class="sw-label">Adresse</span><span class="sw-value">133 avenue Pasteur, 49100 Angers, France</span></div><div class="sw-field"><span class="sw-label">IPI</span><span class="sw-value">484540735</span></div><div class="sw-field"><span class="sw-label">COAD</span><span class="sw-value">145899</span></div><div class="sw-field"><span class="sw-label">Email</span><span class="sw-value">sebasti1rousselet@gmail.com</span></div><div class="sw-field"><span class="sw-label">Éditeur</span><span class="sw-value">BLZante (50%) / Bonjour mon amour (50%) (gestion séparée)</span></div><div class="sw-field"><span class="sw-label">Contact relecture</span><span class="sw-value">arthur@rossinante.paris / blzante.digital@gmail.com</span></div>
+        <button class="coeditor-link" data-coeditor="BONJOUR MON AMOUR" title="Copier infos BONJOUR MON AMOUR">📋 Copier infos BONJOUR MON AMOUR</button>
+      </div>
+    </div>
+    <div class="sw-card" data-search="vincha vincent brion vincha 25 boulevard emile genevoix, 93230 romainville, france 1019826556 178686 zevincha@gmail.com 40% smp / 40% escapades / 20% blzante">
+      <div class="sw-header">
+        <div class="sw-header-left">
+          <span class="sw-chevron">›</span>
+          <span class="sw-display-name">VINCHA</span>
+        </div>
+        <button class="copy-btn" title="Copier les infos">
+          <span class="btn-icon">📋</span>
+        </button>
+      </div>
+      <div class="sw-body">
+        <div class="sw-field"><span class="sw-label">Prénom</span><span class="sw-value">Vincent</span></div><div class="sw-field"><span class="sw-label">Nom</span><span class="sw-value">BRION</span></div><div class="sw-field"><span class="sw-label">Pseudo</span><span class="sw-value">VINCHA</span></div><div class="sw-field"><span class="sw-label">Adresse</span><span class="sw-value">25 Boulevard Emile Genevoix, 93230 Romainville, France</span></div><div class="sw-field"><span class="sw-label">IPI</span><span class="sw-value">1019826556</span></div><div class="sw-field"><span class="sw-label">COAD</span><span class="sw-value">178686</span></div><div class="sw-field"><span class="sw-label">Email</span><span class="sw-value">zevincha@gmail.com</span></div><div class="sw-field"><span class="sw-label">Éditeur</span><span class="sw-value">40% SMP / 40% Escapades / 20% BLZante</span></div>
+        <button class="coeditor-link" data-coeditor="ESCAPADES" title="Copier infos ESCAPADES">📋 Copier infos ESCAPADES</button>
+      </div>
+    </div>
+    <div class="sw-card" data-search="vj mouhamed abdoulaye preira mouhamed abdoulaye preira dit "vj" seras, pikine ouest, dakar, sénégal vj : 1211070623 / mouhamed abdoulaye preira : 1179423731 / abdoulaye mouhamed : 1179423829 1732862 10preira@gmail.com 50% hoside / 50% blz publishing (gestion séparée) hoside music">
+      <div class="sw-header">
+        <div class="sw-header-left">
+          <span class="sw-chevron">›</span>
+          <span class="sw-display-name">VJ</span>
+        </div>
+        <button class="copy-btn" title="Copier les infos">
+          <span class="btn-icon">📋</span>
+        </button>
+      </div>
+      <div class="sw-body">
+        <div class="sw-field"><span class="sw-label">Prénom</span><span class="sw-value">Mouhamed Abdoulaye</span></div><div class="sw-field"><span class="sw-label">Nom</span><span class="sw-value">PREIRA</span></div><div class="sw-field"><span class="sw-label">Pseudo</span><span class="sw-value">Mouhamed Abdoulaye PREIRA dit "VJ"</span></div><div class="sw-field"><span class="sw-label">Adresse</span><span class="sw-value">Seras, Pikine Ouest, Dakar, Sénégal</span></div><div class="sw-field"><span class="sw-label">IPI</span><span class="sw-value">VJ : 1211070623 / Mouhamed Abdoulaye PREIRA : 1179423731 / ABDOULAYE MOUHAMED : 1179423829</span></div><div class="sw-field"><span class="sw-label">COAD</span><span class="sw-value">1732862</span></div><div class="sw-field"><span class="sw-label">Email</span><span class="sw-value">10preira@gmail.com</span></div><div class="sw-field"><span class="sw-label">Éditeur</span><span class="sw-value">50% Hoside / 50% BLZ Publishing (gestion séparée)</span></div><div class="sw-field"><span class="sw-label">Contact relecture</span><span class="sw-value">Hoside Music</span></div>
+        <button class="coeditor-link" data-coeditor="HOSIDE MUSIC" title="Copier infos HOSIDE MUSIC">📋 Copier infos HOSIDE MUSIC</button>
+      </div>
+    </div>
+    <div class="sw-card" data-search="yannick seri yannick zadi séri yannick zadi séri 20 bp 761, abidjan 20, côte d'ivoire 1020353916 1408069 leseriyannick@gmail.com blz publishing / blzante (85/15 gestion séparée)">
+      <div class="sw-header">
+        <div class="sw-header-left">
+          <span class="sw-chevron">›</span>
+          <span class="sw-display-name">YANNICK SERI</span>
+        </div>
+        <button class="copy-btn" title="Copier les infos">
+          <span class="btn-icon">📋</span>
+        </button>
+      </div>
+      <div class="sw-body">
+        <div class="sw-field"><span class="sw-label">Prénom</span><span class="sw-value">Yannick Zadi</span></div><div class="sw-field"><span class="sw-label">Nom</span><span class="sw-value">SÉRI</span></div><div class="sw-field"><span class="sw-label">Pseudo</span><span class="sw-value">Yannick Zadi SÉRI</span></div><div class="sw-field"><span class="sw-label">Adresse</span><span class="sw-value">20 BP 761, Abidjan 20, Côte d'Ivoire</span></div><div class="sw-field"><span class="sw-label">IPI</span><span class="sw-value">1020353916</span></div><div class="sw-field"><span class="sw-label">COAD</span><span class="sw-value">1408069</span></div><div class="sw-field"><span class="sw-label">Email</span><span class="sw-value">leseriyannick@gmail.com</span></div><div class="sw-field"><span class="sw-label">Éditeur</span><span class="sw-value">BLZ Publishing / BLZante (85/15 gestion séparée)</span></div>
+        
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label">Nos societes editrices</div>
+  <div class="sw-list" id="edList">
+    <div class="sw-card" data-search="blzante blzante sas au capital de 1 000€ scm village marcadet - 258 rue marcadet, 75018 paris paris 940 394 877 romain bilharz — président blzante.digital@gmail.com 1262915647 1935280 jean.dedeyan@sonymusicpub.com / creff.pierre@gmail.com / arthur@rossinante.paris" data-category="editor">
+      <div class="sw-header">
+        <div class="sw-header-left">
+          <span class="sw-chevron">›</span>
+          <span class="sw-display-name">BLZANTE</span>
+        </div>
+        <button class="copy-btn" title="Copier les infos">
+          <span class="btn-icon">📋</span>
+        </button>
+      </div>
+      <div class="sw-body">
+        <div class="sw-field"><span class="sw-label">Dénomination</span><span class="sw-value">BLZante</span></div><div class="sw-field"><span class="sw-label">Forme juridique</span><span class="sw-value">SAS au capital de 1 000€</span></div><div class="sw-field"><span class="sw-label">Siège social</span><span class="sw-value">SCM Village Marcadet - 258 rue Marcadet, 75018 Paris</span></div><div class="sw-field"><span class="sw-label">RCS</span><span class="sw-value">Paris</span></div><div class="sw-field"><span class="sw-label">SIREN</span><span class="sw-value">940 394 877</span></div><div class="sw-field"><span class="sw-label">Représentant</span><span class="sw-value">Romain BILHARZ — Président</span></div><div class="sw-field"><span class="sw-label">Email</span><span class="sw-value">blzante.digital@gmail.com</span></div><div class="sw-field"><span class="sw-label">IPI</span><span class="sw-value">1262915647</span></div><div class="sw-field"><span class="sw-label">COAD</span><span class="sw-value">1935280</span></div><div class="sw-field"><span class="sw-label">Relecture contrats</span><span class="sw-value">jean.dedeyan@sonymusicpub.com / creff.pierre@gmail.com / arthur@rossinante.paris</span></div>
+      </div>
+    </div>
+    <div class="sw-card" data-search="blz publishing blz publishing air blz publishing sarl au capital de 1500€ 26, rue damrémont, 75018 paris, france paris 537 373 524 romain bilharz — gérant bilharz.romain.public@gmail.com 879531880 694353" data-category="editor">
+      <div class="sw-header">
+        <div class="sw-header-left">
+          <span class="sw-chevron">›</span>
+          <span class="sw-display-name">BLZ PUBLISHING</span>
+        </div>
+        <button class="copy-btn" title="Copier les infos">
+          <span class="btn-icon">📋</span>
+        </button>
+      </div>
+      <div class="sw-body">
+        <div class="sw-field"><span class="sw-label">Dénomination</span><span class="sw-value">BLZ Publishing</span></div><div class="sw-field"><span class="sw-label">Nom commercial</span><span class="sw-value">Air BLZ Publishing</span></div><div class="sw-field"><span class="sw-label">Forme juridique</span><span class="sw-value">SARL au capital de 1500€</span></div><div class="sw-field"><span class="sw-label">Siège social</span><span class="sw-value">26, rue Damrémont, 75018 Paris, France</span></div><div class="sw-field"><span class="sw-label">RCS</span><span class="sw-value">Paris</span></div><div class="sw-field"><span class="sw-label">SIREN</span><span class="sw-value">537 373 524</span></div><div class="sw-field"><span class="sw-label">Représentant</span><span class="sw-value">Romain BILHARZ — Gérant</span></div><div class="sw-field"><span class="sw-label">Email</span><span class="sw-value">bilharz.romain.public@gmail.com</span></div><div class="sw-field"><span class="sw-label">IPI</span><span class="sw-value">879531880</span></div><div class="sw-field"><span class="sw-label">COAD</span><span class="sw-value">694353</span></div>
+      </div>
+    </div>
+    <div class="sw-card" data-search="rossinante rossinante (les autres mgmt) sas au capital de 4 000€ 76 rue du ruisseau, 75018 paris 817 959 315 817 959 315 00018 fr87 817 959 315 arthur sachel — président arthur@rossinante.paris 1068009762 1160447 jean.dedeyan@sonymusicpub.com" data-category="editor">
+      <div class="sw-header">
+        <div class="sw-header-left">
+          <span class="sw-chevron">›</span>
+          <span class="sw-display-name">ROSSINANTE</span>
+        </div>
+        <button class="copy-btn" title="Copier les infos">
+          <span class="btn-icon">📋</span>
+        </button>
+      </div>
+      <div class="sw-body">
+        <div class="sw-field"><span class="sw-label">Dénomination</span><span class="sw-value">Rossinante (Les Autres MGMT)</span></div><div class="sw-field"><span class="sw-label">Forme juridique</span><span class="sw-value">SAS au capital de 4 000€</span></div><div class="sw-field"><span class="sw-label">Siège social</span><span class="sw-value">76 rue du Ruisseau, 75018 Paris</span></div><div class="sw-field"><span class="sw-label">SIREN</span><span class="sw-value">817 959 315</span></div><div class="sw-field"><span class="sw-label">SIRET</span><span class="sw-value">817 959 315 00018</span></div><div class="sw-field"><span class="sw-label">N° TVA</span><span class="sw-value">FR87 817 959 315</span></div><div class="sw-field"><span class="sw-label">Représentant</span><span class="sw-value">Arthur SACHEL — Président</span></div><div class="sw-field"><span class="sw-label">Email</span><span class="sw-value">arthur@rossinante.paris</span></div><div class="sw-field"><span class="sw-label">IPI</span><span class="sw-value">1068009762</span></div><div class="sw-field"><span class="sw-label">COAD</span><span class="sw-value">1160447</span></div><div class="sw-field"><span class="sw-label">Relecture contrats</span><span class="sw-value">jean.dedeyan@sonymusicpub.com</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label">Societes coeditrices</div>
+  <div class="sw-list" id="coedList">
+    <div class="sw-card" data-search="ablode publishing ablodē publishing sas au capital de 1000€ 9 rue des colonnes, 75002 paris paris 935 162 818 william edorh — président william.edorh@ablode.fr 1297652999 2033222" data-category="coeditor">
+      <div class="sw-header">
+        <div class="sw-header-left">
+          <span class="sw-chevron">›</span>
+          <span class="sw-display-name">ABLODE PUBLISHING</span>
+        </div>
+        <button class="copy-btn" title="Copier les infos">
+          <span class="btn-icon">📋</span>
+        </button>
+      </div>
+      <div class="sw-body">
+        <div class="sw-field"><span class="sw-label">Dénomination</span><span class="sw-value">Ablodē Publishing</span></div><div class="sw-field"><span class="sw-label">Forme juridique</span><span class="sw-value">SAS au capital de 1000€</span></div><div class="sw-field"><span class="sw-label">Siège social</span><span class="sw-value">9 rue des Colonnes, 75002 Paris</span></div><div class="sw-field"><span class="sw-label">RCS</span><span class="sw-value">Paris</span></div><div class="sw-field"><span class="sw-label">SIREN</span><span class="sw-value">935 162 818</span></div><div class="sw-field"><span class="sw-label">Représentant</span><span class="sw-value">William EDORH — Président</span></div><div class="sw-field"><span class="sw-label">Email</span><span class="sw-value">william.edorh@ablode.fr</span></div><div class="sw-field"><span class="sw-label">IPI</span><span class="sw-value">1297652999</span></div><div class="sw-field"><span class="sw-label">COAD</span><span class="sw-value">2033222</span></div>
+      </div>
+    </div>
+    <div class="sw-card" data-search="bonjour mon amour bonjour mon amour sas au capital de 500€ 36 rue de la roche, 49380 bellevigne-en-layon, france angers b 988 774 279 sébastien rousselet — président sebasti1rousselet@gmail.com 1314867445" data-category="coeditor">
+      <div class="sw-header">
+        <div class="sw-header-left">
+          <span class="sw-chevron">›</span>
+          <span class="sw-display-name">BONJOUR MON AMOUR</span>
+        </div>
+        <button class="copy-btn" title="Copier les infos">
+          <span class="btn-icon">📋</span>
+        </button>
+      </div>
+      <div class="sw-body">
+        <div class="sw-field"><span class="sw-label">Dénomination</span><span class="sw-value">Bonjour mon amour</span></div><div class="sw-field"><span class="sw-label">Forme juridique</span><span class="sw-value">SAS au capital de 500€</span></div><div class="sw-field"><span class="sw-label">Siège social</span><span class="sw-value">36 rue de la Roche, 49380 Bellevigne-en-Layon, France</span></div><div class="sw-field"><span class="sw-label">RCS</span><span class="sw-value">Angers</span></div><div class="sw-field"><span class="sw-label">SIREN</span><span class="sw-value">B 988 774 279</span></div><div class="sw-field"><span class="sw-label">Représentant</span><span class="sw-value">Sébastien ROUSSELET — Président</span></div><div class="sw-field"><span class="sw-label">Email</span><span class="sw-value">sebasti1rousselet@gmail.com</span></div><div class="sw-field"><span class="sw-label">IPI</span><span class="sw-value">1314867445</span></div>
+      </div>
+    </div>
+    <div class="sw-card" data-search="escapades escapades sas au capital de 1 000€ 25 boulevard emile genevois, 93230 romainville paris 929 544 914 vincent brion — dirigeant en cours" data-category="coeditor">
+      <div class="sw-header">
+        <div class="sw-header-left">
+          <span class="sw-chevron">›</span>
+          <span class="sw-display-name">ESCAPADES</span>
+        </div>
+        <button class="copy-btn" title="Copier les infos">
+          <span class="btn-icon">📋</span>
+        </button>
+      </div>
+      <div class="sw-body">
+        <div class="sw-field"><span class="sw-label">Dénomination</span><span class="sw-value">Escapades</span></div><div class="sw-field"><span class="sw-label">Forme juridique</span><span class="sw-value">SAS au capital de 1 000€</span></div><div class="sw-field"><span class="sw-label">Siège social</span><span class="sw-value">25 Boulevard Emile Genevois, 93230 Romainville</span></div><div class="sw-field"><span class="sw-label">RCS</span><span class="sw-value">Paris</span></div><div class="sw-field"><span class="sw-label">SIREN</span><span class="sw-value">929 544 914</span></div><div class="sw-field"><span class="sw-label">Représentant</span><span class="sw-value">Vincent BRION — Dirigeant</span></div><div class="sw-field"><span class="sw-label">IPI</span><span class="sw-value">En cours</span></div>
+      </div>
+    </div>
+    <div class="sw-card" data-search="green piste records green piste records sarl au capital de 3 000€ 1 rue de la chèvrerie, 43230 paulhaguet, france le puy en velay 517 546 539 simon kessler — gérant simon@greenpiste-records.com 611420306 439831" data-category="coeditor">
+      <div class="sw-header">
+        <div class="sw-header-left">
+          <span class="sw-chevron">›</span>
+          <span class="sw-display-name">GREEN PISTE RECORDS</span>
+        </div>
+        <button class="copy-btn" title="Copier les infos">
+          <span class="btn-icon">📋</span>
+        </button>
+      </div>
+      <div class="sw-body">
+        <div class="sw-field"><span class="sw-label">Dénomination</span><span class="sw-value">Green Piste Records</span></div><div class="sw-field"><span class="sw-label">Forme juridique</span><span class="sw-value">SARL au capital de 3 000€</span></div><div class="sw-field"><span class="sw-label">Siège social</span><span class="sw-value">1 rue de la Chèvrerie, 43230 Paulhaguet, France</span></div><div class="sw-field"><span class="sw-label">RCS</span><span class="sw-value">Le Puy en Velay</span></div><div class="sw-field"><span class="sw-label">SIREN</span><span class="sw-value">517 546 539</span></div><div class="sw-field"><span class="sw-label">Représentant</span><span class="sw-value">Simon KESSLER — Gérant</span></div><div class="sw-field"><span class="sw-label">Email</span><span class="sw-value">simon@greenpiste-records.com</span></div><div class="sw-field"><span class="sw-label">IPI</span><span class="sw-value">611420306</span></div><div class="sw-field"><span class="sw-label">COAD</span><span class="sw-value">439831</span></div>
+      </div>
+    </div>
+    <div class="sw-card" data-search="hoside music hoside music sas au capital de 1 000 000 cfa liberté 6 extension côté poste de santé mamadou diop, dakar, sénégal rccm de dakar — sn dkr 2023 b 23080, ninea 010330819 babacar mbaye — gérant hoside@gmail.com 1207229580 1780893 babacar@hosidestudio.com / meroudieng@gmail.com" data-category="coeditor">
+      <div class="sw-header">
+        <div class="sw-header-left">
+          <span class="sw-chevron">›</span>
+          <span class="sw-display-name">HOSIDE MUSIC</span>
+        </div>
+        <button class="copy-btn" title="Copier les infos">
+          <span class="btn-icon">📋</span>
+        </button>
+      </div>
+      <div class="sw-body">
+        <div class="sw-field"><span class="sw-label">Dénomination</span><span class="sw-value">Hoside Music</span></div><div class="sw-field"><span class="sw-label">Forme juridique</span><span class="sw-value">SAS au capital de 1 000 000 CFA</span></div><div class="sw-field"><span class="sw-label">Siège social</span><span class="sw-value">Liberté 6 Extension Côté Poste de Santé Mamadou Diop, Dakar, Sénégal</span></div><div class="sw-field"><span class="sw-label">RCS</span><span class="sw-value">RCCM de Dakar — SN DKR 2023 B 23080, NINEA 010330819</span></div><div class="sw-field"><span class="sw-label">Représentant</span><span class="sw-value">Babacar MBAYE — Gérant</span></div><div class="sw-field"><span class="sw-label">Email</span><span class="sw-value">hoside@gmail.com</span></div><div class="sw-field"><span class="sw-label">IPI</span><span class="sw-value">1207229580</span></div><div class="sw-field"><span class="sw-label">COAD</span><span class="sw-value">1780893</span></div><div class="sw-field"><span class="sw-label">Relecture contrats</span><span class="sw-value">babacar@hosidestudio.com / meroudieng@gmail.com</span></div>
+      </div>
+    </div>
+    <div class="sw-card" data-search="magnolias films magnolias films projets complexes sarl au capital de 11 000€ 3 rue charles bourgeat, 10100 la fosse corduan troyes b 417 901 089 yann brolli — gérant contact@magnoliasfilms.fr projets complexes : 1266913335 / magnolias films : 1262915745 1935279 contact@projetscomplexes.com / elisa@projetscomplexes.com" data-category="coeditor">
+      <div class="sw-header">
+        <div class="sw-header-left">
+          <span class="sw-chevron">›</span>
+          <span class="sw-display-name">MAGNOLIAS FILMS</span>
+        </div>
+        <button class="copy-btn" title="Copier les infos">
+          <span class="btn-icon">📋</span>
+        </button>
+      </div>
+      <div class="sw-body">
+        <div class="sw-field"><span class="sw-label">Dénomination</span><span class="sw-value">Magnolias Films</span></div><div class="sw-field"><span class="sw-label">Nom commercial</span><span class="sw-value">Projets Complexes</span></div><div class="sw-field"><span class="sw-label">Forme juridique</span><span class="sw-value">SARL au capital de 11 000€</span></div><div class="sw-field"><span class="sw-label">Siège social</span><span class="sw-value">3 rue Charles Bourgeat, 10100 La Fosse Corduan</span></div><div class="sw-field"><span class="sw-label">RCS</span><span class="sw-value">Troyes</span></div><div class="sw-field"><span class="sw-label">SIREN</span><span class="sw-value">B 417 901 089</span></div><div class="sw-field"><span class="sw-label">Représentant</span><span class="sw-value">Yann BROLLI — Gérant</span></div><div class="sw-field"><span class="sw-label">Email</span><span class="sw-value">contact@magnoliasfilms.fr</span></div><div class="sw-field"><span class="sw-label">IPI</span><span class="sw-value">PROJETS COMPLEXES : 1266913335 / MAGNOLIAS FILMS : 1262915745</span></div><div class="sw-field"><span class="sw-label">COAD</span><span class="sw-value">1935279</span></div><div class="sw-field"><span class="sw-label">Relecture contrats</span><span class="sw-value">contact@projetscomplexes.com / elisa@projetscomplexes.com</span></div>
+      </div>
+    </div>
+    <div class="sw-card" data-search="out of the blue out of the blue publishing ootbp sasu au capital de 1000€ 10ter, rue de l'hippodrome, 93400 saint-ouen-sur-seine bobigny 937 628 832 nicolas pflug — président nicolas.pflug@outofthebluemusic.fr 1303639278 2040873" data-category="coeditor">
+      <div class="sw-header">
+        <div class="sw-header-left">
+          <span class="sw-chevron">›</span>
+          <span class="sw-display-name">OUT OF THE BLUE</span>
+        </div>
+        <button class="copy-btn" title="Copier les infos">
+          <span class="btn-icon">📋</span>
+        </button>
+      </div>
+      <div class="sw-body">
+        <div class="sw-field"><span class="sw-label">Dénomination</span><span class="sw-value">Out Of The Blue Publishing</span></div><div class="sw-field"><span class="sw-label">Nom commercial</span><span class="sw-value">OOTBP</span></div><div class="sw-field"><span class="sw-label">Forme juridique</span><span class="sw-value">SASU au capital de 1000€</span></div><div class="sw-field"><span class="sw-label">Siège social</span><span class="sw-value">10Ter, Rue de l'Hippodrome, 93400 Saint-Ouen-sur-Seine</span></div><div class="sw-field"><span class="sw-label">RCS</span><span class="sw-value">Bobigny</span></div><div class="sw-field"><span class="sw-label">SIREN</span><span class="sw-value">937 628 832</span></div><div class="sw-field"><span class="sw-label">Représentant</span><span class="sw-value">Nicolas PFLUG — Président</span></div><div class="sw-field"><span class="sw-label">Email</span><span class="sw-value">Nicolas.Pflug@outofthebluemusic.fr</span></div><div class="sw-field"><span class="sw-label">IPI</span><span class="sw-value">1303639278</span></div><div class="sw-field"><span class="sw-label">COAD</span><span class="sw-value">2040873</span></div>
+      </div>
+    </div>
+    <div class="sw-card" data-search="parlons peu rec parlons peu rec sas au capital de 1 000€ 335 rue vaugirard, 75015 paris paris 917 942 286 pierre laurent faure — président pierrelaurent.faure@parlonspeurec.com en cours d'inscription en cours d'inscription patricianeau.faure@gmail.com / ec.composer@gmail.com / creff.pierre@gmail.com" data-category="coeditor">
+      <div class="sw-header">
+        <div class="sw-header-left">
+          <span class="sw-chevron">›</span>
+          <span class="sw-display-name">PARLONS PEU REC</span>
+        </div>
+        <button class="copy-btn" title="Copier les infos">
+          <span class="btn-icon">📋</span>
+        </button>
+      </div>
+      <div class="sw-body">
+        <div class="sw-field"><span class="sw-label">Dénomination</span><span class="sw-value">Parlons Peu Rec</span></div><div class="sw-field"><span class="sw-label">Forme juridique</span><span class="sw-value">SAS au capital de 1 000€</span></div><div class="sw-field"><span class="sw-label">Siège social</span><span class="sw-value">335 rue Vaugirard, 75015 Paris</span></div><div class="sw-field"><span class="sw-label">RCS</span><span class="sw-value">Paris</span></div><div class="sw-field"><span class="sw-label">SIREN</span><span class="sw-value">917 942 286</span></div><div class="sw-field"><span class="sw-label">Représentant</span><span class="sw-value">Pierre Laurent FAURE — Président</span></div><div class="sw-field"><span class="sw-label">Email</span><span class="sw-value">pierrelaurent.faure@parlonspeurec.com</span></div><div class="sw-field"><span class="sw-label">IPI</span><span class="sw-value">En cours d'inscription</span></div><div class="sw-field"><span class="sw-label">COAD</span><span class="sw-value">En cours d'inscription</span></div><div class="sw-field"><span class="sw-label">Relecture contrats</span><span class="sw-value">patricianeau.faure@gmail.com / ec.composer@gmail.com / creff.pierre@gmail.com</span></div>
+      </div>
+    </div>
+    <div class="sw-card" data-search="pluma pluma publicación y producción sasu au capital de 100€ 60 rue françois 1er, 75008 paris paris 979 970 043 société plume / alvaro mena — président alvaro@labelpluma.fr 1241616189 1897130" data-category="coeditor">
+      <div class="sw-header">
+        <div class="sw-header-left">
+          <span class="sw-chevron">›</span>
+          <span class="sw-display-name">PLUMA</span>
+        </div>
+        <button class="copy-btn" title="Copier les infos">
+          <span class="btn-icon">📋</span>
+        </button>
+      </div>
+      <div class="sw-body">
+        <div class="sw-field"><span class="sw-label">Dénomination</span><span class="sw-value">PLUMA PUBLICACIÓN Y PRODUCCIÓN</span></div><div class="sw-field"><span class="sw-label">Forme juridique</span><span class="sw-value">SASU au capital de 100€</span></div><div class="sw-field"><span class="sw-label">Siège social</span><span class="sw-value">60 rue François 1er, 75008 Paris</span></div><div class="sw-field"><span class="sw-label">RCS</span><span class="sw-value">Paris</span></div><div class="sw-field"><span class="sw-label">SIREN</span><span class="sw-value">979 970 043</span></div><div class="sw-field"><span class="sw-label">Représentant</span><span class="sw-value">Société PLUME / Alvaro MENA — Président</span></div><div class="sw-field"><span class="sw-label">Email</span><span class="sw-value">alvaro@labelpluma.fr</span></div><div class="sw-field"><span class="sw-label">IPI</span><span class="sw-value">1241616189</span></div><div class="sw-field"><span class="sw-label">COAD</span><span class="sw-value">1897130</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const coeditorData = {"ABLODE PUBLISHING": "Infos ABLODE PUBLISHING\nDénomination : Ablodē Publishing\nForme juridique : SAS au capital de 1000€\nSiège social : 9 rue des Colonnes, 75002 Paris\nRCS : Paris\nSIREN : 935 162 818\nReprésentant : William EDORH — Président\nEmail : william.edorh@ablode.fr\nIPI : 1297652999\nCOAD : 2033222", "BONJOUR MON AMOUR": "Infos BONJOUR MON AMOUR\nDénomination : Bonjour mon amour\nForme juridique : SAS au capital de 500€\nSiège social : 36 rue de la Roche, 49380 Bellevigne-en-Layon, France\nRCS : Angers\nSIREN : B 988 774 279\nReprésentant : Sébastien ROUSSELET — Président\nEmail : sebasti1rousselet@gmail.com\nIPI : 1314867445", "ESCAPADES": "Infos ESCAPADES\nDénomination : Escapades\nForme juridique : SAS au capital de 1 000€\nSiège social : 25 Boulevard Emile Genevois, 93230 Romainville\nRCS : Paris\nSIREN : 929 544 914\nReprésentant : Vincent BRION — Dirigeant\nIPI : En cours", "GREEN PISTE RECORDS": "Infos GREEN PISTE RECORDS\nDénomination : Green Piste Records\nForme juridique : SARL au capital de 3 000€\nSiège social : 1 rue de la Chèvrerie, 43230 Paulhaguet, France\nRCS : Le Puy en Velay\nSIREN : 517 546 539\nReprésentant : Simon KESSLER — Gérant\nEmail : simon@greenpiste-records.com\nIPI : 611420306\nCOAD : 439831", "HOSIDE MUSIC": "Infos HOSIDE MUSIC\nDénomination : Hoside Music\nForme juridique : SAS au capital de 1 000 000 CFA\nSiège social : Liberté 6 Extension Côté Poste de Santé Mamadou Diop, Dakar, Sénégal\nRCS : RCCM de Dakar — SN DKR 2023 B 23080, NINEA 010330819\nReprésentant : Babacar MBAYE — Gérant\nEmail : hoside@gmail.com\nIPI : 1207229580\nCOAD : 1780893\nRelecture contrats : babacar@hosidestudio.com / meroudieng@gmail.com", "MAGNOLIAS FILMS": "Infos MAGNOLIAS FILMS\nDénomination : Magnolias Films\nNom commercial : Projets Complexes\nForme juridique : SARL au capital de 11 000€\nSiège social : 3 rue Charles Bourgeat, 10100 La Fosse Corduan\nRCS : Troyes\nSIREN : B 417 901 089\nReprésentant : Yann BROLLI — Gérant\nEmail : contact@magnoliasfilms.fr\nIPI : PROJETS COMPLEXES : 1266913335 / MAGNOLIAS FILMS : 1262915745\nCOAD : 1935279\nRelecture contrats : contact@projetscomplexes.com / elisa@projetscomplexes.com", "OUT OF THE BLUE": "Infos OUT OF THE BLUE\nDénomination : Out Of The Blue Publishing\nNom commercial : OOTBP\nForme juridique : SASU au capital de 1000€\nSiège social : 10Ter, Rue de l'Hippodrome, 93400 Saint-Ouen-sur-Seine\nRCS : Bobigny\nSIREN : 937 628 832\nReprésentant : Nicolas PFLUG — Président\nEmail : Nicolas.Pflug@outofthebluemusic.fr\nIPI : 1303639278\nCOAD : 2040873", "PARLONS PEU REC": "Infos PARLONS PEU REC\nDénomination : Parlons Peu Rec\nForme juridique : SAS au capital de 1 000€\nSiège social : 335 rue Vaugirard, 75015 Paris\nRCS : Paris\nSIREN : 917 942 286\nReprésentant : Pierre Laurent FAURE — Président\nEmail : pierrelaurent.faure@parlonspeurec.com\nIPI : En cours d'inscription\nCOAD : En cours d'inscription\nRelecture contrats : patricianeau.faure@gmail.com / ec.composer@gmail.com / creff.pierre@gmail.com", "PLUMA": "Infos PLUMA\nDénomination : PLUMA PUBLICACIÓN Y PRODUCCIÓN\nForme juridique : SASU au capital de 100€\nSiège social : 60 rue François 1er, 75008 Paris\nRCS : Paris\nSIREN : 979 970 043\nReprésentant : Société PLUME / Alvaro MENA — Président\nEmail : alvaro@labelpluma.fr\nIPI : 1241616189\nCOAD : 1897130"};
+
+// Event delegation for all lists
+document.querySelectorAll('.sw-list').forEach(list => {
+  list.addEventListener('click', (e) => {
+    // Coeditor link?
+    const coedLink = e.target.closest('.coeditor-link');
+    if (coedLink) {
+      e.stopPropagation();
+      const key = coedLink.dataset.coeditor;
+      const text = coeditorData[key] || '';
+      navigator.clipboard.writeText(text).then(() => {
+        coedLink.classList.add('copied');
+        const orig = coedLink.textContent;
+        coedLink.textContent = '✓ Copié !';
+        setTimeout(() => { coedLink.classList.remove('copied'); coedLink.textContent = orig; }, 2000);
+      });
+      return;
+    }
+    // Copy button?
+    const copyBtn = e.target.closest('.copy-btn');
+    if (copyBtn) {
+      e.stopPropagation();
+      const card = copyBtn.closest('.sw-card');
+      const displayName = card.querySelector('.sw-display-name').textContent;
+      const fields = card.querySelectorAll('.sw-field');
+      const lines = ['Infos ' + displayName];
+      fields.forEach(f => {
+        lines.push(f.querySelector('.sw-label').textContent + ' : ' + f.querySelector('.sw-value').textContent);
+      });
+      navigator.clipboard.writeText(lines.join('\n')).then(() => {
+        copyBtn.classList.add('copied');
+        copyBtn.querySelector('.btn-icon').textContent = '✓';
+        setTimeout(() => { copyBtn.classList.remove('copied'); copyBtn.querySelector('.btn-icon').textContent = '📋'; }, 2000);
+      });
+      return;
+    }
+    // Header toggle?
+    const header = e.target.closest('.sw-header');
+    if (header) header.closest('.sw-card').classList.toggle('open');
+  });
+});
+
+// Search across all lists
+const searchInput = document.getElementById('searchInput');
+const allCards = document.querySelectorAll('.sw-card');
+const countEl = document.getElementById('searchCount');
+const allSections = document.querySelectorAll('.section-label');
+
+searchInput.addEventListener('input', () => {
+  const q = searchInput.value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  let visible = 0;
+  allCards.forEach(card => {
+    const data = card.dataset.search.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const match = !q || data.includes(q);
+    card.classList.toggle('hidden', !match);
+    if (match) visible++;
+  });
+  countEl.textContent = q ? visible + ' resultat' + (visible > 1 ? 's' : '') : '39 fiches';
+  // Hide section labels if all cards in section are hidden
+  allSections.forEach(label => {
+    const list = label.nextElementSibling;
+    if (list && list.classList.contains('sw-list')) {
+      const hasVisible = list.querySelector('.sw-card:not(.hidden)');
+      label.style.display = hasVisible ? '' : 'none';
+      list.style.display = hasVisible ? '' : 'none';
+    }
+  });
+});
+</script>
+
+</body>
+</html>
