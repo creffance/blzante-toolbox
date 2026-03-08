@@ -110,6 +110,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .recent-type.single { color: #8be9fd; border-color: #1a3a4a; }
 .recent-type.ep { color: #bd93f9; border-color: #2a1a4a; }
 .recent-type.album { color: #ff79c6; border-color: #4a1a3a; }
+.recent-type.live { color: #50fa7b; border-color: #1a4a1a; }
 .recent-name { flex: 1; color: #fff; }
 .recent-sw { color: var(--muted); font-size: 0.65rem; }
 .recent-delete { cursor: pointer; color: #444; transition: color 0.15s; font-size: 0.85rem; }
@@ -145,11 +146,34 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
       <label class="form-label">Type de release</label>
       <select class="form-select" id="releaseType">
         <option value="">— Choisir —</option>
+        <option value="Live">Live</option>
         <option value="Certification">Certification</option>
         <option value="Single">Single</option>
         <option value="EP">EP</option>
         <option value="Album">Album</option>
       </select>
+    </div>
+  </div>
+
+  <div class="form-group conditional" id="certGroup">
+    <div class="form-row">
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Certification de</label>
+        <select class="form-select" id="certType">
+          <option value="">— Choisir —</option>
+          <option value="Single">Single</option>
+          <option value="Album">Album</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Niveau</label>
+        <select class="form-select" id="certLevel">
+          <option value="">— Choisir —</option>
+          <option value="Or">Or</option>
+          <option value="Platine">Platine</option>
+          <option value="Diamant">Diamant</option>
+        </select>
+      </div>
     </div>
   </div>
 
@@ -164,8 +188,21 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
   </div>
 
   <div class="form-group conditional" id="trackGroup">
-    <label class="form-label">Nom du track (Single)</label>
+    <label class="form-label">Nom du track</label>
     <input type="text" class="form-input" id="trackName" placeholder="Titre du single" autocomplete="off" />
+  </div>
+
+  <div class="form-group conditional" id="liveGroup">
+    <div class="form-row">
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Lieu</label>
+        <input type="text" class="form-input" id="liveLieu" placeholder="Nom de la salle / festival" autocomplete="off" />
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">Ville</label>
+        <input type="text" class="form-input" id="liveVille" placeholder="Ville" autocomplete="off" />
+      </div>
+    </div>
   </div>
 
   <div class="form-group">
@@ -231,11 +268,15 @@ dateInput.addEventListener('input', (e) => {
 const typeSelect = document.getElementById('releaseType');
 const projectGroup = document.getElementById('projectGroup');
 const trackGroup = document.getElementById('trackGroup');
+const liveGroup = document.getElementById('liveGroup');
+const certGroup = document.getElementById('certGroup');
 
 typeSelect.addEventListener('change', () => {
   const t = typeSelect.value;
   projectGroup.classList.toggle('visible', t === 'EP' || t === 'Album');
   trackGroup.classList.toggle('visible', t === 'Single' || t === 'Certification');
+  liveGroup.classList.toggle('visible', t === 'Live');
+  certGroup.classList.toggle('visible', t === 'Certification');
 });
 
 // ─── Songwriter picker ───
@@ -297,6 +338,10 @@ document.getElementById('submitBtn').addEventListener('click', () => {
   const artist = document.getElementById('artistName').value.trim();
   const project = document.getElementById('projectName').value.trim();
   const track = document.getElementById('trackName').value.trim();
+  const lieu = document.getElementById('liveLieu').value.trim();
+  const ville = document.getElementById('liveVille').value.trim();
+  const certType = document.getElementById('certType').value;
+  const certLevel = document.getElementById('certLevel').value;
   const status = document.getElementById('statusMsg');
 
   // Validate
@@ -315,10 +360,24 @@ document.getElementById('submitBtn').addEventListener('click', () => {
     status.className = 'status error';
     return;
   }
+  if (type === 'Live' && !lieu) {
+    status.textContent = '⚠ Lieu requis pour un Live';
+    status.className = 'status error';
+    return;
+  }
+  if (type === 'Certification' && (!certType || !certLevel)) {
+    status.textContent = '⚠ Choisir le type et le niveau de certification';
+    status.className = 'status error';
+    return;
+  }
 
   let title = '';
   if (type === 'EP' || type === 'Album') {
     title = project || artist;
+  } else if (type === 'Live') {
+    title = lieu + (ville ? ' — ' + ville : '');
+  } else if (type === 'Certification') {
+    title = (track || artist) + ' (' + certLevel + ' ' + certType + ')';
   } else {
     title = track || artist;
   }
@@ -326,10 +385,14 @@ document.getElementById('submitBtn').addEventListener('click', () => {
   const release = {
     id: Date.now(),
     date,
-    dateSortable: date.split('/').reverse().join('-'), // YYYY-MM-DD for sorting
+    dateSortable: date.split('/').reverse().join('-'),
     type,
     artist,
     title,
+    lieu: lieu || '',
+    ville: ville || '',
+    certType: certType || '',
+    certLevel: certLevel || '',
     songwriters: [...selectedSw],
     createdAt: new Date().toISOString(),
   };
@@ -346,8 +409,14 @@ document.getElementById('submitBtn').addEventListener('click', () => {
   document.getElementById('artistName').value = '';
   document.getElementById('projectName').value = '';
   document.getElementById('trackName').value = '';
+  document.getElementById('liveLieu').value = '';
+  document.getElementById('liveVille').value = '';
+  document.getElementById('certType').value = '';
+  document.getElementById('certLevel').value = '';
   projectGroup.classList.remove('visible');
   trackGroup.classList.remove('visible');
+  liveGroup.classList.remove('visible');
+  certGroup.classList.remove('visible');
   selectedSw = [];
   swOptions.forEach(o => o.classList.remove('selected'));
   renderTags();
