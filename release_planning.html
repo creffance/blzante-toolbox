@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Release Planning — BLZante Toolbox</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Syne+Mono&display=swap');
+:root { --bg: #0a0a0a; --surface: #141414; --border: #262626; --text: #e8e8e8; --muted: #777; --accent: #e8c547; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Syne Mono', monospace; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+body::before { content: ''; position: fixed; inset: 0; background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px); background-size: 60px 60px; opacity: 0.3; pointer-events: none; z-index: 0; }
+
+nav { display: flex; align-items: center; justify-content: space-between; padding: 18px 40px; border-bottom: 1px solid var(--border); position: relative; z-index: 1; }
+.nav-logo { font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 800; color: #fff; text-decoration: none; letter-spacing: 0.08em; display: flex; align-items: center; gap: 10px; }
+.nav-logo-img { height: 28px; width: auto; display: block; }
+.nav-right { display: flex; align-items: center; gap: 12px; font-size: 0.65rem; color: var(--muted); letter-spacing: 0.14em; text-transform: uppercase; }
+.nav-back { color: var(--muted); text-decoration: none; font-size: 0.65rem; letter-spacing: 0.14em; text-transform: uppercase; transition: color 0.15s; }
+.nav-back:hover { color: #fff; }
+.nav-sep { color: var(--border); }
+
+.container { max-width: 900px; margin: 0 auto; padding: 40px 40px 60px; position: relative; z-index: 1; flex: 1; width: 100%; }
+
+.header-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; border-bottom: 1px solid var(--border); padding-bottom: 20px; }
+.header-row h1 { font-family: 'Syne', sans-serif; font-size: 1.3rem; font-weight: 800; color: var(--text); line-height: 1.3; }
+.add-btn { font-family: 'Syne', sans-serif; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 8px 16px; background: var(--surface); border: 1px solid var(--border); color: var(--text); text-decoration: none; transition: all 0.2s; }
+.add-btn:hover { border-color: #555; color: #fff; }
+
+/* Filters */
+.filters { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+.filter-btn {
+  font-family: 'Syne Mono', monospace; font-size: 0.62rem; letter-spacing: 0.08em;
+  text-transform: uppercase; padding: 5px 12px; background: transparent;
+  border: 1px solid var(--border); color: var(--muted); cursor: pointer; transition: all 0.15s;
+}
+.filter-btn:hover { border-color: #555; color: var(--text); }
+.filter-btn.active { border-color: var(--accent); color: var(--accent); }
+
+/* Stats */
+.stats { font-size: 0.62rem; color: var(--muted); letter-spacing: 0.1em; margin-bottom: 16px; }
+
+/* Month groups */
+.month-group { margin-bottom: 24px; }
+.month-label {
+  font-family: 'Syne', sans-serif; font-size: 0.68rem; font-weight: 700;
+  letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted);
+  margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border);
+}
+
+/* Release items */
+.release-list { display: flex; flex-direction: column; gap: 1px; background: var(--border); border: 1px solid var(--border); }
+.release-item {
+  display: grid; grid-template-columns: 80px 64px 1fr auto; gap: 12px;
+  align-items: center; padding: 12px 14px; background: var(--bg); font-size: 0.72rem;
+  transition: background 0.15s;
+}
+.release-item:hover { background: #111; }
+
+.rel-date { color: var(--muted); font-size: 0.7rem; }
+.rel-type {
+  font-size: 0.58rem; letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 2px 6px; border: 1px solid var(--border); text-align: center;
+}
+.rel-type.certification { color: var(--accent); border-color: #4a3e10; }
+.rel-type.single { color: #8be9fd; border-color: #1a3a4a; }
+.rel-type.ep { color: #bd93f9; border-color: #2a1a4a; }
+.rel-type.album { color: #ff79c6; border-color: #4a1a3a; }
+
+.rel-info { display: flex; flex-direction: column; gap: 2px; }
+.rel-artist { color: #fff; font-weight: 600; }
+.rel-title { color: var(--muted); font-size: 0.68rem; }
+.rel-sw { color: #444; font-size: 0.6rem; }
+
+.rel-delete { cursor: pointer; color: #333; font-size: 0.85rem; transition: color 0.15s; padding: 4px; }
+.rel-delete:hover { color: #ff6b6b; }
+
+.empty-msg { text-align: center; padding: 48px 20px; color: #444; font-size: 0.78rem; }
+.empty-msg a { color: var(--accent); text-decoration: none; }
+.empty-msg a:hover { text-decoration: underline; }
+
+.today-marker { border-left: 2px solid var(--accent); }
+
+@media (max-width: 560px) {
+  nav { padding: 16px 20px; }
+  .container { padding: 28px 20px 40px; }
+  .release-item { grid-template-columns: 70px 50px 1fr auto; gap: 8px; padding: 10px; }
+}
+</style>
+</head>
+<body>
+<nav>
+  <a class="nav-logo" href="index.html"><img src="data:image/png;base64,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" alt="BLZante" class="nav-logo-img" /><span>BLZante</span></a>
+  <div class="nav-right">
+    <a class="nav-back" href="index.html">&larr; Toolbox</a>
+    <span class="nav-sep">/</span>
+    <span>Release Planning</span>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="header-row">
+    <h1>Release Planning</h1>
+    <a class="add-btn" href="release_create.html">+ Nouvelle release</a>
+  </div>
+
+  <div class="filters" id="filters">
+    <button class="filter-btn active" data-filter="all">Tout</button>
+    <button class="filter-btn" data-filter="Certification">Certification</button>
+    <button class="filter-btn" data-filter="Single">Single</button>
+    <button class="filter-btn" data-filter="EP">EP</button>
+    <button class="filter-btn" data-filter="Album">Album</button>
+  </div>
+
+  <div class="stats" id="stats"></div>
+  <div id="planningContent"></div>
+</div>
+
+<script>
+const MONTHS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+
+let activeFilter = 'all';
+
+function getReleases() {
+  return JSON.parse(localStorage.getItem('blzante_releases') || '[]');
+}
+
+function saveReleases(releases) {
+  localStorage.setItem('blzante_releases', JSON.stringify(releases));
+}
+
+function render() {
+  const releases = getReleases();
+  const filtered = activeFilter === 'all' ? releases : releases.filter(r => r.type === activeFilter);
+  const content = document.getElementById('planningContent');
+  const stats = document.getElementById('stats');
+
+  stats.textContent = `${filtered.length} release${filtered.length > 1 ? 's' : ''}`;
+
+  if (filtered.length === 0) {
+    content.innerHTML = '<div class="empty-msg">Aucune release pour le moment.<br><a href="release_create.html">Créer une release →</a></div>';
+    return;
+  }
+
+  // Group by month
+  const groups = {};
+  const today = new Date().toISOString().slice(0, 10);
+
+  filtered.forEach(r => {
+    const parts = r.dateSortable.split('-');
+    const key = parts[0] + '-' + parts[1];
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(r);
+  });
+
+  // Sort month keys
+  const sortedKeys = Object.keys(groups).sort();
+
+  let html = '';
+  sortedKeys.forEach(key => {
+    const [year, month] = key.split('-');
+    const monthName = MONTHS_FR[parseInt(month) - 1];
+    html += `<div class="month-group">`;
+    html += `<div class="month-label">${monthName} ${year}</div>`;
+    html += `<div class="release-list">`;
+
+    groups[key].forEach(r => {
+      const isToday = r.dateSortable === today;
+      const isPast = r.dateSortable < today;
+      const swText = r.songwriters && r.songwriters.length ? r.songwriters.join(', ') : '';
+
+      html += `<div class="release-item${isToday ? ' today-marker' : ''}" data-id="${r.id}" style="${isPast ? 'opacity:0.5' : ''}">`;
+      html += `<span class="rel-date">${r.date}</span>`;
+      html += `<span class="rel-type ${r.type.toLowerCase()}">${r.type}</span>`;
+      html += `<div class="rel-info">`;
+      html += `<span class="rel-artist">${r.artist}</span>`;
+      html += `<span class="rel-title">${r.title}</span>`;
+      if (swText) html += `<span class="rel-sw">${swText}</span>`;
+      html += `</div>`;
+      html += `<span class="rel-delete" title="Supprimer">×</span>`;
+      html += `</div>`;
+    });
+
+    html += `</div></div>`;
+  });
+
+  content.innerHTML = html;
+}
+
+// Filters
+document.getElementById('filters').addEventListener('click', (e) => {
+  const btn = e.target.closest('.filter-btn');
+  if (!btn) return;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  activeFilter = btn.dataset.filter;
+  render();
+});
+
+// Delete
+document.getElementById('planningContent').addEventListener('click', (e) => {
+  const del = e.target.closest('.rel-delete');
+  if (!del) return;
+  const item = del.closest('.release-item');
+  const id = parseInt(item.dataset.id);
+  let releases = getReleases();
+  releases = releases.filter(r => r.id !== id);
+  saveReleases(releases);
+  render();
+});
+
+// Init
+render();
+</script>
+</body>
+</html>

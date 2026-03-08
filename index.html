@@ -44,13 +44,13 @@ nav {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 28px 48px;
+  padding: 18px 40px;
   border-bottom: 1px solid var(--border);
 }
 
 .nav-logo {
   font-family: 'Syne', sans-serif;
-  font-size: 1.6rem;
+  font-size: 1.4rem;
   font-weight: 800;
   color: #ffffff;
   text-decoration: none;
@@ -61,7 +61,7 @@ nav {
 }
 
 .nav-logo-img {
-  height: 32px;
+  height: 28px;
   width: auto;
   display: block;
 }
@@ -76,7 +76,7 @@ nav {
 
 main {
   flex: 1;
-  padding: 64px 48px 80px;
+  padding: 32px 40px 40px;
   max-width: 1100px;
   width: 100%;
   margin: 0 auto;
@@ -91,9 +91,21 @@ main {
   margin-bottom: 48px;
 }
 
+.section-label {
+  font-family: 'Syne', sans-serif;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin-top: 28px;
+  margin-bottom: 8px;
+}
+.section-label:first-of-type { margin-top: 0; }
+
 .tools-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 1px;
   background: var(--border);
   border: 1px solid var(--border);
@@ -101,12 +113,12 @@ main {
 
 .tool-card {
   background: var(--bg);
-  padding: 32px 28px;
+  padding: 20px 22px;
   text-decoration: none;
   color: inherit;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 10px;
   position: relative;
   overflow: hidden;
   transition: background 0.2s;
@@ -148,7 +160,7 @@ main {
 }
 
 .tool-name {
-  font-size: 1.15rem;
+  font-size: 1rem;
   font-weight: 700;
   letter-spacing: -0.01em;
   line-height: 1.35;
@@ -190,7 +202,7 @@ main {
 
 footer {
   border-top: 1px solid var(--border);
-  padding: 20px 48px;
+  padding: 14px 40px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -212,8 +224,8 @@ footer {
 }
 nav { animation: fadeUp 0.4s ease both; }
 .page-title { animation: fadeUp 0.4s 0.1s ease both; }
-.tool-card:nth-child(1) { animation: fadeUp 0.4s 0.15s ease both; }
-.tool-card:nth-child(2) { animation: fadeUp 0.4s 0.22s ease both; }
+.section-label { animation: fadeUp 0.4s 0.15s ease both; }
+.tools-grid { animation: fadeUp 0.4s 0.2s ease both; }
 
 @media (max-width: 600px) {
   nav, main, footer { padding-left: 24px; padding-right: 24px; }
@@ -231,16 +243,25 @@ nav { animation: fadeUp 0.4s ease both; }
   </nav>
 
   <main>
-    <div class="page-title">— Outils disponibles</div>
+    <div class="section-label">Releases Schedule</div>
     <div class="tools-grid">
-
-      <a class="tool-card" href="sacem_depot.html">
+      <a class="tool-card" href="release_planning.html">
         <div class="card-top">
           <span class="tool-arrow">↗</span>
         </div>
-        <div class="tool-name">SACEM Dépôt<br>to ZIP Filezilla</div>
+        <div class="tool-name">Release<br>Planning</div>
       </a>
 
+      <a class="tool-card" href="release_create.html">
+        <div class="card-top">
+          <span class="tool-arrow">↗</span>
+        </div>
+        <div class="tool-name">Créer<br>une Release</div>
+      </a>
+    </div>
+
+    <div class="section-label">Infos</div>
+    <div class="tools-grid">
       <a class="tool-card" href="infos_facturation.html">
         <div class="card-top">
           <span class="tool-arrow">↗</span>
@@ -252,10 +273,20 @@ nav { animation: fadeUp 0.4s ease both; }
         <div class="card-top">
           <span class="tool-arrow">↗</span>
         </div>
-        <div class="tool-name">Infos SACEM<br>Songwriters</div>
+        <div class="tool-name">Infos SACEM<br>Songwriters &amp; Éditeurs</div>
       </a>
-
     </div>
+
+    <div class="section-label">Outils</div>
+    <div class="tools-grid">
+      <a class="tool-card" href="sacem_depot.html">
+        <div class="card-top">
+          <span class="tool-arrow">↗</span>
+        </div>
+        <div class="tool-name">SACEM Dépôt<br>to ZIP Filezilla</div>
+      </a>
+    </div>
+
   </main>
 
   <footer>

@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Créer une Release — BLZante Toolbox</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Syne+Mono&display=swap');
+:root { --bg: #0a0a0a; --surface: #141414; --border: #262626; --text: #e8e8e8; --muted: #777; --accent: #e8c547; --success: #4ade80; --error: #ff6b6b; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Syne Mono', monospace; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+body::before { content: ''; position: fixed; inset: 0; background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px); background-size: 60px 60px; opacity: 0.3; pointer-events: none; z-index: 0; }
+
+nav { display: flex; align-items: center; justify-content: space-between; padding: 18px 40px; border-bottom: 1px solid var(--border); position: relative; z-index: 1; }
+.nav-logo { font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 800; color: #fff; text-decoration: none; letter-spacing: 0.08em; display: flex; align-items: center; gap: 10px; }
+.nav-logo-img { height: 28px; width: auto; display: block; }
+.nav-right { display: flex; align-items: center; gap: 12px; font-size: 0.65rem; color: var(--muted); letter-spacing: 0.14em; text-transform: uppercase; }
+.nav-back { color: var(--muted); text-decoration: none; font-size: 0.65rem; letter-spacing: 0.14em; text-transform: uppercase; transition: color 0.15s; }
+.nav-back:hover { color: #fff; }
+.nav-sep { color: var(--border); }
+
+.container { max-width: 640px; margin: 0 auto; padding: 40px 40px 60px; position: relative; z-index: 1; flex: 1; width: 100%; }
+.page-heading { margin-bottom: 32px; border-bottom: 1px solid var(--border); padding-bottom: 20px; }
+.page-heading h1 { font-family: 'Syne', sans-serif; font-size: 1.3rem; font-weight: 800; color: var(--text); line-height: 1.3; }
+
+/* Form */
+.form-group { margin-bottom: 20px; }
+.form-label { font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; display: block; }
+.form-input, .form-select {
+  width: 100%; font-family: 'Syne Mono', monospace; font-size: 0.82rem;
+  padding: 12px 14px; border: 1px solid var(--border); background: var(--surface);
+  color: var(--text); outline: none; transition: border-color 0.2s; appearance: none;
+}
+.form-input:focus, .form-select:focus { border-color: #555; }
+.form-input::placeholder { color: #444; }
+
+.form-select { cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23777'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
+
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* Conditional fields */
+.conditional { display: none; }
+.conditional.visible { display: block; }
+
+/* Songwriter multi-select */
+.sw-picker { position: relative; }
+.sw-picker-input {
+  width: 100%; font-family: 'Syne Mono', monospace; font-size: 0.82rem;
+  padding: 12px 14px; border: 1px solid var(--border); background: var(--surface);
+  color: var(--text); outline: none; transition: border-color 0.2s;
+}
+.sw-picker-input:focus { border-color: #555; }
+.sw-picker-input::placeholder { color: #444; }
+
+.sw-dropdown {
+  display: none; position: absolute; top: 100%; left: 0; right: 0; z-index: 10;
+  background: var(--surface); border: 1px solid var(--border); border-top: none;
+  max-height: 200px; overflow-y: auto;
+}
+.sw-dropdown.open { display: block; }
+
+.sw-option {
+  padding: 10px 14px; font-size: 0.78rem; cursor: pointer; transition: background 0.1s;
+}
+.sw-option:hover { background: #1a1a1a; }
+.sw-option.selected { color: var(--accent); }
+.sw-option.hidden { display: none; }
+
+.sw-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.sw-tag {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px; font-size: 0.68rem; background: #1a1a1a;
+  border: 1px solid var(--border); color: var(--text);
+}
+.sw-tag-remove {
+  cursor: pointer; color: var(--muted); font-size: 0.8rem; line-height: 1;
+  transition: color 0.15s;
+}
+.sw-tag-remove:hover { color: var(--error); }
+
+/* Submit */
+.submit-btn {
+  margin-top: 28px; width: 100%; padding: 14px;
+  background: linear-gradient(135deg, #fff 0%, #bbb 100%); color: #0a0a0a;
+  border: none; cursor: pointer; font-family: 'Syne', sans-serif;
+  font-size: 0.82rem; font-weight: 800; letter-spacing: 0.14em;
+  text-transform: uppercase; transition: opacity 0.2s;
+}
+.submit-btn:hover { opacity: 0.85; }
+.submit-btn:disabled { background: linear-gradient(135deg, #333 0%, #222 100%); color: var(--muted); cursor: not-allowed; }
+
+.status { margin-top: 12px; font-size: 0.68rem; min-height: 18px; }
+.status.success { color: var(--success); }
+.status.error { color: var(--error); }
+
+/* Recent releases */
+.recent-section { margin-top: 40px; border-top: 1px solid var(--border); padding-top: 20px; }
+.recent-title { font-size: 0.62rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+.recent-item {
+  display: flex; align-items: center; gap: 12px; padding: 10px 14px;
+  background: var(--surface); border: 1px solid var(--border); margin-bottom: 2px;
+  font-size: 0.72rem;
+}
+.recent-date { color: var(--muted); min-width: 80px; }
+.recent-type {
+  font-size: 0.58rem; letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 2px 6px; border: 1px solid var(--border); color: var(--muted); min-width: 48px; text-align: center;
+}
+.recent-type.certification { color: var(--accent); border-color: #4a3e10; }
+.recent-type.single { color: #8be9fd; border-color: #1a3a4a; }
+.recent-type.ep { color: #bd93f9; border-color: #2a1a4a; }
+.recent-type.album { color: #ff79c6; border-color: #4a1a3a; }
+.recent-name { flex: 1; color: #fff; }
+.recent-sw { color: var(--muted); font-size: 0.65rem; }
+.recent-delete { cursor: pointer; color: #444; transition: color 0.15s; font-size: 0.85rem; }
+.recent-delete:hover { color: var(--error); }
+.empty-msg { font-size: 0.7rem; color: #444; padding: 16px 0; }
+
+@media (max-width: 560px) {
+  nav { padding: 16px 20px; }
+  .container { padding: 28px 20px 40px; }
+  .form-row { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<nav>
+  <a class="nav-logo" href="index.html"><img src="data:image/png;base64,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" alt="BLZante" class="nav-logo-img" /><span>BLZante</span></a>
+  <div class="nav-right">
+    <a class="nav-back" href="index.html">&larr; Toolbox</a>
+    <span class="nav-sep">/</span>
+    <span>Créer une Release</span>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-heading"><h1>Créer une Release</h1></div>
+
+  <div class="form-row">
+    <div class="form-group">
+      <label class="form-label">Date de sortie</label>
+      <input type="text" class="form-input" id="releaseDate" placeholder="DD/MM/YYYY" maxlength="10" autocomplete="off" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Type de release</label>
+      <select class="form-select" id="releaseType">
+        <option value="">— Choisir —</option>
+        <option value="Certification">Certification</option>
+        <option value="Single">Single</option>
+        <option value="EP">EP</option>
+        <option value="Album">Album</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label class="form-label">Nom Artiste</label>
+    <input type="text" class="form-input" id="artistName" placeholder="Nom de l'artiste" autocomplete="off" />
+  </div>
+
+  <div class="form-group conditional" id="projectGroup">
+    <label class="form-label">Nom du projet (EP / Album)</label>
+    <input type="text" class="form-input" id="projectName" placeholder="Titre du projet" autocomplete="off" />
+  </div>
+
+  <div class="form-group conditional" id="trackGroup">
+    <label class="form-label">Nom du track (Single)</label>
+    <input type="text" class="form-input" id="trackName" placeholder="Titre du single" autocomplete="off" />
+  </div>
+
+  <div class="form-group">
+    <label class="form-label">Songwriters BLZante</label>
+    <div class="sw-picker">
+      <input type="text" class="sw-picker-input" id="swSearch" placeholder="Rechercher un songwriter..." autocomplete="off" />
+      <div class="sw-dropdown" id="swDropdown">
+        <div class="sw-option" data-name="2B">2B</div>
+        <div class="sw-option" data-name="AKATCHE">AKATCHE</div>
+        <div class="sw-option" data-name="OZZY">OZZY</div>
+        <div class="sw-option" data-name="BRO">BRO</div>
+        <div class="sw-option" data-name="CHERI">CHERI</div>
+        <div class="sw-option" data-name="DANI TERREUR">DANI TERREUR</div>
+        <div class="sw-option" data-name="EMY JO">EMY JO</div>
+        <div class="sw-option" data-name="GABRIEL MABILAT">GABRIEL MABILAT</div>
+        <div class="sw-option" data-name="HADRIEN MABILAT">HADRIEN MABILAT</div>
+        <div class="sw-option" data-name="HUGO LARDENET">HUGO LARDENET</div>
+        <div class="sw-option" data-name="IVY">IVY</div>
+        <div class="sw-option" data-name="KEV 117">KEV 117</div>
+        <div class="sw-option" data-name="LAURINA MALAKA">LAURINA MALAKA</div>
+        <div class="sw-option" data-name="LEANDRE">LEANDRE</div>
+        <div class="sw-option" data-name="LEITH">LEITH</div>
+        <div class="sw-option" data-name="MATSHIMOTO">MATSHIMOTO</div>
+        <div class="sw-option" data-name="NOLAN">NOLAN</div>
+        <div class="sw-option" data-name="PABLO">PABLO</div>
+        <div class="sw-option" data-name="PALMAE">PALMAE</div>
+        <div class="sw-option" data-name="PIERRE-LAURENT FAURE">PIERRE-LAURENT FAURE</div>
+        <div class="sw-option" data-name="RITUAL X">RITUAL X</div>
+        <div class="sw-option" data-name="ROI LUIS">ROI LUIS</div>
+        <div class="sw-option" data-name="SACHA MALAKA">SACHA MALAKA</div>
+        <div class="sw-option" data-name="SEBASTIEN ROUSSELET">SEBASTIEN ROUSSELET</div>
+        <div class="sw-option" data-name="VINCHA">VINCHA</div>
+        <div class="sw-option" data-name="VJ">VJ</div>
+        <div class="sw-option" data-name="YANNICK SERI">YANNICK SERI</div>
+      </div>
+    </div>
+    <div class="sw-tags" id="swTags"></div>
+  </div>
+
+  <button class="submit-btn" id="submitBtn">⚡ Ajouter la release</button>
+  <div class="status" id="statusMsg"></div>
+
+  <div class="recent-section">
+    <div class="recent-title">Dernières releases ajoutées</div>
+    <div id="recentList"></div>
+  </div>
+</div>
+
+<script>
+// ─── State ───
+let selectedSw = [];
+
+// ─── Date auto-format ───
+const dateInput = document.getElementById('releaseDate');
+dateInput.addEventListener('input', (e) => {
+  let v = e.target.value.replace(/[^0-9]/g, '');
+  if (v.length > 2) v = v.slice(0,2) + '/' + v.slice(2);
+  if (v.length > 5) v = v.slice(0,5) + '/' + v.slice(5,9);
+  e.target.value = v;
+});
+
+// ─── Conditional fields ───
+const typeSelect = document.getElementById('releaseType');
+const projectGroup = document.getElementById('projectGroup');
+const trackGroup = document.getElementById('trackGroup');
+
+typeSelect.addEventListener('change', () => {
+  const t = typeSelect.value;
+  projectGroup.classList.toggle('visible', t === 'EP' || t === 'Album');
+  trackGroup.classList.toggle('visible', t === 'Single' || t === 'Certification');
+});
+
+// ─── Songwriter picker ───
+const swSearch = document.getElementById('swSearch');
+const swDropdown = document.getElementById('swDropdown');
+const swTags = document.getElementById('swTags');
+const swOptions = swDropdown.querySelectorAll('.sw-option');
+
+swSearch.addEventListener('focus', () => swDropdown.classList.add('open'));
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.sw-picker')) swDropdown.classList.remove('open');
+});
+
+swSearch.addEventListener('input', () => {
+  const q = swSearch.value.toLowerCase();
+  swOptions.forEach(opt => {
+    opt.classList.toggle('hidden', q && !opt.dataset.name.toLowerCase().includes(q));
+  });
+  swDropdown.classList.add('open');
+});
+
+swDropdown.addEventListener('click', (e) => {
+  const opt = e.target.closest('.sw-option');
+  if (!opt) return;
+  const name = opt.dataset.name;
+  if (selectedSw.includes(name)) {
+    selectedSw = selectedSw.filter(n => n !== name);
+    opt.classList.remove('selected');
+  } else {
+    selectedSw.push(name);
+    opt.classList.add('selected');
+  }
+  renderTags();
+  swSearch.value = '';
+  swOptions.forEach(o => o.classList.remove('hidden'));
+});
+
+function renderTags() {
+  swTags.innerHTML = selectedSw.map(name =>
+    `<span class="sw-tag">${name}<span class="sw-tag-remove" data-name="${name}">×</span></span>`
+  ).join('');
+}
+
+swTags.addEventListener('click', (e) => {
+  const rm = e.target.closest('.sw-tag-remove');
+  if (!rm) return;
+  const name = rm.dataset.name;
+  selectedSw = selectedSw.filter(n => n !== name);
+  swOptions.forEach(opt => {
+    if (opt.dataset.name === name) opt.classList.remove('selected');
+  });
+  renderTags();
+});
+
+// ─── Submit ───
+document.getElementById('submitBtn').addEventListener('click', () => {
+  const date = dateInput.value.trim();
+  const type = typeSelect.value;
+  const artist = document.getElementById('artistName').value.trim();
+  const project = document.getElementById('projectName').value.trim();
+  const track = document.getElementById('trackName').value.trim();
+  const status = document.getElementById('statusMsg');
+
+  // Validate
+  if (!date || !/^\d{2}\/\d{2}\/\d{4}$/.test(date)) {
+    status.textContent = '⚠ Date invalide (DD/MM/YYYY)';
+    status.className = 'status error';
+    return;
+  }
+  if (!type) {
+    status.textContent = '⚠ Choisir un type de release';
+    status.className = 'status error';
+    return;
+  }
+  if (!artist) {
+    status.textContent = '⚠ Nom artiste requis';
+    status.className = 'status error';
+    return;
+  }
+
+  let title = '';
+  if (type === 'EP' || type === 'Album') {
+    title = project || artist;
+  } else {
+    title = track || artist;
+  }
+
+  const release = {
+    id: Date.now(),
+    date,
+    dateSortable: date.split('/').reverse().join('-'), // YYYY-MM-DD for sorting
+    type,
+    artist,
+    title,
+    songwriters: [...selectedSw],
+    createdAt: new Date().toISOString(),
+  };
+
+  // Save
+  const releases = JSON.parse(localStorage.getItem('blzante_releases') || '[]');
+  releases.push(release);
+  releases.sort((a, b) => a.dateSortable.localeCompare(b.dateSortable));
+  localStorage.setItem('blzante_releases', JSON.stringify(releases));
+
+  // Reset form
+  dateInput.value = '';
+  typeSelect.value = '';
+  document.getElementById('artistName').value = '';
+  document.getElementById('projectName').value = '';
+  document.getElementById('trackName').value = '';
+  projectGroup.classList.remove('visible');
+  trackGroup.classList.remove('visible');
+  selectedSw = [];
+  swOptions.forEach(o => o.classList.remove('selected'));
+  renderTags();
+
+  status.textContent = `✓ Release ajoutée : ${artist} — ${title}`;
+  status.className = 'status success';
+  setTimeout(() => { status.textContent = ''; status.className = 'status'; }, 3000);
+
+  renderRecent();
+});
+
+// ─── Recent releases ───
+function renderRecent() {
+  const releases = JSON.parse(localStorage.getItem('blzante_releases') || '[]');
+  const list = document.getElementById('recentList');
+
+  if (releases.length === 0) {
+    list.innerHTML = '<div class="empty-msg">Aucune release pour le moment</div>';
+    return;
+  }
+
+  // Show last 10 (newest first)
+  const recent = [...releases].reverse().slice(0, 10);
+  list.innerHTML = recent.map(r => `
+    <div class="recent-item" data-id="${r.id}">
+      <span class="recent-date">${r.date}</span>
+      <span class="recent-type ${r.type.toLowerCase()}">${r.type}</span>
+      <span class="recent-name">${r.artist} — ${r.title}</span>
+      <span class="recent-sw">${r.songwriters.length ? r.songwriters.join(', ') : ''}</span>
+      <span class="recent-delete" title="Supprimer">×</span>
+    </div>
+  `).join('');
+}
+
+document.getElementById('recentList').addEventListener('click', (e) => {
+  const del = e.target.closest('.recent-delete');
+  if (!del) return;
+  const item = del.closest('.recent-item');
+  const id = parseInt(item.dataset.id);
+  let releases = JSON.parse(localStorage.getItem('blzante_releases') || '[]');
+  releases = releases.filter(r => r.id !== id);
+  localStorage.setItem('blzante_releases', JSON.stringify(releases));
+  renderRecent();
+});
+
+// Init
+renderRecent();
+</script>
+</body>
+</html>
