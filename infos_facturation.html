@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Infos Facturation — BLZante Toolbox</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Syne+Mono&display=swap');
+
+:root {
+  --bg: #0a0a0a;
+  --surface: #141414;
+  --border: #262626;
+  --text: #e8e8e8;
+  --muted: #777;
+  --accent: #ffffff;
+  --success: #4ade80;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Syne Mono', monospace;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 60px 60px;
+  opacity: 0.3;
+  pointer-events: none;
+  z-index: 0;
+}
+
+nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28px 48px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  z-index: 1;
+}
+
+.nav-logo {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #fff;
+  text-decoration: none;
+  letter-spacing: 0.08em;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nav-logo-img {
+  height: 32px;
+  width: auto;
+  display: block;
+}
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.65rem;
+  color: var(--muted);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.nav-back {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.65rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  transition: color 0.15s;
+}
+.nav-back:hover { color: #fff; }
+.nav-sep { color: var(--border); }
+
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 56px 48px 80px;
+  position: relative;
+  z-index: 1;
+  flex: 1;
+}
+
+.page-heading {
+  margin-bottom: 48px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 24px;
+}
+
+.page-heading h1 {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  line-height: 1.3;
+}
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 2px;
+}
+
+.company-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  transition: border-color 0.2s;
+}
+.company-card:hover { border-color: #444; }
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.card-logo {
+  height: 44px;
+  width: auto;
+  flex-shrink: 0;
+}
+
+.card-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.3;
+}
+
+.card-subtitle {
+  font-size: 0.65rem;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.card-info {
+  font-size: 0.72rem;
+  line-height: 1.8;
+  color: #ccc;
+  white-space: pre-line;
+}
+
+.card-info strong {
+  color: #fff;
+  font-weight: 600;
+}
+
+.copy-btn {
+  align-self: flex-start;
+  margin-top: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  cursor: pointer;
+  font-family: 'Syne Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transition: all 0.2s;
+}
+.copy-btn:hover { border-color: #666; color: #fff; }
+.copy-btn.copied { border-color: var(--success); color: var(--success); }
+
+@media (max-width: 560px) {
+  nav { padding: 20px 24px; }
+  .container { padding: 40px 24px 60px; }
+  .cards-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="index.html"><img src="data:image/png;base64,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" alt="BLZante" class="nav-logo-img" /><span>BLZante</span></a>
+  <div class="nav-right">
+    <a class="nav-back" href="index.html">&larr; Toolbox</a>
+    <span class="nav-sep">/</span>
+    <span>Infos Facturation</span>
+  </div>
+</nav>
+
+<div class="container">
+
+  <div class="page-heading">
+    <h1>Infos Facturation<br>Sociétés</h1>
+  </div>
+
+  <div class="cards-grid">
+
+    <!-- BLZante -->
+    <div class="company-card">
+      <div class="card-header">
+        <img src="data:image/png;base64,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" alt="BLZante" class="card-logo" />
+        <div>
+          <div class="card-title">BLZante</div>
+          
+        </div>
+      </div>
+      <div class="card-info" id="info-blzante">BLZante
+SCM Village Marcadet — 258 rue Marcadet, 75018 Paris
+SAS au capital de 1000€ — RCS Paris
+SIREN : 940 394 877
+SIRET : 94039487700010
+N° TVA : FR74940394877
+Code NAF / APE : 5920Z
+Président — Romain BILHARZ
+Mail : blzante.digital@gmail.com</div>
+      <button class="copy-btn" onclick="copyInfo('info-blzante', this)">
+        <span class="btn-icon">📋</span>
+        <span class="btn-text">Copier les infos</span>
+      </button>
+    </div>
+
+    <!-- BLZ Publishing -->
+    <div class="company-card">
+      <div class="card-header">
+        <img src="data:image/png;base64,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" alt="BLZ Publishing" class="card-logo" />
+        <div>
+          <div class="card-title">BLZ Publishing</div>
+          <div class="card-subtitle">Air BLZ Publishing</div>
+        </div>
+      </div>
+      <div class="card-info" id="info-blzpub">BLZ Publishing (Air BLZ Publishing)
+26 rue Damrémont, 75018 Paris
+SARL au capital de 1500€
+SIREN : 537 373 524
+SIRET : 53737352400025
+N° TVA : FR81537373524
+Gérant — Romain BILHARZ
+Mail : bilharz.romain.public@gmail.com</div>
+      <button class="copy-btn" onclick="copyInfo('info-blzpub', this)">
+        <span class="btn-icon">📋</span>
+        <span class="btn-text">Copier les infos</span>
+      </button>
+    </div>
+
+    <!-- BLZ Inc. -->
+    <div class="company-card">
+      <div class="card-header">
+        <img src="data:image/png;base64,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" alt="BLZ" class="card-logo" />
+        <div>
+          <div class="card-title">BLZ Inc.</div>
+          
+        </div>
+      </div>
+      <div class="card-info" id="info-blzinc">BLZ Inc.
+26 rue Damrémont, 75018 Paris
+SAS au capital de 500€ — RCS Paris
+SIREN : 834 094 658
+SIRET : 834 094 658 00012
+N° TVA : FR12834094658
+Président — Romain BILHARZ
+Mail : bilharz.romain.public@gmail.com</div>
+      <button class="copy-btn" onclick="copyInfo('info-blzinc', this)">
+        <span class="btn-icon">📋</span>
+        <span class="btn-text">Copier les infos</span>
+      </button>
+    </div>
+
+    <!-- Rossinante -->
+    <div class="company-card">
+      <div class="card-header">
+        <img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCAAwADADASIAAhEBAxEB/8QAGwAAAQUBAQAAAAAAAAAAAAAAAAEDBQYHCAT/xAAtEAABAgQEBAUFAQAAAAAAAAABAgMABAURBhIhMQcUQVETIiZhZBVCcYHigv/EABsBAAAHAQAAAAAAAAAAAAAAAAABAgMEBQYH/8QAJBEAAgICAQQBBQAAAAAAAAAAAQIAAwQRMQUGIWEiMmJxwdH/2gAMAwEAAhEDEQA/AOMoIIVNioZr2vrbeBBEgjZ6ZwSlKnRpSqyWK1Ll5tlLzeaQsbKF7Hz7jaPNN8Fwxf1EVW+J/cIusWkbc6mio7U6teA1dWwfuX+zIYUbxK4soj2H607TnXQ6EgKQ4BbOk7G3TqP1EUN4NHV1DLwZR5GPZjWtTaNMp0R7ESJHD1FqlfqjVNpEk7NzLh0QhN7DuTsAOpOkR0W7hFiM4Xx7Tqg44USq18vNa6FpehJ/Bsr/ADDigFgDxDxkre5VsOlJGz6nUFApH0HC1No2cOKk5ZDSljZSgPMR7XvEHieek6dLLmp6ZalmRpncVYX7fn2i41CKLjylM1uhzdNesA8jyKP2rGqT+jaIXVAvDcTv2ItlOORjgFlHxB42B4E534g1piu4kdm5UHl0JDTRIsVAX1t7kmK+N4cm2HZWadln0FDrSyhaT0INiIbG8P1VrWgVeBOCZ2TblZD3XfUxJP5iQQtj2gse0OSLNko/HN+UoclITdBM2/LsJaXMc3l8TKLBRGU62A6wxN8aEv39OlN/l/xGRWPaCx7Qi2tbhpxuaKjuvq1Cha7da9L+xJbFtWYrdZcqTMnyhdA8RGfMCoaX2HS0RI3gse0ABvtBogRQq8CUeRkWZNrXWHbMdnwB5PoeJ//Z" alt="Rossinante" class="card-logo" style="border-radius: 6px;" />
+        <div>
+          <div class="card-title">Rossinante</div>
+          <div class="card-subtitle">Les Autres MGMT</div>
+        </div>
+      </div>
+      <div class="card-info" id="info-rossinante">Rossinante (Les Autres MGMT)
+76 rue du Ruisseau, 75018 Paris
+SAS au capital de 4 000€
+SIREN : 817 959 315
+SIRET : 817 959 315 00018
+N° TVA : FR87 817 959 315
+Président — Arthur SACHEL
+Mail : arthur@rossinante.paris</div>
+      <button class="copy-btn" onclick="copyInfo('info-rossinante', this)">
+        <span class="btn-icon">📋</span>
+        <span class="btn-text">Copier les infos</span>
+      </button>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+function copyInfo(id, btn) {
+  const text = document.getElementById(id).textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.classList.add('copied');
+    btn.querySelector('.btn-icon').textContent = '✓';
+    btn.querySelector('.btn-text').textContent = 'Copié !';
+    setTimeout(() => {
+      btn.classList.remove('copied');
+      btn.querySelector('.btn-icon').textContent = '📋';
+      btn.querySelector('.btn-text').textContent = 'Copier les infos';
+    }, 2000);
+  });
+}
+</script>
+
+</body>
+</html>
