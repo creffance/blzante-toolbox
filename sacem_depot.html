@@ -12,13 +12,14 @@
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Syne+Mono&display=swap');
 
 :root {
-  --bg: #0d0d0d;
-  --surface: #161616;
-  --border: #2a2a2a;
-  --text: #f0ede6;
-  --muted: #888;
-  --accent: #e8c547;
-  --success: #4ecdc4;
+  --bg: #0a0a0a;
+  --surface: #141414;
+  --border: #262626;
+  --text: #e8e8e8;
+  --muted: #777;
+  --accent: #ffffff;
+  --accent-dim: #aaa;
+  --success: #d0d0d0;
   --error: #ff6b6b;
 }
 
@@ -84,7 +85,7 @@ nav {
   text-transform: uppercase;
   transition: color 0.15s;
 }
-.nav-back:hover { color: var(--accent); }
+.nav-back:hover { color: #fff; }
 
 .nav-sep { color: var(--border); }
 
@@ -127,8 +128,8 @@ nav {
 }
 
 .dropzone:hover, .dropzone.dragover {
-  border-color: var(--accent);
-  background: #1a1a0e;
+  border-color: #fff;
+  background: #1a1a1a;
 }
 
 .dropzone-icon { font-size: 2rem; margin-bottom: 12px; display: block; opacity: 0.4; }
@@ -171,7 +172,7 @@ input[type="file"] {
 }
 .file-bar.visible { display: flex; }
 .file-bar .fname { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
-.file-bar .pages { color: var(--accent); white-space: nowrap; }
+.file-bar .pages { color: #fff; white-space: nowrap; }
 
 /* ── Form section ── */
 .form-section { margin-top: 36px; display: none; }
@@ -213,7 +214,7 @@ input[type="file"] {
   outline: none;
   transition: border-color 0.15s;
 }
-.field input:focus { border-color: var(--accent); }
+.field input:focus { border-color: #666; }
 .field input.readonly { background: #111; color: var(--muted); cursor: default; }
 
 /* ── Segments ── */
@@ -245,10 +246,10 @@ input[type="file"] {
   border: 1px solid;
 }
 
-.seg-BDO  { color: var(--success); border-color: #1a3d3a; background: #0d1f1e; }
-.seg-CTR1 { color: var(--accent);  border-color: #4a3e10; background: #1a1508; }
-.seg-CTR2 { color: #f0a040;        border-color: #4a3010; background: #1a1008; }
-.seg-DIV  { color: var(--muted);   border-color: var(--border); background: #111; }
+.seg-BDO  { color: #fff; border-color: #444; background: #1a1a1a; }
+.seg-CTR1 { color: #ccc; border-color: #3a3a3a; background: #181818; }
+.seg-CTR2 { color: #aaa; border-color: #333; background: #161616; }
+.seg-DIV  { color: var(--muted); border-color: var(--border); background: #111; }
 
 .seg-name { flex: 1; font-size: 0.75rem; color: var(--text); }
 .seg-pages-display { font-size: 0.65rem; color: var(--muted); white-space: nowrap; }
@@ -287,7 +288,7 @@ input[type="file"] {
   text-align: center;
   transition: border-color 0.15s;
 }
-.page-input:focus { border-color: var(--accent); }
+.page-input:focus { border-color: #666; }
 
 .seg-desc { font-size: 0.65rem; color: var(--muted); flex: 2; line-height: 1.5; }
 
@@ -313,8 +314,8 @@ input[type="file"] {
   top: 3px; left: 3px;
   transition: transform 0.2s, background 0.2s;
 }
-.toggle-switch input:checked + .toggle-track { background: #2a2a10; }
-.toggle-switch input:checked + .toggle-track::after { transform: translateX(14px); background: var(--accent); }
+.toggle-switch input:checked + .toggle-track { background: #333; }
+.toggle-switch input:checked + .toggle-track::after { transform: translateX(14px); background: #fff; }
 
 .seg-disabled { opacity: 0.35; }
 
@@ -323,8 +324,8 @@ input[type="file"] {
   margin-top: 32px;
   width: 100%;
   padding: 16px;
-  background: var(--accent);
-  color: #0d0d0d;
+  background: linear-gradient(135deg, #fff 0%, #bbb 100%);
+  color: #0a0a0a;
   border: none;
   cursor: pointer;
   font-family: 'Syne', sans-serif;
@@ -335,26 +336,26 @@ input[type="file"] {
   transition: opacity 0.2s;
 }
 .generate-btn:hover { opacity: 0.85; }
-.generate-btn:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; opacity: 1; }
+.generate-btn:disabled { background: linear-gradient(135deg, #333 0%, #222 100%); color: var(--muted); cursor: not-allowed; opacity: 1; }
 
 .btn-inner { display: flex; align-items: center; justify-content: center; gap: 8px; }
 
 /* ── Progress ── */
 .progress-bar { display: none; margin-top: 12px; height: 2px; background: var(--border); }
 .progress-bar.visible { display: block; }
-.progress-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.3s ease; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, #888, #fff); width: 0%; transition: width 0.3s ease; }
 
 /* ── Status ── */
 .status { margin-top: 10px; font-size: 0.68rem; color: var(--muted); letter-spacing: 0.04em; min-height: 18px; }
 .status.error { color: var(--error); }
-.status.success { color: var(--success); }
+.status.success { color: #fff; }
 
 /* ── Result card ── */
 .result-card {
   display: none;
   margin-top: 24px;
-  border: 1px solid #1a3d3a;
-  background: #0d1a18;
+  border: 1px solid #444;
+  background: #181818;
   padding: 20px;
 }
 .result-card.visible { display: block; }
@@ -363,7 +364,7 @@ input[type="file"] {
   font-family: 'Syne', sans-serif;
   font-size: 1rem;
   font-weight: 700;
-  color: var(--success);
+  color: #fff;
   margin-bottom: 14px;
 }
 
@@ -377,15 +378,15 @@ input[type="file"] {
   color: var(--text);
 }
 
-.result-file .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--success); flex-shrink: 0; }
+.result-file .dot { width: 5px; height: 5px; border-radius: 50%; background: #fff; flex-shrink: 0; }
 
 .download-btn {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   padding: 12px 20px;
-  background: var(--success);
-  color: #0d0d0d;
+  background: linear-gradient(135deg, #fff 0%, #ccc 100%);
+  color: #0a0a0a;
   border: none;
   cursor: pointer;
   font-family: 'Syne', sans-serif;
@@ -410,7 +411,7 @@ input[type="file"] {
   text-transform: uppercase;
   transition: color 0.2s;
 }
-.reset-link:hover { color: var(--accent); }
+.reset-link:hover { color: #fff; }
 
 @media (max-width: 560px) {
   nav { padding: 20px 24px; }
@@ -418,7 +419,6 @@ input[type="file"] {
   .field-row { grid-template-columns: 1fr; }
   .segment-body { flex-direction: column; }
 }
-</style>
 </style>
 </head>
 <body>
@@ -569,7 +569,7 @@ input[type="file"] {
     <button class="generate-btn" id="generateBtn">
       <span class="btn-inner">
         <span>⚡</span>
-        <span>Générer le ZIP SACEM</span>
+        <span>Regénérer le ZIP</span>
       </span>
     </button>
 
@@ -681,55 +681,209 @@ document.getElementById('toggle-div').addEventListener('change', e => {
 // ─── Extract title from BDO text (page 1) via pdf.js ─────────────────────────
 async function extractTitleFromPDF(bytes) {
   try {
-    const loadingTask = pdfjsLib.getDocument({ data: bytes });
+    // IMPORTANT: pass a copy so the original ArrayBuffer is not transferred/neutered
+    const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(bytes) });
     const pdf = await loadingTask.promise;
+
+    // --- Strategy 1: Find "Titre de l'œuvre" on BDO (page 1) ---
+    const title1 = await extractTitleFromBDO(pdf);
+    if (title1) return title1;
+
+    // --- Strategy 2: Find title in contract "ARTICLE 1" section (pages 3+) ---
+    const title2 = await extractTitleFromContract(pdf);
+    if (title2) return title2;
+
+  } catch(e) {
+    console.warn('extractTitleFromPDF error:', e);
+  }
+  return null;
+}
+
+// Strategy 1: look for "Titre de l'œuvre" field on BDO page
+async function extractTitleFromBDO(pdf) {
+  try {
     const page = await pdf.getPage(1);
     const content = await page.getTextContent();
+    const items = content.items;
 
     // Group text items into lines by Y position
-    const items = content.items;
     const lineMap = new Map();
-
     for (const item of items) {
       const y = Math.round(item.transform[5]);
       if (!lineMap.has(y)) lineMap.set(y, []);
       lineMap.get(y).push(item);
     }
 
-    // Sort lines top-to-bottom (descending Y in PDF coords)
+    // Sort lines top-to-bottom
     const sortedYs = [...lineMap.keys()].sort((a, b) => b - a);
     const lines = sortedYs.map(y =>
       lineMap.get(y)
         .sort((a, b) => a.transform[4] - b.transform[4])
         .map(i => i.str)
-        .join('')
+        .join(' ')
         .trim()
     ).filter(l => l.length > 0);
 
-    // Find title: first meaningful line after "Commentaires"
-    let foundCommentaires = false;
+    // Look for "Titre de l'œuvre" or "Titre de l'oeuvre" line
     for (const line of lines) {
-      if (!foundCommentaires) {
-        if (line.includes('Commentaires')) foundCommentaires = true;
-        continue;
+      const match = line.match(/Titre de l[''']œuvre[^A-Z]*([\sA-ZÀ-Ü0-9'-]+)/i) ||
+                    line.match(/Titre de l[''']oeuvre[^A-Z]*([\sA-ZÀ-Ü0-9'-]+)/i);
+      if (match) {
+        const raw = match[1].trim()
+          .replace(/\s+[*]\s*$/, '')  // remove trailing *
+          .replace(/\s+$/, '')
+          .trim();
+        if (raw.length >= 2) return raw;
       }
-      if (line.length < 2) continue;
-      if (/^[\d\/\s.:]+$/.test(line)) continue;
+    }
 
-      // Strip trailing numbers/dates/single chars (durée, date exploitation, etc.)
-      // Keep only the leading text portion before digits start
-      // e.g. "PROBLEME PROBLEME 02 38 CHANSON 07 11 2 0 2 5 x" → "PROBLEME PROBLEME"
-      const cleaned = line
-        .replace(/\s+\d[\d\s\/\.]*.*$/, '') // remove everything from first number sequence
-        .replace(/\s+[xX]\s*$/, '')          // remove trailing x
-        .trim();
-
-      if (cleaned.length >= 2) return cleaned;
+    // Fallback: look for line containing "Titre de l" then take next significant item on same Y
+    for (let i = 0; i < lines.length; i++) {
+      if (/Titre de l/i.test(lines[i])) {
+        // The value might be on this line after the label, or on a nearby Y line
+        // Try to extract from items on the same Y-band
+        const y = sortedYs[i];
+        const itemsOnLine = lineMap.get(y).sort((a, b) => a.transform[4] - b.transform[4]);
+        // Find items after "Titre" label (higher X position)
+        let afterLabel = false;
+        let valueTexts = [];
+        for (const item of itemsOnLine) {
+          if (afterLabel && item.str.trim().length > 0 && !/[*]/.test(item.str)) {
+            valueTexts.push(item.str.trim());
+          }
+          if (/Titre/i.test(item.str)) afterLabel = true;
+        }
+        const val = valueTexts.join(' ').trim();
+        if (val.length >= 2 && !/^(de l|Sous)/i.test(val)) return val;
+      }
     }
   } catch(e) {
-    console.warn('extractTitleFromPDF error:', e);
+    console.warn('extractTitleFromBDO error:', e);
   }
   return null;
+}
+
+// Strategy 2: find title in "ARTICLE 1" of contract (scan pages 3-8)
+async function extractTitleFromContract(pdf) {
+  try {
+    const maxPage = Math.min(pdf.numPages, 10);
+    for (let p = 3; p <= maxPage; p++) {
+      const page = await pdf.getPage(p);
+      const content = await page.getTextContent();
+      const fullText = content.items.map(i => i.str).join(' ');
+
+      // Look for pattern like "chanson suivante :" followed by the title
+      const match = fullText.match(/chanson suivante\s*:\s*([A-ZÀ-Ü][A-ZÀ-Ü0-9\s'-]+?)(?:\s+(?:VERSION|Paroles|Version))/i);
+      if (match) {
+        const title = match[1].trim()
+          .replace(/\s+VERSION.*$/i, '')
+          .trim();
+        if (title.length >= 2) return title;
+      }
+
+      // Alternative: "objet du contrat" section with title in caps
+      const match2 = fullText.match(/OBJET DU CONTRAT.*?:\s*([A-ZÀ-Ü][A-ZÀ-Ü0-9\s'-]+?)(?:\s+VERSION|\s+Paroles)/i);
+      if (match2) {
+        const title = match2[1].trim();
+        if (title.length >= 2) return title;
+      }
+    }
+  } catch(e) {
+    console.warn('extractTitleFromContract error:', e);
+  }
+  return null;
+}
+
+// ─── Auto-detect PDF section boundaries ───────────────────────────────────────
+async function detectSections(bytes, numPages) {
+  try {
+    const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(bytes) });
+    const pdf = await loadingTask.promise;
+
+    // Scan all pages and extract first ~200 chars of text
+    const pageTexts = [];
+    for (let p = 1; p <= numPages; p++) {
+      const page = await pdf.getPage(p);
+      const content = await page.getTextContent();
+      const text = content.items.map(i => i.str).join(' ').substring(0, 500);
+      pageTexts.push(text);
+    }
+
+    // BDO: always starts at page 1, ends at last consecutive "Bulletin de déclaration" or "Partie réservée" page
+    let bdoEnd = 2; // default
+    for (let i = 0; i < numPages; i++) {
+      const t = pageTexts[i];
+      if (t.includes('Bulletin de d') || t.includes('Partie réservée')) {
+        bdoEnd = i + 1;
+      } else {
+        break;
+      }
+    }
+
+    // Find first "CONTRAT DE COÉDITION" or "CONTRAT DE COEDITION" page
+    let coeditionStart = -1;
+    for (let i = bdoEnd; i < numPages; i++) {
+      const t = pageTexts[i].toUpperCase();
+      if (t.includes('CONTRAT DE CO') && t.includes('DITION')) {
+        coeditionStart = i + 1; // 1-indexed
+        break;
+      }
+    }
+
+    // Find audit trail: "Certificat de réalisation" or "Certificate of Completion" or Docusign/Dropbox pages
+    let auditStart = -1;
+    for (let i = bdoEnd; i < numPages; i++) {
+      const t = pageTexts[i];
+      if (t.includes('Certificat de r') || t.includes('Certificate of Completion') ||
+          t.includes('Suivi du dossier') || t.includes('Envelope ID Summary') ||
+          t.includes('Record Tracking')) {
+        auditStart = i + 1; // 1-indexed, first audit page found
+        break;
+      }
+    }
+
+    // CTR_001: from after BDO to before coédition (or before audit if no coédition)
+    const ctr1Start = bdoEnd + 1;
+    let ctr1End;
+    if (coeditionStart > 0) {
+      ctr1End = coeditionStart - 1;
+    } else if (auditStart > 0) {
+      ctr1End = auditStart - 1;
+    } else {
+      ctr1End = numPages;
+    }
+
+    // CTR_002 (coédition): from coédition start to before audit
+    let ctr2Start = -1, ctr2End = -1;
+    let hasCtr2 = false;
+    if (coeditionStart > 0) {
+      ctr2Start = coeditionStart;
+      if (auditStart > 0) {
+        ctr2End = auditStart - 1;
+      } else {
+        ctr2End = numPages;
+      }
+      hasCtr2 = true;
+    }
+
+    // DIV_001 (audit trail): from audit start to end
+    let divStart = -1, divEnd = numPages;
+    let hasDiv = false;
+    if (auditStart > 0) {
+      divStart = auditStart;
+      hasDiv = true;
+    }
+
+    return {
+      bdo:  { start: 1, end: bdoEnd },
+      ctr1: { start: ctr1Start, end: ctr1End },
+      ctr2: hasCtr2 ? { start: ctr2Start, end: ctr2End } : null,
+      div:  hasDiv ? { start: divStart, end: divEnd } : null,
+    };
+  } catch(e) {
+    console.warn('detectSections error:', e);
+    return null;
+  }
 }
 
 // ─── File loading ─────────────────────────────────────────────────────────────
@@ -758,27 +912,60 @@ async function loadFile(file) {
     document.getElementById('fileBarPages').textContent = `${totalPages} pages`;
     document.getElementById('fileBar').classList.add('visible');
 
-    // Auto-fill div end
-    document.getElementById('div-end').value = totalPages;
-
     // Show form
     document.getElementById('formSection').classList.add('visible');
 
     // Extract title from BDO (page 1)
-    setProgress(0, 'Lecture du titre depuis le bulletin SACEM…');
+    setProgress(0, 'Analyse du PDF…');
     const extractedTitle = await extractTitleFromPDF(pdfBytes);
     if (extractedTitle) {
       document.getElementById('titreOeuvre').value = extractedTitle;
-      setProgress(0, '');
     } else {
       setProgress(0, '⚠ Titre non détecté — à saisir manuellement.', 'error');
     }
 
+    // Auto-detect sections
+    setProgress(0, 'Détection des sections…');
+    const sections = await detectSections(pdfBytes, totalPages);
+    if (sections) {
+      document.getElementById('bdo-start').value = sections.bdo.start;
+      document.getElementById('bdo-end').value = sections.bdo.end;
+      document.getElementById('ctr1-start').value = sections.ctr1.start;
+      document.getElementById('ctr1-end').value = sections.ctr1.end;
+
+      if (sections.ctr2) {
+        document.getElementById('toggle-ctr2').checked = true;
+        setSegmentEnabled('ctr2', true);
+        document.getElementById('ctr2-start').value = sections.ctr2.start;
+        document.getElementById('ctr2-end').value = sections.ctr2.end;
+      } else {
+        document.getElementById('toggle-ctr2').checked = false;
+        setSegmentEnabled('ctr2', false);
+      }
+
+      if (sections.div) {
+        document.getElementById('toggle-div').checked = true;
+        setSegmentEnabled('div', true);
+        document.getElementById('div-start').value = sections.div.start;
+        document.getElementById('div-end').value = sections.div.end;
+      } else {
+        document.getElementById('toggle-div').checked = false;
+        setSegmentEnabled('div', false);
+      }
+    } else {
+      // Fallback defaults
+      document.getElementById('div-end').value = totalPages;
+    }
+
+    setProgress(0, '');
     updateZipPreview();
     updatePageDisplays();
 
     // Hide result if re-loading
     document.getElementById('resultCard').classList.remove('visible');
+
+    // Auto-generate ZIP after a short delay (let UI render)
+    setTimeout(() => generateZIP(), 200);
   };
   reader.readAsArrayBuffer(file);
 }
@@ -803,13 +990,12 @@ dropzone.addEventListener('drop', e => {
 });
 
 // ─── Generate ZIP ─────────────────────────────────────────────────────────────
-document.getElementById('generateBtn').addEventListener('click', async () => {
+async function generateZIP() {
   if (!pdfBytes) return;
 
   const titre = sanitizeTitle(document.getElementById('titreOeuvre').value || '');
   if (!titre) {
-    document.getElementById('statusMsg').textContent = '⚠ Veuillez saisir le titre de l\'œuvre.';
-    document.getElementById('statusMsg').className = 'status error';
+    setProgress(0, '⚠ Titre non détecté — saisir manuellement puis cliquer Regénérer.', 'error');
     return;
   }
 
@@ -905,7 +1091,9 @@ document.getElementById('generateBtn').addEventListener('click', async () => {
   }
 
   btn.disabled = false;
-});
+}
+
+document.getElementById('generateBtn').addEventListener('click', () => generateZIP());
 
 // ─── Reset ────────────────────────────────────────────────────────────────────
 document.getElementById('resetLink').addEventListener('click', () => {
