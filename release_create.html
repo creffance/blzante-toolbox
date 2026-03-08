@@ -92,6 +92,8 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .submit-btn:disabled { background: linear-gradient(135deg, #333 0%, #222 100%); color: var(--muted); cursor: not-allowed; }
 .cancel-btn { background: transparent; border: 1px solid var(--border); color: var(--muted); margin-top: 8px; }
 .cancel-btn:hover { border-color: #666; color: var(--text); opacity: 1; }
+.delete-btn { background: transparent; border: 1px solid #4a1a1a; color: #ff6b6b; margin-top: 8px; }
+.delete-btn:hover { border-color: #ff6b6b; opacity: 1; }
 
 .status { margin-top: 12px; font-size: 0.68rem; min-height: 18px; }
 .status.success { color: var(--success); }
@@ -268,6 +270,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 
   <button class="submit-btn" id="submitBtn">⚡ Ajouter</button>
   <button class="submit-btn cancel-btn" id="cancelBtn" style="display:none">Annuler la modification</button>
+  <button class="submit-btn delete-btn" id="deleteBtn" style="display:none">🗑 Supprimer cet événement</button>
   <div class="status" id="statusMsg"></div>
 
   <div class="recent-section">
@@ -296,6 +299,7 @@ const swTags = document.getElementById('swTags');
 const swOptions = swDropdown.querySelectorAll('.sw-option');
 const submitBtn = document.getElementById('submitBtn');
 const cancelBtn = document.getElementById('cancelBtn');
+const deleteBtn = document.getElementById('deleteBtn');
 const pageTitle = document.getElementById('pageTitle');
 const optAnnule = document.getElementById('optAnnule');
 
@@ -371,6 +375,7 @@ function enterEditMode(release) {
   pageTitle.textContent = 'Modifier';
   submitBtn.textContent = '✓ Enregistrer les modifications';
   cancelBtn.style.display = '';
+  deleteBtn.style.display = '';
   optAnnule.style.display = '';
 
   // Fill form
@@ -403,6 +408,7 @@ function exitEditMode() {
   pageTitle.textContent = 'Ajouter une sortie';
   submitBtn.textContent = '⚡ Ajouter';
   cancelBtn.style.display = 'none';
+  deleteBtn.style.display = 'none';
   optAnnule.style.display = 'none';
   resetForm();
 }
@@ -431,6 +437,15 @@ function resetForm() {
 }
 
 cancelBtn.addEventListener('click', exitEditMode);
+
+deleteBtn.addEventListener('click', () => {
+  if (!editId) return;
+  if (!confirm('Supprimer définitivement cet événement ?')) return;
+  let releases = JSON.parse(localStorage.getItem('blzante_releases') || '[]');
+  releases = releases.filter(r => r.id !== editId);
+  localStorage.setItem('blzante_releases', JSON.stringify(releases));
+  window.location.href = 'release_planning.html';
+});
 
 // Check URL for edit param
 const urlParams = new URLSearchParams(window.location.search);
@@ -559,21 +574,9 @@ function renderRecent() {
       <span class="recent-type ${r.type.toLowerCase()}">${r.type}</span>
       <span class="recent-name">${r.artist} — ${r.title}${st}</span>
       <span class="recent-sw">${r.songwriters && r.songwriters.length ? r.songwriters.join(', ') : ''}</span>
-      <span class="recent-delete" title="Supprimer">×</span>
     </div>`;
   }).join('');
 }
-
-document.getElementById('recentList').addEventListener('click', (e) => {
-  const del = e.target.closest('.recent-delete');
-  if (!del) return;
-  const item = del.closest('.recent-item');
-  const id = parseInt(item.dataset.id);
-  let releases = JSON.parse(localStorage.getItem('blzante_releases') || '[]');
-  releases = releases.filter(r => r.id !== id);
-  localStorage.setItem('blzante_releases', JSON.stringify(releases));
-  renderRecent();
-});
 
 // Init
 renderRecent();

@@ -50,7 +50,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 /* Release items */
 .release-list { display: flex; flex-direction: column; gap: 1px; background: var(--border); border: 1px solid var(--border); }
 .release-item {
-  display: grid; grid-template-columns: 80px 64px 56px 1fr auto auto; gap: 12px;
+  display: grid; grid-template-columns: 80px 64px 56px 1fr auto; gap: 12px;
   align-items: center; padding: 12px 14px; background: var(--bg); font-size: 0.72rem;
   transition: background 0.15s;
 }
@@ -63,7 +63,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 }
 .rel-edit:hover { color: var(--text); }
 
-.rel-date { color: var(--muted); font-size: 0.7rem; }
+.rel-date { color: #bbb; font-size: 0.7rem; }
 .rel-type {
   font-size: 0.58rem; letter-spacing: 0.06em; text-transform: uppercase;
   padding: 2px 6px; border: 1px solid var(--border); text-align: center; color: var(--muted);
@@ -78,11 +78,8 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 
 .rel-info { display: flex; flex-direction: column; gap: 2px; }
 .rel-artist { color: #fff; font-weight: 600; }
-.rel-title { color: var(--muted); font-size: 0.68rem; }
+.rel-title { color: #aaa; font-size: 0.68rem; }
 .rel-sw { color: #444; font-size: 0.6rem; }
-
-.rel-delete { cursor: pointer; color: #333; font-size: 0.85rem; transition: color 0.15s; padding: 4px; }
-.rel-delete:hover { color: #ff6b6b; }
 
 .empty-msg { text-align: center; padding: 48px 20px; color: #444; font-size: 0.78rem; }
 .empty-msg a { color: var(--accent); text-decoration: none; }
@@ -93,7 +90,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 @media (max-width: 560px) {
   nav { padding: 16px 20px; }
   .container { padding: 28px 20px 40px; }
-  .release-item { grid-template-columns: 70px 50px 44px 1fr auto auto; gap: 6px; padding: 10px; }
+  .release-item { grid-template-columns: 70px 50px 44px 1fr auto; gap: 6px; padding: 10px; }
 }
 </style>
 </head>
@@ -193,7 +190,6 @@ function render() {
       if (swText) html += `<span class="rel-sw">${swText}</span>`;
       html += `</div>`;
       html += `<a class="rel-edit" href="release_create.html?edit=${r.id}" title="Modifier">edit</a>`;
-      html += `<span class="rel-delete" title="Supprimer">×</span>`;
       html += `</div>`;
     });
 
@@ -210,18 +206,6 @@ document.getElementById('filters').addEventListener('click', (e) => {
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   activeFilter = btn.dataset.filter;
-  render();
-});
-
-// Delete
-document.getElementById('planningContent').addEventListener('click', (e) => {
-  const del = e.target.closest('.rel-delete');
-  if (!del) return;
-  const item = del.closest('.release-item');
-  const id = parseInt(item.dataset.id);
-  let releases = getReleases();
-  releases = releases.filter(r => r.id !== id);
-  saveReleases(releases);
   render();
 });
 
