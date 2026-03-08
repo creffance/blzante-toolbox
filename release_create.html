@@ -94,6 +94,8 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .cancel-btn:hover { border-color: #666; color: var(--text); opacity: 1; }
 .delete-btn { background: transparent; border: 1px solid #4a1a1a; color: #ff6b6b; margin-top: 8px; }
 .delete-btn:hover { border-color: #ff6b6b; opacity: 1; }
+.planning-link { background: transparent; border: 1px solid var(--border); color: var(--text); margin-top: 20px; display: block; }
+.planning-link:hover { border-color: #555; opacity: 1; }
 
 .status { margin-top: 12px; font-size: 0.68rem; min-height: 18px; }
 .status.success { color: var(--success); }
@@ -112,11 +114,6 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
   font-size: 0.58rem; letter-spacing: 0.06em; text-transform: uppercase;
   padding: 2px 6px; border: 1px solid var(--border); color: var(--muted); min-width: 48px; text-align: center;
 }
-.recent-type.certification { color: var(--accent); border-color: #4a3e10; }
-.recent-type.single { color: #8be9fd; border-color: #1a3a4a; }
-.recent-type.ep { color: #bd93f9; border-color: #2a1a4a; }
-.recent-type.album { color: #ff79c6; border-color: #4a1a3a; }
-.recent-type.live { color: #50fa7b; border-color: #1a4a1a; }
 .recent-name { flex: 1; color: #fff; }
 .recent-sw { color: var(--muted); font-size: 0.65rem; }
 .recent-delete { cursor: pointer; color: #444; transition: color 0.15s; font-size: 0.85rem; }
@@ -272,6 +269,8 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
   <button class="submit-btn cancel-btn" id="cancelBtn" style="display:none">Annuler la modification</button>
   <button class="submit-btn delete-btn" id="deleteBtn" style="display:none">🗑 Supprimer cet événement</button>
   <div class="status" id="statusMsg"></div>
+
+  <a class="submit-btn planning-link" id="planningLink" href="release_planning.html" style="display:none; text-align:center; text-decoration:none;">→ Consulter le planning</a>
 
   <div class="recent-section">
     <div class="recent-title">Dernières releases ajoutées</div>
@@ -553,6 +552,7 @@ submitBtn.addEventListener('click', () => {
   } else {
     resetForm();
     renderRecent();
+    document.getElementById('planningLink').style.display = '';
   }
 });
 
