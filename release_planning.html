@@ -130,24 +130,31 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 </div>
 
 <script>
+const DB = 'https://blzante-toolbox-default-rtdb.europe-west1.firebasedatabase.app';
 const MONTHS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 
 let activeFilter = 'all';
 let activeSw = 'all';
+let cachedReleases = [];
 
-function getReleases() {
-  return JSON.parse(localStorage.getItem('blzante_releases') || '[]');
-}
-
-function saveReleases(releases) {
-  localStorage.setItem('blzante_releases', JSON.stringify(releases));
+async function fetchReleases() {
+  try {
+    const res = await fetch(DB + '/releases.json');
+    const data = await res.json();
+    if (!data) { cachedReleases = []; return; }
+    cachedReleases = Object.values(data).sort((a, b) => (a.dateSortable || '').localeCompare(b.dateSortable || ''));
+  } catch (err) {
+    document.getElementById('stats').textContent = '⚠ Erreur de connexion';
+  }
 }
 
 function buildSwFilters() {
-  const releases = getReleases();
   const swSet = new Set();
-  releases.forEach(r => {
-    if (r.songwriters) r.songwriters.forEach(sw => swSet.add(sw));
+  cachedReleases.forEach(r => {
+    if (r.songwriters) {
+      const sw = Array.isArray(r.songwriters) ? r.songwriters : [r.songwriters];
+      sw.forEach(s => swSet.add(s));
+    }
   });
   const sorted = [...swSet].sort();
   const container = document.getElementById('swFilters');
@@ -156,33 +163,34 @@ function buildSwFilters() {
 }
 
 function render() {
-  const releases = getReleases();
-  let filtered = activeFilter === 'all' ? releases : releases.filter(r => r.type === activeFilter);
+  let filtered = activeFilter === 'all' ? cachedReleases : cachedReleases.filter(r => r.type === activeFilter);
   if (activeSw !== 'all') {
-    filtered = filtered.filter(r => r.songwriters && r.songwriters.includes(activeSw));
+    filtered = filtered.filter(r => {
+      if (!r.songwriters) return false;
+      const sw = Array.isArray(r.songwriters) ? r.songwriters : [r.songwriters];
+      return sw.includes(activeSw);
+    });
   }
   const content = document.getElementById('planningContent');
   const stats = document.getElementById('stats');
 
-  stats.textContent = `${filtered.length} release${filtered.length > 1 ? 's' : ''}`;
+  stats.textContent = `${filtered.length} event${filtered.length > 1 ? 's' : ''}`;
 
   if (filtered.length === 0) {
-    content.innerHTML = '<div class="empty-msg">Aucune sortie pour le moment.<br><a href="release_create.html">Ajouter →</a></div>';
+    content.innerHTML = '<div class="empty-msg">Aucun event pour le moment.<br><a href="release_create.html">Ajouter →</a></div>';
     return;
   }
 
-  // Group by month
   const groups = {};
   const today = new Date().toISOString().slice(0, 10);
 
   filtered.forEach(r => {
-    const parts = r.dateSortable.split('-');
+    const parts = (r.dateSortable || '').split('-');
     const key = parts[0] + '-' + parts[1];
     if (!groups[key]) groups[key] = [];
     groups[key].push(r);
   });
 
-  // Sort month keys
   const sortedKeys = Object.keys(groups).sort().reverse();
 
   let html = '';
@@ -197,7 +205,8 @@ function render() {
       const isToday = r.dateSortable === today;
       const isPast = r.dateSortable < today;
       const isAnnule = r.status === 'Annulé';
-      const swText = r.songwriters && r.songwriters.length ? r.songwriters.join(', ') : '';
+      const swArr = r.songwriters ? (Array.isArray(r.songwriters) ? r.songwriters : [r.songwriters]) : [];
+      const swText = swArr.join(', ');
       const st = r.status || 'Confirmé';
       const stClass = st === 'TBC' ? 'tbc' : st === 'Annulé' ? 'annule' : 'confirme';
 
@@ -225,13 +234,12 @@ function render() {
 document.getElementById('filters').addEventListener('click', (e) => {
   const btn = e.target.closest('.filter-btn');
   if (!btn) return;
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('#filters .filter-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   activeFilter = btn.dataset.filter;
   render();
 });
 
-// Songwriter filters
 document.getElementById('swFilters').addEventListener('click', (e) => {
   const btn = e.target.closest('.filter-btn');
   if (!btn) return;
@@ -242,8 +250,12 @@ document.getElementById('swFilters').addEventListener('click', (e) => {
 });
 
 // Init
-buildSwFilters();
-render();
+(async () => {
+  document.getElementById('stats').textContent = 'Chargement...';
+  await fetchReleases();
+  buildSwFilters();
+  render();
+})();
 </script>
 </body>
 </html>

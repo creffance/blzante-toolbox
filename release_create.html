@@ -279,9 +279,25 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 </div>
 
 <script>
+const DB = 'https://blzante-toolbox-default-rtdb.europe-west1.firebasedatabase.app';
+
+// ─── Firebase helpers ───
+async function fbGetAll() {
+  const res = await fetch(DB + '/releases.json');
+  const data = await res.json();
+  if (!data) return [];
+  return Object.values(data).sort((a, b) => (a.dateSortable || '').localeCompare(b.dateSortable || ''));
+}
+async function fbPut(release) {
+  await fetch(DB + '/releases/' + release.id + '.json', {method: 'PUT', body: JSON.stringify(release)});
+}
+async function fbDelete(id) {
+  await fetch(DB + '/releases/' + id + '.json', {method: 'DELETE'});
+}
+
 // ─── State ───
 let selectedSw = [];
-let editId = null; // null = create mode, number = edit mode
+let editId = null;
 
 // ─── Elements ───
 const dateInput = document.getElementById('releaseDate');
@@ -326,7 +342,6 @@ swSearch.addEventListener('focus', () => swDropdown.classList.add('open'));
 document.addEventListener('click', (e) => {
   if (!e.target.closest('.sw-picker')) swDropdown.classList.remove('open');
 });
-
 swSearch.addEventListener('input', () => {
   const q = swSearch.value.toLowerCase();
   swOptions.forEach(opt => {
@@ -334,7 +349,6 @@ swSearch.addEventListener('input', () => {
   });
   swDropdown.classList.add('open');
 });
-
 swDropdown.addEventListener('click', (e) => {
   const opt = e.target.closest('.sw-option');
   if (!opt) return;
@@ -351,25 +365,21 @@ swDropdown.addEventListener('click', (e) => {
   swOptions.forEach(o => o.classList.remove('hidden'));
   swDropdown.classList.remove('open');
 });
-
 function renderTags() {
   swTags.innerHTML = selectedSw.map(name =>
     `<span class="sw-tag">${name}<span class="sw-tag-remove" data-name="${name}">×</span></span>`
   ).join('');
 }
-
 swTags.addEventListener('click', (e) => {
   const rm = e.target.closest('.sw-tag-remove');
   if (!rm) return;
   const name = rm.dataset.name;
   selectedSw = selectedSw.filter(n => n !== name);
-  swOptions.forEach(opt => {
-    if (opt.dataset.name === name) opt.classList.remove('selected');
-  });
+  swOptions.forEach(opt => { if (opt.dataset.name === name) opt.classList.remove('selected'); });
   renderTags();
 });
 
-// ─── Edit mode detection ───
+// ─── Edit mode ───
 function enterEditMode(release) {
   editId = release.id;
   pageTitle.textContent = 'Modifier';
@@ -377,8 +387,6 @@ function enterEditMode(release) {
   cancelBtn.style.display = '';
   deleteBtn.style.display = '';
   optAnnule.style.display = '';
-
-  // Fill form
   dateInput.value = release.date;
   typeSelect.value = release.type;
   statusSelect.value = release.status || 'Confirmé';
@@ -391,14 +399,9 @@ function enterEditMode(release) {
   document.getElementById('certLevel').value = release.certLevel || '';
   document.getElementById('epTrackCount').value = release.epTrackCount || '';
   document.getElementById('epTrackNames').value = release.epTrackNames || '';
-
-  // Songwriters
-  selectedSw = release.songwriters ? [...release.songwriters] : [];
-  swOptions.forEach(opt => {
-    opt.classList.toggle('selected', selectedSw.includes(opt.dataset.name));
-  });
+  selectedSw = release.songwriters ? (Array.isArray(release.songwriters) ? [...release.songwriters] : release.songwriters.split(',')) : [];
+  swOptions.forEach(opt => { opt.classList.toggle('selected', selectedSw.includes(opt.dataset.name)); });
   renderTags();
-
   updateConditionals();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -438,26 +441,27 @@ function resetForm() {
 
 cancelBtn.addEventListener('click', exitEditMode);
 
-deleteBtn.addEventListener('click', () => {
+deleteBtn.addEventListener('click', async () => {
   if (!editId) return;
   if (!confirm('Supprimer définitivement cet événement ?')) return;
-  let releases = JSON.parse(localStorage.getItem('blzante_releases') || '[]');
-  releases = releases.filter(r => r.id !== editId);
-  localStorage.setItem('blzante_releases', JSON.stringify(releases));
+  await fbDelete(editId);
   window.location.href = 'release_planning.html';
 });
 
 // Check URL for edit param
-const urlParams = new URLSearchParams(window.location.search);
-const editParam = urlParams.get('edit');
-if (editParam) {
-  const releases = JSON.parse(localStorage.getItem('blzante_releases') || '[]');
-  const found = releases.find(r => r.id === parseInt(editParam));
-  if (found) enterEditMode(found);
-}
+(async () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const editParam = urlParams.get('edit');
+  if (editParam) {
+    const releases = await fbGetAll();
+    const found = releases.find(r => String(r.id) === editParam);
+    if (found) enterEditMode(found);
+  }
+  renderRecent();
+})();
 
 // ─── Submit ───
-submitBtn.addEventListener('click', () => {
+submitBtn.addEventListener('click', async () => {
   const date = dateInput.value.trim();
   const type = typeSelect.value;
   const releaseStatus = statusSelect.value;
@@ -472,32 +476,13 @@ submitBtn.addEventListener('click', () => {
   const epTrackNames = document.getElementById('epTrackNames').value.trim();
   const statusMsg = document.getElementById('statusMsg');
 
-  // Validate
   if (!date || !/^\d{2}\/\d{2}\/\d{4}$/.test(date)) {
-    statusMsg.textContent = '⚠ Date invalide (DD/MM/YYYY)';
-    statusMsg.className = 'status error';
-    return;
+    statusMsg.textContent = '⚠ Date invalide (DD/MM/YYYY)'; statusMsg.className = 'status error'; return;
   }
-  if (!type) {
-    statusMsg.textContent = '⚠ Choisir un type';
-    statusMsg.className = 'status error';
-    return;
-  }
-  if (!artist) {
-    statusMsg.textContent = '⚠ Nom artiste requis';
-    statusMsg.className = 'status error';
-    return;
-  }
-  if (type === 'Live' && !lieu) {
-    statusMsg.textContent = '⚠ Lieu requis pour un Live';
-    statusMsg.className = 'status error';
-    return;
-  }
-  if (type === 'Certification' && (!certType || !certLevel)) {
-    statusMsg.textContent = '⚠ Choisir le type et le niveau de certification';
-    statusMsg.className = 'status error';
-    return;
-  }
+  if (!type) { statusMsg.textContent = '⚠ Choisir un type'; statusMsg.className = 'status error'; return; }
+  if (!artist) { statusMsg.textContent = '⚠ Nom artiste requis'; statusMsg.className = 'status error'; return; }
+  if (type === 'Live' && !lieu) { statusMsg.textContent = '⚠ Lieu requis pour un Live'; statusMsg.className = 'status error'; return; }
+  if (type === 'Certification' && (!certType || !certLevel)) { statusMsg.textContent = '⚠ Choisir le type et le niveau de certification'; statusMsg.className = 'status error'; return; }
 
   let title = '';
   if (type === 'EP' || type === 'Album') {
@@ -511,76 +496,61 @@ submitBtn.addEventListener('click', () => {
     title = track || artist;
   }
 
-  let releases = JSON.parse(localStorage.getItem('blzante_releases') || '[]');
+  submitBtn.disabled = true;
+  submitBtn.textContent = '⏳ Enregistrement...';
 
-  if (editId) {
-    // Update existing
-    releases = releases.map(r => {
-      if (r.id === editId) {
-        return {
-          ...r, date, dateSortable: date.split('/').reverse().join('-'),
-          type, status: releaseStatus, artist, title,
-          project, track, lieu, ville, certType, certLevel,
-          epTrackCount, epTrackNames,
-          songwriters: [...selectedSw],
-        };
-      }
-      return r;
-    });
-    statusMsg.textContent = `✓ Modifié : ${artist} — ${title}`;
-  } else {
-    // Create new
-    releases.push({
-      id: Date.now(), date, dateSortable: date.split('/').reverse().join('-'),
+  try {
+    const release = {
+      id: editId || Date.now(), date, dateSortable: date.split('/').reverse().join('-'),
       type, status: releaseStatus, artist, title,
       project, track, lieu, ville, certType, certLevel,
       epTrackCount, epTrackNames,
-      songwriters: [...selectedSw], createdAt: new Date().toISOString(),
-    });
-    statusMsg.textContent = `✓ Ajouté : ${artist} — ${title}`;
+      songwriters: [...selectedSw], createdAt: editId ? undefined : new Date().toISOString(),
+    };
+
+    await fbPut(release);
+
+    statusMsg.textContent = editId ? `✓ Modifié : ${artist} — ${title}` : `✓ Ajouté : ${artist} — ${title}`;
+    statusMsg.className = 'status success';
+    setTimeout(() => { statusMsg.textContent = ''; statusMsg.className = 'status'; }, 3000);
+
+    if (editId) {
+      setTimeout(() => { window.location.href = 'release_planning.html'; }, 800);
+    } else {
+      resetForm();
+      renderRecent();
+      document.getElementById('planningLink').style.display = '';
+    }
+  } catch (err) {
+    statusMsg.textContent = '⚠ Erreur réseau — réessaye';
+    statusMsg.className = 'status error';
   }
 
-  releases.sort((a, b) => a.dateSortable.localeCompare(b.dateSortable));
-  localStorage.setItem('blzante_releases', JSON.stringify(releases));
-
-  statusMsg.className = 'status success';
-  setTimeout(() => { statusMsg.textContent = ''; statusMsg.className = 'status'; }, 3000);
-
-  if (editId) {
-    // Return to planning after edit
-    setTimeout(() => { window.location.href = 'release_planning.html'; }, 800);
-  } else {
-    resetForm();
-    renderRecent();
-    document.getElementById('planningLink').style.display = '';
-  }
+  submitBtn.disabled = false;
+  submitBtn.textContent = editId ? '✓ Enregistrer les modifications' : '⚡ Ajouter';
 });
 
 // ─── Recent releases ───
-function renderRecent() {
-  const releases = JSON.parse(localStorage.getItem('blzante_releases') || '[]');
+async function renderRecent() {
+  const releases = await fbGetAll();
   const list = document.getElementById('recentList');
-
   if (releases.length === 0) {
-    list.innerHTML = '<div class="empty-msg">Aucune release pour le moment</div>';
+    list.innerHTML = '<div class="empty-msg">Aucun event pour le moment</div>';
     return;
   }
-
   const recent = [...releases].reverse().slice(0, 10);
   list.innerHTML = recent.map(r => {
     const st = r.status && r.status !== 'Confirmé' ? ` [${r.status}]` : '';
+    const sw = r.songwriters && r.songwriters.length ? (Array.isArray(r.songwriters) ? r.songwriters.join(', ') : r.songwriters) : '';
     return `
     <div class="recent-item" data-id="${r.id}">
       <span class="recent-date">${r.date}</span>
-      <span class="recent-type ${r.type.toLowerCase()}">${r.type}</span>
+      <span class="recent-type">${r.type}</span>
       <span class="recent-name">${r.artist} — ${r.title}${st}</span>
-      <span class="recent-sw">${r.songwriters && r.songwriters.length ? r.songwriters.join(', ') : ''}</span>
+      <span class="recent-sw">${sw}</span>
     </div>`;
   }).join('');
 }
-
-// Init
-renderRecent();
 </script>
 </body>
 </html>
