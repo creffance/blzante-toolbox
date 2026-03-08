@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SACEM Dropbox Sign to ZIP Filezilla — BLZante Toolbox</title>
+<title>SACEM Dépôt to ZIP Filezilla — BLZante Toolbox</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -65,6 +65,15 @@ nav {
   color: #fff;
   text-decoration: none;
   letter-spacing: 0.08em;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nav-logo-img {
+  height: 32px;
+  width: auto;
+  display: block;
 }
 
 .nav-right {
@@ -424,18 +433,18 @@ input[type="file"] {
 <body>
 
 <nav>
-  <a class="nav-logo" href="index.html">BLZante</a>
+  <a class="nav-logo" href="index.html"><img src="data:image/png;base64,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" alt="BLZante" class="nav-logo-img" /><span>BLZante</span></a>
   <div class="nav-right">
     <a class="nav-back" href="index.html">← Toolbox</a>
     <span class="nav-sep">/</span>
-    <span>SACEM Dropbox Sign to ZIP Filezilla</span>
+    <span>SACEM Dépôt to ZIP Filezilla</span>
   </div>
 </nav>
 
 <div class="container">
 
   <div class="page-heading">
-    <h1>SACEM Dropbox Sign<br>to ZIP Filezilla</h1>
+    <h1>SACEM Dépôt<br>to ZIP Filezilla</h1>
   </div>
 
   <!-- DROP ZONE -->
@@ -518,12 +527,6 @@ input[type="file"] {
       <!-- CTR_002 -->
       <div class="segment-card" id="card-ctr2">
         <div class="segment-header">
-          <div class="seg-toggle">
-            <label class="toggle-switch">
-              <input type="checkbox" id="toggle-ctr2" checked />
-              <span class="toggle-track"></span>
-            </label>
-          </div>
           <span class="seg-badge seg-CTR2">CTR_002</span>
           <span class="seg-name">Contrat de coédition</span>
           <span class="seg-pages-display" id="disp-ctr2">—</span>
@@ -535,21 +538,15 @@ input[type="file"] {
             <label>fin</label>
             <input type="number" class="page-input" id="ctr2-end" min="1" value="19" />
           </div>
-          <span class="seg-desc">Contrat de coédition entre éditeurs (optionnel)</span>
+          <span class="seg-desc">Contrat de coédition entre éditeurs</span>
         </div>
       </div>
 
       <!-- DIV_001 -->
       <div class="segment-card" id="card-div">
         <div class="segment-header">
-          <div class="seg-toggle">
-            <label class="toggle-switch">
-              <input type="checkbox" id="toggle-div" checked />
-              <span class="toggle-track"></span>
-            </label>
-          </div>
           <span class="seg-badge seg-DIV">DIV_001</span>
-          <span class="seg-name">Pistes d'audit Dropbox Sign</span>
+          <span class="seg-name">Pistes d'audit (DocuSign / Dropbox Sign)</span>
           <span class="seg-pages-display" id="disp-div">—</span>
         </div>
         <div class="segment-body">
@@ -663,13 +660,6 @@ document.getElementById('dateDepot').value = todayFormatted();
 
 document.getElementById('titreOeuvre').addEventListener('input', updateZipPreview);
 
-document.getElementById('toggle-ctr2').addEventListener('change', e => {
-  setSegmentEnabled('ctr2', e.target.checked);
-});
-document.getElementById('toggle-div').addEventListener('change', e => {
-  setSegmentEnabled('div', e.target.checked);
-});
-
 // Page input listeners
 ['bdo','ctr1','ctr2','div'].forEach(id => {
   ['start','end'].forEach(suffix => {
@@ -678,19 +668,20 @@ document.getElementById('toggle-div').addEventListener('change', e => {
   });
 });
 
-// ─── Extract title from BDO text (page 1) via pdf.js ─────────────────────────
+// ─── Extract title from PDF ────────────────────────────────────────────────────
 async function extractTitleFromPDF(bytes) {
   try {
     // IMPORTANT: pass a copy so the original ArrayBuffer is not transferred/neutered
     const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(bytes) });
     const pdf = await loadingTask.promise;
 
-    // --- Strategy 1: Find "Titre de l'œuvre" on BDO (page 1) ---
-    const title1 = await extractTitleFromBDO(pdf);
+    // --- Strategy 1: Find title in contract "ARTICLE 1" section (pages 3+) ---
+    // More reliable because the title is always clearly formatted in the contract
+    const title1 = await extractTitleFromContract(pdf);
     if (title1) return title1;
 
-    // --- Strategy 2: Find title in contract "ARTICLE 1" section (pages 3+) ---
-    const title2 = await extractTitleFromContract(pdf);
+    // --- Strategy 2: Find "Titre de l'œuvre" on BDO (page 1) ---
+    const title2 = await extractTitleFromBDO(pdf);
     if (title2) return title2;
 
   } catch(e) {
@@ -706,7 +697,29 @@ async function extractTitleFromBDO(pdf) {
     const content = await page.getTextContent();
     const items = content.items;
 
-    // Group text items into lines by Y position
+    // Build raw text from items (pdf.js order)
+    const rawText = items.map(i => i.str).join(' ');
+    console.log('[extractTitleFromBDO] rawText (first 300):', rawText.substring(0, 300));
+
+    // ── Strategy A: "Titre de l'œuvre" followed by title in rawText ──
+    // In pdf.js, items are joined sequentially so "Titre de l'œuvre* MA NGI CI FLOW" appears together
+    const titleRawMatch = rawText.match(/Titre de l.{1,6}uvre[^A-Za-z\u00C0-\u024F]*([A-Z\u00C0-\u00DC][A-Z\u00C0-\u00DC0-9\s''\u2019-]+)/);
+    if (titleRawMatch) {
+      let candidate = titleRawMatch[1].trim();
+      // Stop at field markers that follow the title
+      candidate = candidate
+        .replace(/\s+(Sous|Formulaire|Genre|Dur|CHANSON|A\s*$|B\s+CR|VJ\s*-\s*MA).*/i, '')
+        .replace(/\s+\d{1,2}\s+\d{1,2}(?:\s+\d{2,4})?\s*$/, '')
+        .replace(/\s+[xX]\s*$/, '')
+        .replace(/\s+[A-Z]\s*$/, '')  // trailing single uppercase letter (from next field label)
+        .trim();
+      if (candidate.length >= 2) {
+        console.log(`[extractTitleFromBDO] Found via rawText "Titre de l'oeuvre": "${candidate}"`);
+        return candidate;
+      }
+    }
+
+    // ── Strategy 1: Group by Y position ──
     const lineMap = new Map();
     for (const item of items) {
       const y = Math.round(item.transform[5]);
@@ -714,7 +727,6 @@ async function extractTitleFromBDO(pdf) {
       lineMap.get(y).push(item);
     }
 
-    // Sort lines top-to-bottom
     const sortedYs = [...lineMap.keys()].sort((a, b) => b - a);
     const lines = sortedYs.map(y =>
       lineMap.get(y)
@@ -724,27 +736,24 @@ async function extractTitleFromBDO(pdf) {
         .trim()
     ).filter(l => l.length > 0);
 
-    // Look for "Titre de l'œuvre" or "Titre de l'oeuvre" line
+    // Look for "Titre de l'œuvre" with value on same line (DocuSign format)
     for (const line of lines) {
-      const match = line.match(/Titre de l[''']œuvre[^A-Z]*([\sA-ZÀ-Ü0-9'-]+)/i) ||
-                    line.match(/Titre de l[''']oeuvre[^A-Z]*([\sA-ZÀ-Ü0-9'-]+)/i);
+      // Use .{1,5} to match any quote+œ/oe combination
+      const match = line.match(/Titre de l.{1,5}uvre[^A-Z]*([\sA-Z\u00C0-\u00DC0-9''\u2019-]+)/i);
       if (match) {
         const raw = match[1].trim()
-          .replace(/\s+[*]\s*$/, '')  // remove trailing *
+          .replace(/\s+[*]\s*$/, '')
           .replace(/\s+$/, '')
           .trim();
-        if (raw.length >= 2) return raw;
+        if (raw.length >= 2 && !/^(Sous)/i.test(raw)) return raw;
       }
     }
 
-    // Fallback: look for line containing "Titre de l" then take next significant item on same Y
+    // ── Strategy 2: "Titre de l" label, then look at items after it on same Y ──
     for (let i = 0; i < lines.length; i++) {
-      if (/Titre de l/i.test(lines[i])) {
-        // The value might be on this line after the label, or on a nearby Y line
-        // Try to extract from items on the same Y-band
+      if (/Titre de l/i.test(lines[i]) && !/Sous/i.test(lines[i].substring(0, 4))) {
         const y = sortedYs[i];
         const itemsOnLine = lineMap.get(y).sort((a, b) => a.transform[4] - b.transform[4]);
-        // Find items after "Titre" label (higher X position)
         let afterLabel = false;
         let valueTexts = [];
         for (const item of itemsOnLine) {
@@ -755,6 +764,27 @@ async function extractTitleFromBDO(pdf) {
         }
         const val = valueTexts.join(' ').trim();
         if (val.length >= 2 && !/^(de l|Sous)/i.test(val)) return val;
+      }
+    }
+
+    // ── Strategy 3: Y-grouped "Commentaires" fallback ──
+    let foundCommentaires = false;
+    for (const line of lines) {
+      if (!foundCommentaires) {
+        if (/Commentaires/i.test(line)) foundCommentaires = true;
+        continue;
+      }
+      const cleaned = line.trim();
+      if (cleaned.length < 2) continue;
+      if (/^[\d\s\/\-.:,;]+$/.test(cleaned)) continue;
+      if (/^(ISRC|HORS|Doc ID|CHANSON)/i.test(cleaned)) continue;
+      const titleCandidate = cleaned
+        .replace(/\s+\d[\d\s\/\.]*$/, '')
+        .replace(/\s+[xX]\s*$/, '')
+        .trim();
+      if (titleCandidate.length >= 2) {
+        console.log(`[extractTitleFromBDO] Found via Y-grouped Commentaires: "${titleCandidate}"`);
+        return titleCandidate;
       }
     }
   } catch(e) {
@@ -772,19 +802,61 @@ async function extractTitleFromContract(pdf) {
       const content = await page.getTextContent();
       const fullText = content.items.map(i => i.str).join(' ');
 
-      // Look for pattern like "chanson suivante :" followed by the title
-      const match = fullText.match(/chanson suivante\s*:\s*([A-ZÀ-Ü][A-ZÀ-Ü0-9\s'-]+?)(?:\s+(?:VERSION|Paroles|Version))/i);
-      if (match) {
-        const title = match[1].trim()
-          .replace(/\s+VERSION.*$/i, '')
-          .trim();
-        if (title.length >= 2) return title;
+      // Only process pages that contain "chanson suivante" (= ARTICLE 1 of cession contract)
+      if (!/chanson suivante/i.test(fullText)) continue;
+
+      console.log(`[extractTitleFromContract] Page ${p} has "chanson suivante", analyzing...`);
+      console.log(`[extractTitleFromContract] Text snippet: ${fullText.substring(fullText.search(/chanson suivante/i), fullText.search(/chanson suivante/i) + 300)}`);
+
+      // ── Pattern A: Extract everything between "chanson suivante :" and "Paroles" ──
+      // Then find the title within that block (works for ALL formats)
+      const blockMatch = fullText.match(/chanson suivante\s*:\s*([\s\S]{5,500}?)Paroles/i);
+      if (blockMatch) {
+        const block = blockMatch[1];
+        console.log(`[extractTitleFromContract] Block between chanson/Paroles: "${block.substring(0, 150)}"`);
+
+        // Sub-pattern 1: title in guillemets « ... »
+        const guillemet = block.match(/[\u00AB\u201C]\s*([^\u00BB\u201D]{2,80})\s*[\u00BB\u201D]/);
+        if (guillemet) {
+          const title = guillemet[1].trim();
+          if (title.length >= 2) {
+            console.log(`[extractTitleFromContract] Found via guillemets: "${title}"`);
+            return title;
+          }
+        }
+
+        // Sub-pattern 2: title in ALL CAPS (DocuSign format)
+        // Look for a sequence of uppercase words (at least 2 chars)
+        const capsMatch = block.match(/([A-Z\u00C0-\u00DC][A-Z\u00C0-\u00DC0-9\s''\u2019-]{2,80})/);
+        if (capsMatch) {
+          let title = capsMatch[1].trim()
+            .replace(/\s+(Titre|Sous|VERSION).*$/i, '')
+            .replace(/\s+[A-Z]\s*$/, '')
+            .trim();
+          if (title.length >= 2) {
+            console.log(`[extractTitleFromContract] Found via CAPS in block: "${title}"`);
+            return title;
+          }
+        }
       }
 
-      // Alternative: "objet du contrat" section with title in caps
-      const match2 = fullText.match(/OBJET DU CONTRAT.*?:\s*([A-ZÀ-Ü][A-ZÀ-Ü0-9\s'-]+?)(?:\s+VERSION|\s+Paroles)/i);
-      if (match2) {
-        const title = match2[1].trim();
+      // ── Pattern B: "Titre de l'œuvre : « ... »" directly ──
+      const matchB = fullText.match(/Titre de l.{1,6}uvre\s*:\s*[\u00AB\u201C"]\s*([^\u00BB\u201D"]+)\s*[\u00BB\u201D"]/i);
+      if (matchB) {
+        const title = matchB[1].trim();
+        if (title.length >= 2) {
+          console.log(`[extractTitleFromContract] Found via Titre de l'oeuvre: "${title}"`);
+          return title;
+        }
+      }
+
+      // ── Pattern C: "chanson suivante :" followed directly by CAPS title ──
+      const matchC = fullText.match(/chanson suivante\s*:\s*([A-Z\u00C0-\u00DC][A-Z\u00C0-\u00DC0-9\s''\u2019-]+?)(?:\s+(?:VERSION|Paroles|Version))/i);
+      if (matchC) {
+        let title = matchC[1].trim()
+          .replace(/\s+VERSION.*$/i, '')
+          .replace(/\s+[A-Z]\s*$/, '')
+          .trim();
         if (title.length >= 2) return title;
       }
     }
@@ -800,49 +872,79 @@ async function detectSections(bytes, numPages) {
     const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(bytes) });
     const pdf = await loadingTask.promise;
 
-    // Scan all pages and extract first ~200 chars of text
+    // Scan all pages and extract FULL text content
     const pageTexts = [];
     for (let p = 1; p <= numPages; p++) {
       const page = await pdf.getPage(p);
       const content = await page.getTextContent();
-      const text = content.items.map(i => i.str).join(' ').substring(0, 500);
+      const text = content.items.map(i => i.str).join(' ');
       pageTexts.push(text);
+      console.log(`[detectSections] Page ${p}: ${text.substring(0, 120)}…`);
     }
 
-    // BDO: always starts at page 1, ends at last consecutive "Bulletin de déclaration" or "Partie réservée" page
+    // ── BDO: always starts at page 1, ends at last consecutive BDO page ──
     let bdoEnd = 2; // default
     for (let i = 0; i < numPages; i++) {
       const t = pageTexts[i];
-      if (t.includes('Bulletin de d') || t.includes('Partie réservée')) {
+      if (t.includes('Bulletin de d') || t.includes('Partie réservée') || t.includes('Partie r\u00e9serv\u00e9e')) {
         bdoEnd = i + 1;
       } else {
         break;
       }
     }
 
-    // Find first "CONTRAT DE COÉDITION" or "CONTRAT DE COEDITION" page
+    // ── Find first coédition contract page ──
+    // Instead of matching the title "CONTRAT DE COÉDITION" (which has encoding issues),
+    // we look for the unique combination: the word "COÉDITEURS" (or variants) + "ENTRE" near the top
+    // This pattern ONLY appears on the first page of a coédition contract, never in CTR_001
     let coeditionStart = -1;
     for (let i = bdoEnd; i < numPages; i++) {
-      const t = pageTexts[i].toUpperCase();
-      if (t.includes('CONTRAT DE CO') && t.includes('DITION')) {
-        coeditionStart = i + 1; // 1-indexed
-        break;
+      const raw = pageTexts[i];
+      // Check for COÉDITEURS/COEDITEURS/CO-ÉDITEURS/CO-EDITEURS anywhere on the page
+      // Use permissive regex: CO + 0-3 chars + DITEURS
+      const hasCoediteurs = /CO.{0,3}DITEURS/i.test(raw);
+      if (hasCoediteurs) {
+        // Verify it's the FIRST page of the coédition (has "ENTRE" near the beginning)
+        const first600 = raw.substring(0, 600);
+        const hasEntre = /ENTRE/i.test(first600);
+        console.log(`[detectSections] Page ${i + 1}: has CO*DITEURS=${hasCoediteurs}, ENTRE in first 600=${hasEntre}`);
+        if (hasEntre) {
+          coeditionStart = i + 1;
+          console.log(`[detectSections] → Coédition starts at page ${i + 1}`);
+          break;
+        }
       }
     }
 
-    // Find audit trail: "Certificat de réalisation" or "Certificate of Completion" or Docusign/Dropbox pages
+    // ── Find audit trail ──
+    // DocuSign markers: "Certificat de réalisation", "Certificate of Completion", "Suivi du dossier"
+    // Dropbox Sign markers: "Piste d'audit", "Historique du document", "Dropbox Sign"
+    // Also: "ELECTRONIC RECORD AND SIGNATURE DISCLOSURE", "Divulgation relative"
     let auditStart = -1;
     for (let i = bdoEnd; i < numPages; i++) {
       const t = pageTexts[i];
-      if (t.includes('Certificat de r') || t.includes('Certificate of Completion') ||
-          t.includes('Suivi du dossier') || t.includes('Envelope ID Summary') ||
-          t.includes('Record Tracking')) {
-        auditStart = i + 1; // 1-indexed, first audit page found
+      const tUp = t.toUpperCase();
+      if (
+        // DocuSign
+        t.includes('Certificat de r') ||
+        tUp.includes('CERTIFICATE OF COMPLETION') ||
+        t.includes('Suivi du dossier') ||
+        tUp.includes('ENVELOPE ID SUMMARY') ||
+        tUp.includes('RECORD TRACKING') ||
+        // Dropbox Sign
+        (t.includes('Piste d') && t.includes('audit')) ||
+        (t.includes('Historique du document') && (t.includes('Dropbox') || t.includes('Sign'))) ||
+        (tUp.includes('DROPBOX') && tUp.includes('SIGN') && (tUp.includes('PISTE') || tUp.includes('AUDIT'))) ||
+        // Generic e-signature disclosures (always part of audit)
+        tUp.includes('ELECTRONIC RECORD AND SIGNATURE DISCLOSURE')
+      ) {
+        auditStart = i + 1; // 1-indexed
+        console.log(`[detectSections] Audit trail found at page ${i + 1}`);
         break;
       }
     }
 
-    // CTR_001: from after BDO to before coédition (or before audit if no coédition)
+    // ── CTR_001: from after BDO to before coédition (or before audit if no coédition) ──
     const ctr1Start = bdoEnd + 1;
     let ctr1End;
     if (coeditionStart > 0) {
@@ -853,9 +955,8 @@ async function detectSections(bytes, numPages) {
       ctr1End = numPages;
     }
 
-    // CTR_002 (coédition): from coédition start to before audit
+    // ── CTR_002 (coédition): from coédition start to before audit ──
     let ctr2Start = -1, ctr2End = -1;
-    let hasCtr2 = false;
     if (coeditionStart > 0) {
       ctr2Start = coeditionStart;
       if (auditStart > 0) {
@@ -863,22 +964,21 @@ async function detectSections(bytes, numPages) {
       } else {
         ctr2End = numPages;
       }
-      hasCtr2 = true;
     }
 
-    // DIV_001 (audit trail): from audit start to end
+    // ── DIV_001 (audit trail): from audit start to end ──
     let divStart = -1, divEnd = numPages;
-    let hasDiv = false;
     if (auditStart > 0) {
       divStart = auditStart;
-      hasDiv = true;
     }
+
+    console.log(`[detectSections] BDO: 1-${bdoEnd}, CTR1: ${ctr1Start}-${ctr1End}, CTR2: ${ctr2Start > 0 ? ctr2Start+'-'+ctr2End : 'none'}, DIV: ${divStart > 0 ? divStart+'-'+divEnd : 'none'}`);
 
     return {
       bdo:  { start: 1, end: bdoEnd },
       ctr1: { start: ctr1Start, end: ctr1End },
-      ctr2: hasCtr2 ? { start: ctr2Start, end: ctr2End } : null,
-      div:  hasDiv ? { start: divStart, end: divEnd } : null,
+      ctr2: ctr2Start > 0 ? { start: ctr2Start, end: ctr2End } : null,
+      div:  divStart > 0 ? { start: divStart, end: divEnd } : null,
     };
   } catch(e) {
     console.warn('detectSections error:', e);
@@ -934,23 +1034,22 @@ async function loadFile(file) {
       document.getElementById('ctr1-end').value = sections.ctr1.end;
 
       if (sections.ctr2) {
-        document.getElementById('toggle-ctr2').checked = true;
-        setSegmentEnabled('ctr2', true);
         document.getElementById('ctr2-start').value = sections.ctr2.start;
         document.getElementById('ctr2-end').value = sections.ctr2.end;
       } else {
-        document.getElementById('toggle-ctr2').checked = false;
-        setSegmentEnabled('ctr2', false);
+        // Fallback: CTR_002 not detected — set reasonable defaults
+        const fallbackCtr2Start = sections.ctr1.end + 1;
+        document.getElementById('ctr2-start').value = fallbackCtr2Start;
+        document.getElementById('ctr2-end').value = sections.div ? sections.div.start - 1 : totalPages;
       }
 
       if (sections.div) {
-        document.getElementById('toggle-div').checked = true;
-        setSegmentEnabled('div', true);
         document.getElementById('div-start').value = sections.div.start;
         document.getElementById('div-end').value = sections.div.end;
       } else {
-        document.getElementById('toggle-div').checked = false;
-        setSegmentEnabled('div', false);
+        // Fallback: audit not detected — assume last pages
+        document.getElementById('div-start').value = totalPages;
+        document.getElementById('div-end').value = totalPages;
       }
     } else {
       // Fallback defaults
@@ -1016,17 +1115,13 @@ async function generateZIP() {
   // CTR_001 always
   ranges.push({ name: `CTR_001_${titre}.pdf`, ...getRange('ctr1') });
 
-  // CTR_002 optional
-  if (document.getElementById('toggle-ctr2').checked) {
-    ranges.push({ name: `CTR_002_${titre}.pdf`, ...getRange('ctr2') });
-  }
+  // CTR_002 always
+  ranges.push({ name: `CTR_002_${titre}.pdf`, ...getRange('ctr2') });
 
-  // DIV_001 optional
-  if (document.getElementById('toggle-div').checked) {
-    const divStart = parseInt(document.getElementById('div-start').value) - 1;
-    const divEnd = parseInt(document.getElementById('div-end').value) || totalPages;
-    ranges.push({ name: `DIV_001_${titre}.pdf`, start: divStart, end: divEnd });
-  }
+  // DIV_001 always
+  const divStart = parseInt(document.getElementById('div-start').value) - 1;
+  const divEnd = parseInt(document.getElementById('div-end').value) || totalPages;
+  ranges.push({ name: `DIV_001_${titre}.pdf`, start: divStart, end: divEnd });
 
   // Validate
   for (const r of ranges) {
@@ -1109,11 +1204,6 @@ document.getElementById('resetLink').addEventListener('click', () => {
   document.getElementById('progressBar').classList.remove('visible');
   document.getElementById('progressFill').style.width = '0%';
   document.getElementById('dateDepot').value = todayFormatted();
-  // Reset toggles
-  document.getElementById('toggle-ctr2').checked = true;
-  document.getElementById('toggle-div').checked = true;
-  setSegmentEnabled('ctr2', true);
-  setSegmentEnabled('div', true);
 });
 </script>
 </div><!-- /container -->
