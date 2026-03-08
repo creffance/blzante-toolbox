@@ -35,6 +35,8 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 }
 .filter-btn:hover { border-color: #555; color: var(--text); }
 .filter-btn.active { border-color: var(--accent); color: var(--accent); }
+.sw-filters { margin-top: 4px; }
+.filter-label { font-size: 0.55rem; color: #444; letter-spacing: 0.1em; text-transform: uppercase; margin-right: 4px; }
 
 /* Stats */
 .stats { font-size: 0.62rem; color: var(--muted); letter-spacing: 0.1em; margin-bottom: 16px; }
@@ -119,6 +121,10 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
     <button class="filter-btn" data-filter="Album">Album</button>
   </div>
 
+  <div class="filters sw-filters" id="swFilters">
+    <button class="filter-btn active" data-sw="all">Tout</button>
+  </div>
+
   <div class="stats" id="stats"></div>
   <div id="planningContent"></div>
 </div>
@@ -127,6 +133,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 const MONTHS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 
 let activeFilter = 'all';
+let activeSw = 'all';
 
 function getReleases() {
   return JSON.parse(localStorage.getItem('blzante_releases') || '[]');
@@ -136,9 +143,24 @@ function saveReleases(releases) {
   localStorage.setItem('blzante_releases', JSON.stringify(releases));
 }
 
+function buildSwFilters() {
+  const releases = getReleases();
+  const swSet = new Set();
+  releases.forEach(r => {
+    if (r.songwriters) r.songwriters.forEach(sw => swSet.add(sw));
+  });
+  const sorted = [...swSet].sort();
+  const container = document.getElementById('swFilters');
+  container.innerHTML = '<button class="filter-btn active" data-sw="all">Tout</button>' +
+    sorted.map(sw => `<button class="filter-btn" data-sw="${sw}">${sw}</button>`).join('');
+}
+
 function render() {
   const releases = getReleases();
-  const filtered = activeFilter === 'all' ? releases : releases.filter(r => r.type === activeFilter);
+  let filtered = activeFilter === 'all' ? releases : releases.filter(r => r.type === activeFilter);
+  if (activeSw !== 'all') {
+    filtered = filtered.filter(r => r.songwriters && r.songwriters.includes(activeSw));
+  }
   const content = document.getElementById('planningContent');
   const stats = document.getElementById('stats');
 
@@ -209,7 +231,18 @@ document.getElementById('filters').addEventListener('click', (e) => {
   render();
 });
 
+// Songwriter filters
+document.getElementById('swFilters').addEventListener('click', (e) => {
+  const btn = e.target.closest('.filter-btn');
+  if (!btn) return;
+  document.querySelectorAll('#swFilters .filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  activeSw = btn.dataset.sw;
+  render();
+});
+
 // Init
+buildSwFilters();
 render();
 </script>
 </body>

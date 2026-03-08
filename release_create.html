@@ -142,7 +142,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 </nav>
 
 <div class="container">
-  <div class="page-heading"><h1 id="pageTitle">Ajouter une sortie</h1></div>
+  <div class="page-heading"><h1 id="pageTitle">Ajouter un event</h1></div>
 
   <div class="form-row-3">
     <div class="form-group">
@@ -350,6 +350,7 @@ swDropdown.addEventListener('click', (e) => {
   renderTags();
   swSearch.value = '';
   swOptions.forEach(o => o.classList.remove('hidden'));
+  swDropdown.classList.remove('open');
 });
 
 function renderTags() {
@@ -405,7 +406,7 @@ function enterEditMode(release) {
 
 function exitEditMode() {
   editId = null;
-  pageTitle.textContent = 'Ajouter une sortie';
+  pageTitle.textContent = 'Ajouter un event';
   submitBtn.textContent = '⚡ Ajouter';
   cancelBtn.style.display = 'none';
   deleteBtn.style.display = 'none';
