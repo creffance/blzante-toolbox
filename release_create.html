@@ -33,10 +33,12 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 }
 .form-input:focus, .form-select:focus { border-color: #555; }
 .form-input::placeholder { color: #444; }
+.form-textarea { resize: vertical; min-height: 60px; line-height: 1.6; }
 
 .form-select { cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23777'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
 
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
 
 /* Conditional fields */
 .conditional { display: none; }
@@ -88,6 +90,8 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 }
 .submit-btn:hover { opacity: 0.85; }
 .submit-btn:disabled { background: linear-gradient(135deg, #333 0%, #222 100%); color: var(--muted); cursor: not-allowed; }
+.cancel-btn { background: transparent; border: 1px solid var(--border); color: var(--muted); margin-top: 8px; }
+.cancel-btn:hover { border-color: #666; color: var(--text); opacity: 1; }
 
 .status { margin-top: 12px; font-size: 0.68rem; min-height: 18px; }
 .status.success { color: var(--success); }
@@ -121,6 +125,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
   nav { padding: 16px 20px; }
   .container { padding: 28px 20px 40px; }
   .form-row { grid-template-columns: 1fr; }
+  .form-row-3 { grid-template-columns: 1fr; }
 }
 </style>
 </head>
@@ -130,14 +135,14 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
   <div class="nav-right">
     <a class="nav-back" href="index.html">&larr; Toolbox</a>
     <span class="nav-sep">/</span>
-    <span>Créer une Release</span>
+    <span>Ajouter / Modifier</span>
   </div>
 </nav>
 
 <div class="container">
-  <div class="page-heading"><h1>Créer une Release</h1></div>
+  <div class="page-heading"><h1 id="pageTitle">Ajouter une sortie</h1></div>
 
-  <div class="form-row">
+  <div class="form-row-3">
     <div class="form-group">
       <label class="form-label">Date de sortie</label>
       <input type="text" class="form-input" id="releaseDate" placeholder="DD/MM/YYYY" maxlength="10" autocomplete="off" />
@@ -151,6 +156,14 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
         <option value="Single">Single</option>
         <option value="EP">EP</option>
         <option value="Album">Album</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Statut</label>
+      <select class="form-select" id="releaseStatus">
+        <option value="Confirmé">Confirmé</option>
+        <option value="TBC">TBC</option>
+        <option value="Annulé" class="status-annule" id="optAnnule" style="display:none">Annulé</option>
       </select>
     </div>
   </div>
@@ -185,6 +198,17 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
   <div class="form-group conditional" id="projectGroup">
     <label class="form-label">Nom du projet (EP / Album)</label>
     <input type="text" class="form-input" id="projectName" placeholder="Titre du projet" autocomplete="off" />
+  </div>
+
+  <div class="form-group conditional" id="epTracksGroup">
+    <div class="form-group">
+      <label class="form-label">Nombre de titres (optionnel)</label>
+      <input type="number" class="form-input" id="epTrackCount" placeholder="Ex: 5" min="1" max="30" autocomplete="off" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Noms des tracks (optionnel — un par ligne)</label>
+      <textarea class="form-input form-textarea" id="epTrackNames" placeholder="Track 1&#10;Track 2&#10;Track 3" rows="4"></textarea>
+    </div>
   </div>
 
   <div class="form-group conditional" id="trackGroup">
@@ -242,7 +266,8 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
     <div class="sw-tags" id="swTags"></div>
   </div>
 
-  <button class="submit-btn" id="submitBtn">⚡ Ajouter la release</button>
+  <button class="submit-btn" id="submitBtn">⚡ Ajouter</button>
+  <button class="submit-btn cancel-btn" id="cancelBtn" style="display:none">Annuler la modification</button>
   <div class="status" id="statusMsg"></div>
 
   <div class="recent-section">
@@ -254,9 +279,27 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 <script>
 // ─── State ───
 let selectedSw = [];
+let editId = null; // null = create mode, number = edit mode
+
+// ─── Elements ───
+const dateInput = document.getElementById('releaseDate');
+const typeSelect = document.getElementById('releaseType');
+const statusSelect = document.getElementById('releaseStatus');
+const projectGroup = document.getElementById('projectGroup');
+const trackGroup = document.getElementById('trackGroup');
+const liveGroup = document.getElementById('liveGroup');
+const certGroup = document.getElementById('certGroup');
+const epTracksGroup = document.getElementById('epTracksGroup');
+const swSearch = document.getElementById('swSearch');
+const swDropdown = document.getElementById('swDropdown');
+const swTags = document.getElementById('swTags');
+const swOptions = swDropdown.querySelectorAll('.sw-option');
+const submitBtn = document.getElementById('submitBtn');
+const cancelBtn = document.getElementById('cancelBtn');
+const pageTitle = document.getElementById('pageTitle');
+const optAnnule = document.getElementById('optAnnule');
 
 // ─── Date auto-format ───
-const dateInput = document.getElementById('releaseDate');
 dateInput.addEventListener('input', (e) => {
   let v = e.target.value.replace(/[^0-9]/g, '');
   if (v.length > 2) v = v.slice(0,2) + '/' + v.slice(2);
@@ -265,26 +308,17 @@ dateInput.addEventListener('input', (e) => {
 });
 
 // ─── Conditional fields ───
-const typeSelect = document.getElementById('releaseType');
-const projectGroup = document.getElementById('projectGroup');
-const trackGroup = document.getElementById('trackGroup');
-const liveGroup = document.getElementById('liveGroup');
-const certGroup = document.getElementById('certGroup');
-
-typeSelect.addEventListener('change', () => {
+function updateConditionals() {
   const t = typeSelect.value;
   projectGroup.classList.toggle('visible', t === 'EP' || t === 'Album');
+  epTracksGroup.classList.toggle('visible', t === 'EP');
   trackGroup.classList.toggle('visible', t === 'Single' || t === 'Certification');
   liveGroup.classList.toggle('visible', t === 'Live');
   certGroup.classList.toggle('visible', t === 'Certification');
-});
+}
+typeSelect.addEventListener('change', updateConditionals);
 
 // ─── Songwriter picker ───
-const swSearch = document.getElementById('swSearch');
-const swDropdown = document.getElementById('swDropdown');
-const swTags = document.getElementById('swTags');
-const swOptions = swDropdown.querySelectorAll('.sw-option');
-
 swSearch.addEventListener('focus', () => swDropdown.classList.add('open'));
 document.addEventListener('click', (e) => {
   if (!e.target.closest('.sw-picker')) swDropdown.classList.remove('open');
@@ -331,10 +365,87 @@ swTags.addEventListener('click', (e) => {
   renderTags();
 });
 
+// ─── Edit mode detection ───
+function enterEditMode(release) {
+  editId = release.id;
+  pageTitle.textContent = 'Modifier';
+  submitBtn.textContent = '✓ Enregistrer les modifications';
+  cancelBtn.style.display = '';
+  optAnnule.style.display = '';
+
+  // Fill form
+  dateInput.value = release.date;
+  typeSelect.value = release.type;
+  statusSelect.value = release.status || 'Confirmé';
+  document.getElementById('artistName').value = release.artist || '';
+  document.getElementById('projectName').value = release.project || '';
+  document.getElementById('trackName').value = release.track || '';
+  document.getElementById('liveLieu').value = release.lieu || '';
+  document.getElementById('liveVille').value = release.ville || '';
+  document.getElementById('certType').value = release.certType || '';
+  document.getElementById('certLevel').value = release.certLevel || '';
+  document.getElementById('epTrackCount').value = release.epTrackCount || '';
+  document.getElementById('epTrackNames').value = release.epTrackNames || '';
+
+  // Songwriters
+  selectedSw = release.songwriters ? [...release.songwriters] : [];
+  swOptions.forEach(opt => {
+    opt.classList.toggle('selected', selectedSw.includes(opt.dataset.name));
+  });
+  renderTags();
+
+  updateConditionals();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function exitEditMode() {
+  editId = null;
+  pageTitle.textContent = 'Ajouter une sortie';
+  submitBtn.textContent = '⚡ Ajouter';
+  cancelBtn.style.display = 'none';
+  optAnnule.style.display = 'none';
+  resetForm();
+}
+
+function resetForm() {
+  dateInput.value = '';
+  typeSelect.value = '';
+  statusSelect.value = 'Confirmé';
+  document.getElementById('artistName').value = '';
+  document.getElementById('projectName').value = '';
+  document.getElementById('trackName').value = '';
+  document.getElementById('liveLieu').value = '';
+  document.getElementById('liveVille').value = '';
+  document.getElementById('certType').value = '';
+  document.getElementById('certLevel').value = '';
+  document.getElementById('epTrackCount').value = '';
+  document.getElementById('epTrackNames').value = '';
+  projectGroup.classList.remove('visible');
+  trackGroup.classList.remove('visible');
+  liveGroup.classList.remove('visible');
+  certGroup.classList.remove('visible');
+  epTracksGroup.classList.remove('visible');
+  selectedSw = [];
+  swOptions.forEach(o => o.classList.remove('selected'));
+  renderTags();
+}
+
+cancelBtn.addEventListener('click', exitEditMode);
+
+// Check URL for edit param
+const urlParams = new URLSearchParams(window.location.search);
+const editParam = urlParams.get('edit');
+if (editParam) {
+  const releases = JSON.parse(localStorage.getItem('blzante_releases') || '[]');
+  const found = releases.find(r => r.id === parseInt(editParam));
+  if (found) enterEditMode(found);
+}
+
 // ─── Submit ───
-document.getElementById('submitBtn').addEventListener('click', () => {
+submitBtn.addEventListener('click', () => {
   const date = dateInput.value.trim();
   const type = typeSelect.value;
+  const releaseStatus = statusSelect.value;
   const artist = document.getElementById('artistName').value.trim();
   const project = document.getElementById('projectName').value.trim();
   const track = document.getElementById('trackName').value.trim();
@@ -342,38 +453,41 @@ document.getElementById('submitBtn').addEventListener('click', () => {
   const ville = document.getElementById('liveVille').value.trim();
   const certType = document.getElementById('certType').value;
   const certLevel = document.getElementById('certLevel').value;
-  const status = document.getElementById('statusMsg');
+  const epTrackCount = document.getElementById('epTrackCount').value.trim();
+  const epTrackNames = document.getElementById('epTrackNames').value.trim();
+  const statusMsg = document.getElementById('statusMsg');
 
   // Validate
   if (!date || !/^\d{2}\/\d{2}\/\d{4}$/.test(date)) {
-    status.textContent = '⚠ Date invalide (DD/MM/YYYY)';
-    status.className = 'status error';
+    statusMsg.textContent = '⚠ Date invalide (DD/MM/YYYY)';
+    statusMsg.className = 'status error';
     return;
   }
   if (!type) {
-    status.textContent = '⚠ Choisir un type de release';
-    status.className = 'status error';
+    statusMsg.textContent = '⚠ Choisir un type';
+    statusMsg.className = 'status error';
     return;
   }
   if (!artist) {
-    status.textContent = '⚠ Nom artiste requis';
-    status.className = 'status error';
+    statusMsg.textContent = '⚠ Nom artiste requis';
+    statusMsg.className = 'status error';
     return;
   }
   if (type === 'Live' && !lieu) {
-    status.textContent = '⚠ Lieu requis pour un Live';
-    status.className = 'status error';
+    statusMsg.textContent = '⚠ Lieu requis pour un Live';
+    statusMsg.className = 'status error';
     return;
   }
   if (type === 'Certification' && (!certType || !certLevel)) {
-    status.textContent = '⚠ Choisir le type et le niveau de certification';
-    status.className = 'status error';
+    statusMsg.textContent = '⚠ Choisir le type et le niveau de certification';
+    statusMsg.className = 'status error';
     return;
   }
 
   let title = '';
   if (type === 'EP' || type === 'Album') {
     title = project || artist;
+    if (type === 'EP' && epTrackCount) title += ' (' + epTrackCount + ' titres)';
   } else if (type === 'Live') {
     title = lieu + (ville ? ' — ' + ville : '');
   } else if (type === 'Certification') {
@@ -382,50 +496,48 @@ document.getElementById('submitBtn').addEventListener('click', () => {
     title = track || artist;
   }
 
-  const release = {
-    id: Date.now(),
-    date,
-    dateSortable: date.split('/').reverse().join('-'),
-    type,
-    artist,
-    title,
-    lieu: lieu || '',
-    ville: ville || '',
-    certType: certType || '',
-    certLevel: certLevel || '',
-    songwriters: [...selectedSw],
-    createdAt: new Date().toISOString(),
-  };
+  let releases = JSON.parse(localStorage.getItem('blzante_releases') || '[]');
 
-  // Save
-  const releases = JSON.parse(localStorage.getItem('blzante_releases') || '[]');
-  releases.push(release);
+  if (editId) {
+    // Update existing
+    releases = releases.map(r => {
+      if (r.id === editId) {
+        return {
+          ...r, date, dateSortable: date.split('/').reverse().join('-'),
+          type, status: releaseStatus, artist, title,
+          project, track, lieu, ville, certType, certLevel,
+          epTrackCount, epTrackNames,
+          songwriters: [...selectedSw],
+        };
+      }
+      return r;
+    });
+    statusMsg.textContent = `✓ Modifié : ${artist} — ${title}`;
+  } else {
+    // Create new
+    releases.push({
+      id: Date.now(), date, dateSortable: date.split('/').reverse().join('-'),
+      type, status: releaseStatus, artist, title,
+      project, track, lieu, ville, certType, certLevel,
+      epTrackCount, epTrackNames,
+      songwriters: [...selectedSw], createdAt: new Date().toISOString(),
+    });
+    statusMsg.textContent = `✓ Ajouté : ${artist} — ${title}`;
+  }
+
   releases.sort((a, b) => a.dateSortable.localeCompare(b.dateSortable));
   localStorage.setItem('blzante_releases', JSON.stringify(releases));
 
-  // Reset form
-  dateInput.value = '';
-  typeSelect.value = '';
-  document.getElementById('artistName').value = '';
-  document.getElementById('projectName').value = '';
-  document.getElementById('trackName').value = '';
-  document.getElementById('liveLieu').value = '';
-  document.getElementById('liveVille').value = '';
-  document.getElementById('certType').value = '';
-  document.getElementById('certLevel').value = '';
-  projectGroup.classList.remove('visible');
-  trackGroup.classList.remove('visible');
-  liveGroup.classList.remove('visible');
-  certGroup.classList.remove('visible');
-  selectedSw = [];
-  swOptions.forEach(o => o.classList.remove('selected'));
-  renderTags();
+  statusMsg.className = 'status success';
+  setTimeout(() => { statusMsg.textContent = ''; statusMsg.className = 'status'; }, 3000);
 
-  status.textContent = `✓ Release ajoutée : ${artist} — ${title}`;
-  status.className = 'status success';
-  setTimeout(() => { status.textContent = ''; status.className = 'status'; }, 3000);
-
-  renderRecent();
+  if (editId) {
+    // Return to planning after edit
+    setTimeout(() => { window.location.href = 'release_planning.html'; }, 800);
+  } else {
+    resetForm();
+    renderRecent();
+  }
 });
 
 // ─── Recent releases ───
@@ -438,17 +550,18 @@ function renderRecent() {
     return;
   }
 
-  // Show last 10 (newest first)
   const recent = [...releases].reverse().slice(0, 10);
-  list.innerHTML = recent.map(r => `
+  list.innerHTML = recent.map(r => {
+    const st = r.status && r.status !== 'Confirmé' ? ` [${r.status}]` : '';
+    return `
     <div class="recent-item" data-id="${r.id}">
       <span class="recent-date">${r.date}</span>
       <span class="recent-type ${r.type.toLowerCase()}">${r.type}</span>
-      <span class="recent-name">${r.artist} — ${r.title}</span>
-      <span class="recent-sw">${r.songwriters.length ? r.songwriters.join(', ') : ''}</span>
+      <span class="recent-name">${r.artist} — ${r.title}${st}</span>
+      <span class="recent-sw">${r.songwriters && r.songwriters.length ? r.songwriters.join(', ') : ''}</span>
       <span class="recent-delete" title="Supprimer">×</span>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 }
 
 document.getElementById('recentList').addEventListener('click', (e) => {
