@@ -164,7 +164,7 @@ function render() {
   });
 
   // Sort month keys
-  const sortedKeys = Object.keys(groups).sort();
+  const sortedKeys = Object.keys(groups).sort().reverse();
 
   let html = '';
   sortedKeys.forEach(key => {
@@ -174,7 +174,7 @@ function render() {
     html += `<div class="month-label">${monthName} ${year}</div>`;
     html += `<div class="release-list">`;
 
-    groups[key].forEach(r => {
+    groups[key].reverse().forEach(r => {
       const isToday = r.dateSortable === today;
       const isPast = r.dateSortable < today;
       const isAnnule = r.status === 'Annulé';
