@@ -263,7 +263,13 @@ document.getElementById('bgFileInput').addEventListener('change', e => {
 function addPlacement(val) {
   const div = document.createElement('div'); div.className = 'dynamic-item';
   div.innerHTML = `<input type="text" class="form-input" placeholder="Nom de l'artiste" value="${val||''}" /><button class="remove-btn" onclick="this.parentElement.remove()">×</button>`;
+  const input = div.querySelector('input');
+  input.addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return; e.preventDefault();
+    if (input.value.trim()) { addPlacement(); }
+  });
   document.getElementById('placementsList').appendChild(div);
+  if (!val) input.focus();
 }
 document.getElementById('addPlacement').addEventListener('click', () => addPlacement());
 

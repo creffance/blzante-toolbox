@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Roster — BLZante Toolbox</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Syne+Mono&display=swap');
 :root { --bg: #0a0a0a; --surface: #141414; --border: #262626; --text: #e8e8e8; --muted: #777; --accent: #e8c547; }
@@ -81,6 +83,37 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
   .entry-card { padding-left: 16px; }
   .card-inner { max-width: 100%; }
 }
+
+/* PDF render (hidden) */
+#pdfRender {
+  position: fixed; left: -9999px; top: 0; z-index: -1;
+  width: 1120px; height: 630px; /* 16:9 landscape */
+  background: #0a0a0a; color: #e8e8e8;
+  font-family: 'Syne', Arial, sans-serif; overflow: hidden;
+}
+.pdf-bg { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0.2; }
+.pdf-content { position: relative; z-index: 1; display: flex; height: 100%; padding: 40px; gap: 40px; }
+.pdf-left { flex: 0 0 280px; display: flex; flex-direction: column; align-items: center; gap: 16px; padding-top: 20px; }
+.pdf-photo { width: 140px; height: 140px; border-radius: 50%; object-fit: cover; border: 3px solid #262626; }
+.pdf-photo-ph { width: 140px; height: 140px; border-radius: 50%; background: #222; border: 3px solid #262626; display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: 800; color: #555; }
+.pdf-name { font-size: 1.8rem; font-weight: 800; color: #fff; text-align: center; line-height: 1.2; }
+.pdf-types { font-size: 0.7rem; color: #888; text-align: center; }
+.pdf-skills { font-size: 0.65rem; color: #555; text-align: center; }
+.pdf-socials { display: flex; gap: 8px; margin-top: auto; }
+.pdf-socials a { color: #888; }
+.pdf-right { flex: 1; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
+.pdf-bio { font-size: 0.78rem; color: #aaa; line-height: 1.6; font-family: 'Syne Mono', monospace; }
+.pdf-section-label { font-size: 0.6rem; color: #555; letter-spacing: 0.16em; text-transform: uppercase; border-bottom: 1px solid #262626; padding-bottom: 4px; }
+.pdf-tags { display: flex; gap: 5px; flex-wrap: wrap; }
+.pdf-tag { font-size: 0.62rem; color: #ccc; padding: 3px 8px; border: 1px solid #333; font-family: 'Syne Mono', monospace; }
+.pdf-majors { display: flex; gap: 8px; flex-wrap: wrap; }
+.pdf-major { display: flex; gap: 8px; align-items: center; border: 1px solid #333; padding: 6px 10px; }
+.pdf-major img { width: 44px; height: 44px; object-fit: cover; }
+.pdf-major-info { font-size: 0.65rem; color: #aaa; line-height: 1.3; }
+.pdf-major-info strong { color: #fff; }
+.pdf-certs { display: flex; gap: 5px; flex-wrap: wrap; }
+.pdf-cert { display: flex; align-items: center; gap: 5px; font-size: 0.6rem; color: #e8c547; padding: 3px 8px; border: 1px solid #4a3e10; font-family: 'Syne Mono', monospace; }
+.pdf-cert img { width: 28px; height: 28px; object-fit: cover; }
 </style>
 </head>
 <body>
@@ -92,6 +125,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
   <div class="header-row"><h1>Roster</h1><a class="add-link" href="roster_create.html">+ Ajouter un artiste</a></div>
   <div id="rosterContent"><div class="loading">Chargement...</div></div>
 </div>
+<div id="pdfRender"></div>
 
 <script>
 const DB = 'https://blzante-toolbox-default-rtdb.europe-west1.firebasedatabase.app';
@@ -198,6 +232,10 @@ const SOCIAL_ICONS = {
     html += '</div>';
     content.innerHTML = html;
 
+    // Store artists for PDF
+    window._rosterArtists = {};
+    artists.forEach(a => { window._rosterArtists[a.id] = a; });
+
     // Toggle
     content.addEventListener('click', e => {
       const header = e.target.closest('.entry-header');
@@ -207,15 +245,119 @@ const SOCIAL_ICONS = {
     });
 
     // PDF download
-    content.addEventListener('click', e => {
+    content.addEventListener('click', async e => {
       const pdfBtn = e.target.closest('.entry-btn.pdf');
       if (!pdfBtn) return;
       e.stopPropagation();
-      alert('Export PDF — bientôt disponible');
+      const id = pdfBtn.dataset.id;
+      const a = window._rosterArtists[id];
+      if (!a) return;
+
+      pdfBtn.textContent = '⏳';
+      try { await generatePDF(a); } catch(err) { console.error(err); alert('Erreur PDF'); }
+      pdfBtn.textContent = 'PDF';
     });
 
   } catch(err) { document.getElementById('rosterContent').innerHTML = '<div class="loading">⚠ Erreur de connexion</div>'; }
 })();
+
+async function generatePDF(a) {
+  const render = document.getElementById('pdfRender');
+  const types = a.types ? (Array.isArray(a.types) ? a.types : [a.types]) : [];
+  const skills = a.skills ? (Array.isArray(a.skills) ? a.skills : [a.skills]) : [];
+  const imgs = a.images ? (Array.isArray(a.images) ? a.images : Object.values(a.images)) : [];
+  const primary = imgs.find(i => i.primary) || imgs[0];
+  const bgSrc = a.bg || (imgs.length > 1 ? (imgs.find(i => !i.primary) || imgs[0] || {}).src : '') || DEFAULT_BG;
+  const placements = a.placements ? (Array.isArray(a.placements) ? a.placements : Object.values(a.placements)) : [];
+  const majors = a.majors ? (Array.isArray(a.majors) ? a.majors : Object.values(a.majors)) : [];
+  const certs = a.certs ? (Array.isArray(a.certs) ? a.certs : Object.values(a.certs)) : [];
+  const initial = (a.name || '?')[0];
+
+  let h = '';
+  if (bgSrc) h += `<div class="pdf-bg" style="background-image:url('${bgSrc}')"></div>`;
+  h += '<div class="pdf-content">';
+
+  // Left column
+  h += '<div class="pdf-left">';
+  if (primary) h += `<img class="pdf-photo" src="${primary.src}" crossorigin="anonymous" />`;
+  else h += `<div class="pdf-photo-ph">${initial}</div>`;
+  h += `<div class="pdf-name">${a.name}</div>`;
+  if (types.length) h += `<div class="pdf-types">${types.join(' · ')}</div>`;
+  if (skills.length) h += `<div class="pdf-skills">${skills.join(' · ')}</div>`;
+
+  // Social icons
+  const socials = ['instagram','tiktok','spotify','ytChannel','youtube'].filter(k => a[k]);
+  if (socials.length) {
+    h += '<div class="pdf-socials">';
+    socials.forEach(k => { h += `<a href="${a[k]}">${SOCIAL_ICONS[k]}</a>`; });
+    h += '</div>';
+  }
+  h += '</div>';
+
+  // Right column
+  h += '<div class="pdf-right">';
+  if (a.bio) h += `<div class="pdf-bio">${a.bio}</div>`;
+
+  if (placements.length) {
+    h += '<div class="pdf-section-label">Placements</div>';
+    h += '<div class="pdf-tags">';
+    placements.forEach(p => { const n = typeof p === 'string' ? p : p.name || ''; if (n) h += `<span class="pdf-tag">${n}</span>`; });
+    h += '</div>';
+  }
+
+  if (majors.length) {
+    h += '<div class="pdf-section-label">Placements majeurs</div>';
+    h += '<div class="pdf-majors">';
+    majors.forEach(m => {
+      h += '<div class="pdf-major">';
+      if (m.artwork) h += `<img src="${m.artwork}" crossorigin="anonymous" />`;
+      h += `<div class="pdf-major-info"><strong>${m.artist || ''}</strong><br>${m.title || ''}</div></div>`;
+    });
+    h += '</div>';
+  }
+
+  if (certs.length) {
+    h += '<div class="pdf-section-label">Certifications</div>';
+    h += '<div class="pdf-certs">';
+    certs.forEach(c => {
+      const label = [c.level, c.type, c.artist, c.project].filter(Boolean).join(' · ');
+      h += '<span class="pdf-cert">';
+      if (c.artwork) h += `<img src="${c.artwork}" crossorigin="anonymous" />`;
+      h += label + '</span>';
+    });
+    h += '</div>';
+  }
+
+  h += '</div></div>';
+  render.innerHTML = h;
+
+  // Wait for images to load
+  const allImgs = render.querySelectorAll('img');
+  await Promise.all(Array.from(allImgs).map(img => {
+    if (img.complete) return Promise.resolve();
+    return new Promise(res => { img.onload = res; img.onerror = res; });
+  }));
+
+  // Small delay for rendering
+  await new Promise(r => setTimeout(r, 200));
+
+  // Render to canvas
+  const canvas = await html2canvas(render, {
+    width: 1120, height: 630, scale: 2,
+    backgroundColor: '#0a0a0a', useCORS: true, allowTaint: true,
+  });
+
+  // Generate PDF (landscape A4-ish)
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [297, 167] });
+  const imgData = canvas.toDataURL('image/jpeg', 0.92);
+  pdf.addImage(imgData, 'JPEG', 0, 0, 297, 167);
+  const now = new Date();
+  const yyyymmdd = now.getFullYear() + String(now.getMonth()+1).padStart(2,'0') + String(now.getDate()).padStart(2,'0');
+  pdf.save(yyyymmdd + '_' + (a.name || 'artiste').replace(/[^a-zA-Z0-9]/g, '_') + '_fiche.pdf');
+
+  render.innerHTML = '';
+}
 </script>
 </body>
 </html>
