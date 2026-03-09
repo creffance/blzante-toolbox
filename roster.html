@@ -79,8 +79,9 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 /* Section titles */
 .card-section-title {
   font-family: 'Syne', sans-serif; font-size: 0.6rem; font-weight: 700;
-  letter-spacing: 0.14em; text-transform: uppercase; color: #888;
-  margin: 10px 0 6px; padding-bottom: 3px; border-bottom: 1px solid rgba(255,255,255,0.06);
+  letter-spacing: 0.14em; text-transform: uppercase; color: #bbb;
+  margin: 12px 0 6px; padding-top: 10px; padding-bottom: 4px;
+  border-top: 1px solid rgba(255,255,255,0.06); border-bottom: 1px solid rgba(255,255,255,0.06);
 }
 
 .card-placements { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 8px; }
@@ -107,38 +108,38 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
   .card-inner { max-width: 100%; }
 }
 
-/* PDF render (hidden) — matches card layout */
+/* PDF render (hidden) — A4 portrait proportions */
 #pdfRender {
   position: fixed; left: -9999px; top: 0; z-index: -1;
-  width: 800px; height: 800px;
+  width: 794px; height: 1123px; /* A4 ratio */
   background: #0a0a0a; color: #e8e8e8;
   font-family: 'Syne', Arial, sans-serif; overflow: hidden;
 }
 .pdf-bg { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0.2; }
-.pdf-content { position: relative; z-index: 1; padding: 28px; height: 100%; display: flex; flex-direction: column; overflow: hidden; }
-.pdf-top { display: flex; align-items: flex-start; gap: 18px; margin-bottom: 8px; }
-.pdf-photo { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #262626; flex-shrink: 0; }
-.pdf-photo-ph { width: 80px; height: 80px; border-radius: 50%; background: #222; border: 3px solid #262626; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 800; color: #555; }
-.pdf-name { font-size: 1.6rem; font-weight: 800; color: #fff; line-height: 1.2; }
-.pdf-types { font-size: 0.7rem; color: #888; margin-top: 3px; }
-.pdf-skills { font-size: 0.65rem; color: #666; margin-top: 2px; }
-.pdf-playlist { display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; padding: 6px 14px; border: 1px solid rgba(255,0,0,0.35); background: rgba(255,0,0,0.06); color: #ccc; font-size: 0.65rem; font-family: 'Syne Mono', monospace; text-decoration: none; }
-.pdf-bio { font-size: 0.72rem; color: #d0d0d0; line-height: 1.6; font-family: 'Syne Mono', monospace; text-align: center; margin: 10px 0; padding: 14px 18px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); }
-.pdf-section-label { font-size: 0.65rem; color: #888; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700; margin: 10px 0 5px; padding-bottom: 3px; border-bottom: 1px solid rgba(255,255,255,0.06); }
-.pdf-tags { display: flex; gap: 5px; flex-wrap: wrap; }
-.pdf-tag { font-size: 0.62rem; color: #ddd; padding: 3px 9px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.05); font-family: 'Syne Mono', monospace; }
-.pdf-majors { display: flex; gap: 6px; flex-wrap: wrap; }
-.pdf-major { display: flex; gap: 6px; align-items: center; border: 1px solid #333; padding: 5px 8px; }
-.pdf-major img { width: 40px; height: 40px; object-fit: cover; }
-.pdf-major-info { font-size: 0.6rem; color: #aaa; line-height: 1.3; }
+.pdf-content { position: relative; z-index: 1; padding: 40px; height: 100%; display: flex; flex-direction: column; overflow: hidden; }
+.pdf-top { display: flex; align-items: flex-start; gap: 20px; margin-bottom: 12px; }
+.pdf-photo { width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 3px solid #262626; flex-shrink: 0; }
+.pdf-photo-ph { width: 90px; height: 90px; border-radius: 50%; background: #222; border: 3px solid #262626; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; font-weight: 800; color: #555; }
+.pdf-name { font-size: 1.8rem; font-weight: 800; color: #fff; line-height: 1.2; }
+.pdf-types { font-size: 0.75rem; color: #888; margin-top: 4px; }
+.pdf-skills { font-size: 0.68rem; color: #666; margin-top: 3px; }
+.pdf-playlist { display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; padding: 8px 16px; border: 1px solid rgba(255,0,0,0.35); background: rgba(255,0,0,0.06); color: #ccc; font-size: 0.68rem; font-family: 'Syne Mono', monospace; text-decoration: none; }
+.pdf-bio { font-size: 0.76rem; color: #d0d0d0; line-height: 1.7; font-family: 'Syne Mono', monospace; text-align: center; margin: 16px 0; padding: 16px 22px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); }
+.pdf-section-label { font-size: 0.7rem; color: #bbb; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700; margin: 18px 0 8px; padding-top: 14px; padding-bottom: 5px; border-top: 1px solid rgba(255,255,255,0.06); border-bottom: 1px solid rgba(255,255,255,0.06); }
+.pdf-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.pdf-tag { font-size: 0.66rem; color: #ddd; padding: 4px 10px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.05); font-family: 'Syne Mono', monospace; }
+.pdf-majors { display: flex; gap: 8px; flex-wrap: wrap; }
+.pdf-major { display: flex; gap: 8px; align-items: center; border: 1px solid #333; padding: 6px 10px; }
+.pdf-major img { width: 44px; height: 44px; object-fit: cover; }
+.pdf-major-info { font-size: 0.66rem; color: #aaa; line-height: 1.3; }
 .pdf-major-info strong { color: #fff; }
-.pdf-certs { display: flex; flex-direction: column; gap: 3px; }
-.pdf-cert { display: flex; align-items: center; gap: 6px; font-size: 0.6rem; color: #e8c547; padding: 3px 8px; border: 1px solid #4a3e10; font-family: 'Syne Mono', monospace; }
-.pdf-cert img { width: 28px; height: 28px; object-fit: cover; }
-.pdf-cert-emoji { font-size: 0.9rem; }
-.pdf-socials { display: flex; gap: 10px; margin-top: auto; justify-content: center; padding-top: 10px; }
+.pdf-certs { display: flex; flex-direction: column; gap: 4px; }
+.pdf-cert { display: flex; align-items: center; gap: 8px; font-size: 0.64rem; color: #e8c547; padding: 4px 10px; border: 1px solid #4a3e10; font-family: 'Syne Mono', monospace; }
+.pdf-cert img { width: 30px; height: 30px; object-fit: cover; }
+.pdf-cert-emoji { font-size: 1rem; }
+.pdf-socials { display: flex; gap: 12px; margin-top: auto; justify-content: center; padding-top: 16px; }
 .pdf-socials a { color: #ddd; }
-.pdf-socials svg { width: 22px; height: 22px; }
+.pdf-socials svg { width: 26px; height: 26px; }
 </style>
 </head>
 <body>
@@ -418,16 +419,32 @@ async function generatePDF(a) {
   // Small delay for rendering
   await new Promise(r => setTimeout(r, 200));
 
-  // Render to canvas
+  // Render to canvas (A4 proportions)
   const canvas = await html2canvas(render, {
-    width: 800, height: 800, scale: 2,
+    width: 794, height: 1123, scale: 2,
     backgroundColor: '#0a0a0a', useCORS: true, allowTaint: true,
   });
 
   const { jsPDF } = window.jspdf;
-  const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [210, 210] });
+  const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const imgData = canvas.toDataURL('image/jpeg', 0.92);
-  pdf.addImage(imgData, 'JPEG', 0, 0, 210, 210);
+  pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
+
+  // Add clickable links over rendered positions
+  const scaleX = 210 / 794;
+  const scaleY = 297 / 1123;
+  render.querySelectorAll('a[href]').forEach(link => {
+    const rect = link.getBoundingClientRect();
+    const renderRect = render.getBoundingClientRect();
+    const x = (rect.left - renderRect.left) * scaleX;
+    const y = (rect.top - renderRect.top) * scaleY;
+    const w = rect.width * scaleX;
+    const h = rect.height * scaleY;
+    if (w > 0 && h > 0) {
+      pdf.link(x, y, w, h, { url: link.href });
+    }
+  });
+
   const now = new Date();
   const yyyymmdd = now.getFullYear() + String(now.getMonth()+1).padStart(2,'0') + String(now.getDate()).padStart(2,'0');
   pdf.save(yyyymmdd + '_' + (a.name || 'artiste').replace(/[^a-zA-Z0-9]/g, '_') + '_fiche.pdf');
