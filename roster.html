@@ -14,173 +14,156 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .nav-logo { font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 800; color: #fff; text-decoration: none; letter-spacing: 0.08em; display: flex; align-items: center; gap: 10px; }
 .nav-logo-img { height: 28px; width: auto; display: block; }
 .nav-right { display: flex; align-items: center; gap: 12px; font-size: 0.65rem; color: var(--muted); letter-spacing: 0.14em; text-transform: uppercase; }
-.nav-back { color: var(--muted); text-decoration: none; font-size: 0.65rem; letter-spacing: 0.14em; text-transform: uppercase; transition: color 0.15s; }
+.nav-back { color: var(--muted); text-decoration: none; transition: color 0.15s; }
 .nav-back:hover { color: #fff; }
 .nav-sep { color: var(--border); }
-.container { max-width: 1000px; margin: 0 auto; padding: 40px 40px 60px; position: relative; z-index: 1; flex: 1; width: 100%; }
-
+.container { max-width: 900px; margin: 0 auto; padding: 40px 40px 60px; position: relative; z-index: 1; flex: 1; width: 100%; }
 .header-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; border-bottom: 1px solid var(--border); padding-bottom: 20px; }
-.header-row h1 { font-family: 'Syne', sans-serif; font-size: 1.3rem; font-weight: 800; color: var(--text); }
-.add-btn { font-family: 'Syne', sans-serif; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 8px 16px; background: var(--surface); border: 1px solid var(--border); color: var(--text); text-decoration: none; transition: all 0.2s; }
-.add-btn:hover { border-color: #555; color: #fff; }
-
+.header-row h1 { font-family: 'Syne', sans-serif; font-size: 1.3rem; font-weight: 800; }
+.add-link { font-family: 'Syne', sans-serif; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 8px 16px; background: var(--surface); border: 1px solid var(--border); color: var(--text); text-decoration: none; transition: all 0.2s; }
+.add-link:hover { border-color: #555; }
 .loading { text-align: center; padding: 48px; color: var(--muted); font-size: 0.78rem; }
 
-/* Artist cards grid */
-.roster-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 2px; }
+/* Roster list */
+.roster-list { display: flex; flex-direction: column; gap: 1px; background: var(--border); border: 1px solid var(--border); }
+.roster-entry { background: var(--bg); }
+.roster-entry:hover { background: #111; }
 
-.artist-card {
-  position: relative; overflow: hidden; background: var(--surface);
-  border: 1px solid var(--border); min-height: 320px;
-  display: flex; flex-direction: column; transition: border-color 0.2s;
+.entry-header { display: flex; align-items: center; padding: 14px 16px; gap: 12px; cursor: pointer; user-select: none; }
+.entry-chevron { font-size: 1.1rem; color: var(--muted); transition: transform 0.2s; width: 14px; text-align: center; flex-shrink: 0; }
+.roster-entry.open .entry-chevron { transform: rotate(90deg); color: #fff; }
+.entry-name { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 800; color: #fff; flex: 1; }
+.entry-types { font-size: 0.55rem; color: var(--muted); letter-spacing: 0.04em; }
+.entry-btns { display: flex; gap: 6px; flex-shrink: 0; }
+.entry-btn { font-family: 'Syne Mono', monospace; font-size: 0.58rem; letter-spacing: 0.06em; text-transform: uppercase; padding: 5px 10px; background: transparent; border: 1px solid var(--border); color: var(--muted); cursor: pointer; text-decoration: none; transition: all 0.15s; }
+.entry-btn:hover { border-color: #555; color: var(--text); }
+.entry-btn.pdf { color: var(--accent); border-color: #4a3e10; }
+.entry-btn.pdf:hover { border-color: var(--accent); }
+
+/* Expanded card */
+.entry-card { display: none; padding: 0 16px 20px 42px; }
+.roster-entry.open .entry-card { display: block; }
+
+.card-inner {
+  position: relative; overflow: hidden; border: 1px solid var(--border);
+  aspect-ratio: 1 / 1; max-width: 500px; display: flex; flex-direction: column;
 }
-.artist-card:hover { border-color: #444; }
-
-.card-bg {
-  position: absolute; inset: 0; background-size: cover; background-position: center;
-  opacity: 0.25; z-index: 0;
-}
-
+.card-bg { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0.2; z-index: 0; }
 .card-content { position: relative; z-index: 1; padding: 24px; flex: 1; display: flex; flex-direction: column; }
+.card-top { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 12px; }
+.card-photo { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border); flex-shrink: 0; }
+.card-photo-ph { width: 72px; height: 72px; border-radius: 50%; background: #222; border: 2px solid var(--border); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.4rem; color: #555; }
+.card-name { font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 800; color: #fff; }
+.card-types { font-size: 0.58rem; color: var(--muted); margin-top: 2px; }
+.card-skills { font-size: 0.54rem; color: #555; margin-top: 2px; }
+.card-bio { font-size: 0.7rem; color: #aaa; line-height: 1.6; margin-bottom: 10px; }
 
-.card-top { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 16px; }
-.card-photo {
-  width: 64px; height: 64px; border-radius: 50%; object-fit: cover;
-  border: 2px solid var(--border); flex-shrink: 0;
-}
-.card-photo-placeholder {
-  width: 64px; height: 64px; border-radius: 50%; background: #222;
-  border: 2px solid var(--border); flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center;
-  font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.2rem; color: #555;
-}
-.card-identity { flex: 1; min-width: 0; }
-.card-name { font-family: 'Syne', sans-serif; font-size: 1.3rem; font-weight: 800; color: #fff; line-height: 1.2; }
-.card-types { font-size: 0.58rem; color: var(--muted); letter-spacing: 0.06em; margin-top: 4px; }
-.card-skills { font-size: 0.54rem; color: #555; letter-spacing: 0.06em; margin-top: 2px; }
+.card-placements { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 8px; }
+.pl-tag { font-size: 0.58rem; color: var(--text); padding: 2px 7px; border: 1px solid var(--border); }
 
-.card-bio { font-size: 0.7rem; color: #aaa; line-height: 1.6; margin-bottom: 14px; flex: 1; }
+.card-majors { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+.major-block { display: flex; gap: 6px; align-items: center; border: 1px solid var(--border); padding: 4px 8px; }
+.major-art { width: 36px; height: 36px; object-fit: cover; }
+.major-info { font-size: 0.58rem; color: #aaa; line-height: 1.3; }
+.major-info strong { color: #fff; }
 
-/* Placements */
-.card-placements { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
-.placement-tag {
-  font-size: 0.6rem; color: var(--text); padding: 3px 8px;
-  border: 1px solid var(--border); letter-spacing: 0.04em;
-}
+.card-certs { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 10px; }
+.cert-tag { display: flex; align-items: center; gap: 5px; font-size: 0.56rem; color: var(--accent); padding: 2px 7px; border: 1px solid #4a3e10; }
+.cert-art { width: 24px; height: 24px; object-fit: cover; }
 
-/* Artworks */
-.card-artworks { display: flex; gap: 4px; margin-bottom: 12px; }
-.artwork-thumb { width: 48px; height: 48px; object-fit: cover; border: 1px solid var(--border); }
-
-/* Certifications */
-.card-certs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
-.cert-tag {
-  font-size: 0.56rem; color: var(--accent); padding: 2px 7px;
-  border: 1px solid #4a3e10; letter-spacing: 0.04em;
-}
-
-/* Links */
-.card-links { display: flex; gap: 8px; margin-top: auto; }
-.card-link {
-  font-size: 0.58rem; color: var(--muted); text-decoration: none;
-  padding: 4px 10px; border: 1px solid var(--border); transition: all 0.15s;
-  letter-spacing: 0.06em;
-}
-.card-link:hover { border-color: #555; color: #fff; }
-
-.card-edit {
-  position: absolute; top: 10px; right: 10px; font-size: 0.6rem;
-  color: #444; text-decoration: none; letter-spacing: 0.08em;
-  text-transform: uppercase; z-index: 2; transition: color 0.15s;
-}
-.card-edit:hover { color: var(--text); }
+.card-socials { display: flex; gap: 8px; margin-top: auto; }
+.social-link { display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border: 1px solid var(--border); color: var(--muted); transition: all 0.15s; }
+.social-link:hover { border-color: #555; color: #fff; }
 
 @media (max-width: 560px) {
   nav { padding: 16px 20px; }
   .container { padding: 28px 20px 40px; }
-  .roster-grid { grid-template-columns: 1fr; }
+  .entry-card { padding-left: 16px; }
+  .card-inner { max-width: 100%; }
 }
 </style>
 </head>
 <body>
 <nav>
   <a class="nav-logo" href="index.html"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABoAAAAkCAIAAAAYWL1EAAABCGlDQ1BJQ0MgUHJvZmlsZQAAeJxjYGA8wQAELAYMDLl5JUVB7k4KEZFRCuwPGBiBEAwSk4sLGHADoKpv1yBqL+viUYcLcKakFicD6Q9ArFIEtBxopAiQLZIOYWuA2EkQtg2IXV5SUAJkB4DYRSFBzkB2CpCtkY7ETkJiJxcUgdT3ANk2uTmlyQh3M/Ck5oUGA2kOIJZhKGYIYnBncAL5H6IkfxEDg8VXBgbmCQixpJkMDNtbGRgkbiHEVBYwMPC3MDBsO48QQ4RJQWJRIliIBYiZ0tIYGD4tZ2DgjWRgEL7AwMAVDQsIHG5TALvNnSEfCNMZchhSgSKeDHkMyQx6QJYRgwGDIYMZAKbWPz9HbOBQAAAG/0lEQVR42o1WbUiTbRQ+z55tuc3vj6bkWqkVoSWWuVmmkoKESGoYmGZLBINJ0RfE0KwEPwL7EUI/JCz0RxEtgoIC031gZqXG0jSC2twKZbnmB6bbs+e8P47sHRq+7/lxc/M897nu69znXOe+GVhnLMv6fD4A2Lx5c0VFhVqtlkgkSqVSLBb39vZ2dnZaLBYAYBgGEWFjY1kWAMLCwhoaGmw2G66zhYWFtrY2sVhMiBthCYVCAMjLy/v69avf//79+zU1NVVVVbW1tXq9nj4ajcbw8HCGYfyIgfN/scrLyz0eDyLOzMx0dnampKRER0efP3/+yZMn3d3dhYWFJSUlbrcbEV+/fi0UCgUCwV84ElZRURHHcYj48OFDhUIBACdOnJibmwsMVqPRJCcnE+Lly5f9vhEREVFRUQAAAoEAAPbv37+wsICIjY2N9KWmpoYgvnz5cv369Rs3bjgcDkSMjY09deoUIv78+TMkJITYpaamarVaILZxcXFWqxUR29raiO/JkycJq6WlRa1W63Q6mUyWkJDg9Xrv3bsHALOzs4iYl5dHB1dRUWG1WldT+fTpU0S8e/cuYWVkZCwvLyPimTNncnJyKDT6Ozg46HQ6AeDNmzc8z1dXV5OLXq8fGBgAANi1axdFFBwcLBAIgoKCPn36hIharTYpKQkR5+fnm5qanj9/zrLss2fPEDE0NPTdu3eIWFlZyTBMRESE1+ttaGgAALh48SIi1tTU0D4XLlxAxOHhYQD48OEDIqamppaXlxuNRgCw2Wyzs7NJSUlE+eDBgwCg0+nsdntoaCgAgMlkcrlcYWFhDMNIpdKpqSmv15uZmUmsu7q6jh07hogqlYoy8ODBg5KSEkS0Wq1SqVQkEjmdzp6eHgCA0NDQlZWVjo4Oopaenu6nVlZWhoiJiYmZmZlZWVnp6ekej8fj8SQnJ5vNZkS8desWANTW1iJiUVERwzCgUqkQsbCwkPKdm5vL83xfX59AIAgLC/v48WNra+uOHTs0Gs3S0hK5abVaUptCoZBIJDMzM2NjY6sFp9FoEDEhIYHYbdmyBREHBgYI/cCBA4E1XFpaevToUZ/Ph4g6nQ4AmpubEbG1tXVVZPX19V6vNyQkxK9/s9k8NDQEAJs2bQIAtVo9MTGh1+v37t17+vRpwjWZTACQlpbm8XiGhobkcjkAFBcXQ1NT09zcnEgkAgAajx8/7vV6aQVtAAByubyrq4uwBgcH5XK5VCq1WCyIWF5eDgBZWVkmkwnOnTs3NzfnbzgsyzIM09fXNzw8rFQqhUKhUqmsr68nDSBid3d3UFAQAPT09CDi2NhYREQEAAwNDY2OjkJGRobb7Y6OjiY40lxSUtL8/Pzy8rLFYpmfnyeggYGBgoICItve3o6IHMeRyOrq6hCxt7cXWJadnJzMyspiWZZCo1GtVvszMDIycvbsWTpKgUBw584dwtJqtQCgUqn+/PnD83x/fz8AQGNjI6laLBZTQqmjZGdn5+fnp6Sk+E9w9+7dL1++pD2uXLkCAEql0m638zyPiAaDARiGkclkDoejrq6OgIRCIcuy1MX8tmfPnubmZpfLhYiLi4uVlZUAEBcXR9mgjmswGFazWVpaioirGg4wuVx+6NAhvV5PDYYCV6vVALB9+3bqFBzHUSUaDIZ/PV+9eoWIFovl8ePHer3ebDZbrVaKgmxqaqqhoUEikQBATk6O3W4nLET0wzEZGRk+n294eFihUOh0uuzs7JiYGJ7nFxcXXS7X79+/3W63w+F4//59b2/vr1+/AODq1as3b94UiUQ+n4+Oled5gUBgNBqhsrJyYWHB3wX919Jfr7rDhw+bTCYiS4wC5waDAYqLi+nT27dvNRpNTEzMepSQkJCCgoJHjx7RSo7jAg8hEE7IsiytUKlUKpVqdnZ2dHT08+fP09PTPp8vMjJy586daWlp27ZtI2ie5/1185eb2q8t2jAqKio/Pz8/P3/NOvrLsiyV5EZwZLQOEckz8BxJfPA/TEgQHMeR+OkhQ/40oZHneZr/BztaTR0l8EXgz+/6caMX0759+1JTUzs6OjiO+/btW3BwcHt7+/fv3yMjI8fGxiQSyfj4uM/nu337dmJios1mi46OXvu6ASBONptNKJPJxsfHW1pacnNz4+Pjjxw5Mjg46Ha7+/v7nU5nTEzM9PS0TCb78ePHyMjIxMTEtWvXqqqqOI5bI+rVBPA8L5FIEhMTFQrF5OTkpUuXHA6HSCTyer0ikUgkElVXVysUipycnJSUlPj4+KWlpRcvXlAlrIdjysrKenp6pqenY2NjnU7nysoKPbOkUqnL5YqNjaUq4Xk+PDzcbreHh4d7PJ6oqCgK0F9GJDIhz/NisXjr1q10jQVuFRkZuWZzeqVtIMR/ACfvUc9bOAzOAAAAAElFTkSuQmCC" alt="BLZante" class="nav-logo-img" /><span>BLZante</span></a>
-  <div class="nav-right">
-    <a class="nav-back" href="index.html">&larr; Toolbox</a>
-    <span class="nav-sep">/</span>
-    <span>Roster</span>
-  </div>
+  <div class="nav-right"><a class="nav-back" href="index.html">&larr; Toolbox</a><span class="nav-sep">/</span><span>Roster</span></div>
 </nav>
-
 <div class="container">
-  <div class="header-row">
-    <h1>Roster</h1>
-    <a class="add-btn" href="roster_create.html">+ Ajouter un artiste</a>
-  </div>
+  <div class="header-row"><h1>Roster</h1><a class="add-link" href="roster_create.html">+ Ajouter un artiste</a></div>
   <div id="rosterContent"><div class="loading">Chargement...</div></div>
 </div>
 
 <script>
 const DB = 'https://blzante-toolbox-default-rtdb.europe-west1.firebasedatabase.app';
 
+const SOCIAL_ICONS = {
+  instagram: `<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>`,
+  tiktok: `<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1v-3.5a6.37 6.37 0 00-.79-.05A6.34 6.34 0 003.15 15.2a6.34 6.34 0 0010.86 4.43v-7.15a8.16 8.16 0 005.58 2.17v-3.44c-1.1 0-2.96-.52-4-1.52z"/></svg>`,
+  spotify: `<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>`,
+  ytChannel: `<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>`,
+  youtube: `<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>`,
+};
+
 (async () => {
   try {
     const res = await fetch(DB + '/roster.json');
     const data = await res.json();
     const content = document.getElementById('rosterContent');
-
-    if (!data) {
-      content.innerHTML = '<div class="loading">Aucun artiste pour le moment.<br><a href="roster_create.html" style="color:var(--accent)">Créer une fiche →</a></div>';
-      return;
-    }
-
+    if (!data) { content.innerHTML = '<div class="loading">Aucun artiste.<br><a href="roster_create.html" style="color:var(--accent)">Créer une fiche →</a></div>'; return; }
     const artists = Object.values(data).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
-    let html = '<div class="roster-grid">';
-
+    let html = '<div class="roster-list">';
     artists.forEach(a => {
-      const types = a.types ? (Array.isArray(a.types) ? a.types.join(' · ') : a.types) : '';
-      const skills = a.skills ? (Array.isArray(a.skills) ? a.skills.join(' · ') : a.skills) : '';
+      const types = a.types ? (Array.isArray(a.types) ? a.types : [a.types]) : [];
+      const skills = a.skills ? (Array.isArray(a.skills) ? a.skills : [a.skills]) : [];
+      const allLabels = [...types, ...skills].join(' · ');
+      const imgs = a.images ? (Array.isArray(a.images) ? a.images : Object.values(a.images)) : [];
+      const primary = imgs.find(i => i.primary) || imgs[0];
+      const bgImg = imgs.length > 1 ? (imgs.find(i => !i.primary) || imgs[0]) : primary;
       const placements = a.placements ? (Array.isArray(a.placements) ? a.placements : Object.values(a.placements)) : [];
+      const majors = a.majors ? (Array.isArray(a.majors) ? a.majors : Object.values(a.majors)) : [];
       const certs = a.certs ? (Array.isArray(a.certs) ? a.certs : Object.values(a.certs)) : [];
-      const initial = (a.name || '?')[0].toUpperCase();
+      const initial = (a.name || '?')[0];
 
-      html += `<div class="artist-card">`;
-      if (a.bg) html += `<div class="card-bg" style="background-image:url('${a.bg}')"></div>`;
-      html += `<a class="card-edit" href="roster_create.html?edit=${a.id}">edit</a>`;
-      html += `<div class="card-content">`;
-
-      // Top: photo + name
-      html += `<div class="card-top">`;
-      if (a.photo) {
-        html += `<img class="card-photo" src="${a.photo}" alt="${a.name}" />`;
-      } else {
-        html += `<div class="card-photo-placeholder">${initial}</div>`;
-      }
-      html += `<div class="card-identity">`;
-      html += `<div class="card-name">${a.name}</div>`;
-      if (types) html += `<div class="card-types">${types}</div>`;
-      if (skills) html += `<div class="card-skills">${skills}</div>`;
+      html += `<div class="roster-entry" data-id="${a.id}">`;
+      html += `<div class="entry-header">`;
+      html += `<span class="entry-chevron">›</span>`;
+      html += `<div style="flex:1;min-width:0"><div class="entry-name">${a.name}</div>`;
+      if (allLabels) html += `<div class="entry-types">${allLabels}</div>`;
+      html += `</div>`;
+      html += `<div class="entry-btns">`;
+      html += `<button class="entry-btn pdf" data-id="${a.id}" title="Télécharger PDF">PDF</button>`;
+      html += `<a class="entry-btn" href="roster_create.html?edit=${a.id}">edit</a>`;
       html += `</div></div>`;
 
-      // Bio
+      // Expandable card
+      html += `<div class="entry-card"><div class="card-inner">`;
+      if (bgImg) html += `<div class="card-bg" style="background-image:url('${bgImg.src}')"></div>`;
+      html += `<div class="card-content">`;
+      html += `<div class="card-top">`;
+      if (primary) html += `<img class="card-photo" src="${primary.src}" />`;
+      else html += `<div class="card-photo-ph">${initial}</div>`;
+      html += `<div><div class="card-name">${a.name}</div>`;
+      if (types.length) html += `<div class="card-types">${types.join(' · ')}</div>`;
+      if (skills.length) html += `<div class="card-skills">${skills.join(' · ')}</div>`;
+      html += `</div></div>`;
+
       if (a.bio) html += `<div class="card-bio">${a.bio}</div>`;
 
       // Placements
       if (placements.length) {
         html += `<div class="card-placements">`;
-        placements.forEach(p => {
-          if (p.artist) html += `<span class="placement-tag">${p.artist}</span>`;
-        });
+        placements.forEach(p => { const n = typeof p === 'string' ? p : p.name || ''; if (n) html += `<span class="pl-tag">${n}</span>`; });
         html += `</div>`;
       }
 
-      // Artworks
-      const artworks = placements.filter(p => p.artwork);
-      if (artworks.length) {
-        html += `<div class="card-artworks">`;
-        artworks.forEach(p => {
-          html += `<img class="artwork-thumb" src="${p.artwork}" alt="${p.title || ''}" title="${p.artist} — ${p.title}" />`;
+      // Major placements
+      if (majors.length) {
+        html += `<div class="card-majors">`;
+        majors.forEach(m => {
+          html += `<div class="major-block">`;
+          if (m.artwork) html += `<img class="major-art" src="${m.artwork}" />`;
+          html += `<div class="major-info"><strong>${m.artist || ''}</strong><br>${m.title || ''}</div></div>`;
         });
         html += `</div>`;
       }
@@ -189,30 +172,47 @@ const DB = 'https://blzante-toolbox-default-rtdb.europe-west1.firebasedatabase.a
       if (certs.length) {
         html += `<div class="card-certs">`;
         certs.forEach(c => {
-          const t = typeof c === 'string' ? c : c.text || '';
-          if (t) html += `<span class="cert-tag">${t}</span>`;
+          const label = [c.level, c.type, c.artist, c.project].filter(Boolean).join(' · ');
+          html += `<span class="cert-tag">`;
+          if (c.artwork) html += `<img class="cert-art" src="${c.artwork}" />`;
+          html += label + `</span>`;
         });
         html += `</div>`;
       }
 
-      // Links
-      const links = [];
-      if (a.instagram) links.push(`<a class="card-link" href="${a.instagram}" target="_blank">Instagram</a>`);
-      if (a.tiktok) links.push(`<a class="card-link" href="${a.tiktok}" target="_blank">TikTok</a>`);
-      if (a.spotify) links.push(`<a class="card-link" href="${a.spotify}" target="_blank">Spotify</a>`);
-      if (a.ytChannel) links.push(`<a class="card-link" href="${a.ytChannel}" target="_blank">YouTube</a>`);
-      if (a.youtube) links.push(`<a class="card-link" href="${a.youtube}" target="_blank">Playlist YT</a>`);
-      if (links.length) html += `<div class="card-links">${links.join('')}</div>`;
+      // Social links
+      const socials = ['instagram','tiktok','spotify','ytChannel','youtube'].filter(k => a[k]);
+      if (socials.length) {
+        html += `<div class="card-socials">`;
+        socials.forEach(k => {
+          const title = k === 'ytChannel' ? 'YouTube' : k === 'youtube' ? 'Playlist YT' : k.charAt(0).toUpperCase() + k.slice(1);
+          html += `<a class="social-link" href="${a[k]}" target="_blank" title="${title}">${SOCIAL_ICONS[k] || title}</a>`;
+        });
+        html += `</div>`;
+      }
 
-      html += `</div></div>`;
+      html += `</div></div></div></div>`;
     });
-
     html += '</div>';
     content.innerHTML = html;
 
-  } catch (err) {
-    document.getElementById('rosterContent').innerHTML = '<div class="loading">⚠ Erreur de connexion</div>';
-  }
+    // Toggle
+    content.addEventListener('click', e => {
+      const header = e.target.closest('.entry-header');
+      if (header && !e.target.closest('.entry-btn')) {
+        header.closest('.roster-entry').classList.toggle('open');
+      }
+    });
+
+    // PDF download
+    content.addEventListener('click', e => {
+      const pdfBtn = e.target.closest('.entry-btn.pdf');
+      if (!pdfBtn) return;
+      e.stopPropagation();
+      alert('Export PDF — bientôt disponible');
+    });
+
+  } catch(err) { document.getElementById('rosterContent').innerHTML = '<div class="loading">⚠ Erreur de connexion</div>'; }
 })();
 </script>
 </body>

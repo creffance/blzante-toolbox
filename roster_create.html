@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Créer une fiche artiste — BLZante Toolbox</title>
+<title>Fiche artiste — BLZante Toolbox</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Syne+Mono&display=swap');
 :root { --bg: #0a0a0a; --surface: #141414; --border: #262626; --text: #e8e8e8; --muted: #777; --accent: #e8c547; --success: #4ade80; --error: #ff6b6b; }
@@ -14,79 +14,63 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .nav-logo { font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 800; color: #fff; text-decoration: none; letter-spacing: 0.08em; display: flex; align-items: center; gap: 10px; }
 .nav-logo-img { height: 28px; width: auto; display: block; }
 .nav-right { display: flex; align-items: center; gap: 12px; font-size: 0.65rem; color: var(--muted); letter-spacing: 0.14em; text-transform: uppercase; }
-.nav-back { color: var(--muted); text-decoration: none; font-size: 0.65rem; letter-spacing: 0.14em; text-transform: uppercase; transition: color 0.15s; }
+.nav-back { color: var(--muted); text-decoration: none; transition: color 0.15s; }
 .nav-back:hover { color: #fff; }
 .nav-sep { color: var(--border); }
 .container { max-width: 700px; margin: 0 auto; padding: 40px 40px 60px; position: relative; z-index: 1; flex: 1; width: 100%; }
 .page-heading { margin-bottom: 32px; border-bottom: 1px solid var(--border); padding-bottom: 20px; }
-.page-heading h1 { font-family: 'Syne', sans-serif; font-size: 1.3rem; font-weight: 800; color: var(--text); line-height: 1.3; }
-
-/* Form */
+.page-heading h1 { font-family: 'Syne', sans-serif; font-size: 1.3rem; font-weight: 800; color: var(--text); }
 .form-section { font-family: 'Syne', sans-serif; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); margin: 28px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
 .form-section:first-of-type { margin-top: 0; }
 .form-group { margin-bottom: 16px; }
 .form-label { font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; display: block; }
-.form-input, .form-select, .form-textarea {
-  width: 100%; font-family: 'Syne Mono', monospace; font-size: 0.82rem;
-  padding: 12px 14px; border: 1px solid var(--border); background: var(--surface);
-  color: var(--text); outline: none; transition: border-color 0.2s;
-}
+.form-input, .form-select, .form-textarea { width: 100%; font-family: 'Syne Mono', monospace; font-size: 0.82rem; padding: 12px 14px; border: 1px solid var(--border); background: var(--surface); color: var(--text); outline: none; transition: border-color 0.2s; }
 .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: #555; }
 .form-input::placeholder, .form-textarea::placeholder { color: #444; }
 .form-textarea { resize: vertical; min-height: 70px; line-height: 1.6; }
 .form-select { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23777'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-
-/* Type tags */
+.form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
 .type-options { display: flex; flex-wrap: wrap; gap: 6px; }
-.type-btn {
-  font-family: 'Syne Mono', monospace; font-size: 0.62rem; letter-spacing: 0.06em;
-  padding: 6px 12px; background: transparent; border: 1px solid var(--border);
-  color: var(--muted); cursor: pointer; transition: all 0.15s;
-}
+.type-btn { font-family: 'Syne Mono', monospace; font-size: 0.62rem; letter-spacing: 0.06em; padding: 6px 12px; background: transparent; border: 1px solid var(--border); color: var(--muted); cursor: pointer; transition: all 0.15s; }
 .type-btn:hover { border-color: #555; color: var(--text); }
 .type-btn.active { border-color: var(--accent); color: var(--accent); }
 
-/* Image upload */
-.img-upload { display: flex; gap: 8px; align-items: flex-start; }
-.img-upload .form-input { flex: 1; }
-.img-upload-btn {
-  font-family: 'Syne Mono', monospace; font-size: 0.62rem; padding: 12px 14px;
-  background: var(--surface); border: 1px solid var(--border); color: var(--muted);
-  cursor: pointer; transition: all 0.15s; white-space: nowrap;
-}
-.img-upload-btn:hover { border-color: #555; color: var(--text); }
-.img-preview { width: 80px; height: 80px; object-fit: cover; border: 1px solid var(--border); margin-top: 8px; display: none; }
-.img-preview.round { border-radius: 50%; }
+/* Images gallery */
+.img-gallery { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.img-thumb-wrap { position: relative; }
+.img-thumb { width: 80px; height: 80px; object-fit: cover; border: 2px solid var(--border); cursor: pointer; transition: border-color 0.15s; }
+.img-thumb.primary { border-color: var(--accent); }
+.img-thumb-rm { position: absolute; top: -4px; right: -4px; width: 18px; height: 18px; background: var(--error); color: #fff; border: none; border-radius: 50%; font-size: 0.65rem; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; }
+.img-add { width: 80px; height: 80px; border: 1px dashed var(--border); display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 1.4rem; cursor: pointer; transition: all 0.15s; }
+.img-add:hover { border-color: #555; color: var(--text); }
+.img-hint { font-size: 0.58rem; color: #444; margin-top: 6px; }
+.img-url-input { margin-top: 8px; }
 
 /* Dynamic lists */
-.dynamic-list { display: flex; flex-direction: column; gap: 8px; }
-.dynamic-item {
-  display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 6px; align-items: center;
-}
-.dynamic-item.cert { grid-template-columns: 1fr auto; }
-.dynamic-item .form-input { padding: 10px 12px; font-size: 0.78rem; }
-.remove-item {
-  width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
-  background: transparent; border: 1px solid #333; color: #555; cursor: pointer;
-  font-size: 0.8rem; transition: all 0.15s;
-}
-.remove-item:hover { border-color: var(--error); color: var(--error); }
-.add-item {
-  font-family: 'Syne Mono', monospace; font-size: 0.62rem; letter-spacing: 0.08em;
-  padding: 8px 14px; background: transparent; border: 1px dashed var(--border);
-  color: var(--muted); cursor: pointer; transition: all 0.15s; text-align: center;
-}
-.add-item:hover { border-color: #555; color: var(--text); }
+.dynamic-list { display: flex; flex-direction: column; gap: 6px; }
+.dynamic-item { display: flex; gap: 6px; align-items: center; }
+.dynamic-item .form-input { padding: 10px 12px; font-size: 0.78rem; flex: 1; }
+.dynamic-item .form-select { padding: 10px 12px; font-size: 0.78rem; }
+.remove-btn { width: 28px; height: 28px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: transparent; border: 1px solid #333; color: #555; cursor: pointer; font-size: 0.8rem; transition: all 0.15s; }
+.remove-btn:hover { border-color: var(--error); color: var(--error); }
+.add-btn-dyn { font-family: 'Syne Mono', monospace; font-size: 0.62rem; padding: 8px 14px; background: transparent; border: 1px dashed var(--border); color: var(--muted); cursor: pointer; transition: all 0.15s; text-align: center; margin-top: 4px; }
+.add-btn-dyn:hover { border-color: #555; color: var(--text); }
+
+/* Major placement row */
+.major-item { display: grid; grid-template-columns: 1fr 1fr auto auto; gap: 6px; align-items: center; }
+.major-item .form-input { padding: 10px 12px; font-size: 0.78rem; }
+.major-artwork { width: 40px; height: 40px; object-fit: cover; border: 1px solid var(--border); }
+.major-upload { font-size: 0.58rem; padding: 6px 8px; background: var(--surface); border: 1px solid var(--border); color: var(--muted); cursor: pointer; white-space: nowrap; }
+.major-upload:hover { border-color: #555; }
+
+/* Cert row */
+.cert-item { display: grid; grid-template-columns: 80px 80px 1fr 1fr auto auto; gap: 6px; align-items: center; }
+.cert-item .form-select, .cert-item .form-input { padding: 10px 8px; font-size: 0.72rem; }
+.cert-artwork { width: 36px; height: 36px; object-fit: cover; border: 1px solid var(--border); }
 
 /* Submit */
-.submit-btn {
-  margin-top: 28px; width: 100%; padding: 14px;
-  background: linear-gradient(135deg, #fff 0%, #bbb 100%); color: #0a0a0a;
-  border: none; cursor: pointer; font-family: 'Syne', sans-serif;
-  font-size: 0.82rem; font-weight: 800; letter-spacing: 0.14em;
-  text-transform: uppercase; transition: opacity 0.2s;
-}
+.submit-btn { margin-top: 28px; width: 100%; padding: 14px; background: linear-gradient(135deg, #fff 0%, #bbb 100%); color: #0a0a0a; border: none; cursor: pointer; font-family: 'Syne', sans-serif; font-size: 0.82rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; transition: opacity 0.2s; }
 .submit-btn:hover { opacity: 0.85; }
 .cancel-btn { background: transparent; border: 1px solid var(--border); color: var(--muted); margin-top: 8px; }
 .cancel-btn:hover { border-color: #666; color: var(--text); opacity: 1; }
@@ -101,9 +85,9 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 @media (max-width: 560px) {
   nav { padding: 16px 20px; }
   .container { padding: 28px 20px 40px; }
-  .form-row { grid-template-columns: 1fr; }
-  .dynamic-item { grid-template-columns: 1fr 1fr auto; }
-  .dynamic-item .form-input:nth-child(3) { grid-column: 1 / -2; }
+  .form-row, .form-row-3 { grid-template-columns: 1fr; }
+  .major-item { grid-template-columns: 1fr 1fr; }
+  .cert-item { grid-template-columns: 1fr 1fr; }
 }
 </style>
 </head>
@@ -116,26 +100,23 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
     <span>Fiche artiste</span>
   </div>
 </nav>
-
 <div class="container">
   <div class="page-heading"><h1 id="pageTitle">Créer une fiche artiste</h1></div>
 
   <div class="form-section">Identité</div>
-
   <div class="form-group">
     <label class="form-label">Nom d'artiste</label>
     <input type="text" class="form-input" id="artistName" placeholder="Ex: OZZY" autocomplete="off" />
   </div>
-
   <div class="form-group">
     <label class="form-label">Type d'artiste</label>
     <div class="type-options" id="typeOptions">
       <button class="type-btn" data-type="Auteur">Auteur</button>
       <button class="type-btn" data-type="Compositeur">Compositeur</button>
+      <button class="type-btn" data-type="Topliner">Topliner</button>
       <button class="type-btn" data-type="Artiste Interprète">Artiste Interprète</button>
     </div>
   </div>
-
   <div class="form-group">
     <label class="form-label">Compétences techniques</label>
     <div class="type-options" id="skillOptions">
@@ -148,70 +129,46 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
       <button class="type-btn" data-skill="Ingénieur Mastering">Ing. Mastering</button>
     </div>
   </div>
-
   <div class="form-group">
     <label class="form-label">Bio courte</label>
     <textarea class="form-textarea" id="artistBio" placeholder="2-3 phrases de présentation..." rows="3"></textarea>
   </div>
 
   <div class="form-section">Images</div>
-
-  <div class="form-group">
-    <label class="form-label">Photo de profil</label>
-    <div class="img-upload">
-      <input type="text" class="form-input" id="photoUrl" placeholder="Coller un lien URL" autocomplete="off" />
-      <label class="img-upload-btn" for="photoFile">Upload</label>
-      <input type="file" id="photoFile" accept="image/*" style="display:none" />
-    </div>
-    <img class="img-preview round" id="photoPreview" />
+  <p class="img-hint">Cliquer sur une image pour la définir comme principale (bordure jaune). Ajouter via upload ou URL.</p>
+  <div class="img-gallery" id="imgGallery">
+    <div class="img-add" id="imgAddBtn" title="Ajouter une image">+</div>
+  </div>
+  <input type="file" id="imgFileInput" accept="image/*" style="display:none" multiple />
+  <div class="form-group img-url-input">
+    <input type="text" class="form-input" id="imgUrlInput" placeholder="Ou coller un lien URL et appuyer Entrée" autocomplete="off" />
   </div>
 
+  <div class="form-section">Placements</div>
   <div class="form-group">
-    <label class="form-label">Image de fond</label>
-    <div class="img-upload">
-      <input type="text" class="form-input" id="bgUrl" placeholder="Coller un lien URL" autocomplete="off" />
-      <label class="img-upload-btn" for="bgFile">Upload</label>
-      <input type="file" id="bgFile" accept="image/*" style="display:none" />
-    </div>
-    <img class="img-preview" id="bgPreview" />
+    <label class="form-label">Artistes placés</label>
+    <div class="dynamic-list" id="placementsList"></div>
+    <button class="add-btn-dyn" id="addPlacement">+ Ajouter un artiste</button>
   </div>
 
   <div class="form-section">Placements majeurs</div>
-  <div class="dynamic-list" id="placementsList">
-  </div>
-  <button class="add-item" id="addPlacement">+ Ajouter un placement</button>
+  <div class="dynamic-list" id="majorList"></div>
+  <button class="add-btn-dyn" id="addMajor">+ Ajouter un placement majeur</button>
 
   <div class="form-section">Certifications</div>
-  <div class="dynamic-list" id="certsList">
-  </div>
-  <button class="add-item" id="addCert">+ Ajouter une certification</button>
+  <div class="dynamic-list" id="certsList"></div>
+  <button class="add-btn-dyn" id="addCert">+ Ajouter une certification</button>
 
   <div class="form-section">Liens</div>
-
-  <div class="form-group">
-    <label class="form-label">Instagram</label>
-    <input type="text" class="form-input" id="linkInsta" placeholder="https://instagram.com/..." autocomplete="off" />
+  <div class="form-row">
+    <div class="form-group"><label class="form-label">Instagram</label><input type="text" class="form-input" id="linkInsta" placeholder="https://instagram.com/..." autocomplete="off" /></div>
+    <div class="form-group"><label class="form-label">TikTok</label><input type="text" class="form-input" id="linkTiktok" placeholder="https://tiktok.com/@..." autocomplete="off" /></div>
   </div>
-
-  <div class="form-group">
-    <label class="form-label">TikTok (optionnel)</label>
-    <input type="text" class="form-input" id="linkTiktok" placeholder="https://tiktok.com/@..." autocomplete="off" />
+  <div class="form-row">
+    <div class="form-group"><label class="form-label">Spotify</label><input type="text" class="form-input" id="linkSpotify" placeholder="https://open.spotify.com/artist/..." autocomplete="off" /></div>
+    <div class="form-group"><label class="form-label">YouTube</label><input type="text" class="form-input" id="linkYtChannel" placeholder="https://youtube.com/@..." autocomplete="off" /></div>
   </div>
-
-  <div class="form-group">
-    <label class="form-label">Profil Spotify</label>
-    <input type="text" class="form-input" id="linkSpotify" placeholder="https://open.spotify.com/artist/..." autocomplete="off" />
-  </div>
-
-  <div class="form-group">
-    <label class="form-label">Chaîne YouTube</label>
-    <input type="text" class="form-input" id="linkYtChannel" placeholder="https://youtube.com/@..." autocomplete="off" />
-  </div>
-
-  <div class="form-group">
-    <label class="form-label">Playlist YouTube</label>
-    <input type="text" class="form-input" id="linkYoutube" placeholder="https://youtube.com/playlist?list=..." autocomplete="off" />
-  </div>
+  <div class="form-group"><label class="form-label">Playlist YouTube</label><input type="text" class="form-input" id="linkYoutube" placeholder="https://youtube.com/playlist?list=..." autocomplete="off" /></div>
 
   <button class="submit-btn" id="submitBtn">⚡ Créer la fiche</button>
   <button class="submit-btn cancel-btn" id="cancelBtn" style="display:none">Annuler la modification</button>
@@ -222,183 +179,187 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 
 <script>
 const DB = 'https://blzante-toolbox-default-rtdb.europe-west1.firebasedatabase.app';
+let selectedTypes = [], selectedSkills = [], editId = null;
+let images = []; // {src, primary}
 
-// ─── State ───
-let selectedTypes = [];
-let selectedSkills = [];
-let editId = null;
-let photoData = '';
-let bgData = '';
-
-// ─── Type buttons ───
-document.getElementById('typeOptions').addEventListener('click', (e) => {
-  const btn = e.target.closest('.type-btn');
-  if (!btn) return;
-  const t = btn.dataset.type;
-  if (selectedTypes.includes(t)) {
-    selectedTypes = selectedTypes.filter(x => x !== t);
-    btn.classList.remove('active');
-  } else {
-    selectedTypes.push(t);
-    btn.classList.add('active');
-  }
+// ─── Type / Skill buttons ───
+document.getElementById('typeOptions').addEventListener('click', e => {
+  const b = e.target.closest('.type-btn'); if (!b) return;
+  const t = b.dataset.type;
+  if (selectedTypes.includes(t)) { selectedTypes = selectedTypes.filter(x=>x!==t); b.classList.remove('active'); }
+  else { selectedTypes.push(t); b.classList.add('active'); }
+});
+document.getElementById('skillOptions').addEventListener('click', e => {
+  const b = e.target.closest('.type-btn'); if (!b) return;
+  const s = b.dataset.skill;
+  if (selectedSkills.includes(s)) { selectedSkills = selectedSkills.filter(x=>x!==s); b.classList.remove('active'); }
+  else { selectedSkills.push(s); b.classList.add('active'); }
 });
 
-// ─── Skill buttons ───
-document.getElementById('skillOptions').addEventListener('click', (e) => {
-  const btn = e.target.closest('.type-btn');
-  if (!btn) return;
-  const s = btn.dataset.skill;
-  if (selectedSkills.includes(s)) {
-    selectedSkills = selectedSkills.filter(x => x !== s);
-    btn.classList.remove('active');
-  } else {
-    selectedSkills.push(s);
-    btn.classList.add('active');
-  }
-});
-
-// ─── Image handling ───
-function setupImageUpload(urlId, fileId, previewId) {
-  const urlInput = document.getElementById(urlId);
-  const fileInput = document.getElementById(fileId);
-  const preview = document.getElementById(previewId);
-  const isPhoto = urlId === 'photoUrl';
-
-  urlInput.addEventListener('input', () => {
-    const url = urlInput.value.trim();
-    if (url) {
-      preview.src = url;
-      preview.style.display = 'block';
-      if (isPhoto) photoData = url; else bgData = url;
-    } else {
-      preview.style.display = 'none';
-      if (isPhoto) photoData = ''; else bgData = '';
-    }
-  });
-
-  fileInput.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const data = ev.target.result;
-      preview.src = data;
-      preview.style.display = 'block';
-      urlInput.value = '(fichier uploadé)';
-      if (isPhoto) photoData = data; else bgData = data;
-    };
-    reader.readAsDataURL(file);
+// ─── Images ───
+function renderImages() {
+  const gal = document.getElementById('imgGallery');
+  gal.querySelectorAll('.img-thumb-wrap').forEach(e => e.remove());
+  const addBtn = document.getElementById('imgAddBtn');
+  images.forEach((img, i) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'img-thumb-wrap';
+    wrap.innerHTML = `<img class="img-thumb ${img.primary ? 'primary' : ''}" src="${img.src}" data-idx="${i}" /><button class="img-thumb-rm" data-idx="${i}">×</button>`;
+    gal.insertBefore(wrap, addBtn);
   });
 }
-setupImageUpload('photoUrl', 'photoFile', 'photoPreview');
-setupImageUpload('bgUrl', 'bgFile', 'bgPreview');
+document.getElementById('imgGallery').addEventListener('click', e => {
+  const rm = e.target.closest('.img-thumb-rm');
+  if (rm) { images.splice(parseInt(rm.dataset.idx), 1); if (images.length && !images.some(i=>i.primary)) images[0].primary = true; renderImages(); return; }
+  const thumb = e.target.closest('.img-thumb');
+  if (thumb) { const idx = parseInt(thumb.dataset.idx); images.forEach((im,i) => im.primary = i===idx); renderImages(); return; }
+  if (e.target.closest('.img-add')) document.getElementById('imgFileInput').click();
+});
+document.getElementById('imgFileInput').addEventListener('change', e => {
+  Array.from(e.target.files).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = ev => { images.push({src: ev.target.result, primary: images.length === 0}); renderImages(); };
+    reader.readAsDataURL(file);
+  });
+  e.target.value = '';
+});
+document.getElementById('imgUrlInput').addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return; e.preventDefault();
+  const url = e.target.value.trim(); if (!url) return;
+  images.push({src: url, primary: images.length === 0}); renderImages(); e.target.value = '';
+});
 
-// ─── Dynamic placements ───
-let placementCount = 0;
-function addPlacement(artist, title, artwork) {
-  placementCount++;
-  const id = placementCount;
-  const div = document.createElement('div');
-  div.className = 'dynamic-item';
-  div.dataset.id = id;
-  div.innerHTML = `
-    <input type="text" class="form-input" placeholder="Artiste" value="${artist || ''}" data-field="artist" />
-    <input type="text" class="form-input" placeholder="Titre" value="${title || ''}" data-field="title" />
-    <input type="text" class="form-input" placeholder="Artwork URL" value="${artwork || ''}" data-field="artwork" />
-    <button class="remove-item" onclick="this.parentElement.remove()">×</button>
-  `;
+// ─── Placements (simple artist names) ───
+function addPlacement(val) {
+  const div = document.createElement('div'); div.className = 'dynamic-item';
+  div.innerHTML = `<input type="text" class="form-input" placeholder="Nom de l'artiste" value="${val||''}" /><button class="remove-btn" onclick="this.parentElement.remove()">×</button>`;
   document.getElementById('placementsList').appendChild(div);
 }
 document.getElementById('addPlacement').addEventListener('click', () => addPlacement());
 
-// ─── Dynamic certifications ───
+// ─── Major placements ───
+let majorCount = 0;
+function addMajor(artist, title, artwork) {
+  majorCount++;
+  const div = document.createElement('div'); div.className = 'major-item'; div.dataset.mid = majorCount;
+  div.innerHTML = `<input type="text" class="form-input" placeholder="Artiste" value="${artist||''}" data-f="artist" />` +
+    `<input type="text" class="form-input" placeholder="Projet" value="${title||''}" data-f="title" />` +
+    `<label class="major-upload"><input type="file" accept="image/*" style="display:none" data-f="file" />img</label>` +
+    `<button class="remove-btn" onclick="this.parentElement.remove()">×</button>`;
+  if (artwork) {
+    const img = document.createElement('img'); img.className = 'major-artwork'; img.src = artwork; img.dataset.f = 'artworkSrc';
+    div.insertBefore(img, div.querySelector('.remove-btn'));
+  }
+  const fileInput = div.querySelector('input[type=file]');
+  fileInput.addEventListener('change', ev => {
+    const f = ev.target.files[0]; if (!f) return;
+    const r = new FileReader(); r.onload = re => {
+      let img = div.querySelector('.major-artwork');
+      if (!img) { img = document.createElement('img'); img.className = 'major-artwork'; img.dataset.f = 'artworkSrc'; div.insertBefore(img, div.querySelector('.remove-btn')); }
+      img.src = re.target.result;
+    }; r.readAsDataURL(f);
+  });
+  div.querySelector('.major-upload').addEventListener('click', () => fileInput.click());
+  document.getElementById('majorList').appendChild(div);
+}
+document.getElementById('addMajor').addEventListener('click', () => addMajor());
+
+// ─── Certifications ───
 let certCount = 0;
-function addCert(text) {
+function addCert(type, level, artist, project, artwork) {
   certCount++;
-  const div = document.createElement('div');
-  div.className = 'dynamic-item cert';
-  div.innerHTML = `
-    <input type="text" class="form-input" placeholder="Ex: Or Single — Djadja — Aya Nakamura" value="${text || ''}" />
-    <button class="remove-item" onclick="this.parentElement.remove()">×</button>
-  `;
+  const div = document.createElement('div'); div.className = 'cert-item'; div.dataset.cid = certCount;
+  div.innerHTML = `<select class="form-select" data-f="type"><option value="">Type</option><option value="Single" ${type==='Single'?'selected':''}>Single</option><option value="Album" ${type==='Album'?'selected':''}>Album</option></select>` +
+    `<select class="form-select" data-f="level"><option value="">Certif</option><option value="Or" ${level==='Or'?'selected':''}>Or</option><option value="Platine" ${level==='Platine'?'selected':''}>Platine</option><option value="Diamant" ${level==='Diamant'?'selected':''}>Diamant</option></select>` +
+    `<input type="text" class="form-input" placeholder="Artiste" value="${artist||''}" data-f="artist" />` +
+    `<input type="text" class="form-input" placeholder="Projet" value="${project||''}" data-f="project" />` +
+    `<label class="major-upload"><input type="file" accept="image/*" style="display:none" data-f="file" />img</label>` +
+    `<button class="remove-btn" onclick="this.parentElement.remove()">×</button>`;
+  if (artwork) {
+    const img = document.createElement('img'); img.className = 'cert-artwork'; img.src = artwork; img.dataset.f = 'artworkSrc';
+    div.insertBefore(img, div.querySelector('.remove-btn'));
+  }
+  const fileInput = div.querySelector('input[type=file]');
+  fileInput.addEventListener('change', ev => {
+    const f = ev.target.files[0]; if (!f) return;
+    const r = new FileReader(); r.onload = re => {
+      let img = div.querySelector('.cert-artwork');
+      if (!img) { img = document.createElement('img'); img.className = 'cert-artwork'; img.dataset.f = 'artworkSrc'; div.insertBefore(img, div.querySelector('.remove-btn')); }
+      img.src = re.target.result;
+    }; r.readAsDataURL(f);
+  });
+  div.querySelector('.major-upload').addEventListener('click', () => fileInput.click());
   document.getElementById('certsList').appendChild(div);
 }
 document.getElementById('addCert').addEventListener('click', () => addCert());
+
+// ─── Gather data ───
+function gatherData() {
+  const name = document.getElementById('artistName').value.trim();
+  const bio = document.getElementById('artistBio').value.trim();
+  const placements = []; document.querySelectorAll('#placementsList .dynamic-item .form-input').forEach(i => { const v = i.value.trim(); if (v) placements.push(v); });
+  const majors = []; document.querySelectorAll('#majorList .major-item').forEach(div => {
+    const artist = div.querySelector('[data-f=artist]').value.trim();
+    const title = div.querySelector('[data-f=title]').value.trim();
+    const artImg = div.querySelector('.major-artwork');
+    if (artist || title) majors.push({ artist, title, artwork: artImg ? artImg.src : '' });
+  });
+  const certs = []; document.querySelectorAll('#certsList .cert-item').forEach(div => {
+    const type = div.querySelector('[data-f=type]').value;
+    const level = div.querySelector('[data-f=level]').value;
+    const artist = div.querySelector('[data-f=artist]').value.trim();
+    const project = div.querySelector('[data-f=project]').value.trim();
+    const artImg = div.querySelector('.cert-artwork');
+    if (type || level || artist) certs.push({ type, level, artist, project, artwork: artImg ? artImg.src : '' });
+  });
+  return {
+    name, types: selectedTypes, skills: selectedSkills, bio, images,
+    placements, majors, certs,
+    instagram: document.getElementById('linkInsta').value.trim(),
+    tiktok: document.getElementById('linkTiktok').value.trim(),
+    spotify: document.getElementById('linkSpotify').value.trim(),
+    ytChannel: document.getElementById('linkYtChannel').value.trim(),
+    youtube: document.getElementById('linkYoutube').value.trim(),
+  };
+}
 
 // ─── Edit mode ───
 async function loadForEdit(id) {
   try {
     const res = await fetch(DB + '/roster/' + id + '.json');
-    const data = await res.json();
-    if (!data) return;
-
+    const d = await res.json(); if (!d) return;
     editId = id;
     document.getElementById('pageTitle').textContent = 'Modifier la fiche';
-    document.getElementById('submitBtn').textContent = '✓ Enregistrer les modifications';
+    document.getElementById('submitBtn').textContent = '✓ Enregistrer';
     document.getElementById('cancelBtn').style.display = '';
     document.getElementById('deleteBtn').style.display = '';
-
-    document.getElementById('artistName').value = data.name || '';
-    document.getElementById('artistBio').value = data.bio || '';
-    document.getElementById('linkInsta').value = data.instagram || '';
-    document.getElementById('linkTiktok').value = data.tiktok || '';
-    document.getElementById('linkSpotify').value = data.spotify || '';
-    document.getElementById('linkYtChannel').value = data.ytChannel || '';
-    document.getElementById('linkYoutube').value = data.youtube || '';
-
-    // Types
-    selectedTypes = data.types ? (Array.isArray(data.types) ? [...data.types] : [data.types]) : [];
-    document.querySelectorAll('#typeOptions .type-btn').forEach(btn => {
-      btn.classList.toggle('active', selectedTypes.includes(btn.dataset.type));
-    });
-
-    // Skills
-    selectedSkills = data.skills ? (Array.isArray(data.skills) ? [...data.skills] : [data.skills]) : [];
-    document.querySelectorAll('#skillOptions .type-btn').forEach(btn => {
-      btn.classList.toggle('active', selectedSkills.includes(btn.dataset.skill));
-    });
-
-    // Images
-    if (data.photo) {
-      photoData = data.photo;
-      document.getElementById('photoUrl').value = data.photo.startsWith('data:') ? '(fichier uploadé)' : data.photo;
-      document.getElementById('photoPreview').src = data.photo;
-      document.getElementById('photoPreview').style.display = 'block';
-    }
-    if (data.bg) {
-      bgData = data.bg;
-      document.getElementById('bgUrl').value = data.bg.startsWith('data:') ? '(fichier uploadé)' : data.bg;
-      document.getElementById('bgPreview').src = data.bg;
-      document.getElementById('bgPreview').style.display = 'block';
-    }
-
-    // Placements
-    if (data.placements) {
-      const pl = Array.isArray(data.placements) ? data.placements : Object.values(data.placements);
-      pl.forEach(p => addPlacement(p.artist, p.title, p.artwork));
-    }
-
-    // Certifications
-    if (data.certs) {
-      const cr = Array.isArray(data.certs) ? data.certs : Object.values(data.certs);
-      cr.forEach(c => addCert(typeof c === 'string' ? c : c.text || ''));
-    }
-  } catch (err) {
-    console.error(err);
-  }
+    document.getElementById('artistName').value = d.name || '';
+    document.getElementById('artistBio').value = d.bio || '';
+    document.getElementById('linkInsta').value = d.instagram || '';
+    document.getElementById('linkTiktok').value = d.tiktok || '';
+    document.getElementById('linkSpotify').value = d.spotify || '';
+    document.getElementById('linkYtChannel').value = d.ytChannel || '';
+    document.getElementById('linkYoutube').value = d.youtube || '';
+    selectedTypes = Array.isArray(d.types) ? [...d.types] : d.types ? [d.types] : [];
+    document.querySelectorAll('#typeOptions .type-btn').forEach(b => b.classList.toggle('active', selectedTypes.includes(b.dataset.type)));
+    selectedSkills = Array.isArray(d.skills) ? [...d.skills] : d.skills ? [d.skills] : [];
+    document.querySelectorAll('#skillOptions .type-btn').forEach(b => b.classList.toggle('active', selectedSkills.includes(b.dataset.skill)));
+    images = Array.isArray(d.images) ? [...d.images] : d.images ? Object.values(d.images) : [];
+    renderImages();
+    const pl = Array.isArray(d.placements) ? d.placements : d.placements ? Object.values(d.placements) : [];
+    pl.forEach(p => addPlacement(typeof p === 'string' ? p : p.name || ''));
+    const mj = Array.isArray(d.majors) ? d.majors : d.majors ? Object.values(d.majors) : [];
+    mj.forEach(m => addMajor(m.artist, m.title, m.artwork));
+    const cr = Array.isArray(d.certs) ? d.certs : d.certs ? Object.values(d.certs) : [];
+    cr.forEach(c => addCert(c.type, c.level, c.artist, c.project, c.artwork));
+  } catch(err) { console.error(err); }
 }
-
 function exitEditMode() {
   editId = null;
   document.getElementById('pageTitle').textContent = 'Créer une fiche artiste';
   document.getElementById('submitBtn').textContent = '⚡ Créer la fiche';
   document.getElementById('cancelBtn').style.display = 'none';
   document.getElementById('deleteBtn').style.display = 'none';
-  resetForm();
-}
-
-function resetForm() {
   document.getElementById('artistName').value = '';
   document.getElementById('artistBio').value = '';
   document.getElementById('linkInsta').value = '';
@@ -406,104 +367,42 @@ function resetForm() {
   document.getElementById('linkSpotify').value = '';
   document.getElementById('linkYtChannel').value = '';
   document.getElementById('linkYoutube').value = '';
-  document.getElementById('photoUrl').value = '';
-  document.getElementById('bgUrl').value = '';
-  document.getElementById('photoPreview').style.display = 'none';
-  document.getElementById('bgPreview').style.display = 'none';
-  photoData = ''; bgData = '';
-  selectedTypes = [];
-  selectedSkills = [];
+  selectedTypes = []; selectedSkills = []; images = [];
   document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+  renderImages();
   document.getElementById('placementsList').innerHTML = '';
+  document.getElementById('majorList').innerHTML = '';
   document.getElementById('certsList').innerHTML = '';
 }
-
 document.getElementById('cancelBtn').addEventListener('click', exitEditMode);
-
 document.getElementById('deleteBtn').addEventListener('click', async () => {
-  if (!editId) return;
-  if (!confirm('Supprimer définitivement cette fiche artiste ?')) return;
-  await fetch(DB + '/roster/' + editId + '.json', {method: 'DELETE'});
+  if (!editId || !confirm('Supprimer définitivement cette fiche artiste ?')) return;
+  await fetch(DB + '/roster/' + editId + '.json', {method:'DELETE'});
   window.location.href = 'roster.html';
 });
-
-// Check URL for edit
 (async () => {
-  const params = new URLSearchParams(window.location.search);
-  const eid = params.get('edit');
-  if (eid) await loadForEdit(eid);
+  const p = new URLSearchParams(window.location.search).get('edit');
+  if (p) await loadForEdit(p);
 })();
 
 // ─── Submit ───
 document.getElementById('submitBtn').addEventListener('click', async () => {
-  const name = document.getElementById('artistName').value.trim();
-  const bio = document.getElementById('artistBio').value.trim();
-  const instagram = document.getElementById('linkInsta').value.trim();
-  const tiktok = document.getElementById('linkTiktok').value.trim();
-  const spotify = document.getElementById('linkSpotify').value.trim();
-  const ytChannel = document.getElementById('linkYtChannel').value.trim();
-  const youtube = document.getElementById('linkYoutube').value.trim();
+  const d = gatherData();
   const statusMsg = document.getElementById('statusMsg');
-
-  if (!name) {
-    statusMsg.textContent = '⚠ Nom d\'artiste requis';
-    statusMsg.className = 'status error';
-    return;
-  }
-  if (selectedTypes.length === 0 && selectedSkills.length === 0) {
-    statusMsg.textContent = '⚠ Sélectionner au moins un type ou une compétence';
-    statusMsg.className = 'status error';
-    return;
-  }
-
-  // Gather placements
-  const placements = [];
-  document.querySelectorAll('#placementsList .dynamic-item').forEach(item => {
-    const inputs = item.querySelectorAll('.form-input');
-    const a = inputs[0].value.trim();
-    const t = inputs[1].value.trim();
-    const art = inputs[2].value.trim();
-    if (a || t) placements.push({ artist: a, title: t, artwork: art });
-  });
-
-  // Gather certs
-  const certs = [];
-  document.querySelectorAll('#certsList .dynamic-item .form-input').forEach(input => {
-    const v = input.value.trim();
-    if (v) certs.push(v);
-  });
-
-  const id = editId || name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
-
-  const data = {
-    id, name, types: selectedTypes, skills: selectedSkills, bio,
-    photo: photoData, bg: bgData,
-    placements, certs,
-    instagram, tiktok, spotify, ytChannel, youtube,
-    updatedAt: new Date().toISOString(),
-  };
-
+  if (!d.name) { statusMsg.textContent = '⚠ Nom requis'; statusMsg.className = 'status error'; return; }
+  if (!d.types.length && !d.skills.length) { statusMsg.textContent = '⚠ Sélectionner au moins un type ou compétence'; statusMsg.className = 'status error'; return; }
+  const id = editId || d.name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
   const btn = document.getElementById('submitBtn');
-  btn.disabled = true;
-  btn.textContent = '⏳ Enregistrement...';
-
+  btn.disabled = true; btn.textContent = '⏳ Enregistrement...';
   try {
-    await fetch(DB + '/roster/' + id + '.json', {method: 'PUT', body: JSON.stringify(data)});
-    statusMsg.textContent = editId ? '✓ Fiche modifiée : ' + name : '✓ Fiche créée : ' + name;
+    await fetch(DB + '/roster/' + id + '.json', {method:'PUT', body:JSON.stringify({...d, id, updatedAt: new Date().toISOString()})});
+    statusMsg.textContent = (editId ? '✓ Modifié : ' : '✓ Créé : ') + d.name;
     statusMsg.className = 'status success';
     document.getElementById('rosterLink').style.display = '';
-    if (editId) {
-      setTimeout(() => { window.location.href = 'roster.html'; }, 800);
-    } else {
-      resetForm();
-    }
-  } catch (err) {
-    statusMsg.textContent = '⚠ Erreur réseau — réessaye';
-    statusMsg.className = 'status error';
-  }
-
-  btn.disabled = false;
-  btn.textContent = editId ? '✓ Enregistrer les modifications' : '⚡ Créer la fiche';
+    if (editId) setTimeout(() => { window.location.href = 'roster.html'; }, 800);
+    else exitEditMode();
+  } catch(err) { statusMsg.textContent = '⚠ Erreur réseau'; statusMsg.className = 'status error'; }
+  btn.disabled = false; btn.textContent = editId ? '✓ Enregistrer' : '⚡ Créer la fiche';
 });
 </script>
 </body>
