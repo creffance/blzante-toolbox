@@ -276,11 +276,12 @@ document.getElementById('addPlacement').addEventListener('click', () => addPlace
 
 // ─── Major placements ───
 let majorCount = 0;
-function addMajor(artist, title, artwork) {
+function addMajor(artist, title, artwork, link) {
   majorCount++;
   const div = document.createElement('div'); div.className = 'major-item'; div.dataset.mid = majorCount;
   div.innerHTML = `<input type="text" class="form-input" placeholder="Artiste" value="${artist||''}" data-f="artist" />` +
     `<input type="text" class="form-input" placeholder="Projet" value="${title||''}" data-f="title" />` +
+    `<input type="text" class="form-input" placeholder="Lien écoute (optionnel)" value="${link||''}" data-f="link" style="font-size:0.68rem" />` +
     `<label class="major-upload"><input type="file" accept="image/*" style="display:none" data-f="file" />img</label>` +
     `<button class="remove-btn" onclick="this.parentElement.remove()">×</button>`;
   if (artwork) {
@@ -303,13 +304,22 @@ document.getElementById('addMajor').addEventListener('click', () => addMajor());
 
 // ─── Discographie artiste ───
 let discoCount = 0;
-function addDisco(artist, title, artwork) {
+function addDisco(artist, title, artwork, date, link) {
   discoCount++;
   const div = document.createElement('div'); div.className = 'major-item'; div.dataset.did = discoCount;
-  div.innerHTML = `<input type="text" class="form-input" placeholder="Artiste" value="${artist||''}" data-f="artist" />` +
+  div.innerHTML = `<input type="text" class="form-input" placeholder="MM/YYYY" value="${date||''}" data-f="date" style="max-width:90px" maxlength="7" />` +
+    `<input type="text" class="form-input" placeholder="Artiste" value="${artist||''}" data-f="artist" />` +
     `<input type="text" class="form-input" placeholder="Projet" value="${title||''}" data-f="title" />` +
+    `<input type="text" class="form-input" placeholder="Lien écoute (optionnel)" value="${link||''}" data-f="link" style="font-size:0.68rem" />` +
     `<label class="major-upload"><input type="file" accept="image/*" style="display:none" data-f="file" />img</label>` +
     `<button class="remove-btn" onclick="this.parentElement.remove()">×</button>`;
+  // Auto-format date MM/YYYY
+  const dateInput = div.querySelector('[data-f=date]');
+  dateInput.addEventListener('input', () => {
+    let v = dateInput.value.replace(/[^0-9]/g, '');
+    if (v.length > 2) v = v.slice(0,2) + '/' + v.slice(2,6);
+    dateInput.value = v;
+  });
   if (artwork) {
     const img = document.createElement('img'); img.className = 'major-artwork'; img.src = artwork; img.dataset.f = 'artworkSrc';
     div.insertBefore(img, div.querySelector('.remove-btn'));
@@ -365,14 +375,17 @@ function gatherData() {
   const majors = []; document.querySelectorAll('#majorList .major-item').forEach(div => {
     const artist = div.querySelector('[data-f=artist]').value.trim();
     const title = div.querySelector('[data-f=title]').value.trim();
+    const link = div.querySelector('[data-f=link]').value.trim();
     const artImg = div.querySelector('.major-artwork');
-    if (artist || title) majors.push({ artist, title, artwork: artImg ? artImg.src : '' });
+    if (artist || title) majors.push({ artist, title, link, artwork: artImg ? artImg.src : '' });
   });
   const discography = []; document.querySelectorAll('#discoList .major-item').forEach(div => {
+    const date = div.querySelector('[data-f=date]').value.trim();
     const artist = div.querySelector('[data-f=artist]').value.trim();
     const title = div.querySelector('[data-f=title]').value.trim();
+    const link = div.querySelector('[data-f=link]').value.trim();
     const artImg = div.querySelector('.major-artwork');
-    if (artist || title) discography.push({ artist, title, artwork: artImg ? artImg.src : '' });
+    if (artist || title) discography.push({ date, artist, title, link, artwork: artImg ? artImg.src : '' });
   });
   const certs = []; document.querySelectorAll('#certsList .cert-item').forEach(div => {
     const type = div.querySelector('[data-f=type]').value;
@@ -424,9 +437,9 @@ async function loadForEdit(id) {
     const pl = Array.isArray(d.placements) ? d.placements : d.placements ? Object.values(d.placements) : [];
     pl.forEach(p => addPlacement(typeof p === 'string' ? p : p.name || ''));
     const mj = Array.isArray(d.majors) ? d.majors : d.majors ? Object.values(d.majors) : [];
-    mj.forEach(m => addMajor(m.artist, m.title, m.artwork));
+    mj.forEach(m => addMajor(m.artist, m.title, m.artwork, m.link));
     const dc = Array.isArray(d.discography) ? d.discography : d.discography ? Object.values(d.discography) : [];
-    dc.forEach(x => addDisco(x.artist, x.title, x.artwork));
+    dc.forEach(x => addDisco(x.artist, x.title, x.artwork, x.date, x.link));
     const cr = Array.isArray(d.certs) ? d.certs : d.certs ? Object.values(d.certs) : [];
     cr.forEach(c => addCert(c.type, c.level, c.artist, c.project, c.artwork));
   } catch(err) { console.error(err); }
