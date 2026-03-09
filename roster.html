@@ -187,7 +187,7 @@ const SOCIAL_ICONS = {
     });
     const songwriters = allArtists.filter(a => {
       const t = a.types ? (Array.isArray(a.types) ? a.types : [a.types]) : [];
-      return !t.includes('Artiste Interprète');
+      return t.includes('Auteur') || t.includes('Compositeur') || t.includes('Topliner');
     });
 
     function getBgSrc(a) {
