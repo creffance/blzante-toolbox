@@ -145,14 +145,20 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
   </div>
 
   <div class="form-group" style="margin-top:12px">
-    <label class="form-label">Image de fond (optionnel — par défaut : fond BLZante)</label>
-    <div style="display:flex;gap:8px;align-items:flex-start">
-      <input type="text" class="form-input" id="bgUrl" placeholder="Coller un lien URL" autocomplete="off" style="flex:1" />
-      <label class="img-add" style="width:auto;height:auto;padding:10px 14px;font-size:0.7rem" for="bgFileInput">Upload</label>
-      <input type="file" id="bgFileInput" accept="image/*" style="display:none" />
+    <label class="form-label">Images de fond (optionnel — par défaut : fond BLZante)</label>
+    <p class="img-hint">Cliquer sur une image pour la définir comme principale (bordure jaune).</p>
+    <div class="img-gallery" id="bgGallery">
+      <div class="img-add" id="bgAddBtn" title="Ajouter une image de fond">+</div>
     </div>
-    <img id="bgPreview" style="width:120px;height:68px;object-fit:cover;border:1px solid var(--border);margin-top:8px;display:none" />
+    <input type="file" id="bgFileInput" accept="image/*" style="display:none" multiple />
+    <div class="form-group img-url-input">
+      <input type="text" class="form-input" id="bgUrlInput" placeholder="Ou coller un lien URL et appuyer Entrée" autocomplete="off" />
+    </div>
   </div>
+
+  <div class="form-section" id="discoSection" style="display:none">Discographie artiste</div>
+  <div class="dynamic-list" id="discoList" style="display:none"></div>
+  <button class="add-btn-dyn" id="addDisco" style="display:none">+ Ajouter une sortie</button>
 
   <div class="form-section">Placements</div>
   <div class="form-group">
@@ -191,7 +197,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 const DB = 'https://blzante-toolbox-default-rtdb.europe-west1.firebasedatabase.app';
 let selectedTypes = [], selectedSkills = [], editId = null;
 let images = []; // {src, primary}
-let bgData = '';
+let bgImages = []; // {src, primary}
 
 // ─── Type / Skill buttons ───
 document.getElementById('typeOptions').addEventListener('click', e => {
@@ -199,6 +205,7 @@ document.getElementById('typeOptions').addEventListener('click', e => {
   const t = b.dataset.type;
   if (selectedTypes.includes(t)) { selectedTypes = selectedTypes.filter(x=>x!==t); b.classList.remove('active'); }
   else { selectedTypes.push(t); b.classList.add('active'); }
+  toggleDiscoSection();
 });
 document.getElementById('skillOptions').addEventListener('click', e => {
   const b = e.target.closest('.type-btn'); if (!b) return;
@@ -207,57 +214,51 @@ document.getElementById('skillOptions').addEventListener('click', e => {
   else { selectedSkills.push(s); b.classList.add('active'); }
 });
 
-// ─── Images ───
-function renderImages() {
-  const gal = document.getElementById('imgGallery');
-  gal.querySelectorAll('.img-thumb-wrap').forEach(e => e.remove());
-  const addBtn = document.getElementById('imgAddBtn');
-  images.forEach((img, i) => {
-    const wrap = document.createElement('div');
-    wrap.className = 'img-thumb-wrap';
-    wrap.innerHTML = `<img class="img-thumb ${img.primary ? 'primary' : ''}" src="${img.src}" data-idx="${i}" /><button class="img-thumb-rm" data-idx="${i}">×</button>`;
-    gal.insertBefore(wrap, addBtn);
-  });
+function toggleDiscoSection() {
+  const show = selectedTypes.includes('Artiste Interprète');
+  document.getElementById('discoSection').style.display = show ? '' : 'none';
+  document.getElementById('discoList').style.display = show ? '' : 'none';
+  document.getElementById('addDisco').style.display = show ? '' : 'none';
 }
-document.getElementById('imgGallery').addEventListener('click', e => {
-  const rm = e.target.closest('.img-thumb-rm');
-  if (rm) { images.splice(parseInt(rm.dataset.idx), 1); if (images.length && !images.some(i=>i.primary)) images[0].primary = true; renderImages(); return; }
-  const thumb = e.target.closest('.img-thumb');
-  if (thumb) { const idx = parseInt(thumb.dataset.idx); images.forEach((im,i) => im.primary = i===idx); renderImages(); return; }
-  if (e.target.closest('.img-add')) document.getElementById('imgFileInput').click();
-});
-document.getElementById('imgFileInput').addEventListener('change', e => {
-  Array.from(e.target.files).forEach(file => {
-    const reader = new FileReader();
-    reader.onload = ev => { images.push({src: ev.target.result, primary: images.length === 0}); renderImages(); };
-    reader.readAsDataURL(file);
-  });
-  e.target.value = '';
-});
-document.getElementById('imgUrlInput').addEventListener('keydown', e => {
-  if (e.key !== 'Enter') return; e.preventDefault();
-  const url = e.target.value.trim(); if (!url) return;
-  images.push({src: url, primary: images.length === 0}); renderImages(); e.target.value = '';
-});
 
-// ─── Background image ───
-document.getElementById('bgUrl').addEventListener('input', e => {
-  const url = e.target.value.trim();
-  bgData = url;
-  const prev = document.getElementById('bgPreview');
-  if (url) { prev.src = url; prev.style.display = 'block'; } else { prev.style.display = 'none'; }
-});
-document.getElementById('bgFileInput').addEventListener('change', e => {
-  const file = e.target.files[0]; if (!file) return;
-  const r = new FileReader();
-  r.onload = ev => {
-    bgData = ev.target.result;
-    document.getElementById('bgUrl').value = '(fichier uploadé)';
-    const prev = document.getElementById('bgPreview');
-    prev.src = ev.target.result; prev.style.display = 'block';
-  };
-  r.readAsDataURL(file);
-});
+// ─── Generic gallery handler ───
+function makeGallery(arr, galId, addBtnId, fileInputId, urlInputId) {
+  function render() {
+    const gal = document.getElementById(galId);
+    gal.querySelectorAll('.img-thumb-wrap').forEach(e => e.remove());
+    const addBtn = document.getElementById(addBtnId);
+    arr.forEach((img, i) => {
+      const wrap = document.createElement('div');
+      wrap.className = 'img-thumb-wrap';
+      wrap.innerHTML = `<img class="img-thumb ${img.primary ? 'primary' : ''}" src="${img.src}" data-idx="${i}" /><button class="img-thumb-rm" data-idx="${i}">×</button>`;
+      gal.insertBefore(wrap, addBtn);
+    });
+  }
+  document.getElementById(galId).addEventListener('click', e => {
+    const rm = e.target.closest('.img-thumb-rm');
+    if (rm) { arr.splice(parseInt(rm.dataset.idx), 1); if (arr.length && !arr.some(i=>i.primary)) arr[0].primary = true; render(); return; }
+    const thumb = e.target.closest('.img-thumb');
+    if (thumb) { const idx = parseInt(thumb.dataset.idx); arr.forEach((im,i) => im.primary = i===idx); render(); return; }
+    if (e.target.closest('.img-add')) document.getElementById(fileInputId).click();
+  });
+  document.getElementById(fileInputId).addEventListener('change', e => {
+    Array.from(e.target.files).forEach(file => {
+      const reader = new FileReader();
+      reader.onload = ev => { arr.push({src: ev.target.result, primary: arr.length === 0}); render(); };
+      reader.readAsDataURL(file);
+    });
+    e.target.value = '';
+  });
+  document.getElementById(urlInputId).addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return; e.preventDefault();
+    const url = e.target.value.trim(); if (!url) return;
+    arr.push({src: url, primary: arr.length === 0}); render(); e.target.value = '';
+  });
+  return render;
+}
+
+const renderImages = makeGallery(images, 'imgGallery', 'imgAddBtn', 'imgFileInput', 'imgUrlInput');
+const renderBgImages = makeGallery(bgImages, 'bgGallery', 'bgAddBtn', 'bgFileInput', 'bgUrlInput');
 
 // ─── Placements (simple artist names) ───
 function addPlacement(val) {
@@ -300,6 +301,33 @@ function addMajor(artist, title, artwork) {
 }
 document.getElementById('addMajor').addEventListener('click', () => addMajor());
 
+// ─── Discographie artiste ───
+let discoCount = 0;
+function addDisco(artist, title, artwork) {
+  discoCount++;
+  const div = document.createElement('div'); div.className = 'major-item'; div.dataset.did = discoCount;
+  div.innerHTML = `<input type="text" class="form-input" placeholder="Artiste" value="${artist||''}" data-f="artist" />` +
+    `<input type="text" class="form-input" placeholder="Projet" value="${title||''}" data-f="title" />` +
+    `<label class="major-upload"><input type="file" accept="image/*" style="display:none" data-f="file" />img</label>` +
+    `<button class="remove-btn" onclick="this.parentElement.remove()">×</button>`;
+  if (artwork) {
+    const img = document.createElement('img'); img.className = 'major-artwork'; img.src = artwork; img.dataset.f = 'artworkSrc';
+    div.insertBefore(img, div.querySelector('.remove-btn'));
+  }
+  const fileInput = div.querySelector('input[type=file]');
+  fileInput.addEventListener('change', ev => {
+    const f = ev.target.files[0]; if (!f) return;
+    const r = new FileReader(); r.onload = re => {
+      let img = div.querySelector('.major-artwork');
+      if (!img) { img = document.createElement('img'); img.className = 'major-artwork'; img.dataset.f = 'artworkSrc'; div.insertBefore(img, div.querySelector('.remove-btn')); }
+      img.src = re.target.result;
+    }; r.readAsDataURL(f);
+  });
+  div.querySelector('.major-upload').addEventListener('click', () => fileInput.click());
+  document.getElementById('discoList').appendChild(div);
+}
+document.getElementById('addDisco').addEventListener('click', () => addDisco());
+
 // ─── Certifications ───
 let certCount = 0;
 function addCert(type, level, artist, project, artwork) {
@@ -340,6 +368,12 @@ function gatherData() {
     const artImg = div.querySelector('.major-artwork');
     if (artist || title) majors.push({ artist, title, artwork: artImg ? artImg.src : '' });
   });
+  const discography = []; document.querySelectorAll('#discoList .major-item').forEach(div => {
+    const artist = div.querySelector('[data-f=artist]').value.trim();
+    const title = div.querySelector('[data-f=title]').value.trim();
+    const artImg = div.querySelector('.major-artwork');
+    if (artist || title) discography.push({ artist, title, artwork: artImg ? artImg.src : '' });
+  });
   const certs = []; document.querySelectorAll('#certsList .cert-item').forEach(div => {
     const type = div.querySelector('[data-f=type]').value;
     const level = div.querySelector('[data-f=level]').value;
@@ -349,14 +383,13 @@ function gatherData() {
     if (type || level || artist) certs.push({ type, level, artist, project, artwork: artImg ? artImg.src : '' });
   });
   return {
-    name, types: selectedTypes, skills: selectedSkills, bio, images,
-    placements, majors, certs,
+    name, types: selectedTypes, skills: selectedSkills, bio, images, bgImages,
+    placements, majors, discography, certs,
     instagram: document.getElementById('linkInsta').value.trim(),
     tiktok: document.getElementById('linkTiktok').value.trim(),
     spotify: document.getElementById('linkSpotify').value.trim(),
     ytChannel: document.getElementById('linkYtChannel').value.trim(),
     youtube: document.getElementById('linkYoutube').value.trim(),
-    bg: bgData,
   };
 }
 
@@ -383,16 +416,17 @@ async function loadForEdit(id) {
     document.querySelectorAll('#skillOptions .type-btn').forEach(b => b.classList.toggle('active', selectedSkills.includes(b.dataset.skill)));
     images = Array.isArray(d.images) ? [...d.images] : d.images ? Object.values(d.images) : [];
     renderImages();
-    if (d.bg) {
-      bgData = d.bg;
-      document.getElementById('bgUrl').value = d.bg.startsWith('data:') ? '(fichier uploadé)' : d.bg;
-      document.getElementById('bgPreview').src = d.bg;
-      document.getElementById('bgPreview').style.display = 'block';
-    }
+    bgImages = Array.isArray(d.bgImages) ? [...d.bgImages] : d.bgImages ? Object.values(d.bgImages) : [];
+    // Backward compat: old single bg field
+    if (!bgImages.length && d.bg) bgImages = [{src: d.bg, primary: true}];
+    renderBgImages();
+    toggleDiscoSection();
     const pl = Array.isArray(d.placements) ? d.placements : d.placements ? Object.values(d.placements) : [];
     pl.forEach(p => addPlacement(typeof p === 'string' ? p : p.name || ''));
     const mj = Array.isArray(d.majors) ? d.majors : d.majors ? Object.values(d.majors) : [];
     mj.forEach(m => addMajor(m.artist, m.title, m.artwork));
+    const dc = Array.isArray(d.discography) ? d.discography : d.discography ? Object.values(d.discography) : [];
+    dc.forEach(x => addDisco(x.artist, x.title, x.artwork));
     const cr = Array.isArray(d.certs) ? d.certs : d.certs ? Object.values(d.certs) : [];
     cr.forEach(c => addCert(c.type, c.level, c.artist, c.project, c.artwork));
   } catch(err) { console.error(err); }
@@ -410,13 +444,14 @@ function exitEditMode() {
   document.getElementById('linkSpotify').value = '';
   document.getElementById('linkYtChannel').value = '';
   document.getElementById('linkYoutube').value = '';
-  selectedTypes = []; selectedSkills = []; images = []; bgData = '';
+  selectedTypes = []; selectedSkills = []; images = []; bgImages = [];
   document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
   renderImages();
-  document.getElementById('bgUrl').value = '';
-  document.getElementById('bgPreview').style.display = 'none';
+  renderBgImages();
+  toggleDiscoSection();
   document.getElementById('placementsList').innerHTML = '';
   document.getElementById('majorList').innerHTML = '';
+  document.getElementById('discoList').innerHTML = '';
   document.getElementById('certsList').innerHTML = '';
 }
 document.getElementById('cancelBtn').addEventListener('click', exitEditMode);

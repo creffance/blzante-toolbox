@@ -28,6 +28,12 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 
 /* Roster list */
 .roster-list { display: flex; flex-direction: column; gap: 1px; background: var(--border); border: 1px solid var(--border); }
+.roster-section-header {
+  font-family: 'Syne', sans-serif; font-size: 0.68rem; font-weight: 700;
+  letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted);
+  margin-top: 28px; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid var(--border);
+}
+.roster-section-header:first-of-type { margin-top: 0; }
 .roster-entry { background: var(--bg); }
 .roster-entry:hover { background: #111; }
 
@@ -52,6 +58,8 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 }
 .card-bg { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0.2; z-index: 0; }
 .card-content { position: relative; z-index: 1; padding: 24px; flex: 1; display: flex; flex-direction: column; overflow-y: auto; }
+.card-socials-top { position: absolute; top: 12px; right: 12px; display: flex; gap: 6px; z-index: 2; }
+.card-socials-top .social-link { width: 30px; height: 30px; }
 .card-top { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 8px; }
 .card-photo { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border); flex-shrink: 0; }
 .card-photo-ph { width: 72px; height: 72px; border-radius: 50%; background: #222; border: 2px solid var(--border); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.4rem; color: #555; }
@@ -97,7 +105,6 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .cert-tag { display: flex; align-items: center; gap: 6px; font-size: 0.58rem; color: var(--accent); padding: 3px 8px; border: 1px solid #4a3e10; }
 .cert-art { width: 24px; height: 24px; object-fit: cover; }
 
-.card-socials { display: flex; gap: 8px; margin-top: auto; }
 .social-link { display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border: 1px solid rgba(255,255,255,0.15); color: #ddd; transition: all 0.15s; }
 .social-link:hover { border-color: #fff; color: #fff; }
 
@@ -173,78 +180,111 @@ const SOCIAL_ICONS = {
     const data = await res.json();
     const content = document.getElementById('rosterContent');
     if (!data) { content.innerHTML = '<div class="loading">Aucun artiste.<br><a href="roster_create.html" style="color:var(--accent)">Créer une fiche →</a></div>'; return; }
-    const artists = Object.values(data).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    const allArtists = Object.values(data).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    const artistesInterpretes = allArtists.filter(a => {
+      const t = a.types ? (Array.isArray(a.types) ? a.types : [a.types]) : [];
+      return t.includes('Artiste Interprète');
+    });
+    const songwriters = allArtists.filter(a => {
+      const t = a.types ? (Array.isArray(a.types) ? a.types : [a.types]) : [];
+      return !t.includes('Artiste Interprète');
+    });
 
-    let html = '<div class="roster-list">';
-    artists.forEach(a => {
+    function getBgSrc(a) {
+      const bgs = a.bgImages ? (Array.isArray(a.bgImages) ? a.bgImages : Object.values(a.bgImages)) : [];
+      const primaryBg = bgs.find(i => i.primary) || bgs[0];
+      if (primaryBg) return primaryBg.src;
+      if (a.bg) return a.bg;
+      const imgs = a.images ? (Array.isArray(a.images) ? a.images : Object.values(a.images)) : [];
+      const fallback = imgs.length > 1 ? (imgs.find(i => !i.primary) || imgs[0]) : null;
+      return fallback ? fallback.src : DEFAULT_BG;
+    }
+
+    function renderEntry(a) {
       const types = a.types ? (Array.isArray(a.types) ? a.types : [a.types]) : [];
       const skills = a.skills ? (Array.isArray(a.skills) ? a.skills : [a.skills]) : [];
       const allLabels = [...types, ...skills].join(' · ');
       const imgs = a.images ? (Array.isArray(a.images) ? a.images : Object.values(a.images)) : [];
       const primary = imgs.find(i => i.primary) || imgs[0];
-      const bgImg = imgs.length > 1 ? (imgs.find(i => !i.primary) || imgs[0]) : primary;
-      const bgSrc = a.bg || (bgImg ? bgImg.src : '') || DEFAULT_BG;
+      const bgSrc = getBgSrc(a);
       const placements = a.placements ? (Array.isArray(a.placements) ? a.placements : Object.values(a.placements)) : [];
       const majors = a.majors ? (Array.isArray(a.majors) ? a.majors : Object.values(a.majors)) : [];
+      const discography = a.discography ? (Array.isArray(a.discography) ? a.discography : Object.values(a.discography)) : [];
       const certs = a.certs ? (Array.isArray(a.certs) ? a.certs : Object.values(a.certs)) : [];
       const initial = (a.name || '?')[0];
+      const socials = ['instagram','tiktok','spotify','ytChannel'].filter(k => a[k]);
 
-      html += `<div class="roster-entry" data-id="${a.id}">`;
-      html += `<div class="entry-header">`;
-      html += `<span class="entry-chevron">›</span>`;
-      html += `<div style="flex:1;min-width:0"><div class="entry-name">${a.name}</div>`;
-      if (allLabels) html += `<div class="entry-types">${allLabels}</div>`;
-      html += `</div>`;
-      html += `<div class="entry-btns">`;
-      html += `<button class="entry-btn pdf" data-id="${a.id}" title="Télécharger PDF">PDF</button>`;
-      html += `<a class="entry-btn" href="roster_create.html?edit=${a.id}">edit</a>`;
-      html += `</div></div>`;
+      let h = `<div class="roster-entry" data-id="${a.id}">`;
+      h += `<div class="entry-header"><span class="entry-chevron">›</span>`;
+      h += `<div style="flex:1;min-width:0"><div class="entry-name">${a.name}</div>`;
+      if (allLabels) h += `<div class="entry-types">${allLabels}</div>`;
+      h += `</div><div class="entry-btns">`;
+      h += `<button class="entry-btn pdf" data-id="${a.id}" title="Télécharger PDF">PDF</button>`;
+      h += `<a class="entry-btn" href="roster_create.html?edit=${a.id}">edit</a>`;
+      h += `</div></div>`;
 
-      // Expandable card
-      html += `<div class="entry-card"><div class="card-inner">`;
-      if (bgSrc) html += `<div class="card-bg" style="background-image:url('${bgSrc}')"></div>`;
-      html += `<div class="card-content">`;
-      html += `<div class="card-top">`;
-      if (primary) html += `<img class="card-photo" src="${primary.src}" />`;
-      else html += `<div class="card-photo-ph">${initial}</div>`;
-      html += `<div><div class="card-name">${a.name}</div>`;
-      if (types.length) html += `<div class="card-types">${types.join(' · ')}</div>`;
-      if (skills.length) html += `<div class="card-skills">${skills.join(' · ')}</div>`;
-      html += `</div></div>`;
+      // Card
+      h += `<div class="entry-card"><div class="card-inner">`;
+      if (bgSrc) h += `<div class="card-bg" style="background-image:url('${bgSrc}')"></div>`;
 
-      // Playlist button
-      if (a.youtube) {
-        html += `<a class="playlist-btn" href="${a.youtube}" target="_blank">`;
-        html += `<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`;
-        html += `Écouter la playlist`;
-        html += ` ${SOCIAL_ICONS.youtube}`;
-        html += `</a>`;
+      // Social icons top-right
+      if (socials.length) {
+        h += `<div class="card-socials-top">`;
+        socials.forEach(k => {
+          const title = k === 'ytChannel' ? 'YouTube' : k.charAt(0).toUpperCase() + k.slice(1);
+          h += `<a class="social-link" href="${a[k]}" target="_blank" title="${title}">${SOCIAL_ICONS[k]}</a>`;
+        });
+        h += `</div>`;
       }
 
-      if (a.bio) html += `<div class="card-bio">${a.bio}</div>`;
+      h += `<div class="card-content"><div class="card-top">`;
+      if (primary) h += `<img class="card-photo" src="${primary.src}" />`;
+      else h += `<div class="card-photo-ph">${initial}</div>`;
+      h += `<div><div class="card-name">${a.name}</div>`;
+      if (types.length) h += `<div class="card-types">${types.join(' · ')}</div>`;
+      if (skills.length) h += `<div class="card-skills">${skills.join(' · ')}</div>`;
+      h += `</div></div>`;
+
+      // Playlist
+      if (a.youtube) {
+        h += `<a class="playlist-btn" href="${a.youtube}" target="_blank">`;
+        h += `<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`;
+        h += `Écouter la playlist ${SOCIAL_ICONS.youtube}</a>`;
+      }
+
+      if (a.bio) h += `<div class="card-bio">${a.bio}</div>`;
+
+      // Discography
+      if (discography.length) {
+        h += `<div class="card-section-title">Discographie</div><div class="card-majors">`;
+        discography.forEach(d => {
+          h += `<div class="major-block">`;
+          if (d.artwork) h += `<img class="major-art" src="${d.artwork}" />`;
+          h += `<div class="major-info"><strong>${d.artist || ''}</strong><br>${d.title || ''}</div></div>`;
+        });
+        h += `</div>`;
+      }
 
       // Placements
       if (placements.length) {
         const sorted = [...placements].map(p => typeof p === 'string' ? p : p.name || '').filter(Boolean).sort();
-        html += `<div class="card-section-title">Artistes placés</div>`;
-        html += `<div class="card-placements">`;
-        sorted.forEach(n => { html += `<span class="pl-tag">${n}</span>`; });
-        html += `</div>`;
+        h += `<div class="card-section-title">Artistes placés</div><div class="card-placements">`;
+        sorted.forEach(n => { h += `<span class="pl-tag">${n}</span>`; });
+        h += `</div>`;
       }
 
       // Major placements
       if (majors.length) {
-        html += `<div class="card-section-title">Placements majeurs</div>`;
-        html += `<div class="card-majors">`;
+        h += `<div class="card-section-title">Placements majeurs</div><div class="card-majors">`;
         majors.forEach(m => {
-          html += `<div class="major-block">`;
-          if (m.artwork) html += `<img class="major-art" src="${m.artwork}" />`;
-          html += `<div class="major-info"><strong>${m.artist || ''}</strong><br>${m.title || ''}</div></div>`;
+          h += `<div class="major-block">`;
+          if (m.artwork) h += `<img class="major-art" src="${m.artwork}" />`;
+          h += `<div class="major-info"><strong>${m.artist || ''}</strong><br>${m.title || ''}</div></div>`;
         });
-        html += `</div>`;
+        h += `</div>`;
       }
 
-      // Certs — grouped by type, ordered Diamant > Platine > Or
+      // Certs
       if (certs.length) {
         const CERT_EMOJI = { 'Or': '🥇', 'Platine': '🥈', 'Diamant': '💎' };
         const CERT_ORDER = { 'Diamant': 0, 'Platine': 1, 'Or': 2 };
@@ -252,7 +292,6 @@ const SOCIAL_ICONS = {
         const singles = sortedCerts.filter(c => c.type === 'Single');
         const albums = sortedCerts.filter(c => c.type === 'Album');
         const other = sortedCerts.filter(c => c.type !== 'Single' && c.type !== 'Album');
-
         const renderCertGroup = (title, list) => {
           if (!list.length) return '';
           let out = `<div class="card-section-title">${title}</div><div class="card-certs">`;
@@ -266,30 +305,36 @@ const SOCIAL_ICONS = {
           });
           return out + '</div>';
         };
-        html += renderCertGroup('Certifications Singles', singles);
-        html += renderCertGroup('Certifications Albums', albums);
-        html += renderCertGroup('Autres certifications', other);
+        h += renderCertGroup('Certifications Singles', singles);
+        h += renderCertGroup('Certifications Albums', albums);
+        h += renderCertGroup('Autres certifications', other);
       }
 
-      // Social links
-      const socials = ['instagram','tiktok','spotify','ytChannel'].filter(k => a[k]);
-      if (socials.length) {
-        html += `<div class="card-socials">`;
-        socials.forEach(k => {
-          const title = k === 'ytChannel' ? 'YouTube' : k === 'youtube' ? 'Playlist YT' : k.charAt(0).toUpperCase() + k.slice(1);
-          html += `<a class="social-link" href="${a[k]}" target="_blank" title="${title}">${SOCIAL_ICONS[k] || title}</a>`;
-        });
-        html += `</div>`;
-      }
+      h += `</div></div></div></div>`;
+      return h;
+    }
 
-      html += `</div></div></div></div>`;
-    });
-    html += '</div>';
+    let html = '';
+
+    if (artistesInterpretes.length) {
+      html += '<div class="roster-section-header">Artistes</div>';
+      html += '<div class="roster-list">';
+      artistesInterpretes.forEach(a => { html += renderEntry(a); });
+      html += '</div>';
+    }
+
+    if (songwriters.length) {
+      html += '<div class="roster-section-header">Songwriters</div>';
+      html += '<div class="roster-list">';
+      songwriters.forEach(a => { html += renderEntry(a); });
+      html += '</div>';
+    }
+
     content.innerHTML = html;
 
     // Store artists for PDF
     window._rosterArtists = {};
-    artists.forEach(a => { window._rosterArtists[a.id] = a; });
+    allArtists.forEach(a => { window._rosterArtists[a.id] = a; });
 
     // Toggle
     content.addEventListener('click', e => {
@@ -297,20 +342,16 @@ const SOCIAL_ICONS = {
       if (header && !e.target.closest('.entry-btn')) {
         header.closest('.roster-entry').classList.toggle('open');
       }
-    });
-
-    // PDF download
-    content.addEventListener('click', async e => {
+      // PDF download
       const pdfBtn = e.target.closest('.entry-btn.pdf');
-      if (!pdfBtn) return;
-      e.stopPropagation();
-      const id = pdfBtn.dataset.id;
-      const a = window._rosterArtists[id];
-      if (!a) return;
-
-      pdfBtn.textContent = '⏳';
-      try { await generatePDF(a); } catch(err) { console.error(err); alert('Erreur PDF'); }
-      pdfBtn.textContent = 'PDF';
+      if (pdfBtn) {
+        e.stopPropagation();
+        const id = pdfBtn.dataset.id;
+        const a = window._rosterArtists[id];
+        if (!a) return;
+        pdfBtn.textContent = '⏳';
+        generatePDF(a).then(() => { pdfBtn.textContent = 'PDF'; }).catch(err => { console.error(err); alert('Erreur PDF'); pdfBtn.textContent = 'PDF'; });
+      }
     });
 
   } catch(err) { document.getElementById('rosterContent').innerHTML = '<div class="loading">⚠ Erreur de connexion</div>'; }
@@ -322,9 +363,12 @@ async function generatePDF(a) {
   const skills = a.skills ? (Array.isArray(a.skills) ? a.skills : [a.skills]) : [];
   const imgs = a.images ? (Array.isArray(a.images) ? a.images : Object.values(a.images)) : [];
   const primary = imgs.find(i => i.primary) || imgs[0];
-  const bgSrc = a.bg || (imgs.length > 1 ? (imgs.find(i => !i.primary) || imgs[0] || {}).src : '') || DEFAULT_BG;
+  const bgs = a.bgImages ? (Array.isArray(a.bgImages) ? a.bgImages : Object.values(a.bgImages)) : [];
+  const primaryBg = bgs.find(i => i.primary) || bgs[0];
+  const bgSrc = (primaryBg ? primaryBg.src : '') || a.bg || (imgs.length > 1 ? ((imgs.find(i => !i.primary) || imgs[0] || {}).src || '') : '') || DEFAULT_BG;
   const placements = a.placements ? (Array.isArray(a.placements) ? a.placements : Object.values(a.placements)) : [];
   const majors = a.majors ? (Array.isArray(a.majors) ? a.majors : Object.values(a.majors)) : [];
+  const discography = a.discography ? (Array.isArray(a.discography) ? a.discography : Object.values(a.discography)) : [];
   const certs = a.certs ? (Array.isArray(a.certs) ? a.certs : Object.values(a.certs)) : [];
   const initial = (a.name || '?')[0];
   const CERT_EMOJI = { 'Or': '🥇', 'Platine': '🥈', 'Diamant': '💎' };
@@ -360,6 +404,18 @@ async function generatePDF(a) {
 
   // Bio
   if (a.bio) h += `<div class="pdf-bio">${a.bio}</div>`;
+
+  // Discography
+  if (discography.length) {
+    h += '<div class="pdf-section-label">DISCOGRAPHIE</div>';
+    h += '<div class="pdf-majors">';
+    discography.forEach(d => {
+      h += '<div class="pdf-major">';
+      if (d.artwork) h += `<img src="${d.artwork}" crossorigin="anonymous" />`;
+      h += `<div class="pdf-major-info"><strong>${d.artist || ''}</strong><br>${d.title || ''}</div></div>`;
+    });
+    h += '</div>';
+  }
 
   // Artistes placés (sorted)
   if (placements.length) {
