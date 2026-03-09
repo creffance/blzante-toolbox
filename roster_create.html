@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Créer une fiche artiste — BLZante Toolbox</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Syne+Mono&display=swap');
+:root { --bg: #0a0a0a; --surface: #141414; --border: #262626; --text: #e8e8e8; --muted: #777; --accent: #e8c547; --success: #4ade80; --error: #ff6b6b; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Syne Mono', monospace; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+body::before { content: ''; position: fixed; inset: 0; background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px); background-size: 60px 60px; opacity: 0.3; pointer-events: none; z-index: 0; }
+nav { display: flex; align-items: center; justify-content: space-between; padding: 18px 40px; border-bottom: 1px solid var(--border); position: relative; z-index: 1; }
+.nav-logo { font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 800; color: #fff; text-decoration: none; letter-spacing: 0.08em; display: flex; align-items: center; gap: 10px; }
+.nav-logo-img { height: 28px; width: auto; display: block; }
+.nav-right { display: flex; align-items: center; gap: 12px; font-size: 0.65rem; color: var(--muted); letter-spacing: 0.14em; text-transform: uppercase; }
+.nav-back { color: var(--muted); text-decoration: none; font-size: 0.65rem; letter-spacing: 0.14em; text-transform: uppercase; transition: color 0.15s; }
+.nav-back:hover { color: #fff; }
+.nav-sep { color: var(--border); }
+.container { max-width: 700px; margin: 0 auto; padding: 40px 40px 60px; position: relative; z-index: 1; flex: 1; width: 100%; }
+.page-heading { margin-bottom: 32px; border-bottom: 1px solid var(--border); padding-bottom: 20px; }
+.page-heading h1 { font-family: 'Syne', sans-serif; font-size: 1.3rem; font-weight: 800; color: var(--text); line-height: 1.3; }
+
+/* Form */
+.form-section { font-family: 'Syne', sans-serif; font-size: 0.62rem; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); margin: 28px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+.form-section:first-of-type { margin-top: 0; }
+.form-group { margin-bottom: 16px; }
+.form-label { font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; display: block; }
+.form-input, .form-select, .form-textarea {
+  width: 100%; font-family: 'Syne Mono', monospace; font-size: 0.82rem;
+  padding: 12px 14px; border: 1px solid var(--border); background: var(--surface);
+  color: var(--text); outline: none; transition: border-color 0.2s;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus { border-color: #555; }
+.form-input::placeholder, .form-textarea::placeholder { color: #444; }
+.form-textarea { resize: vertical; min-height: 70px; line-height: 1.6; }
+.form-select { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23777'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* Type tags */
+.type-options { display: flex; flex-wrap: wrap; gap: 6px; }
+.type-btn {
+  font-family: 'Syne Mono', monospace; font-size: 0.62rem; letter-spacing: 0.06em;
+  padding: 6px 12px; background: transparent; border: 1px solid var(--border);
+  color: var(--muted); cursor: pointer; transition: all 0.15s;
+}
+.type-btn:hover { border-color: #555; color: var(--text); }
+.type-btn.active { border-color: var(--accent); color: var(--accent); }
+
+/* Image upload */
+.img-upload { display: flex; gap: 8px; align-items: flex-start; }
+.img-upload .form-input { flex: 1; }
+.img-upload-btn {
+  font-family: 'Syne Mono', monospace; font-size: 0.62rem; padding: 12px 14px;
+  background: var(--surface); border: 1px solid var(--border); color: var(--muted);
+  cursor: pointer; transition: all 0.15s; white-space: nowrap;
+}
+.img-upload-btn:hover { border-color: #555; color: var(--text); }
+.img-preview { width: 80px; height: 80px; object-fit: cover; border: 1px solid var(--border); margin-top: 8px; display: none; }
+.img-preview.round { border-radius: 50%; }
+
+/* Dynamic lists */
+.dynamic-list { display: flex; flex-direction: column; gap: 8px; }
+.dynamic-item {
+  display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 6px; align-items: center;
+}
+.dynamic-item.cert { grid-template-columns: 1fr auto; }
+.dynamic-item .form-input { padding: 10px 12px; font-size: 0.78rem; }
+.remove-item {
+  width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+  background: transparent; border: 1px solid #333; color: #555; cursor: pointer;
+  font-size: 0.8rem; transition: all 0.15s;
+}
+.remove-item:hover { border-color: var(--error); color: var(--error); }
+.add-item {
+  font-family: 'Syne Mono', monospace; font-size: 0.62rem; letter-spacing: 0.08em;
+  padding: 8px 14px; background: transparent; border: 1px dashed var(--border);
+  color: var(--muted); cursor: pointer; transition: all 0.15s; text-align: center;
+}
+.add-item:hover { border-color: #555; color: var(--text); }
+
+/* Submit */
+.submit-btn {
+  margin-top: 28px; width: 100%; padding: 14px;
+  background: linear-gradient(135deg, #fff 0%, #bbb 100%); color: #0a0a0a;
+  border: none; cursor: pointer; font-family: 'Syne', sans-serif;
+  font-size: 0.82rem; font-weight: 800; letter-spacing: 0.14em;
+  text-transform: uppercase; transition: opacity 0.2s;
+}
+.submit-btn:hover { opacity: 0.85; }
+.cancel-btn { background: transparent; border: 1px solid var(--border); color: var(--muted); margin-top: 8px; }
+.cancel-btn:hover { border-color: #666; color: var(--text); opacity: 1; }
+.delete-btn { background: transparent; border: 1px solid #4a1a1a; color: #ff6b6b; margin-top: 8px; }
+.delete-btn:hover { border-color: #ff6b6b; opacity: 1; }
+.roster-link { background: transparent; border: 1px solid var(--border); color: var(--text); margin-top: 20px; display: block; text-align: center; text-decoration: none; }
+.roster-link:hover { border-color: #555; opacity: 1; }
+.status { margin-top: 12px; font-size: 0.68rem; min-height: 18px; }
+.status.success { color: var(--success); }
+.status.error { color: var(--error); }
+
+@media (max-width: 560px) {
+  nav { padding: 16px 20px; }
+  .container { padding: 28px 20px 40px; }
+  .form-row { grid-template-columns: 1fr; }
+  .dynamic-item { grid-template-columns: 1fr 1fr auto; }
+  .dynamic-item .form-input:nth-child(3) { grid-column: 1 / -2; }
+}
+</style>
+</head>
+<body>
+<nav>
+  <a class="nav-logo" href="index.html"><img src="data:image/png;base64,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" alt="BLZante" class="nav-logo-img" /><span>BLZante</span></a>
+  <div class="nav-right">
+    <a class="nav-back" href="index.html">&larr; Toolbox</a>
+    <span class="nav-sep">/</span>
+    <span>Fiche artiste</span>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-heading"><h1 id="pageTitle">Créer une fiche artiste</h1></div>
+
+  <div class="form-section">Identité</div>
+
+  <div class="form-group">
+    <label class="form-label">Nom d'artiste</label>
+    <input type="text" class="form-input" id="artistName" placeholder="Ex: OZZY" autocomplete="off" />
+  </div>
+
+  <div class="form-group">
+    <label class="form-label">Type d'artiste</label>
+    <div class="type-options" id="typeOptions">
+      <button class="type-btn" data-type="Auteur">Auteur</button>
+      <button class="type-btn" data-type="Compositeur">Compositeur</button>
+      <button class="type-btn" data-type="Artiste Interprète">Artiste Interprète</button>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label class="form-label">Compétences techniques</label>
+    <div class="type-options" id="skillOptions">
+      <button class="type-btn" data-skill="Producer">Producer</button>
+      <button class="type-btn" data-skill="Musicien">Musicien</button>
+      <button class="type-btn" data-skill="Musicien Live">Musicien Live</button>
+      <button class="type-btn" data-skill="Directeur Musical">Directeur Musical</button>
+      <button class="type-btn" data-skill="Ingénieur Mixage">Ing. Mixage</button>
+      <button class="type-btn" data-skill="Ingénieur Enregistrement">Ing. Enregistrement</button>
+      <button class="type-btn" data-skill="Ingénieur Mastering">Ing. Mastering</button>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label class="form-label">Bio courte</label>
+    <textarea class="form-textarea" id="artistBio" placeholder="2-3 phrases de présentation..." rows="3"></textarea>
+  </div>
+
+  <div class="form-section">Images</div>
+
+  <div class="form-group">
+    <label class="form-label">Photo de profil</label>
+    <div class="img-upload">
+      <input type="text" class="form-input" id="photoUrl" placeholder="Coller un lien URL" autocomplete="off" />
+      <label class="img-upload-btn" for="photoFile">Upload</label>
+      <input type="file" id="photoFile" accept="image/*" style="display:none" />
+    </div>
+    <img class="img-preview round" id="photoPreview" />
+  </div>
+
+  <div class="form-group">
+    <label class="form-label">Image de fond</label>
+    <div class="img-upload">
+      <input type="text" class="form-input" id="bgUrl" placeholder="Coller un lien URL" autocomplete="off" />
+      <label class="img-upload-btn" for="bgFile">Upload</label>
+      <input type="file" id="bgFile" accept="image/*" style="display:none" />
+    </div>
+    <img class="img-preview" id="bgPreview" />
+  </div>
+
+  <div class="form-section">Placements majeurs</div>
+  <div class="dynamic-list" id="placementsList">
+  </div>
+  <button class="add-item" id="addPlacement">+ Ajouter un placement</button>
+
+  <div class="form-section">Certifications</div>
+  <div class="dynamic-list" id="certsList">
+  </div>
+  <button class="add-item" id="addCert">+ Ajouter une certification</button>
+
+  <div class="form-section">Liens</div>
+
+  <div class="form-group">
+    <label class="form-label">Instagram</label>
+    <input type="text" class="form-input" id="linkInsta" placeholder="https://instagram.com/..." autocomplete="off" />
+  </div>
+
+  <div class="form-group">
+    <label class="form-label">TikTok (optionnel)</label>
+    <input type="text" class="form-input" id="linkTiktok" placeholder="https://tiktok.com/@..." autocomplete="off" />
+  </div>
+
+  <div class="form-group">
+    <label class="form-label">Profil Spotify</label>
+    <input type="text" class="form-input" id="linkSpotify" placeholder="https://open.spotify.com/artist/..." autocomplete="off" />
+  </div>
+
+  <div class="form-group">
+    <label class="form-label">Chaîne YouTube</label>
+    <input type="text" class="form-input" id="linkYtChannel" placeholder="https://youtube.com/@..." autocomplete="off" />
+  </div>
+
+  <div class="form-group">
+    <label class="form-label">Playlist YouTube</label>
+    <input type="text" class="form-input" id="linkYoutube" placeholder="https://youtube.com/playlist?list=..." autocomplete="off" />
+  </div>
+
+  <button class="submit-btn" id="submitBtn">⚡ Créer la fiche</button>
+  <button class="submit-btn cancel-btn" id="cancelBtn" style="display:none">Annuler la modification</button>
+  <button class="submit-btn delete-btn" id="deleteBtn" style="display:none">🗑 Supprimer cette fiche</button>
+  <div class="status" id="statusMsg"></div>
+  <a class="submit-btn roster-link" id="rosterLink" href="roster.html" style="display:none">→ Voir le roster</a>
+</div>
+
+<script>
+const DB = 'https://blzante-toolbox-default-rtdb.europe-west1.firebasedatabase.app';
+
+// ─── State ───
+let selectedTypes = [];
+let selectedSkills = [];
+let editId = null;
+let photoData = '';
+let bgData = '';
+
+// ─── Type buttons ───
+document.getElementById('typeOptions').addEventListener('click', (e) => {
+  const btn = e.target.closest('.type-btn');
+  if (!btn) return;
+  const t = btn.dataset.type;
+  if (selectedTypes.includes(t)) {
+    selectedTypes = selectedTypes.filter(x => x !== t);
+    btn.classList.remove('active');
+  } else {
+    selectedTypes.push(t);
+    btn.classList.add('active');
+  }
+});
+
+// ─── Skill buttons ───
+document.getElementById('skillOptions').addEventListener('click', (e) => {
+  const btn = e.target.closest('.type-btn');
+  if (!btn) return;
+  const s = btn.dataset.skill;
+  if (selectedSkills.includes(s)) {
+    selectedSkills = selectedSkills.filter(x => x !== s);
+    btn.classList.remove('active');
+  } else {
+    selectedSkills.push(s);
+    btn.classList.add('active');
+  }
+});
+
+// ─── Image handling ───
+function setupImageUpload(urlId, fileId, previewId) {
+  const urlInput = document.getElementById(urlId);
+  const fileInput = document.getElementById(fileId);
+  const preview = document.getElementById(previewId);
+  const isPhoto = urlId === 'photoUrl';
+
+  urlInput.addEventListener('input', () => {
+    const url = urlInput.value.trim();
+    if (url) {
+      preview.src = url;
+      preview.style.display = 'block';
+      if (isPhoto) photoData = url; else bgData = url;
+    } else {
+      preview.style.display = 'none';
+      if (isPhoto) photoData = ''; else bgData = '';
+    }
+  });
+
+  fileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const data = ev.target.result;
+      preview.src = data;
+      preview.style.display = 'block';
+      urlInput.value = '(fichier uploadé)';
+      if (isPhoto) photoData = data; else bgData = data;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+setupImageUpload('photoUrl', 'photoFile', 'photoPreview');
+setupImageUpload('bgUrl', 'bgFile', 'bgPreview');
+
+// ─── Dynamic placements ───
+let placementCount = 0;
+function addPlacement(artist, title, artwork) {
+  placementCount++;
+  const id = placementCount;
+  const div = document.createElement('div');
+  div.className = 'dynamic-item';
+  div.dataset.id = id;
+  div.innerHTML = `
+    <input type="text" class="form-input" placeholder="Artiste" value="${artist || ''}" data-field="artist" />
+    <input type="text" class="form-input" placeholder="Titre" value="${title || ''}" data-field="title" />
+    <input type="text" class="form-input" placeholder="Artwork URL" value="${artwork || ''}" data-field="artwork" />
+    <button class="remove-item" onclick="this.parentElement.remove()">×</button>
+  `;
+  document.getElementById('placementsList').appendChild(div);
+}
+document.getElementById('addPlacement').addEventListener('click', () => addPlacement());
+
+// ─── Dynamic certifications ───
+let certCount = 0;
+function addCert(text) {
+  certCount++;
+  const div = document.createElement('div');
+  div.className = 'dynamic-item cert';
+  div.innerHTML = `
+    <input type="text" class="form-input" placeholder="Ex: Or Single — Djadja — Aya Nakamura" value="${text || ''}" />
+    <button class="remove-item" onclick="this.parentElement.remove()">×</button>
+  `;
+  document.getElementById('certsList').appendChild(div);
+}
+document.getElementById('addCert').addEventListener('click', () => addCert());
+
+// ─── Edit mode ───
+async function loadForEdit(id) {
+  try {
+    const res = await fetch(DB + '/roster/' + id + '.json');
+    const data = await res.json();
+    if (!data) return;
+
+    editId = id;
+    document.getElementById('pageTitle').textContent = 'Modifier la fiche';
+    document.getElementById('submitBtn').textContent = '✓ Enregistrer les modifications';
+    document.getElementById('cancelBtn').style.display = '';
+    document.getElementById('deleteBtn').style.display = '';
+
+    document.getElementById('artistName').value = data.name || '';
+    document.getElementById('artistBio').value = data.bio || '';
+    document.getElementById('linkInsta').value = data.instagram || '';
+    document.getElementById('linkTiktok').value = data.tiktok || '';
+    document.getElementById('linkSpotify').value = data.spotify || '';
+    document.getElementById('linkYtChannel').value = data.ytChannel || '';
+    document.getElementById('linkYoutube').value = data.youtube || '';
+
+    // Types
+    selectedTypes = data.types ? (Array.isArray(data.types) ? [...data.types] : [data.types]) : [];
+    document.querySelectorAll('#typeOptions .type-btn').forEach(btn => {
+      btn.classList.toggle('active', selectedTypes.includes(btn.dataset.type));
+    });
+
+    // Skills
+    selectedSkills = data.skills ? (Array.isArray(data.skills) ? [...data.skills] : [data.skills]) : [];
+    document.querySelectorAll('#skillOptions .type-btn').forEach(btn => {
+      btn.classList.toggle('active', selectedSkills.includes(btn.dataset.skill));
+    });
+
+    // Images
+    if (data.photo) {
+      photoData = data.photo;
+      document.getElementById('photoUrl').value = data.photo.startsWith('data:') ? '(fichier uploadé)' : data.photo;
+      document.getElementById('photoPreview').src = data.photo;
+      document.getElementById('photoPreview').style.display = 'block';
+    }
+    if (data.bg) {
+      bgData = data.bg;
+      document.getElementById('bgUrl').value = data.bg.startsWith('data:') ? '(fichier uploadé)' : data.bg;
+      document.getElementById('bgPreview').src = data.bg;
+      document.getElementById('bgPreview').style.display = 'block';
+    }
+
+    // Placements
+    if (data.placements) {
+      const pl = Array.isArray(data.placements) ? data.placements : Object.values(data.placements);
+      pl.forEach(p => addPlacement(p.artist, p.title, p.artwork));
+    }
+
+    // Certifications
+    if (data.certs) {
+      const cr = Array.isArray(data.certs) ? data.certs : Object.values(data.certs);
+      cr.forEach(c => addCert(typeof c === 'string' ? c : c.text || ''));
+    }
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+function exitEditMode() {
+  editId = null;
+  document.getElementById('pageTitle').textContent = 'Créer une fiche artiste';
+  document.getElementById('submitBtn').textContent = '⚡ Créer la fiche';
+  document.getElementById('cancelBtn').style.display = 'none';
+  document.getElementById('deleteBtn').style.display = 'none';
+  resetForm();
+}
+
+function resetForm() {
+  document.getElementById('artistName').value = '';
+  document.getElementById('artistBio').value = '';
+  document.getElementById('linkInsta').value = '';
+  document.getElementById('linkTiktok').value = '';
+  document.getElementById('linkSpotify').value = '';
+  document.getElementById('linkYtChannel').value = '';
+  document.getElementById('linkYoutube').value = '';
+  document.getElementById('photoUrl').value = '';
+  document.getElementById('bgUrl').value = '';
+  document.getElementById('photoPreview').style.display = 'none';
+  document.getElementById('bgPreview').style.display = 'none';
+  photoData = ''; bgData = '';
+  selectedTypes = [];
+  selectedSkills = [];
+  document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('placementsList').innerHTML = '';
+  document.getElementById('certsList').innerHTML = '';
+}
+
+document.getElementById('cancelBtn').addEventListener('click', exitEditMode);
+
+document.getElementById('deleteBtn').addEventListener('click', async () => {
+  if (!editId) return;
+  if (!confirm('Supprimer définitivement cette fiche artiste ?')) return;
+  await fetch(DB + '/roster/' + editId + '.json', {method: 'DELETE'});
+  window.location.href = 'roster.html';
+});
+
+// Check URL for edit
+(async () => {
+  const params = new URLSearchParams(window.location.search);
+  const eid = params.get('edit');
+  if (eid) await loadForEdit(eid);
+})();
+
+// ─── Submit ───
+document.getElementById('submitBtn').addEventListener('click', async () => {
+  const name = document.getElementById('artistName').value.trim();
+  const bio = document.getElementById('artistBio').value.trim();
+  const instagram = document.getElementById('linkInsta').value.trim();
+  const tiktok = document.getElementById('linkTiktok').value.trim();
+  const spotify = document.getElementById('linkSpotify').value.trim();
+  const ytChannel = document.getElementById('linkYtChannel').value.trim();
+  const youtube = document.getElementById('linkYoutube').value.trim();
+  const statusMsg = document.getElementById('statusMsg');
+
+  if (!name) {
+    statusMsg.textContent = '⚠ Nom d\'artiste requis';
+    statusMsg.className = 'status error';
+    return;
+  }
+  if (selectedTypes.length === 0 && selectedSkills.length === 0) {
+    statusMsg.textContent = '⚠ Sélectionner au moins un type ou une compétence';
+    statusMsg.className = 'status error';
+    return;
+  }
+
+  // Gather placements
+  const placements = [];
+  document.querySelectorAll('#placementsList .dynamic-item').forEach(item => {
+    const inputs = item.querySelectorAll('.form-input');
+    const a = inputs[0].value.trim();
+    const t = inputs[1].value.trim();
+    const art = inputs[2].value.trim();
+    if (a || t) placements.push({ artist: a, title: t, artwork: art });
+  });
+
+  // Gather certs
+  const certs = [];
+  document.querySelectorAll('#certsList .dynamic-item .form-input').forEach(input => {
+    const v = input.value.trim();
+    if (v) certs.push(v);
+  });
+
+  const id = editId || name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
+
+  const data = {
+    id, name, types: selectedTypes, skills: selectedSkills, bio,
+    photo: photoData, bg: bgData,
+    placements, certs,
+    instagram, tiktok, spotify, ytChannel, youtube,
+    updatedAt: new Date().toISOString(),
+  };
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Enregistrement...';
+
+  try {
+    await fetch(DB + '/roster/' + id + '.json', {method: 'PUT', body: JSON.stringify(data)});
+    statusMsg.textContent = editId ? '✓ Fiche modifiée : ' + name : '✓ Fiche créée : ' + name;
+    statusMsg.className = 'status success';
+    document.getElementById('rosterLink').style.display = '';
+    if (editId) {
+      setTimeout(() => { window.location.href = 'roster.html'; }, 800);
+    } else {
+      resetForm();
+    }
+  } catch (err) {
+    statusMsg.textContent = '⚠ Erreur réseau — réessaye';
+    statusMsg.className = 'status error';
+  }
+
+  btn.disabled = false;
+  btn.textContent = editId ? '✓ Enregistrer les modifications' : '⚡ Créer la fiche';
+});
+</script>
+</body>
+</html>

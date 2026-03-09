@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Roster — BLZante Toolbox</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Syne+Mono&display=swap');
+:root { --bg: #0a0a0a; --surface: #141414; --border: #262626; --text: #e8e8e8; --muted: #777; --accent: #e8c547; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Syne Mono', monospace; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+body::before { content: ''; position: fixed; inset: 0; background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px); background-size: 60px 60px; opacity: 0.3; pointer-events: none; z-index: 0; }
+nav { display: flex; align-items: center; justify-content: space-between; padding: 18px 40px; border-bottom: 1px solid var(--border); position: relative; z-index: 1; }
+.nav-logo { font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 800; color: #fff; text-decoration: none; letter-spacing: 0.08em; display: flex; align-items: center; gap: 10px; }
+.nav-logo-img { height: 28px; width: auto; display: block; }
+.nav-right { display: flex; align-items: center; gap: 12px; font-size: 0.65rem; color: var(--muted); letter-spacing: 0.14em; text-transform: uppercase; }
+.nav-back { color: var(--muted); text-decoration: none; font-size: 0.65rem; letter-spacing: 0.14em; text-transform: uppercase; transition: color 0.15s; }
+.nav-back:hover { color: #fff; }
+.nav-sep { color: var(--border); }
+.container { max-width: 1000px; margin: 0 auto; padding: 40px 40px 60px; position: relative; z-index: 1; flex: 1; width: 100%; }
+
+.header-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; border-bottom: 1px solid var(--border); padding-bottom: 20px; }
+.header-row h1 { font-family: 'Syne', sans-serif; font-size: 1.3rem; font-weight: 800; color: var(--text); }
+.add-btn { font-family: 'Syne', sans-serif; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; padding: 8px 16px; background: var(--surface); border: 1px solid var(--border); color: var(--text); text-decoration: none; transition: all 0.2s; }
+.add-btn:hover { border-color: #555; color: #fff; }
+
+.loading { text-align: center; padding: 48px; color: var(--muted); font-size: 0.78rem; }
+
+/* Artist cards grid */
+.roster-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 2px; }
+
+.artist-card {
+  position: relative; overflow: hidden; background: var(--surface);
+  border: 1px solid var(--border); min-height: 320px;
+  display: flex; flex-direction: column; transition: border-color 0.2s;
+}
+.artist-card:hover { border-color: #444; }
+
+.card-bg {
+  position: absolute; inset: 0; background-size: cover; background-position: center;
+  opacity: 0.25; z-index: 0;
+}
+
+.card-content { position: relative; z-index: 1; padding: 24px; flex: 1; display: flex; flex-direction: column; }
+
+.card-top { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 16px; }
+.card-photo {
+  width: 64px; height: 64px; border-radius: 50%; object-fit: cover;
+  border: 2px solid var(--border); flex-shrink: 0;
+}
+.card-photo-placeholder {
+  width: 64px; height: 64px; border-radius: 50%; background: #222;
+  border: 2px solid var(--border); flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.2rem; color: #555;
+}
+.card-identity { flex: 1; min-width: 0; }
+.card-name { font-family: 'Syne', sans-serif; font-size: 1.3rem; font-weight: 800; color: #fff; line-height: 1.2; }
+.card-types { font-size: 0.58rem; color: var(--muted); letter-spacing: 0.06em; margin-top: 4px; }
+.card-skills { font-size: 0.54rem; color: #555; letter-spacing: 0.06em; margin-top: 2px; }
+
+.card-bio { font-size: 0.7rem; color: #aaa; line-height: 1.6; margin-bottom: 14px; flex: 1; }
+
+/* Placements */
+.card-placements { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.placement-tag {
+  font-size: 0.6rem; color: var(--text); padding: 3px 8px;
+  border: 1px solid var(--border); letter-spacing: 0.04em;
+}
+
+/* Artworks */
+.card-artworks { display: flex; gap: 4px; margin-bottom: 12px; }
+.artwork-thumb { width: 48px; height: 48px; object-fit: cover; border: 1px solid var(--border); }
+
+/* Certifications */
+.card-certs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.cert-tag {
+  font-size: 0.56rem; color: var(--accent); padding: 2px 7px;
+  border: 1px solid #4a3e10; letter-spacing: 0.04em;
+}
+
+/* Links */
+.card-links { display: flex; gap: 8px; margin-top: auto; }
+.card-link {
+  font-size: 0.58rem; color: var(--muted); text-decoration: none;
+  padding: 4px 10px; border: 1px solid var(--border); transition: all 0.15s;
+  letter-spacing: 0.06em;
+}
+.card-link:hover { border-color: #555; color: #fff; }
+
+.card-edit {
+  position: absolute; top: 10px; right: 10px; font-size: 0.6rem;
+  color: #444; text-decoration: none; letter-spacing: 0.08em;
+  text-transform: uppercase; z-index: 2; transition: color 0.15s;
+}
+.card-edit:hover { color: var(--text); }
+
+@media (max-width: 560px) {
+  nav { padding: 16px 20px; }
+  .container { padding: 28px 20px 40px; }
+  .roster-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<nav>
+  <a class="nav-logo" href="index.html"><img src="data:image/png;base64,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" alt="BLZante" class="nav-logo-img" /><span>BLZante</span></a>
+  <div class="nav-right">
+    <a class="nav-back" href="index.html">&larr; Toolbox</a>
+    <span class="nav-sep">/</span>
+    <span>Roster</span>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="header-row">
+    <h1>Roster</h1>
+    <a class="add-btn" href="roster_create.html">+ Ajouter un artiste</a>
+  </div>
+  <div id="rosterContent"><div class="loading">Chargement...</div></div>
+</div>
+
+<script>
+const DB = 'https://blzante-toolbox-default-rtdb.europe-west1.firebasedatabase.app';
+
+(async () => {
+  try {
+    const res = await fetch(DB + '/roster.json');
+    const data = await res.json();
+    const content = document.getElementById('rosterContent');
+
+    if (!data) {
+      content.innerHTML = '<div class="loading">Aucun artiste pour le moment.<br><a href="roster_create.html" style="color:var(--accent)">Créer une fiche →</a></div>';
+      return;
+    }
+
+    const artists = Object.values(data).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+    let html = '<div class="roster-grid">';
+
+    artists.forEach(a => {
+      const types = a.types ? (Array.isArray(a.types) ? a.types.join(' · ') : a.types) : '';
+      const skills = a.skills ? (Array.isArray(a.skills) ? a.skills.join(' · ') : a.skills) : '';
+      const placements = a.placements ? (Array.isArray(a.placements) ? a.placements : Object.values(a.placements)) : [];
+      const certs = a.certs ? (Array.isArray(a.certs) ? a.certs : Object.values(a.certs)) : [];
+      const initial = (a.name || '?')[0].toUpperCase();
+
+      html += `<div class="artist-card">`;
+      if (a.bg) html += `<div class="card-bg" style="background-image:url('${a.bg}')"></div>`;
+      html += `<a class="card-edit" href="roster_create.html?edit=${a.id}">edit</a>`;
+      html += `<div class="card-content">`;
+
+      // Top: photo + name
+      html += `<div class="card-top">`;
+      if (a.photo) {
+        html += `<img class="card-photo" src="${a.photo}" alt="${a.name}" />`;
+      } else {
+        html += `<div class="card-photo-placeholder">${initial}</div>`;
+      }
+      html += `<div class="card-identity">`;
+      html += `<div class="card-name">${a.name}</div>`;
+      if (types) html += `<div class="card-types">${types}</div>`;
+      if (skills) html += `<div class="card-skills">${skills}</div>`;
+      html += `</div></div>`;
+
+      // Bio
+      if (a.bio) html += `<div class="card-bio">${a.bio}</div>`;
+
+      // Placements
+      if (placements.length) {
+        html += `<div class="card-placements">`;
+        placements.forEach(p => {
+          if (p.artist) html += `<span class="placement-tag">${p.artist}</span>`;
+        });
+        html += `</div>`;
+      }
+
+      // Artworks
+      const artworks = placements.filter(p => p.artwork);
+      if (artworks.length) {
+        html += `<div class="card-artworks">`;
+        artworks.forEach(p => {
+          html += `<img class="artwork-thumb" src="${p.artwork}" alt="${p.title || ''}" title="${p.artist} — ${p.title}" />`;
+        });
+        html += `</div>`;
+      }
+
+      // Certs
+      if (certs.length) {
+        html += `<div class="card-certs">`;
+        certs.forEach(c => {
+          const t = typeof c === 'string' ? c : c.text || '';
+          if (t) html += `<span class="cert-tag">${t}</span>`;
+        });
+        html += `</div>`;
+      }
+
+      // Links
+      const links = [];
+      if (a.instagram) links.push(`<a class="card-link" href="${a.instagram}" target="_blank">Instagram</a>`);
+      if (a.tiktok) links.push(`<a class="card-link" href="${a.tiktok}" target="_blank">TikTok</a>`);
+      if (a.spotify) links.push(`<a class="card-link" href="${a.spotify}" target="_blank">Spotify</a>`);
+      if (a.ytChannel) links.push(`<a class="card-link" href="${a.ytChannel}" target="_blank">YouTube</a>`);
+      if (a.youtube) links.push(`<a class="card-link" href="${a.youtube}" target="_blank">Playlist YT</a>`);
+      if (links.length) html += `<div class="card-links">${links.join('')}</div>`;
+
+      html += `</div></div>`;
+    });
+
+    html += '</div>';
+    content.innerHTML = html;
+
+  } catch (err) {
+    document.getElementById('rosterContent').innerHTML = '<div class="loading">⚠ Erreur de connexion</div>';
+  }
+})();
+</script>
+</body>
+</html>
