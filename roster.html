@@ -51,17 +51,40 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
   aspect-ratio: 1 / 1; max-width: 500px; display: flex; flex-direction: column;
 }
 .card-bg { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0.2; z-index: 0; }
-.card-content { position: relative; z-index: 1; padding: 24px; flex: 1; display: flex; flex-direction: column; }
-.card-top { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 12px; }
+.card-content { position: relative; z-index: 1; padding: 24px; flex: 1; display: flex; flex-direction: column; overflow-y: auto; }
+.card-top { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 8px; }
 .card-photo { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border); flex-shrink: 0; }
 .card-photo-ph { width: 72px; height: 72px; border-radius: 50%; background: #222; border: 2px solid var(--border); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.4rem; color: #555; }
 .card-name { font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 800; color: #fff; }
 .card-types { font-size: 0.58rem; color: var(--muted); margin-top: 2px; }
-.card-skills { font-size: 0.54rem; color: #555; margin-top: 2px; }
-.card-bio { font-size: 0.7rem; color: #aaa; line-height: 1.6; margin-bottom: 10px; }
+.card-skills { font-size: 0.54rem; color: #666; margin-top: 2px; }
+
+/* Playlist button */
+.playlist-btn {
+  display: inline-flex; align-items: center; gap: 6px; margin-top: 8px;
+  padding: 6px 14px; border: 1px solid #ff0000; background: rgba(255,0,0,0.08);
+  color: #fff; font-family: 'Syne Mono', monospace; font-size: 0.6rem;
+  letter-spacing: 0.06em; text-decoration: none; transition: all 0.15s;
+}
+.playlist-btn:hover { background: rgba(255,0,0,0.18); }
+.playlist-btn svg { flex-shrink: 0; }
+
+/* Bio frame */
+.card-bio {
+  font-size: 0.7rem; color: #bbb; line-height: 1.6; margin: 10px 0;
+  padding: 12px 16px; text-align: center; background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+/* Section titles */
+.card-section-title {
+  font-family: 'Syne', sans-serif; font-size: 0.6rem; font-weight: 700;
+  letter-spacing: 0.14em; text-transform: uppercase; color: #888;
+  margin: 10px 0 6px; padding-bottom: 3px; border-bottom: 1px solid rgba(255,255,255,0.06);
+}
 
 .card-placements { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 8px; }
-.pl-tag { font-size: 0.58rem; color: var(--text); padding: 2px 7px; border: 1px solid var(--border); }
+.pl-tag { font-size: 0.58rem; color: var(--text); padding: 3px 8px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.04); }
 
 .card-majors { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
 .major-block { display: flex; gap: 6px; align-items: center; border: 1px solid var(--border); padding: 4px 8px; }
@@ -69,13 +92,13 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .major-info { font-size: 0.58rem; color: #aaa; line-height: 1.3; }
 .major-info strong { color: #fff; }
 
-.card-certs { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 10px; }
-.cert-tag { display: flex; align-items: center; gap: 5px; font-size: 0.56rem; color: var(--accent); padding: 2px 7px; border: 1px solid #4a3e10; }
+.card-certs { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+.cert-tag { display: flex; align-items: center; gap: 6px; font-size: 0.58rem; color: var(--accent); padding: 3px 8px; border: 1px solid #4a3e10; }
 .cert-art { width: 24px; height: 24px; object-fit: cover; }
 
 .card-socials { display: flex; gap: 8px; margin-top: auto; }
-.social-link { display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border: 1px solid var(--border); color: var(--muted); transition: all 0.15s; }
-.social-link:hover { border-color: #555; color: #fff; }
+.social-link { display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border: 1px solid rgba(255,255,255,0.15); color: #ddd; transition: all 0.15s; }
+.social-link:hover { border-color: #fff; color: #fff; }
 
 @media (max-width: 560px) {
   nav { padding: 16px 20px; }
@@ -93,27 +116,32 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 }
 .pdf-bg { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0.2; }
 .pdf-content { position: relative; z-index: 1; display: flex; height: 100%; padding: 40px; gap: 40px; }
-.pdf-left { flex: 0 0 280px; display: flex; flex-direction: column; align-items: center; gap: 16px; padding-top: 20px; }
+.pdf-left { flex: 0 0 280px; display: flex; flex-direction: column; align-items: center; gap: 14px; padding-top: 20px; }
 .pdf-photo { width: 140px; height: 140px; border-radius: 50%; object-fit: cover; border: 3px solid #262626; }
 .pdf-photo-ph { width: 140px; height: 140px; border-radius: 50%; background: #222; border: 3px solid #262626; display: flex; align-items: center; justify-content: center; font-size: 3rem; font-weight: 800; color: #555; }
 .pdf-name { font-size: 1.8rem; font-weight: 800; color: #fff; text-align: center; line-height: 1.2; }
 .pdf-types { font-size: 0.7rem; color: #888; text-align: center; }
-.pdf-skills { font-size: 0.65rem; color: #555; text-align: center; }
-.pdf-socials { display: flex; gap: 8px; margin-top: auto; }
-.pdf-socials a { color: #888; }
-.pdf-right { flex: 1; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
-.pdf-bio { font-size: 0.78rem; color: #aaa; line-height: 1.6; font-family: 'Syne Mono', monospace; }
-.pdf-section-label { font-size: 0.6rem; color: #555; letter-spacing: 0.16em; text-transform: uppercase; border-bottom: 1px solid #262626; padding-bottom: 4px; }
+.pdf-skills { font-size: 0.65rem; color: #666; text-align: center; }
+.pdf-playlist { display: inline-flex; align-items: center; gap: 6px; margin-top: 6px; padding: 7px 16px; border: 1px solid #ff0000; background: rgba(255,0,0,0.1); color: #fff; font-size: 0.65rem; font-family: 'Syne Mono', monospace; text-decoration: none; }
+.pdf-socials { display: flex; gap: 10px; margin-top: auto; }
+.pdf-socials a { color: #ddd; }
+.pdf-socials svg { width: 24px; height: 24px; }
+.pdf-right { flex: 1; display: flex; flex-direction: column; gap: 10px; overflow: hidden; }
+.pdf-bio-wrap { padding: 14px 18px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); }
+.pdf-bio-header { font-size: 0.6rem; color: #888; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 6px; }
+.pdf-bio { font-size: 0.78rem; color: #bbb; line-height: 1.6; font-family: 'Syne Mono', monospace; text-align: center; }
+.pdf-section-label { font-size: 0.72rem; color: #aaa; letter-spacing: 0.16em; text-transform: uppercase; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 4px; font-weight: 700; }
 .pdf-tags { display: flex; gap: 5px; flex-wrap: wrap; }
-.pdf-tag { font-size: 0.62rem; color: #ccc; padding: 3px 8px; border: 1px solid #333; font-family: 'Syne Mono', monospace; }
+.pdf-tag { font-size: 0.65rem; color: #ddd; padding: 4px 10px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.05); font-family: 'Syne Mono', monospace; }
 .pdf-majors { display: flex; gap: 8px; flex-wrap: wrap; }
 .pdf-major { display: flex; gap: 8px; align-items: center; border: 1px solid #333; padding: 6px 10px; }
 .pdf-major img { width: 44px; height: 44px; object-fit: cover; }
 .pdf-major-info { font-size: 0.65rem; color: #aaa; line-height: 1.3; }
 .pdf-major-info strong { color: #fff; }
-.pdf-certs { display: flex; gap: 5px; flex-wrap: wrap; }
-.pdf-cert { display: flex; align-items: center; gap: 5px; font-size: 0.6rem; color: #e8c547; padding: 3px 8px; border: 1px solid #4a3e10; font-family: 'Syne Mono', monospace; }
-.pdf-cert img { width: 28px; height: 28px; object-fit: cover; }
+.pdf-certs { display: flex; flex-direction: column; gap: 4px; }
+.pdf-cert { display: flex; align-items: center; gap: 8px; font-size: 0.65rem; color: #e8c547; padding: 4px 10px; border: 1px solid #4a3e10; font-family: 'Syne Mono', monospace; }
+.pdf-cert img { width: 32px; height: 32px; object-fit: cover; }
+.pdf-cert-emoji { font-size: 1rem; }
 </style>
 </head>
 <body>
@@ -184,17 +212,29 @@ const SOCIAL_ICONS = {
       if (skills.length) html += `<div class="card-skills">${skills.join(' · ')}</div>`;
       html += `</div></div>`;
 
+      // Playlist button
+      if (a.youtube) {
+        html += `<a class="playlist-btn" href="${a.youtube}" target="_blank">`;
+        html += `<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`;
+        html += `Écouter la playlist`;
+        html += ` ${SOCIAL_ICONS.youtube}`;
+        html += `</a>`;
+      }
+
       if (a.bio) html += `<div class="card-bio">${a.bio}</div>`;
 
       // Placements
       if (placements.length) {
+        const sorted = [...placements].map(p => typeof p === 'string' ? p : p.name || '').filter(Boolean).sort();
+        html += `<div class="card-section-title">Artistes placés</div>`;
         html += `<div class="card-placements">`;
-        placements.forEach(p => { const n = typeof p === 'string' ? p : p.name || ''; if (n) html += `<span class="pl-tag">${n}</span>`; });
+        sorted.forEach(n => { html += `<span class="pl-tag">${n}</span>`; });
         html += `</div>`;
       }
 
       // Major placements
       if (majors.length) {
+        html += `<div class="card-section-title">Placements majeurs</div>`;
         html += `<div class="card-majors">`;
         majors.forEach(m => {
           html += `<div class="major-block">`;
@@ -206,18 +246,22 @@ const SOCIAL_ICONS = {
 
       // Certs
       if (certs.length) {
+        const CERT_EMOJI = { 'Or': '🥇', 'Platine': '🥈', 'Diamant': '💎' };
+        html += `<div class="card-section-title">Certifications</div>`;
         html += `<div class="card-certs">`;
         certs.forEach(c => {
-          const label = [c.level, c.type, c.artist, c.project].filter(Boolean).join(' · ');
+          const emoji = CERT_EMOJI[c.level] || '';
+          const label = [c.artist, c.project, c.type, c.level].filter(Boolean).join(' — ');
           html += `<span class="cert-tag">`;
           if (c.artwork) html += `<img class="cert-art" src="${c.artwork}" />`;
+          else if (emoji) html += `<span style="font-size:1rem">${emoji}</span>`;
           html += label + `</span>`;
         });
         html += `</div>`;
       }
 
       // Social links
-      const socials = ['instagram','tiktok','spotify','ytChannel','youtube'].filter(k => a[k]);
+      const socials = ['instagram','tiktok','spotify','ytChannel'].filter(k => a[k]);
       if (socials.length) {
         html += `<div class="card-socials">`;
         socials.forEach(k => {
@@ -272,6 +316,9 @@ async function generatePDF(a) {
   const majors = a.majors ? (Array.isArray(a.majors) ? a.majors : Object.values(a.majors)) : [];
   const certs = a.certs ? (Array.isArray(a.certs) ? a.certs : Object.values(a.certs)) : [];
   const initial = (a.name || '?')[0];
+  const CERT_EMOJI = { 'Or': '🥇', 'Platine': '🥈', 'Diamant': '💎' };
+  const PLAY_SVG = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
+  const YT_SVG = '<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>';
 
   let h = '';
   if (bgSrc) h += `<div class="pdf-bg" style="background-image:url('${bgSrc}')"></div>`;
@@ -285,8 +332,13 @@ async function generatePDF(a) {
   if (types.length) h += `<div class="pdf-types">${types.join(' · ')}</div>`;
   if (skills.length) h += `<div class="pdf-skills">${skills.join(' · ')}</div>`;
 
-  // Social icons
-  const socials = ['instagram','tiktok','spotify','ytChannel','youtube'].filter(k => a[k]);
+  // Playlist button
+  if (a.youtube) {
+    h += `<a class="pdf-playlist" href="${a.youtube}">${PLAY_SVG} Écouter la playlist ${YT_SVG}</a>`;
+  }
+
+  // Social icons (bigger, white, no playlist)
+  const socials = ['instagram','tiktok','spotify','ytChannel'].filter(k => a[k]);
   if (socials.length) {
     h += '<div class="pdf-socials">';
     socials.forEach(k => { h += `<a href="${a[k]}">${SOCIAL_ICONS[k]}</a>`; });
@@ -296,17 +348,25 @@ async function generatePDF(a) {
 
   // Right column
   h += '<div class="pdf-right">';
-  if (a.bio) h += `<div class="pdf-bio">${a.bio}</div>`;
 
+  // Bio framed
+  if (a.bio) {
+    h += '<div class="pdf-bio-wrap"><div class="pdf-bio-header">Short Bio</div>';
+    h += `<div class="pdf-bio">${a.bio}</div></div>`;
+  }
+
+  // Artistes placés (sorted alphabetically)
   if (placements.length) {
-    h += '<div class="pdf-section-label">Placements</div>';
+    const sorted = [...placements].map(p => typeof p === 'string' ? p : p.name || '').filter(Boolean).sort();
+    h += '<div class="pdf-section-label">ARTISTES PLACÉS</div>';
     h += '<div class="pdf-tags">';
-    placements.forEach(p => { const n = typeof p === 'string' ? p : p.name || ''; if (n) h += `<span class="pdf-tag">${n}</span>`; });
+    sorted.forEach(n => { h += `<span class="pdf-tag">${n}</span>`; });
     h += '</div>';
   }
 
+  // Placements majeurs
   if (majors.length) {
-    h += '<div class="pdf-section-label">Placements majeurs</div>';
+    h += '<div class="pdf-section-label">PLACEMENTS MAJEURS</div>';
     h += '<div class="pdf-majors">';
     majors.forEach(m => {
       h += '<div class="pdf-major">';
@@ -316,13 +376,16 @@ async function generatePDF(a) {
     h += '</div>';
   }
 
+  // Certifications
   if (certs.length) {
-    h += '<div class="pdf-section-label">Certifications</div>';
+    h += '<div class="pdf-section-label">CERTIFICATIONS</div>';
     h += '<div class="pdf-certs">';
     certs.forEach(c => {
-      const label = [c.level, c.type, c.artist, c.project].filter(Boolean).join(' · ');
+      const emoji = CERT_EMOJI[c.level] || '';
+      const label = [c.artist, c.project, c.type, c.level].filter(Boolean).join(' — ');
       h += '<span class="pdf-cert">';
       if (c.artwork) h += `<img src="${c.artwork}" crossorigin="anonymous" />`;
+      else if (emoji) h += `<span class="pdf-cert-emoji">${emoji}</span>`;
       h += label + '</span>';
     });
     h += '</div>';
