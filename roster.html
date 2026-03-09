@@ -241,20 +241,31 @@ const SOCIAL_ICONS = {
         html += `</div>`;
       }
 
-      // Certs
+      // Certs — grouped by type, ordered Diamant > Platine > Or
       if (certs.length) {
         const CERT_EMOJI = { 'Or': '🥇', 'Platine': '🥈', 'Diamant': '💎' };
-        html += `<div class="card-section-title">Certifications</div>`;
-        html += `<div class="card-certs">`;
-        certs.forEach(c => {
-          const emoji = CERT_EMOJI[c.level] || '';
-          const label = [c.artist, c.project, c.type, c.level].filter(Boolean).join(' — ');
-          html += `<span class="cert-tag">`;
-          if (c.artwork) html += `<img class="cert-art" src="${c.artwork}" />`;
-          else if (emoji) html += `<span style="font-size:1rem">${emoji}</span>`;
-          html += label + `</span>`;
-        });
-        html += `</div>`;
+        const CERT_ORDER = { 'Diamant': 0, 'Platine': 1, 'Or': 2 };
+        const sortedCerts = [...certs].sort((a, b) => (CERT_ORDER[a.level] ?? 9) - (CERT_ORDER[b.level] ?? 9));
+        const singles = sortedCerts.filter(c => c.type === 'Single');
+        const albums = sortedCerts.filter(c => c.type === 'Album');
+        const other = sortedCerts.filter(c => c.type !== 'Single' && c.type !== 'Album');
+
+        const renderCertGroup = (title, list) => {
+          if (!list.length) return '';
+          let out = `<div class="card-section-title">${title}</div><div class="card-certs">`;
+          list.forEach(c => {
+            const emoji = CERT_EMOJI[c.level] || '';
+            const label = [c.artist, c.project, c.type, c.level].filter(Boolean).join(' — ');
+            out += `<span class="cert-tag">`;
+            if (c.artwork) out += `<img class="cert-art" src="${c.artwork}" />`;
+            else if (emoji) out += `<span style="font-size:1rem">${emoji}</span>`;
+            out += label + `</span>`;
+          });
+          return out + '</div>';
+        };
+        html += renderCertGroup('Certifications Singles', singles);
+        html += renderCertGroup('Certifications Albums', albums);
+        html += renderCertGroup('Autres certifications', other);
       }
 
       // Social links
@@ -360,19 +371,30 @@ async function generatePDF(a) {
     h += '</div>';
   }
 
-  // Certifications
+  // Certifications — grouped by type, ordered Diamant > Platine > Or
   if (certs.length) {
-    h += '<div class="pdf-section-label">CERTIFICATIONS</div>';
-    h += '<div class="pdf-certs">';
-    certs.forEach(c => {
-      const emoji = CERT_EMOJI[c.level] || '';
-      const label = [c.artist, c.project, c.type, c.level].filter(Boolean).join(' — ');
-      h += '<span class="pdf-cert">';
-      if (c.artwork) h += `<img src="${c.artwork}" crossorigin="anonymous" />`;
-      else if (emoji) h += `<span class="pdf-cert-emoji">${emoji}</span>`;
-      h += label + '</span>';
-    });
-    h += '</div>';
+    const CERT_ORDER = { 'Diamant': 0, 'Platine': 1, 'Or': 2 };
+    const sortedCerts = [...certs].sort((a, b) => (CERT_ORDER[a.level] ?? 9) - (CERT_ORDER[b.level] ?? 9));
+    const singles = sortedCerts.filter(c => c.type === 'Single');
+    const albums = sortedCerts.filter(c => c.type === 'Album');
+    const other = sortedCerts.filter(c => c.type !== 'Single' && c.type !== 'Album');
+
+    const renderPdfCertGroup = (title, list) => {
+      if (!list.length) return '';
+      let out = `<div class="pdf-section-label">${title}</div><div class="pdf-certs">`;
+      list.forEach(c => {
+        const emoji = CERT_EMOJI[c.level] || '';
+        const label = [c.artist, c.project, c.type, c.level].filter(Boolean).join(' — ');
+        out += '<span class="pdf-cert">';
+        if (c.artwork) out += `<img src="${c.artwork}" crossorigin="anonymous" />`;
+        else if (emoji) out += `<span class="pdf-cert-emoji">${emoji}</span>`;
+        out += label + '</span>';
+      });
+      return out + '</div>';
+    };
+    h += renderPdfCertGroup('CERTIFICATIONS SINGLES', singles);
+    h += renderPdfCertGroup('CERTIFICATIONS ALBUMS', albums);
+    h += renderPdfCertGroup('AUTRES CERTIFICATIONS', other);
   }
 
   // Social icons
