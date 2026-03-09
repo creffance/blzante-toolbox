@@ -175,6 +175,11 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
   <div class="dynamic-list" id="certsList"></div>
   <button class="add-btn-dyn" id="addCert">+ Ajouter une certification</button>
 
+  <div class="form-section">Informations spéciales</div>
+  <p class="img-hint">Nominations, prix, musicien/directeur musical sur tournée, etc.</p>
+  <div class="dynamic-list" id="specialList"></div>
+  <button class="add-btn-dyn" id="addSpecial">+ Ajouter une info</button>
+
   <div class="form-section">Liens</div>
   <div class="form-row">
     <div class="form-group"><label class="form-label">Instagram</label><input type="text" class="form-input" id="linkInsta" placeholder="https://instagram.com/..." autocomplete="off" /></div>
@@ -367,6 +372,20 @@ function addCert(type, level, artist, project, artwork) {
 }
 document.getElementById('addCert').addEventListener('click', () => addCert());
 
+// ─── Informations spéciales ───
+function addSpecial(val) {
+  const div = document.createElement('div'); div.className = 'dynamic-item';
+  div.innerHTML = `<input type="text" class="form-input" placeholder="Ex: Nomination aux Victoires de la Musique 2024" value="${val||''}" /><button class="remove-btn" onclick="this.parentElement.remove()">×</button>`;
+  const input = div.querySelector('input');
+  input.addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return; e.preventDefault();
+    if (input.value.trim()) { addSpecial(); }
+  });
+  document.getElementById('specialList').appendChild(div);
+  if (!val) input.focus();
+}
+document.getElementById('addSpecial').addEventListener('click', () => addSpecial());
+
 // ─── Gather data ───
 function gatherData() {
   const name = document.getElementById('artistName').value.trim();
@@ -395,9 +414,10 @@ function gatherData() {
     const artImg = div.querySelector('.cert-artwork');
     if (type || level || artist) certs.push({ type, level, artist, project, artwork: artImg ? artImg.src : '' });
   });
+  const specialInfo = []; document.querySelectorAll('#specialList .dynamic-item .form-input').forEach(i => { const v = i.value.trim(); if (v) specialInfo.push(v); });
   return {
     name, types: selectedTypes, skills: selectedSkills, bio, images, bgImages,
-    placements, majors, discography, certs,
+    placements, majors, discography, certs, specialInfo,
     instagram: document.getElementById('linkInsta').value.trim(),
     tiktok: document.getElementById('linkTiktok').value.trim(),
     spotify: document.getElementById('linkSpotify').value.trim(),
@@ -442,6 +462,8 @@ async function loadForEdit(id) {
     dc.forEach(x => addDisco(x.artist, x.title, x.artwork, x.date, x.link));
     const cr = Array.isArray(d.certs) ? d.certs : d.certs ? Object.values(d.certs) : [];
     cr.forEach(c => addCert(c.type, c.level, c.artist, c.project, c.artwork));
+    const sp = Array.isArray(d.specialInfo) ? d.specialInfo : d.specialInfo ? Object.values(d.specialInfo) : [];
+    sp.forEach(s => addSpecial(typeof s === 'string' ? s : ''));
   } catch(err) { console.error(err); }
 }
 function exitEditMode() {
@@ -466,6 +488,7 @@ function exitEditMode() {
   document.getElementById('majorList').innerHTML = '';
   document.getElementById('discoList').innerHTML = '';
   document.getElementById('certsList').innerHTML = '';
+  document.getElementById('specialList').innerHTML = '';
 }
 document.getElementById('cancelBtn').addEventListener('click', exitEditMode);
 document.getElementById('deleteBtn').addEventListener('click', async () => {

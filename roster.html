@@ -103,6 +103,26 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .listen-link { display: inline-flex; align-items: center; gap: 3px; color: var(--accent); font-size: 0.5rem; text-decoration: none; margin-top: 2px; opacity: 0.8; transition: opacity 0.15s; }
 .listen-link:hover { opacity: 1; }
 
+.card-specials { display: flex; flex-direction: column; gap: 3px; margin-bottom: 8px; }
+.special-item { font-size: 0.58rem; color: #ccc; padding: 3px 0; }
+
+/* Special export modal */
+.se-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; display: flex; align-items: center; justify-content: center; }
+.se-modal { background: var(--bg); border: 1px solid var(--border); width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; padding: 28px; }
+.se-title { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 800; color: #fff; margin-bottom: 16px; }
+.se-section { font-size: 0.6rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin: 16px 0 8px; border-bottom: 1px solid var(--border); padding-bottom: 4px; }
+.se-check { display: flex; align-items: center; gap: 8px; padding: 4px 0; cursor: pointer; font-size: 0.72rem; color: var(--text); }
+.se-check input { accent-color: var(--accent); }
+.se-input { width: 100%; font-family: 'Syne Mono', monospace; font-size: 0.78rem; padding: 10px 12px; border: 1px solid var(--border); background: var(--surface); color: var(--text); outline: none; margin-top: 4px; }
+.se-input:focus { border-color: #555; }
+.se-textarea { width: 100%; font-family: 'Syne Mono', monospace; font-size: 0.78rem; padding: 10px 12px; border: 1px solid var(--border); background: var(--surface); color: var(--text); outline: none; margin-top: 4px; resize: vertical; min-height: 60px; line-height: 1.5; }
+.se-btns { display: flex; gap: 8px; margin-top: 20px; }
+.se-btn { flex: 1; padding: 12px; font-family: 'Syne', sans-serif; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; border: none; cursor: pointer; }
+.se-btn-go { background: linear-gradient(135deg, #fff, #bbb); color: #0a0a0a; }
+.se-btn-go:hover { opacity: 0.85; }
+.se-btn-cancel { background: transparent; border: 1px solid var(--border); color: var(--muted); }
+.se-btn-cancel:hover { border-color: #555; color: var(--text); }
+
 .card-certs { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
 .cert-tag { display: flex; align-items: center; gap: 6px; font-size: 0.58rem; color: var(--accent); padding: 3px 8px; border: 1px solid #4a3e10; }
 .cert-art { width: 24px; height: 24px; object-fit: cover; }
@@ -222,6 +242,7 @@ const SOCIAL_ICONS = {
       if (allLabels) h += `<div class="entry-types">${allLabels}</div>`;
       h += `</div><div class="entry-btns">`;
       h += `<button class="entry-btn pdf" data-id="${a.id}" title="Télécharger PDF">PDF</button>`;
+      h += `<button class="entry-btn" data-seid="${a.id}" title="Export personnalisé">Special</button>`;
       h += `<a class="entry-btn" href="roster_create.html?edit=${a.id}">edit</a>`;
       h += `</div></div>`;
 
@@ -321,6 +342,15 @@ const SOCIAL_ICONS = {
         h += renderCertGroup('Autres certifications', other);
       }
 
+      // Special info
+      const specials = a.specialInfo ? (Array.isArray(a.specialInfo) ? a.specialInfo : Object.values(a.specialInfo)) : [];
+      if (specials.length) {
+        h += `<div class="card-section-title">Informations spéciales</div>`;
+        h += `<div class="card-specials">`;
+        specials.forEach(s => { if (s) h += `<div class="special-item">⭐ ${s}</div>`; });
+        h += `</div>`;
+      }
+
       h += `</div></div></div></div>`;
       return h;
     }
@@ -363,10 +393,117 @@ const SOCIAL_ICONS = {
         pdfBtn.textContent = '⏳';
         generatePDF(a).then(() => { pdfBtn.textContent = 'PDF'; }).catch(err => { console.error(err); alert('Erreur PDF'); pdfBtn.textContent = 'PDF'; });
       }
+      // Special Export
+      const seBtn = e.target.closest('[data-seid]');
+      if (seBtn) {
+        e.stopPropagation();
+        const id = seBtn.dataset.seid;
+        const a = window._rosterArtists[id];
+        if (a) openSpecialExport(a);
+      }
     });
 
   } catch(err) { document.getElementById('rosterContent').innerHTML = '<div class="loading">⚠ Erreur de connexion</div>'; }
 })();
+
+function openSpecialExport(a) {
+  const types = a.types ? (Array.isArray(a.types) ? a.types : [a.types]) : [];
+  const skills = a.skills ? (Array.isArray(a.skills) ? a.skills : [a.skills]) : [];
+  const ALL_TYPES = ['Auteur', 'Compositeur', 'Topliner', 'Artiste Interprète'];
+  const ALL_SKILLS = ['Producer', 'Musicien', 'Musicien Live', 'Directeur Musical', 'Ingénieur Mixage', 'Ingénieur Enregistrement', 'Ingénieur Mastering'];
+
+  const overlay = document.createElement('div');
+  overlay.className = 'se-overlay';
+
+  let mh = `<div class="se-modal">`;
+  mh += `<div class="se-title">Export spécial — ${a.name}</div>`;
+
+  // Types
+  mh += `<div class="se-section">Types d'artiste</div>`;
+  ALL_TYPES.forEach(t => {
+    mh += `<label class="se-check"><input type="checkbox" data-se="type" value="${t}" ${types.includes(t) ? 'checked' : ''} /> ${t}</label>`;
+  });
+
+  // Skills
+  mh += `<div class="se-section">Compétences techniques</div>`;
+  ALL_SKILLS.forEach(s => {
+    mh += `<label class="se-check"><input type="checkbox" data-se="skill" value="${s}" ${skills.includes(s) ? 'checked' : ''} /> ${s}</label>`;
+  });
+
+  // Playlist
+  mh += `<div class="se-section">Playlist</div>`;
+  mh += `<input class="se-input" id="sePlaylist" placeholder="Laisser vide pour utiliser le lien par défaut" value="" />`;
+  if (a.youtube) mh += `<div style="font-size:0.58rem;color:#555;margin-top:4px">Par défaut : ${a.youtube}</div>`;
+
+  // Bio
+  mh += `<div class="se-section">Bio</div>`;
+  mh += `<textarea class="se-textarea" id="seBio">${a.bio || ''}</textarea>`;
+  mh += `<div style="font-size:0.58rem;color:#555;margin-top:4px">Modifier ici ne change pas la fiche originale</div>`;
+
+  // Sections to include
+  const discography = a.discography ? (Array.isArray(a.discography) ? a.discography : Object.values(a.discography)) : [];
+  const placements = a.placements ? (Array.isArray(a.placements) ? a.placements : Object.values(a.placements)) : [];
+  const majors = a.majors ? (Array.isArray(a.majors) ? a.majors : Object.values(a.majors)) : [];
+  const certs = a.certs ? (Array.isArray(a.certs) ? a.certs : Object.values(a.certs)) : [];
+  const specials = a.specialInfo ? (Array.isArray(a.specialInfo) ? a.specialInfo : Object.values(a.specialInfo)) : [];
+
+  mh += `<div class="se-section">Sections à inclure</div>`;
+  const sections = [
+    { key: 'discography', label: 'Discographie', has: discography.length > 0 },
+    { key: 'placements', label: 'Artistes placés', has: placements.length > 0 },
+    { key: 'majors', label: 'Placements majeurs', has: majors.length > 0 },
+    { key: 'certs', label: 'Certifications', has: certs.length > 0 },
+    { key: 'specials', label: 'Informations spéciales', has: specials.length > 0 },
+  ];
+  sections.forEach(s => {
+    const disabled = !s.has ? ' disabled' : '';
+    const style = !s.has ? ' style="opacity:0.4"' : '';
+    mh += `<label class="se-check"${style}><input type="checkbox" data-se="section" value="${s.key}" ${s.has ? 'checked' : ''}${disabled} /> ${s.label}${!s.has ? ' (vide)' : ''}</label>`;
+  });
+
+  // Buttons
+  mh += `<div class="se-btns">`;
+  mh += `<button class="se-btn se-btn-cancel" id="seCancel">Annuler</button>`;
+  mh += `<button class="se-btn se-btn-go" id="seExport">⚡ Exporter PDF</button>`;
+  mh += `</div></div>`;
+
+  overlay.innerHTML = mh;
+  document.body.appendChild(overlay);
+
+  overlay.querySelector('#seCancel').addEventListener('click', () => overlay.remove());
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+
+  overlay.querySelector('#seExport').addEventListener('click', async () => {
+    // Build custom data without modifying original
+    const customTypes = []; overlay.querySelectorAll('[data-se=type]:checked').forEach(cb => customTypes.push(cb.value));
+    const customSkills = []; overlay.querySelectorAll('[data-se=skill]:checked').forEach(cb => customSkills.push(cb.value));
+    const customPlaylist = overlay.querySelector('#sePlaylist').value.trim();
+    const customBio = overlay.querySelector('#seBio').value.trim();
+
+    // Section toggles
+    const includedSections = {};
+    overlay.querySelectorAll('[data-se=section]').forEach(cb => { includedSections[cb.value] = cb.checked; });
+
+    const customData = {
+      ...a,
+      types: customTypes,
+      skills: customSkills,
+      bio: customBio,
+      youtube: customPlaylist || a.youtube,
+      discography: includedSections.discography ? a.discography : [],
+      placements: includedSections.placements ? a.placements : [],
+      majors: includedSections.majors ? a.majors : [],
+      certs: includedSections.certs ? a.certs : [],
+      specialInfo: includedSections.specials ? a.specialInfo : [],
+    };
+
+    overlay.querySelector('#seExport').textContent = '⏳ Export...';
+    try {
+      await generatePDF(customData);
+    } catch(err) { console.error(err); alert('Erreur PDF'); }
+    overlay.remove();
+  });
+}
 
 async function generatePDF(a) {
   const render = document.getElementById('pdfRender');
@@ -482,6 +619,13 @@ async function generatePDF(a) {
     h += renderPdfCertGroup('CERTIFICATIONS SINGLES', singles);
     h += renderPdfCertGroup('CERTIFICATIONS ALBUMS', albums);
     h += renderPdfCertGroup('AUTRES CERTIFICATIONS', other);
+  }
+
+  // Special info
+  const specials = a.specialInfo ? (Array.isArray(a.specialInfo) ? a.specialInfo : Object.values(a.specialInfo)) : [];
+  if (specials.length) {
+    h += '<div class="pdf-section-label">INFORMATIONS SPÉCIALES</div>';
+    specials.forEach(s => { if (s) h += `<div style="font-size:0.62rem;color:#ccc;padding:2px 0">⭐ ${s}</div>`; });
   }
 
   // BLZante logo footer
