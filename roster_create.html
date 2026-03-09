@@ -144,6 +144,16 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
     <input type="text" class="form-input" id="imgUrlInput" placeholder="Ou coller un lien URL et appuyer Entrée" autocomplete="off" />
   </div>
 
+  <div class="form-group" style="margin-top:12px">
+    <label class="form-label">Image de fond (optionnel — par défaut : fond BLZante)</label>
+    <div style="display:flex;gap:8px;align-items:flex-start">
+      <input type="text" class="form-input" id="bgUrl" placeholder="Coller un lien URL" autocomplete="off" style="flex:1" />
+      <label class="img-add" style="width:auto;height:auto;padding:10px 14px;font-size:0.7rem" for="bgFileInput">Upload</label>
+      <input type="file" id="bgFileInput" accept="image/*" style="display:none" />
+    </div>
+    <img id="bgPreview" style="width:120px;height:68px;object-fit:cover;border:1px solid var(--border);margin-top:8px;display:none" />
+  </div>
+
   <div class="form-section">Placements</div>
   <div class="form-group">
     <label class="form-label">Artistes placés</label>
@@ -181,6 +191,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 const DB = 'https://blzante-toolbox-default-rtdb.europe-west1.firebasedatabase.app';
 let selectedTypes = [], selectedSkills = [], editId = null;
 let images = []; // {src, primary}
+let bgData = '';
 
 // ─── Type / Skill buttons ───
 document.getElementById('typeOptions').addEventListener('click', e => {
@@ -227,6 +238,25 @@ document.getElementById('imgUrlInput').addEventListener('keydown', e => {
   if (e.key !== 'Enter') return; e.preventDefault();
   const url = e.target.value.trim(); if (!url) return;
   images.push({src: url, primary: images.length === 0}); renderImages(); e.target.value = '';
+});
+
+// ─── Background image ───
+document.getElementById('bgUrl').addEventListener('input', e => {
+  const url = e.target.value.trim();
+  bgData = url;
+  const prev = document.getElementById('bgPreview');
+  if (url) { prev.src = url; prev.style.display = 'block'; } else { prev.style.display = 'none'; }
+});
+document.getElementById('bgFileInput').addEventListener('change', e => {
+  const file = e.target.files[0]; if (!file) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    bgData = ev.target.result;
+    document.getElementById('bgUrl').value = '(fichier uploadé)';
+    const prev = document.getElementById('bgPreview');
+    prev.src = ev.target.result; prev.style.display = 'block';
+  };
+  r.readAsDataURL(file);
 });
 
 // ─── Placements (simple artist names) ───
@@ -320,6 +350,7 @@ function gatherData() {
     spotify: document.getElementById('linkSpotify').value.trim(),
     ytChannel: document.getElementById('linkYtChannel').value.trim(),
     youtube: document.getElementById('linkYoutube').value.trim(),
+    bg: bgData,
   };
 }
 
@@ -346,6 +377,12 @@ async function loadForEdit(id) {
     document.querySelectorAll('#skillOptions .type-btn').forEach(b => b.classList.toggle('active', selectedSkills.includes(b.dataset.skill)));
     images = Array.isArray(d.images) ? [...d.images] : d.images ? Object.values(d.images) : [];
     renderImages();
+    if (d.bg) {
+      bgData = d.bg;
+      document.getElementById('bgUrl').value = d.bg.startsWith('data:') ? '(fichier uploadé)' : d.bg;
+      document.getElementById('bgPreview').src = d.bg;
+      document.getElementById('bgPreview').style.display = 'block';
+    }
     const pl = Array.isArray(d.placements) ? d.placements : d.placements ? Object.values(d.placements) : [];
     pl.forEach(p => addPlacement(typeof p === 'string' ? p : p.name || ''));
     const mj = Array.isArray(d.majors) ? d.majors : d.majors ? Object.values(d.majors) : [];
@@ -367,9 +404,11 @@ function exitEditMode() {
   document.getElementById('linkSpotify').value = '';
   document.getElementById('linkYtChannel').value = '';
   document.getElementById('linkYoutube').value = '';
-  selectedTypes = []; selectedSkills = []; images = [];
+  selectedTypes = []; selectedSkills = []; images = []; bgData = '';
   document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
   renderImages();
+  document.getElementById('bgUrl').value = '';
+  document.getElementById('bgPreview').style.display = 'none';
   document.getElementById('placementsList').innerHTML = '';
   document.getElementById('majorList').innerHTML = '';
   document.getElementById('certsList').innerHTML = '';
