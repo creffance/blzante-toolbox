@@ -447,11 +447,14 @@ async function loadForEdit(id) {
     document.querySelectorAll('#typeOptions .type-btn').forEach(b => b.classList.toggle('active', selectedTypes.includes(b.dataset.type)));
     selectedSkills = Array.isArray(d.skills) ? [...d.skills] : d.skills ? [d.skills] : [];
     document.querySelectorAll('#skillOptions .type-btn').forEach(b => b.classList.toggle('active', selectedSkills.includes(b.dataset.skill)));
-    images = Array.isArray(d.images) ? [...d.images] : d.images ? Object.values(d.images) : [];
+    // Clear and refill arrays (keep same reference for makeGallery closure)
+    images.length = 0;
+    (Array.isArray(d.images) ? d.images : d.images ? Object.values(d.images) : []).forEach(i => images.push(i));
     renderImages();
-    bgImages = Array.isArray(d.bgImages) ? [...d.bgImages] : d.bgImages ? Object.values(d.bgImages) : [];
+    bgImages.length = 0;
+    (Array.isArray(d.bgImages) ? d.bgImages : d.bgImages ? Object.values(d.bgImages) : []).forEach(i => bgImages.push(i));
     // Backward compat: old single bg field
-    if (!bgImages.length && d.bg) bgImages = [{src: d.bg, primary: true}];
+    if (!bgImages.length && d.bg) bgImages.push({src: d.bg, primary: true});
     renderBgImages();
     toggleDiscoSection();
     const pl = Array.isArray(d.placements) ? d.placements : d.placements ? Object.values(d.placements) : [];
@@ -479,7 +482,8 @@ function exitEditMode() {
   document.getElementById('linkSpotify').value = '';
   document.getElementById('linkYtChannel').value = '';
   document.getElementById('linkYoutube').value = '';
-  selectedTypes = []; selectedSkills = []; images = []; bgImages = [];
+  selectedTypes = []; selectedSkills = [];
+  images.length = 0; bgImages.length = 0;
   document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
   renderImages();
   renderBgImages();
