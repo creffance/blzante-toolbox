@@ -447,19 +447,56 @@ function openSpecialExport(a) {
   const certs = a.certs ? (Array.isArray(a.certs) ? a.certs : Object.values(a.certs)) : [];
   const specials = a.specialInfo ? (Array.isArray(a.specialInfo) ? a.specialInfo : Object.values(a.specialInfo)) : [];
 
-  mh += `<div class="se-section">Sections à inclure</div>`;
-  const sections = [
-    { key: 'discography', label: 'Discographie', has: discography.length > 0 },
-    { key: 'placements', label: 'Artistes placés', has: placements.length > 0 },
-    { key: 'majors', label: 'Placements majeurs', has: majors.length > 0 },
-    { key: 'certs', label: 'Certifications', has: certs.length > 0 },
-    { key: 'specials', label: 'Informations spéciales', has: specials.length > 0 },
-  ];
-  sections.forEach(s => {
-    const disabled = !s.has ? ' disabled' : '';
-    const style = !s.has ? ' style="opacity:0.4"' : '';
-    mh += `<label class="se-check"${style}><input type="checkbox" data-se="section" value="${s.key}" ${s.has ? 'checked' : ''}${disabled} /> ${s.label}${!s.has ? ' (vide)' : ''}</label>`;
-  });
+  // --- Discographie (section toggle) ---
+  mh += `<div class="se-section">Discographie</div>`;
+  if (discography.length) {
+    mh += `<label class="se-check"><input type="checkbox" data-se="section" value="discography" checked /> Inclure la discographie</label>`;
+  } else {
+    mh += `<label class="se-check" style="opacity:0.4"><input type="checkbox" data-se="section" value="discography" disabled /> Discographie (vide)</label>`;
+  }
+
+  // --- Artistes placés (individual checkboxes) ---
+  mh += `<div class="se-section">Artistes placés</div>`;
+  if (placements.length) {
+    const sortedPl = [...placements].map((p, i) => ({ name: typeof p === 'string' ? p : p.name || '', idx: i })).filter(p => p.name).sort((a, b) => a.name.localeCompare(b.name));
+    sortedPl.forEach(p => {
+      mh += `<label class="se-check"><input type="checkbox" data-se="placement" value="${p.idx}" checked /> ${p.name}</label>`;
+    });
+  } else {
+    mh += `<div style="font-size:0.6rem;color:#555;padding:4px 0">Aucun artiste placé</div>`;
+  }
+
+  // --- Placements majeurs (individual checkboxes) ---
+  mh += `<div class="se-section">Placements majeurs</div>`;
+  if (majors.length) {
+    majors.forEach((m, i) => {
+      const label = [m.artist, m.title].filter(Boolean).join(' — ');
+      mh += `<label class="se-check"><input type="checkbox" data-se="major" value="${i}" checked /> ${label || 'Placement ' + (i+1)}</label>`;
+    });
+  } else {
+    mh += `<div style="font-size:0.6rem;color:#555;padding:4px 0">Aucun placement majeur</div>`;
+  }
+
+  // --- Certifications (individual checkboxes) ---
+  mh += `<div class="se-section">Certifications</div>`;
+  if (certs.length) {
+    const CERT_EMOJI_SE = { 'Or': '🥇', 'Platine': '🥈', 'Diamant': '💎' };
+    certs.forEach((c, i) => {
+      const emoji = CERT_EMOJI_SE[c.level] || '';
+      const label = [c.artist, c.project, c.type, c.level].filter(Boolean).join(' — ');
+      mh += `<label class="se-check"><input type="checkbox" data-se="cert" value="${i}" checked /> ${emoji ? emoji + ' ' : ''}${label}</label>`;
+    });
+  } else {
+    mh += `<div style="font-size:0.6rem;color:#555;padding:4px 0">Aucune certification</div>`;
+  }
+
+  // --- Informations spéciales (section toggle) ---
+  mh += `<div class="se-section">Informations spéciales</div>`;
+  if (specials.length) {
+    mh += `<label class="se-check"><input type="checkbox" data-se="section" value="specials" checked /> Inclure les informations spéciales</label>`;
+  } else {
+    mh += `<label class="se-check" style="opacity:0.4"><input type="checkbox" data-se="section" value="specials" disabled /> Informations spéciales (vide)</label>`;
+  }
 
   // Buttons
   mh += `<div class="se-btns">`;
@@ -480,9 +517,22 @@ function openSpecialExport(a) {
     const customPlaylist = overlay.querySelector('#sePlaylist').value.trim();
     const customBio = overlay.querySelector('#seBio').value.trim();
 
-    // Section toggles
+    // Section toggles (discography & specials)
     const includedSections = {};
     overlay.querySelectorAll('[data-se=section]').forEach(cb => { includedSections[cb.value] = cb.checked; });
+
+    // Individual item selections
+    const selectedPlacementIdx = new Set();
+    overlay.querySelectorAll('[data-se=placement]:checked').forEach(cb => selectedPlacementIdx.add(Number(cb.value)));
+    const selectedMajorIdx = new Set();
+    overlay.querySelectorAll('[data-se=major]:checked').forEach(cb => selectedMajorIdx.add(Number(cb.value)));
+    const selectedCertIdx = new Set();
+    overlay.querySelectorAll('[data-se=cert]:checked').forEach(cb => selectedCertIdx.add(Number(cb.value)));
+
+    // Filter arrays based on individual selections
+    const filteredPlacements = placements.filter((_, i) => selectedPlacementIdx.has(i));
+    const filteredMajors = majors.filter((_, i) => selectedMajorIdx.has(i));
+    const filteredCerts = certs.filter((_, i) => selectedCertIdx.has(i));
 
     const customData = {
       ...a,
@@ -491,9 +541,9 @@ function openSpecialExport(a) {
       bio: customBio,
       youtube: customPlaylist || a.youtube,
       discography: includedSections.discography ? a.discography : [],
-      placements: includedSections.placements ? a.placements : [],
-      majors: includedSections.majors ? a.majors : [],
-      certs: includedSections.certs ? a.certs : [],
+      placements: filteredPlacements,
+      majors: filteredMajors,
+      certs: filteredCerts,
       specialInfo: includedSections.specials ? a.specialInfo : [],
     };
 
