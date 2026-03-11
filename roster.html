@@ -171,6 +171,29 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .pdf-socials svg { width: 30px; height: 30px; }
 .pdf-footer { display: flex; justify-content: center; margin-top: auto; padding-top: 16px; }
 .pdf-footer img { height: 70px; width: auto; opacity: 0.6; }
+
+/* Team one-pager */
+.op-wrap { position: relative; z-index: 1; width: 100%; height: 100%; display: flex; flex-direction: column; padding: 30px; overflow: hidden; }
+.op-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+.op-header img { height: 40px; opacity: 0.7; }
+.op-header-title { font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: #888; font-family: 'Syne Mono', monospace; }
+.op-grid { display: grid; gap: 10px; flex: 1; align-content: start; }
+.op-card { border: 1px solid rgba(255,255,255,0.1); padding: 10px; display: flex; flex-direction: column; gap: 4px; overflow: hidden; position: relative; }
+.op-card-top { display: flex; align-items: center; gap: 8px; }
+.op-photo { border-radius: 50%; object-fit: cover; border: 2px solid #333; flex-shrink: 0; }
+.op-photo-ph { border-radius: 50%; background: #222; border: 2px solid #333; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-weight: 800; color: #555; }
+.op-name { font-weight: 800; color: #fff; line-height: 1.2; }
+.op-types { color: #888; line-height: 1.3; }
+.op-bio { color: #bbb; line-height: 1.4; font-family: 'Syne Mono', monospace; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; }
+.op-section { color: #999; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; margin-top: 3px; padding-top: 3px; border-top: 1px solid rgba(255,255,255,0.06); }
+.op-tags { display: flex; flex-wrap: wrap; gap: 3px; }
+.op-tag { color: #ddd; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.03); font-family: 'Syne Mono', monospace; white-space: nowrap; }
+.op-certs { display: flex; flex-wrap: wrap; gap: 3px; }
+.op-cert { color: #e8c547; border: 1px solid #4a3e10; font-family: 'Syne Mono', monospace; white-space: nowrap; }
+.op-socials { display: flex; gap: 4px; margin-top: auto; padding-top: 2px; }
+.op-socials a { color: #888; }
+.op-footer { display: flex; justify-content: center; padding-top: 8px; margin-top: auto; }
+.op-footer img { height: 36px; opacity: 0.5; }
 </style>
 </head>
 <body>
@@ -828,13 +851,155 @@ async function generatePDF(a, lang) {
 // ─── Generate team PDF with multiple artists (opens in new tab) ───
 async function generateTeamPDF(artists, lang) {
   if (!artists.length) return;
+  const pdfLang = lang || 'fr';
   const render = document.getElementById('pdfRender');
+  const n = artists.length;
+
+  // Adaptive sizing based on number of artists
+  const cols = n <= 2 ? n : n <= 4 ? 2 : n <= 9 ? 3 : 4;
+  const rows = Math.ceil(n / cols);
+  // Scale factors
+  const isCompact = n > 4;
+  const isVeryCompact = n > 9;
+  const photoSize = isVeryCompact ? 28 : isCompact ? 36 : 48;
+  const nameFontSize = isVeryCompact ? '0.7rem' : isCompact ? '0.82rem' : '1rem';
+  const typesFontSize = isVeryCompact ? '0.46rem' : isCompact ? '0.5rem' : '0.58rem';
+  const bioFontSize = isVeryCompact ? '0.44rem' : isCompact ? '0.48rem' : '0.56rem';
+  const bioLines = isVeryCompact ? 2 : isCompact ? 3 : 4;
+  const sectionFontSize = isVeryCompact ? '0.4rem' : isCompact ? '0.44rem' : '0.5rem';
+  const tagFontSize = isVeryCompact ? '0.4rem' : isCompact ? '0.44rem' : '0.5rem';
+  const tagPad = isVeryCompact ? '1px 4px' : isCompact ? '2px 5px' : '2px 6px';
+  const socialSize = isVeryCompact ? 10 : isCompact ? 12 : 14;
+  const phFontSize = isVeryCompact ? '0.8rem' : isCompact ? '1rem' : '1.3rem';
+
+  const LOGO_B64 = 'data:image/png;base64,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';
+
+  let h = '<div class="op-wrap">';
+  // Header
+  h += '<div class="op-header">';
+  h += `<img src="${LOGO_B64}" crossorigin="anonymous" />`;
+  h += `<span class="op-header-title">${pdfLang === 'fr' ? 'Équipe Songwriters' : 'Songwriter Team'}</span>`;
+  h += '</div>';
+
+  // Grid
+  h += `<div class="op-grid" style="grid-template-columns: repeat(${cols}, 1fr);">`;
+
+  for (const a of artists) {
+    const types = a.types ? (Array.isArray(a.types) ? a.types : [a.types]) : [];
+    const skills = a.skills ? (Array.isArray(a.skills) ? a.skills : [a.skills]) : [];
+    const { types: trTypes, skills: trSkills } = translateLabels(types, skills, pdfLang);
+    const imgs = a.images ? (Array.isArray(a.images) ? a.images : Object.values(a.images)) : [];
+    const primary = imgs.find(i => i.primary) || imgs[0];
+    const initial = (a.name || '?')[0];
+    const placements = a.placements ? (Array.isArray(a.placements) ? a.placements : Object.values(a.placements)) : [];
+    const certs = a.certs ? (Array.isArray(a.certs) ? a.certs : Object.values(a.certs)) : [];
+    const displayBio = (pdfLang === 'en' && a.bioEn) ? a.bioEn : a.bio;
+    const specials = a.specialInfo ? (Array.isArray(a.specialInfo) ? a.specialInfo : Object.values(a.specialInfo)) : [];
+    const specialsEn = a.specialInfoEn ? (Array.isArray(a.specialInfoEn) ? a.specialInfoEn : Object.values(a.specialInfoEn)) : [];
+    const socials = ['instagram','tiktok','spotify','ytChannel'].filter(k => a[k]);
+
+    h += '<div class="op-card">';
+    // Top: photo + name
+    h += '<div class="op-card-top">';
+    if (primary) h += `<img class="op-photo" src="${primary.src}" style="width:${photoSize}px;height:${photoSize}px" crossorigin="anonymous" />`;
+    else h += `<div class="op-photo-ph" style="width:${photoSize}px;height:${photoSize}px;font-size:${phFontSize}">${initial}</div>`;
+    h += '<div>';
+    h += `<div class="op-name" style="font-size:${nameFontSize}">${a.name}</div>`;
+    if (trTypes.length) h += `<div class="op-types" style="font-size:${typesFontSize}">${trTypes.join(' · ')}</div>`;
+    if (trSkills.length) h += `<div class="op-types" style="font-size:${typesFontSize};color:#666">${trSkills.join(' · ')}</div>`;
+    h += '</div></div>';
+
+    // Bio (truncated)
+    if (displayBio) {
+      h += `<div class="op-bio" style="font-size:${bioFontSize};-webkit-line-clamp:${bioLines}">${displayBio}</div>`;
+    }
+
+    // Placements
+    if (placements.length) {
+      const sorted = [...placements].map(p => typeof p === 'string' ? p : p.name || '').filter(Boolean).sort();
+      h += `<div class="op-section" style="font-size:${sectionFontSize}">${t('artistes_places', pdfLang)}</div>`;
+      h += '<div class="op-tags">';
+      sorted.forEach(name => { h += `<span class="op-tag" style="font-size:${tagFontSize};padding:${tagPad}">${name}</span>`; });
+      h += '</div>';
+    }
+
+    // Certs (compact)
+    if (certs.length) {
+      const CERT_EMOJI = { 'Or': '🥇', 'Platine': '🥈', 'Diamant': '💎' };
+      const CERT_ORDER = { 'Diamant': 0, 'Platine': 1, 'Or': 2 };
+      const sorted = [...certs].sort((a, b) => (CERT_ORDER[a.level] ?? 9) - (CERT_ORDER[b.level] ?? 9));
+      h += `<div class="op-section" style="font-size:${sectionFontSize}">${t('cert_singles', pdfLang)}</div>`;
+      h += '<div class="op-certs">';
+      sorted.forEach(c => {
+        const emoji = CERT_EMOJI[c.level] || '';
+        const label = [c.artist, c.project, tCertLevel(c.level, pdfLang)].filter(Boolean).join(' – ');
+        h += `<span class="op-cert" style="font-size:${tagFontSize};padding:${tagPad}">${emoji ? emoji + ' ' : ''}${label}</span>`;
+      });
+      h += '</div>';
+    }
+
+    // Special info (compact)
+    const displaySpecials = specials.map((s, i) => (pdfLang === 'en' && specialsEn[i]) ? specialsEn[i] : s).filter(Boolean);
+    if (displaySpecials.length) {
+      h += `<div class="op-section" style="font-size:${sectionFontSize}">${t('infos_speciales', pdfLang)}</div>`;
+      displaySpecials.forEach(s => { h += `<div style="font-size:${tagFontSize};color:#ccc">⭐ ${s}</div>`; });
+    }
+
+    // Social icons
+    if (socials.length) {
+      h += '<div class="op-socials">';
+      socials.forEach(k => {
+        const icon = SOCIAL_ICONS[k].replace(/width="\d+"/g, `width="${socialSize}"`).replace(/height="\d+"/g, `height="${socialSize}"`);
+        h += `<a href="${a[k]}" target="_blank">${icon}</a>`;
+      });
+      h += '</div>';
+    }
+
+    h += '</div>'; // close op-card
+  }
+
+  h += '</div>'; // close op-grid
+
+  // Footer
+  h += `<div class="op-footer"><img src="${LOGO_B64}" crossorigin="anonymous" /></div>`;
+  h += '</div>'; // close op-wrap
+
+  render.innerHTML = h;
+
+  // Wait for images
+  const allImgs = render.querySelectorAll('img');
+  await Promise.all(Array.from(allImgs).map(img => {
+    if (img.complete) return Promise.resolve();
+    return new Promise(res => { img.onload = res; img.onerror = res; });
+  }));
+  await new Promise(r => setTimeout(r, 300));
+
+  const canvas = await html2canvas(render, {
+    width: 794, height: 1123, scale: 2,
+    backgroundColor: '#0a0a0a', useCORS: true, allowTaint: true,
+  });
+
   const { jsPDF } = window.jspdf;
   const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-  for (let i = 0; i < artists.length; i++) {
-    if (i > 0) pdf.addPage();
-    await renderArtistToPDF(artists[i], pdf, render, lang || 'fr');
-  }
+  const imgData = canvas.toDataURL('image/jpeg', 0.92);
+  pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
+
+  // Add clickable links
+  const scaleX = 210 / 794;
+  const scaleY = 297 / 1123;
+  render.querySelectorAll('a[href]').forEach(link => {
+    const rect = link.getBoundingClientRect();
+    const renderRect = render.getBoundingClientRect();
+    const x = (rect.left - renderRect.left) * scaleX;
+    const y = (rect.top - renderRect.top) * scaleY;
+    const w = rect.width * scaleX;
+    const ht = rect.height * scaleY;
+    if (w > 0 && ht > 0) {
+      pdf.link(x, y, w, ht, { url: link.href });
+    }
+  });
+
+  render.innerHTML = '';
   window.open(pdf.output('bloburl'), '_blank');
 }
 
