@@ -607,7 +607,7 @@ function openSpecialExport(a) {
     const CERT_EMOJI_SE = { 'Or': '🥇', 'Platine': '🥈', 'Diamant': '💎' };
     certs.forEach((c, i) => {
       const emoji = CERT_EMOJI_SE[c.level] || '';
-      const label = buildCertLabel(c, pdfLang);
+      const label = buildCertLabel(c);
       mh += `<label class="se-check"><input type="checkbox" data-se="cert" value="${i}" checked /> ${emoji ? emoji + ' ' : ''}${label}</label>`;
     });
   } else {
@@ -798,6 +798,7 @@ function buildArtistCardHTML(a, pdfLang) {
     h += `<div class="pdf-section-label">${t('infos_speciales', pdfLang).toUpperCase()}</div>`;
     displaySpecials.forEach(s => { if (s) h += `<div style="font-size:0.62rem;color:#ccc;padding:2px 0">⭐ ${s}</div>`; });
   }
+  h += '<div class="pdf-footer"><img src="data:image/png;base64,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" crossorigin="anonymous" /></div>';
   h += '</div>'; // close pdf-content
   return h;
 }
@@ -806,8 +807,6 @@ function buildArtistCardHTML(a, pdfLang) {
 async function renderArtistToPDF(a, pdf, render, lang) {
   const pdfLang = lang || 'fr';
   let h = buildArtistCardHTML(a, pdfLang);
-  // Add footer for single artist PDF
-  h += '<div class="pdf-footer"><img src="data:image/png;base64,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" crossorigin="anonymous" /></div>';
 
   render.innerHTML = h;
 
@@ -842,16 +841,9 @@ async function renderArtistToPDF(a, pdf, render, lang) {
   render.innerHTML = '';
 }
 
-// ─── PDF output: save on mobile, open in new tab on desktop ───
-function isMobile() {
-  return /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && window.innerWidth < 1024);
-}
+// ─── PDF output: always download ───
 function outputPDF(pdf, filename) {
-  if (isMobile()) {
-    pdf.save(filename || 'export.pdf');
-  } else {
-    window.open(pdf.output('bloburl'), '_blank');
-  }
+  pdf.save(filename || 'export.pdf');
 }
 
 // ─── Generate single artist PDF ───
@@ -862,8 +854,7 @@ async function generatePDF(a, lang) {
   await renderArtistToPDF(a, pdf, render, lang || 'fr');
   const now = new Date();
   const yyyymmdd = now.getFullYear() + String(now.getMonth()+1).padStart(2,'0') + String(now.getDate()).padStart(2,'0');
-  const safeName = (a.name || 'artiste').replace(/[^a-zA-Z0-9]/g, '_');
-  outputPDF(pdf, `${yyyymmdd}_${safeName}_fiche_${lang || 'fr'}.pdf`);
+  outputPDF(pdf, `${yyyymmdd}_${a.name || 'artiste'}_${(lang || 'fr').toUpperCase()}.pdf`);
 }
 
 // ─── Generate team PDF with multiple artists (opens in new tab) ───
@@ -964,8 +955,7 @@ async function generateTeamPDF(artists, lang, teamName) {
 
   const now = new Date();
   const yyyymmdd = now.getFullYear() + String(now.getMonth()+1).padStart(2,'0') + String(now.getDate()).padStart(2,'0');
-  const safeTeam = tName.replace(/[^a-zA-Z0-9]/g, '_');
-  outputPDF(pdf, `${yyyymmdd}_${safeTeam}_${pdfLang}.pdf`);
+  outputPDF(pdf, `${yyyymmdd}_${tName}_${pdfLang.toUpperCase()}.pdf`);
 }
 
 // ─── Team export modal ───
