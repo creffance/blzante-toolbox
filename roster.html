@@ -839,13 +839,28 @@ async function renderArtistToPDF(a, pdf, render, lang) {
   render.innerHTML = '';
 }
 
-// ─── Generate single artist PDF (opens in new tab) ───
+// ─── PDF output: save on mobile, open in new tab on desktop ───
+function isMobile() {
+  return /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && window.innerWidth < 1024);
+}
+function outputPDF(pdf, filename) {
+  if (isMobile()) {
+    pdf.save(filename || 'export.pdf');
+  } else {
+    window.open(pdf.output('bloburl'), '_blank');
+  }
+}
+
+// ─── Generate single artist PDF ───
 async function generatePDF(a, lang) {
   const render = document.getElementById('pdfRender');
   const { jsPDF } = window.jspdf;
   const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   await renderArtistToPDF(a, pdf, render, lang || 'fr');
-  window.open(pdf.output('bloburl'), '_blank');
+  const now = new Date();
+  const yyyymmdd = now.getFullYear() + String(now.getMonth()+1).padStart(2,'0') + String(now.getDate()).padStart(2,'0');
+  const safeName = (a.name || 'artiste').replace(/[^a-zA-Z0-9]/g, '_');
+  outputPDF(pdf, `${yyyymmdd}_${safeName}_fiche_${lang || 'fr'}.pdf`);
 }
 
 // ─── Generate team PDF with multiple artists (opens in new tab) ───
@@ -998,7 +1013,9 @@ async function generateTeamPDF(artists, lang) {
   render.style.width = '794px';
   render.style.height = '1123px';
 
-  window.open(pdf.output('bloburl'), '_blank');
+  const now = new Date();
+  const yyyymmdd = now.getFullYear() + String(now.getMonth()+1).padStart(2,'0') + String(now.getDate()).padStart(2,'0');
+  outputPDF(pdf, `${yyyymmdd}_equipe_songwriters_${pdfLang}.pdf`);
 }
 
 // ─── Team export modal ───
