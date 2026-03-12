@@ -408,7 +408,7 @@ function rerenderRoster() {
       }
 
       if (placements.length) {
-        const sorted = [...placements].map(p => typeof p === 'string' ? p : p.name || '').filter(Boolean).sort();
+        const sorted = [...placements].map(p => typeof p === 'string' ? p : p.name || '').filter(Boolean).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
         h += `<div class="card-section-title">${t('artistes_places')}</div><div class="card-placements">`;
         sorted.forEach(n => { h += `<span class="pl-tag">${n}</span>`; });
         h += `</div>`;
@@ -752,7 +752,7 @@ function buildArtistCardHTML(a, pdfLang) {
     h += '</div>';
   }
   if (placements.length) {
-    const sorted = [...placements].map(p => typeof p === 'string' ? p : p.name || '').filter(Boolean).sort();
+    const sorted = [...placements].map(p => typeof p === 'string' ? p : p.name || '').filter(Boolean).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
     h += `<div class="pdf-section-label">${t('artistes_places', pdfLang).toUpperCase()}</div><div class="pdf-tags">`;
     sorted.forEach(n => { h += `<span class="pdf-tag">${n}</span>`; });
     h += '</div>';
@@ -841,9 +841,17 @@ async function renderArtistToPDF(a, pdf, render, lang) {
   render.innerHTML = '';
 }
 
-// ─── PDF output: always download ───
+// ─── PDF output: force real file download (opens in native PDF viewer, not browser tab) ───
 function outputPDF(pdf, filename) {
-  pdf.save(filename || 'export.pdf');
+  const blob = pdf.output('blob');
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename || 'export.pdf';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 // ─── Generate single artist PDF ───
