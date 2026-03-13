@@ -844,21 +844,26 @@ async function renderArtistToPDF(a, pdf, render, lang) {
   render.innerHTML = '';
 }
 
-// ─── PDF output: always force download ───
-// Downloaded PDFs open in native viewer (Adobe, Preview, etc.)
-// where links open the browser in a new tab automatically.
-// If opened in Chrome's built-in viewer, links navigate in-place — that's a Chrome limitation.
+// ─── PDF output: download with proper filename + open in new tab for viewing ───
+// Download gives the correct filename for saving/sharing.
+// New tab lets you view the PDF immediately — links clicked in that tab
+// only navigate that tab, the roster page stays open.
 function outputPDF(pdf, filename) {
+  // 1. Download with correct filename
   const blob = pdf.output('blob');
-  const url = URL.createObjectURL(blob);
+  const dlUrl = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url;
+  a.href = dlUrl;
   a.download = filename || 'export.pdf';
   a.style.display = 'none';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(url), 2000);
+  setTimeout(() => URL.revokeObjectURL(dlUrl), 2000);
+
+  // 2. Open in new tab for immediate viewing (links navigate this tab, not the roster)
+  const viewUrl = pdf.output('bloburl');
+  window.open(viewUrl, '_blank');
 }
 
 // ─── Generate single artist PDF ───
