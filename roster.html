@@ -844,26 +844,33 @@ async function renderArtistToPDF(a, pdf, render, lang) {
   render.innerHTML = '';
 }
 
-// ─── PDF output: download with proper filename + open in new tab for viewing ───
-// Download gives the correct filename for saving/sharing.
-// New tab lets you view the PDF immediately — links clicked in that tab
-// only navigate that tab, the roster page stays open.
+// ─── PDF output ───
+// 1. Downloads the file with correct filename
+// 2. Opens PDF in a sandboxed iframe in a new tab — the sandbox blocks
+//    in-page navigation but allows popups, so all links open in NEW tabs
 function outputPDF(pdf, filename) {
-  // 1. Download with correct filename
   const blob = pdf.output('blob');
-  const dlUrl = URL.createObjectURL(blob);
+  const pdfUrl = URL.createObjectURL(blob);
+
+  // Download with correct filename
   const a = document.createElement('a');
-  a.href = dlUrl;
+  a.href = pdfUrl;
   a.download = filename || 'export.pdf';
   a.style.display = 'none';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(dlUrl), 2000);
 
-  // 2. Open in new tab for immediate viewing (links navigate this tab, not the roster)
-  const viewUrl = pdf.output('bloburl');
-  window.open(viewUrl, '_blank');
+  // Open in sandboxed wrapper — links forced to open in new tabs
+  const title = (filename || 'export.pdf').replace('.pdf', '');
+  const wrapperHTML = '<!DOCTYPE html><html><head><title>' + title + '</title>' +
+    '<style>*{margin:0;padding:0}html,body{height:100%;overflow:hidden;background:#333}' +
+    'iframe{width:100%;height:100%;border:none}</style></head><body>' +
+    '<iframe src="' + pdfUrl + '" sandbox="allow-same-origin allow-scripts allow-popups allow-popups-to-escape-sandbox"></iframe>' +
+    '</body></html>';
+  const wrapperBlob = new Blob([wrapperHTML], { type: 'text/html' });
+  const wrapperUrl = URL.createObjectURL(wrapperBlob);
+  window.open(wrapperUrl, '_blank');
 }
 
 // ─── Generate single artist PDF ───
