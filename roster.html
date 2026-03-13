@@ -844,33 +844,18 @@ async function renderArtistToPDF(a, pdf, render, lang) {
   render.innerHTML = '';
 }
 
-// ─── PDF output ───
-// 1. Downloads the file with correct filename
-// 2. Opens PDF in a sandboxed iframe in a new tab — the sandbox blocks
-//    in-page navigation but allows popups, so all links open in NEW tabs
+// ─── PDF output: download with correct filename ───
 function outputPDF(pdf, filename) {
   const blob = pdf.output('blob');
-  const pdfUrl = URL.createObjectURL(blob);
-
-  // Download with correct filename
+  const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = pdfUrl;
+  a.href = url;
   a.download = filename || 'export.pdf';
   a.style.display = 'none';
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-
-  // Open in sandboxed wrapper — links forced to open in new tabs
-  const title = (filename || 'export.pdf').replace('.pdf', '');
-  const wrapperHTML = '<!DOCTYPE html><html><head><title>' + title + '</title>' +
-    '<style>*{margin:0;padding:0}html,body{height:100%;overflow:hidden;background:#333}' +
-    'iframe{width:100%;height:100%;border:none}</style></head><body>' +
-    '<iframe src="' + pdfUrl + '" sandbox="allow-same-origin allow-scripts allow-popups allow-popups-to-escape-sandbox"></iframe>' +
-    '</body></html>';
-  const wrapperBlob = new Blob([wrapperHTML], { type: 'text/html' });
-  const wrapperUrl = URL.createObjectURL(wrapperBlob);
-  window.open(wrapperUrl, '_blank');
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
 
 // ─── Generate single artist PDF ───
@@ -913,8 +898,8 @@ async function generateTeamPDF(artists, lang, teamName) {
   const scFactor = Math.min(cellW / 794, cellH / 1123);
 
   let h = '';
-  // Background
-  h += `<div style="position:absolute;inset:0;background:url('${DEFAULT_BG}') center/cover;opacity:0.12;z-index:0"></div>`;
+  // Background: dark grid pattern (matches BLZante design, no logo)
+  h += `<div style="position:absolute;inset:0;background-color:#0a0a0a;background-image:linear-gradient(rgba(38,38,38,0.5) 1px,transparent 1px),linear-gradient(90deg,rgba(38,38,38,0.5) 1px,transparent 1px);background-size:60px 60px;z-index:0"></div>`;
   h += `<div style="position:relative;z-index:1;width:100%;height:100%;display:flex;flex-direction:column;overflow:hidden">`;
 
   // Header
