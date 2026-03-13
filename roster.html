@@ -844,26 +844,21 @@ async function renderArtistToPDF(a, pdf, render, lang) {
   render.innerHTML = '';
 }
 
-// ─── PDF output ───
-// Desktop: open in new tab (clicking a link in the PDF only navigates that tab, roster page stays open)
-// Mobile: download file (native viewer opens links in browser separately)
-function isMobile() {
-  return /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && window.innerWidth < 1024);
-}
+// ─── PDF output: always force download ───
+// Downloaded PDFs open in native viewer (Adobe, Preview, etc.)
+// where links open the browser in a new tab automatically.
+// If opened in Chrome's built-in viewer, links navigate in-place — that's a Chrome limitation.
 function outputPDF(pdf, filename) {
-  if (isMobile()) {
-    const blob = pdf.output('blob');
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename || 'export.pdf';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  } else {
-    window.open(pdf.output('bloburl'), '_blank');
-  }
+  const blob = pdf.output('blob');
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename || 'export.pdf';
+  a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
 
 // ─── Generate single artist PDF ───
