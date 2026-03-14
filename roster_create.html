@@ -193,7 +193,10 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
     <div class="form-group"><label class="form-label">Spotify</label><input type="text" class="form-input" id="linkSpotify" placeholder="https://open.spotify.com/artist/..." autocomplete="off" /></div>
     <div class="form-group"><label class="form-label">YouTube</label><input type="text" class="form-input" id="linkYtChannel" placeholder="https://youtube.com/@..." autocomplete="off" /></div>
   </div>
-  <div class="form-group"><label class="form-label">Playlist YouTube</label><input type="text" class="form-input" id="linkYoutube" placeholder="https://youtube.com/playlist?list=..." autocomplete="off" /></div>
+  <div class="form-row">
+    <div class="form-group"><label class="form-label">Playlist YouTube</label><input type="text" class="form-input" id="linkYoutube" placeholder="https://youtube.com/playlist?list=..." autocomplete="off" /></div>
+    <div class="form-group"><label class="form-label">Playlist Spotify</label><input type="text" class="form-input" id="linkSpotifyPlaylist" placeholder="https://open.spotify.com/playlist/..." autocomplete="off" /></div>
+  </div>
 
   <button class="submit-btn" id="submitBtn">⚡ Créer la fiche</button>
   <button class="submit-btn cancel-btn" id="cancelBtn" style="display:none">Annuler la modification</button>
@@ -433,6 +436,7 @@ function gatherData() {
     spotify: document.getElementById('linkSpotify').value.trim(),
     ytChannel: document.getElementById('linkYtChannel').value.trim(),
     youtube: document.getElementById('linkYoutube').value.trim(),
+    spotifyPlaylist: document.getElementById('linkSpotifyPlaylist').value.trim(),
   };
 }
 
@@ -454,6 +458,7 @@ async function loadForEdit(id) {
     document.getElementById('linkSpotify').value = d.spotify || '';
     document.getElementById('linkYtChannel').value = d.ytChannel || '';
     document.getElementById('linkYoutube').value = d.youtube || '';
+    document.getElementById('linkSpotifyPlaylist').value = d.spotifyPlaylist || '';
     selectedTypes = Array.isArray(d.types) ? [...d.types] : d.types ? [d.types] : [];
     document.querySelectorAll('#typeOptions .type-btn').forEach(b => b.classList.toggle('active', selectedTypes.includes(b.dataset.type)));
     selectedSkills = Array.isArray(d.skills) ? [...d.skills] : d.skills ? [d.skills] : [];
@@ -495,6 +500,7 @@ function exitEditMode() {
   document.getElementById('linkSpotify').value = '';
   document.getElementById('linkYtChannel').value = '';
   document.getElementById('linkYoutube').value = '';
+  document.getElementById('linkSpotifyPlaylist').value = '';
   selectedTypes = []; selectedSkills = [];
   images.length = 0; bgImages.length = 0;
   document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
