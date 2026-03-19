@@ -61,7 +61,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .major-item { display: grid; grid-template-columns: 1fr 1fr auto auto; gap: 6px; align-items: center; }
 .major-item .form-input { padding: 10px 12px; font-size: 0.78rem; }
 .major-artwork { width: 40px; height: 40px; object-fit: cover; border: 1px solid var(--border); }
-.major-upload { font-size: 0.58rem; padding: 6px 8px; background: var(--surface); border: 1px solid var(--border); color: var(--muted); cursor: pointer; white-space: nowrap; }
+.major-upload { font-family: 'Syne Mono', monospace; font-size: 0.58rem; padding: 6px 8px; background: var(--surface); border: 1px solid var(--border); color: var(--muted); cursor: pointer; white-space: nowrap; }
 .major-upload:hover { border-color: #555; }
 
 /* Cert row */
@@ -235,6 +235,7 @@ function toggleDiscoSection() {
 
 // ─── Generic gallery handler ───
 function makeGallery(arr, galId, addBtnId, fileInputId, urlInputId) {
+  const fileInput = document.getElementById(fileInputId);
   function render() {
     const gal = document.getElementById(galId);
     gal.querySelectorAll('.img-thumb-wrap').forEach(e => e.remove());
@@ -251,9 +252,13 @@ function makeGallery(arr, galId, addBtnId, fileInputId, urlInputId) {
     if (rm) { arr.splice(parseInt(rm.dataset.idx), 1); if (arr.length && !arr.some(i=>i.primary)) arr[0].primary = true; render(); return; }
     const thumb = e.target.closest('.img-thumb');
     if (thumb) { const idx = parseInt(thumb.dataset.idx); arr.forEach((im,i) => im.primary = i===idx); render(); return; }
-    if (e.target.closest('.img-add')) document.getElementById(fileInputId).click();
   });
-  document.getElementById(fileInputId).addEventListener('change', e => {
+  // Direct click on the + button — not delegated — preserves user gesture for file input
+  document.getElementById(addBtnId).addEventListener('click', e => {
+    e.stopPropagation();
+    fileInput.click();
+  });
+  fileInput.addEventListener('change', e => {
     Array.from(e.target.files).forEach(file => {
       const reader = new FileReader();
       reader.onload = ev => { arr.push({src: ev.target.result, primary: arr.length === 0}); render(); };
@@ -294,7 +299,8 @@ function addMajor(artist, title, artwork, link) {
   div.innerHTML = `<input type="text" class="form-input" placeholder="Artiste" value="${artist||''}" data-f="artist" />` +
     `<input type="text" class="form-input" placeholder="Projet" value="${title||''}" data-f="title" />` +
     `<input type="text" class="form-input" placeholder="Lien écoute (optionnel)" value="${link||''}" data-f="link" style="font-size:0.68rem" />` +
-    `<label class="major-upload"><input type="file" accept="image/*" style="display:none" data-f="file" />img</label>` +
+    `<input type="file" accept="image/*" style="display:none" data-f="file" />` +
+    `<button type="button" class="major-upload" data-f="upload">img</button>` +
     `<button class="remove-btn" onclick="this.parentElement.remove()">×</button>`;
   if (artwork) {
     const img = document.createElement('img'); img.className = 'major-artwork'; img.src = artwork; img.dataset.f = 'artworkSrc';
@@ -308,8 +314,9 @@ function addMajor(artist, title, artwork, link) {
       if (!img) { img = document.createElement('img'); img.className = 'major-artwork'; img.dataset.f = 'artworkSrc'; div.insertBefore(img, div.querySelector('.remove-btn')); }
       img.src = re.target.result;
     }; r.readAsDataURL(f);
+    ev.target.value = '';
   });
-  div.querySelector('.major-upload').addEventListener('click', () => fileInput.click());
+  div.querySelector('[data-f=upload]').addEventListener('click', e => { e.preventDefault(); fileInput.click(); });
   document.getElementById('majorList').appendChild(div);
 }
 document.getElementById('addMajor').addEventListener('click', () => addMajor());
@@ -323,9 +330,9 @@ function addDisco(artist, title, artwork, date, link) {
     `<input type="text" class="form-input" placeholder="Artiste" value="${artist||''}" data-f="artist" />` +
     `<input type="text" class="form-input" placeholder="Projet" value="${title||''}" data-f="title" />` +
     `<input type="text" class="form-input" placeholder="Lien écoute (optionnel)" value="${link||''}" data-f="link" style="font-size:0.68rem" />` +
-    `<label class="major-upload"><input type="file" accept="image/*" style="display:none" data-f="file" />img</label>` +
+    `<input type="file" accept="image/*" style="display:none" data-f="file" />` +
+    `<button type="button" class="major-upload" data-f="upload">img</button>` +
     `<button class="remove-btn" onclick="this.parentElement.remove()">×</button>`;
-  // Auto-format date MM/YYYY
   const dateInput = div.querySelector('[data-f=date]');
   dateInput.addEventListener('input', () => {
     let v = dateInput.value.replace(/[^0-9]/g, '');
@@ -344,8 +351,9 @@ function addDisco(artist, title, artwork, date, link) {
       if (!img) { img = document.createElement('img'); img.className = 'major-artwork'; img.dataset.f = 'artworkSrc'; div.insertBefore(img, div.querySelector('.remove-btn')); }
       img.src = re.target.result;
     }; r.readAsDataURL(f);
+    ev.target.value = '';
   });
-  div.querySelector('.major-upload').addEventListener('click', () => fileInput.click());
+  div.querySelector('[data-f=upload]').addEventListener('click', e => { e.preventDefault(); fileInput.click(); });
   document.getElementById('discoList').appendChild(div);
 }
 document.getElementById('addDisco').addEventListener('click', () => addDisco());
@@ -359,7 +367,8 @@ function addCert(type, level, artist, project, artwork) {
     `<select class="form-select" data-f="level"><option value="">Certif</option><option value="Or" ${level==='Or'?'selected':''}>Or</option><option value="Platine" ${level==='Platine'?'selected':''}>Platine</option><option value="Diamant" ${level==='Diamant'?'selected':''}>Diamant</option></select>` +
     `<input type="text" class="form-input" placeholder="Artiste" value="${artist||''}" data-f="artist" />` +
     `<input type="text" class="form-input" placeholder="Projet" value="${project||''}" data-f="project" />` +
-    `<label class="major-upload"><input type="file" accept="image/*" style="display:none" data-f="file" />img</label>` +
+    `<input type="file" accept="image/*" style="display:none" data-f="file" />` +
+    `<button type="button" class="major-upload" data-f="upload">img</button>` +
     `<button class="remove-btn" onclick="this.parentElement.remove()">×</button>`;
   if (artwork) {
     const img = document.createElement('img'); img.className = 'cert-artwork'; img.src = artwork; img.dataset.f = 'artworkSrc';
@@ -373,8 +382,9 @@ function addCert(type, level, artist, project, artwork) {
       if (!img) { img = document.createElement('img'); img.className = 'cert-artwork'; img.dataset.f = 'artworkSrc'; div.insertBefore(img, div.querySelector('.remove-btn')); }
       img.src = re.target.result;
     }; r.readAsDataURL(f);
+    ev.target.value = '';
   });
-  div.querySelector('.major-upload').addEventListener('click', () => fileInput.click());
+  div.querySelector('[data-f=upload]').addEventListener('click', e => { e.preventDefault(); fileInput.click(); });
   document.getElementById('certsList').appendChild(div);
 }
 document.getElementById('addCert').addEventListener('click', () => addCert());
