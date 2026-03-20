@@ -15,17 +15,15 @@
 
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root {
-      --bg:     #0d0d0d;
-      --border: #2a2a2a;
-      --text:   #f0ede6;
-      --muted:  #555;
-      --accent: #e8c547;
+      --bg:      #0d0d0d;
+      --border:  #2a2a2a;
+      --text:    #f0ede6;
+      --muted:   #555;
+      --accent:  #e8c547;
       --surface: #111111;
-      --surface2: #161616;
+      --surface2:#161616;
     }
-
     body {
       font-family: 'Inter', system-ui, sans-serif;
       background: var(--bg);
@@ -34,11 +32,9 @@
       display: flex;
       flex-direction: column;
     }
-
     body::before {
       content: '';
-      position: fixed;
-      inset: 0;
+      position: fixed; inset: 0;
       background-image:
         linear-gradient(var(--border) 1px, transparent 1px),
         linear-gradient(90deg, var(--border) 1px, transparent 1px);
@@ -47,54 +43,35 @@
       pointer-events: none;
       z-index: 0;
     }
-
-    /* ── Nav ── */
     nav {
-      position: relative;
-      z-index: 1;
-      display: flex;
-      align-items: center;
-      gap: 12px;
+      position: relative; z-index: 1;
+      display: flex; align-items: center; gap: 12px;
       padding: 18px 40px;
       border-bottom: 1px solid var(--border);
       font-family: 'Syne Mono', monospace;
-      font-size: 0.65rem;
-      letter-spacing: 0.1em;
+      font-size: 0.65rem; letter-spacing: 0.1em;
     }
-
     nav a { color: var(--muted); text-decoration: none; transition: color 0.15s; }
     nav a:hover { color: var(--accent); }
-    .nav-sep   { color: var(--border); }
+    .nav-sep { color: var(--border); }
     .nav-current { color: var(--text); font-weight: 600; }
-
-    /* ── App shell ── */
-    #root {
-      position: relative;
-      z-index: 1;
-      flex: 1;
-      padding: 28px 40px 48px;
-    }
-
-    @media (max-width: 600px) {
-      nav, #root { padding-left: 24px; padding-right: 24px; }
-    }
+    #root { position: relative; z-index: 1; flex: 1; padding: 28px 40px 48px; }
+    @media (max-width: 700px) { nav, #root { padding-left: 20px; padding-right: 20px; } }
   </style>
 </head>
 <body>
-
   <nav>
     <a href="index.html">← BLZante Toolbox</a>
     <span class="nav-sep">/</span>
     <span class="nav-current">ONID BLZante</span>
   </nav>
-
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useState, useMemo, useCallback, useEffect } = React;
+    const { useState, useMemo, useCallback, useRef } = React;
     const XL = XLSX;
 
-    // ─── Utilitaires ─────────────────────────────────────────────────────────
+    // ─── Utils ────────────────────────────────────────────────────────────────
 
     function normalize(str) {
       if (str == null) return "";
@@ -102,6 +79,7 @@
         .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
         .replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
     }
+
     function tokenize(s) { return normalize(s).split(" ").filter(Boolean); }
 
     function jaccardSim(a, b) {
@@ -126,42 +104,47 @@
     }
 
     function fuzzyScore(q, c) {
-      const jaccard = jaccardSim(q, c);
-      const maxLen = Math.max(normalize(q).length, normalize(c).length);
-      const levSim = maxLen ? 1 - levenshtein(q, c) / maxLen : 1;
-      return 0.65 * jaccard + 0.35 * levSim;
+      const jac = jaccardSim(q, c);
+      const maxL = Math.max(normalize(q).length, normalize(c).length);
+      const lev = maxL ? 1 - levenshtein(q, c) / maxL : 1;
+      return 0.65 * jac + 0.35 * lev;
     }
 
-    function bestCatalogMatches(title, catalogues, topN = 4) {
+    function bestCatalogMatches(titre, catalogues, topN = 4) {
       const all = [];
       for (const { name, rows, col } of catalogues) {
         rows.forEach(row => {
           const t = (row[col] || "").toString();
           if (!t) return;
-          const score = fuzzyScore(title, t);
-          if (score > 0.08) all.push({ titre: t, score, catalogue: name });
+          const score = fuzzyScore(titre, t);
+          if (score > 0.1) all.push({ titre: t, score, catalogue: name });
         });
       }
       return all.sort((a, b) => b.score - a.score).slice(0, topN);
     }
 
     function readExcel(file) {
-      return new Promise((resolve, reject) => {
+      return new Promise((res, rej) => {
         const r = new FileReader();
         r.onload = e => {
           try {
             const wb = XL.read(new Uint8Array(e.target.result), { type: "array" });
-            resolve(XL.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "" }));
-          } catch(err) { reject(err); }
+            res(XL.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "" }));
+          } catch(err) { rej(err); }
         };
-        r.onerror = reject;
+        r.onerror = rej;
         r.readAsArrayBuffer(file);
       });
     }
 
+    // Détection auto des colonnes — connaît les noms SACEM standards
     function autoCol(rows, ...hints) {
       if (!rows.length) return "";
       const keys = Object.keys(rows[0]);
+      for (const h of hints) {
+        const f = keys.find(k => normalize(k) === normalize(h));
+        if (f) return f;
+      }
       for (const h of hints) {
         const f = keys.find(k => normalize(k).includes(normalize(h)));
         if (f) return f;
@@ -169,72 +152,65 @@
       return keys[0];
     }
 
-    // ─── Persistance localStorage ─────────────────────────────────────────────
+    // ─── Persistance ──────────────────────────────────────────────────────────
 
-    const STORAGE_KEY = "onid_blzante_termes";
-    const loadTerms  = () => { try { const v = localStorage.getItem(STORAGE_KEY); return v ? JSON.parse(v) : []; } catch { return []; } };
-    const saveTerms  = (t) => { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(t)); } catch {} };
+    const SK = "onid_blzante_termes";
+    const loadTerms = () => { try { const v = localStorage.getItem(SK); return v ? JSON.parse(v) : []; } catch { return []; } };
+    const saveTerms = t => { try { localStorage.setItem(SK, JSON.stringify(t)); } catch {} };
 
-    // ─── Design tokens (dark) ─────────────────────────────────────────────────
+    // ─── Design ───────────────────────────────────────────────────────────────
 
     const C = {
-      bg:      "#0d0d0d",
-      surface: "#111111",
-      surface2:"#161616",
-      border:  "#2a2a2a",
-      border2: "#333333",
-      text:    "#f0ede6",
-      muted:   "#666",
-      accent:  "#e8c547",
-      green:   "#4ade80",
-      red:     "#f87171",
-      violet:  "#a78bfa",
-      blue:    "#60a5fa",
+      bg: "#0d0d0d", surface: "#111", surface2: "#161616", surface3: "#1a1a1a",
+      border: "#2a2a2a", border2: "#333",
+      text: "#f0ede6", muted: "#555", muted2: "#888",
+      accent: "#e8c547",
+      green: "#4ade80", greenBg: "#0a1a0a", greenBorder: "#1a4a1a",
+      red: "#f87171",   redBg:   "#1a0a0a", redBorder:   "#4a1a1a",
+      violet: "#a78bfa", blue: "#60a5fa",
     };
 
+    const mono = "'Syne Mono', monospace";
+    const syne = "'Syne', sans-serif";
+
     const S = {
-      card: {
-        background: C.surface, border: `1px solid ${C.border}`,
-        borderRadius: 4, padding: 24,
+      card: { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 3, padding: 24 },
+      btn: (active, accent) => {
+        const a = accent || C.accent;
+        return {
+          background: active ? a : C.surface2,
+          color: active ? C.bg : C.muted,
+          border: `1px solid ${active ? a : C.border2}`,
+          borderRadius: 2, padding: "8px 18px",
+          fontFamily: mono, fontSize: 10, fontWeight: 700,
+          letterSpacing: "0.12em", textTransform: "uppercase",
+          cursor: "pointer", transition: "all 0.15s",
+        };
       },
-      btn: (active, bg) => ({
-        background: active ? (bg || C.accent) : C.surface2,
-        color: active ? (bg ? "#fff" : C.bg) : C.muted,
-        border: `1px solid ${active ? (bg || C.accent) : C.border}`,
-        borderRadius: 3, padding: "7px 16px",
-        fontFamily: "'Syne Mono', monospace",
-        fontSize: 11, fontWeight: 600, letterSpacing: "0.08em",
-        cursor: "pointer", transition: "all 0.15s",
-        textTransform: "uppercase",
-      }),
-      tag: (bg = C.border, color = C.muted) => ({
-        background: bg === C.border ? "transparent" : bg + "22",
-        color: color,
-        border: `1px solid ${bg === C.border ? C.border : bg + "55"}`,
-        borderRadius: 2, padding: "2px 8px",
-        fontFamily: "'Syne Mono', monospace",
-        fontSize: 10, letterSpacing: "0.1em",
-        textTransform: "uppercase", display: "inline-block",
-      }),
+      ghostBtn: {
+        background: "none", border: `1px solid ${C.border2}`,
+        borderRadius: 2, padding: "8px 18px",
+        fontFamily: mono, fontSize: 10, fontWeight: 700,
+        letterSpacing: "0.12em", textTransform: "uppercase",
+        color: C.muted, cursor: "pointer", transition: "all 0.15s",
+      },
       select: {
-        width: "100%", padding: "7px 10px", borderRadius: 3,
+        width: "100%", padding: "8px 10px", borderRadius: 2,
         border: `1px solid ${C.border2}`, fontSize: 12,
-        background: C.surface2, color: C.text,
-        fontFamily: "'Syne Mono', monospace",
+        background: C.surface2, color: C.text, fontFamily: mono,
+        cursor: "pointer",
       },
       input: {
-        padding: "9px 13px", borderRadius: 3,
+        padding: "9px 13px", borderRadius: 2,
         border: `1px solid ${C.border2}`,
-        fontSize: 13, background: C.surface2,
-        color: C.text, outline: "none", width: "100%",
-        boxSizing: "border-box",
+        fontSize: 13, background: C.surface2, color: C.text,
+        outline: "none", width: "100%", boxSizing: "border-box",
         fontFamily: "'Inter', sans-serif",
       },
-      label: {
-        fontFamily: "'Syne Mono', monospace",
-        fontSize: 10, fontWeight: 700, color: C.muted,
-        letterSpacing: "0.18em", textTransform: "uppercase",
-        display: "block", marginBottom: 6,
+      sectionLabel: {
+        fontFamily: mono, fontSize: 9, fontWeight: 700, color: C.muted,
+        letterSpacing: "0.22em", textTransform: "uppercase",
+        display: "block", marginBottom: 8,
       },
     };
 
@@ -244,46 +220,49 @@
       { key: "blz",        name: "BLZ",        color: C.blue    },
     ];
 
-    // ─── Composant ────────────────────────────────────────────────────────────
+    // ─── Composant principal ──────────────────────────────────────────────────
 
     function App() {
-      const [step, setStep]           = useState(1);
-      const [tab, setTab]             = useState("upload");
+      const [step, setStep]         = useState(1);
+      const [tab, setTab]           = useState("upload");
 
-      const [onidData, setOnidData]   = useState([]);
-      const [onidFile, setOnidFile]   = useState("");
-      const [colTitre, setColTitre]   = useState("");
-      const [colAyant, setColAyant]   = useState("");
+      // ONID
+      const [onidData, setOnidData] = useState([]);
+      const [onidFile, setOnidFile] = useState("");
+      const [colTitre, setColTitre] = useState(""); // ex: TITROEUV
+      const [colAyant, setColAyant] = useState(""); // ex: AD
 
-      const [cats, setCats]           = useState({ blzante: [], rossinante: [], blz: [] });
-      const [catFiles, setCatFiles]   = useState({ blzante: "", rossinante: "", blz: "" });
-      const [catCols, setCatCols]     = useState({ blzante: "", rossinante: "", blz: "" });
+      // Catalogues
+      const [cats, setCats]         = useState({ blzante: [], rossinante: [], blz: [] });
+      const [catFiles, setCatFiles] = useState({ blzante: "", rossinante: "", blz: "" });
+      const [catCols, setCatCols]   = useState({ blzante: "", rossinante: "", blz: "" });
 
-      const [terms, setTerms]         = useState(() => loadTerms());
-      const [newTerm, setNewTerm]     = useState("");
+      // Termes
+      const [terms, setTerms]       = useState(() => loadTerms());
+      const [newTerm, setNewTerm]   = useState("");
 
-      const [results, setResults]     = useState([]);
-      const [decisions, setDecisions] = useState({});
-      const [selCat, setSelCat]       = useState({});
-      const [filter, setFilter]       = useState("all");
+      // Résultats
+      const [results, setResults]   = useState([]);
+      const [decisions, setDec]     = useState({});
+      const [selCat, setSelCat]     = useState({});
+      const [filter, setFilter]     = useState("all");
 
-      const [loading, setLoading]     = useState(false);
-      const [err, setErr]             = useState("");
-      const [msg, setMsg]             = useState("");
+      const [loading, setLoading]   = useState(false);
+      const [err, setErr]           = useState("");
+      const [msg, setMsg]           = useState("");
 
-      const onidCols = onidData.length ? Object.keys(onidData[0]) : [];
-      const montantKey = onidCols.find(k =>
-        normalize(k).includes("montant") || normalize(k).includes("amount") || normalize(k).includes("somme")
-      );
-      const anyCat = CATS.some(c => cats[c.key].length > 0);
+      const onidCols  = onidData.length ? Object.keys(onidData[0]) : [];
+      const anyCat    = CATS.some(c => cats[c.key].length > 0);
+      const montantKey = onidCols.find(k => /montant|amount|somme/i.test(k));
 
       const persistTerms = useCallback(t => { setTerms(t); saveTerms(t); }, []);
 
-      // termes
+      // ── Termes ──────────────────────────────────────────────────────────────
+
       function addTerm() {
         const t = newTerm.trim();
         if (!t) return;
-        if (terms.some(x => normalize(x) === normalize(t))) { setErr("Terme déjà présent."); setMsg(""); return; }
+        if (terms.some(x => normalize(x) === normalize(t))) { setErr("Terme déjà présent."); return; }
         persistTerms([...terms, t]);
         setNewTerm(""); setErr(""); setMsg("");
       }
@@ -298,25 +277,29 @@
           incoming.forEach(t => { if (!merged.some(x => normalize(x) === normalize(t))) { merged.push(t); added++; } });
           persistTerms(merged);
           setErr(""); setMsg(`✓ ${added} terme(s) importé(s), ${incoming.length - added} doublon(s) ignoré(s).`);
-        } catch(e) { setErr("Erreur import : " + e.message); setMsg(""); }
+        } catch(e) { setErr("Erreur import : " + e.message); }
       }
 
-      // fichiers
+      // ── Fichiers ─────────────────────────────────────────────────────────────
+
       async function loadOnid(file) {
         try {
           const rows = await readExcel(file);
           if (!rows.length) { setErr("Fichier ONID vide."); return; }
           setOnidData(rows); setOnidFile(file.name);
-          setColTitre(autoCol(rows, "titre", "oeuvre", "libelle"));
-          setColAyant(autoCol(rows, "ayant", "artiste", "editeur", "compositeur"));
-          setErr(""); setMsg("");
+          // Détection prioritaire des noms SACEM standards
+          setColTitre(autoCol(rows, "TITROEUV", "titre", "oeuvre", "libelle", "title"));
+          setColAyant(autoCol(rows, "AD", "ayant", "artiste", "editeur", "compositeur", "author"));
+          setErr(""); setMsg(`✓ ${rows.length} lignes chargées — colonnes détectées automatiquement.`);
         } catch(e) { setErr("Erreur ONID : " + e.message); }
       }
+
       async function loadCat(key, file) {
         try {
           const rows = await readExcel(file);
           if (!rows.length) { setErr(`Catalogue ${key} vide.`); return; }
-          const col = autoCol(rows, "titre", "oeuvre", "libelle");
+          // Cherche "Titre de l'oeuvre" ou fallback
+          const col = autoCol(rows, "Titre de l'oeuvre", "titre", "oeuvre", "libelle", "title");
           setCats(c => ({ ...c, [key]: rows }));
           setCatFiles(f => ({ ...f, [key]: file.name }));
           setCatCols(c => ({ ...c, [key]: col }));
@@ -324,39 +307,62 @@
         } catch(e) { setErr("Erreur catalogue : " + e.message); }
       }
 
-      function goMapping() {
-        if (!onidData.length) { setErr("Chargez le fichier ONID."); return; }
-        if (!anyCat)          { setErr("Chargez au moins un catalogue."); return; }
-        if (!terms.length)    { setErr("Ajoutez au moins un terme."); return; }
-        setStep(2); setErr(""); setMsg("");
-      }
+      // ── Lancement de la recherche ────────────────────────────────────────────
 
       function runSearch() {
         setLoading(true); setErr(""); setMsg("");
         setTimeout(() => {
           try {
-            const activeCats = CATS.filter(c => cats[c.key].length > 0)
+            const activeCats = CATS
+              .filter(c => cats[c.key].length > 0)
               .map(c => ({ name: c.name, rows: cats[c.key], col: catCols[c.key] }));
-            const seen = new Set(), matches = [];
+
+            // Pour chaque terme, on collecte toutes les lignes ONID correspondantes
+            // Une même ligne ONID peut matcher plusieurs termes — on garde le premier terme qui l'a matchée
+            const seenRows = new Set();
+            const matches  = [];
+
             terms.forEach(terme => {
               const nt = normalize(terme);
               onidData.forEach((row, i) => {
                 const titre = (row[colTitre] || "").toString();
                 const ayant = (row[colAyant] || "").toString();
-                if ((normalize(titre).includes(nt) || normalize(ayant).includes(nt)) && !seen.has(i)) {
-                  seen.add(i);
-                  matches.push({ id: String(i), terme, row, catMatches: bestCatalogMatches(titre, activeCats) });
+                const matchTitre = normalize(titre).includes(nt);
+                const matchAyant = normalize(ayant).includes(nt);
+
+                if (matchTitre || matchAyant) {
+                  if (!seenRows.has(i)) {
+                    seenRows.add(i);
+                    // Catalogue : on tente un fuzzy sur le titre ONID
+                    // Le résultat peut être vide — la ligne apparaît quand même
+                    const catMatches = activeCats.length > 0
+                      ? bestCatalogMatches(titre, activeCats)
+                      : [];
+
+                    matches.push({
+                      id: String(i),
+                      terme,
+                      matchIn: matchTitre && matchAyant ? "titre + ayant droit"
+                               : matchTitre ? "titre" : "ayant droit",
+                      row,
+                      catMatches,
+                    });
+                  }
                 }
               });
             });
-            setResults(matches); setDecisions({}); setSelCat({});
+
+            setResults(matches);
+            setDec({}); setSelCat({});
             setStep(3); setFilter("all");
           } catch(e) { setErr("Erreur : " + e.message); }
           setLoading(false);
         }, 30);
       }
 
-      const decide  = useCallback((id, d) => setDecisions(p => ({ ...p, [id]: p[id] === d ? undefined : d })), []);
+      // ── Décisions ────────────────────────────────────────────────────────────
+
+      const decide  = useCallback((id, d) => setDec(p => ({ ...p, [id]: p[id] === d ? undefined : d })), []);
       const pickCat = useCallback((id, v) => setSelCat(p => ({ ...p, [id]: v })), []);
 
       const stats = useMemo(() => ({
@@ -375,7 +381,9 @@
 
       function exportXlsx() {
         const rows = results.filter(r => decisions[r.id] === "v").map(r => ({
-          ...r.row, "Terme trouvé": r.terme, "Oeuvre identifiée": selCat[r.id] || "",
+          ...r.row,
+          "Terme trouvé":      r.terme,
+          "Oeuvre identifiée": selCat[r.id] || "",
         }));
         const ws = XL.utils.json_to_sheet(rows);
         const wb = XL.utils.book_new();
@@ -384,112 +392,101 @@
       }
 
       function reset() {
-        setStep(1); setResults([]); setDecisions({}); setSelCat({});
+        setStep(1); setResults([]); setDec({}); setSelCat({});
         setOnidData([]); setOnidFile("");
         setCats({ blzante: [], rossinante: [], blz: [] });
         setCatFiles({ blzante: "", rossinante: "", blz: "" });
         setFilter("all"); setErr(""); setMsg(""); setTab("upload");
       }
 
-      // ── stepper ──────────────────────────────────────────────────────────────
-      const Stepper = () => (
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          {["Fichiers & Termes", "Colonnes", "Résultats"].map((lbl, i) => (
-            <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <div style={{
-                width: 22, height: 22, borderRadius: "50%",
-                background: step > i+1 ? C.green : step === i+1 ? C.accent : C.surface2,
-                color:      step > i+1 ? C.bg    : step === i+1 ? C.bg     : C.muted,
-                border: `1px solid ${step > i+1 ? C.green : step === i+1 ? C.accent : C.border}`,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 10, fontWeight: 800,
-                fontFamily: "'Syne Mono', monospace",
-              }}>{step > i+1 ? "✓" : i+1}</div>
-              <span style={{ fontSize: 11, fontFamily: "'Syne Mono', monospace", color: step === i+1 ? C.text : C.muted, letterSpacing: "0.08em" }}>{lbl}</span>
-              {i < 2 && <span style={{ color: C.border, fontSize: 12 }}>›</span>}
-            </div>
-          ))}
-        </div>
-      );
+      // ─────────────────────────────────────────────────────────────────────────
+      // RENDER
+      // ─────────────────────────────────────────────────────────────────────────
 
-      // ── render ────────────────────────────────────────────────────────────────
       return (
-        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+        <div style={{ maxWidth: 1300, margin: "0 auto" }}>
 
-          {/* Header */}
-          <div style={{ marginBottom: 24, display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
-            <div>
-              <div style={{ fontFamily: "'Syne Mono', monospace", fontSize: 10, color: C.muted, letterSpacing: "0.24em", textTransform: "uppercase", marginBottom: 6 }}>
-                Outils / SACEM
-              </div>
-              <h1 style={{ fontFamily: "'Syne', sans-serif", fontSize: 22, fontWeight: 800, letterSpacing: "-0.01em", color: C.text, lineHeight: 1.2 }}>
-                ONID BLZante
-              </h1>
-              <div style={{ fontFamily: "'Syne Mono', monospace", fontSize: 11, color: C.muted, marginTop: 4, letterSpacing: "0.06em" }}>
-                Identification des Oeuvres Non Identifiées SACEM
-              </div>
+          {/* ── Titre page ── */}
+          <div style={{ marginBottom: 22 }}>
+            <div style={{ fontFamily: mono, fontSize: 9, color: C.muted, letterSpacing: "0.24em", textTransform: "uppercase", marginBottom: 6 }}>
+              Outils / SACEM
             </div>
-            <Stepper />
+            <h1 style={{ fontFamily: syne, fontSize: 20, fontWeight: 800, color: C.text, letterSpacing: "-0.01em" }}>
+              ONID BLZante
+            </h1>
+            <div style={{ fontFamily: mono, fontSize: 10, color: C.muted, marginTop: 4, letterSpacing: "0.06em" }}>
+              Identification des Oeuvres Non Identifiées SACEM
+            </div>
           </div>
 
-          {/* Séparateur */}
-          <div style={{ height: 1, background: C.border, marginBottom: 22 }} />
+          {/* ── Stepper ── */}
+          <div style={{ display: "flex", gap: 0, marginBottom: 24, borderBottom: `1px solid ${C.border}` }}>
+            {["1 — Fichiers & Termes", "2 — Recherche", "3 — Résultats"].map((lbl, i) => (
+              <div key={i} style={{
+                padding: "10px 24px",
+                fontFamily: mono, fontSize: 10, letterSpacing: "0.1em", textTransform: "uppercase",
+                color: step === i+1 ? C.accent : step > i+1 ? C.muted2 : C.muted,
+                borderBottom: step === i+1 ? `2px solid ${C.accent}` : "2px solid transparent",
+                marginBottom: -1,
+              }}>
+                {step > i+1 ? "✓ " : ""}{lbl}
+              </div>
+            ))}
+          </div>
 
-          {/* Notifs */}
+          {/* ── Notifs ── */}
           {err && (
-            <div style={{ background: "#1a0a0a", border: `1px solid #5a2020`, borderRadius: 3, padding: "9px 16px", marginBottom: 14, color: C.red, fontSize: 12, fontFamily: "'Syne Mono', monospace", letterSpacing: "0.04em" }}>
+            <div style={{ background: C.redBg, border: `1px solid ${C.redBorder}`, borderRadius: 2, padding: "9px 16px", marginBottom: 14, color: C.red, fontSize: 12, fontFamily: mono, letterSpacing: "0.04em" }}>
               ⚠ {err}
             </div>
           )}
           {msg && !err && (
-            <div style={{ background: "#0a1a0a", border: `1px solid #1a5a1a`, borderRadius: 3, padding: "9px 16px", marginBottom: 14, color: C.green, fontSize: 12, fontFamily: "'Syne Mono', monospace", letterSpacing: "0.04em" }}>
+            <div style={{ background: C.greenBg, border: `1px solid ${C.greenBorder}`, borderRadius: 2, padding: "9px 16px", marginBottom: 14, color: C.green, fontSize: 12, fontFamily: mono, letterSpacing: "0.04em" }}>
               {msg}
             </div>
           )}
 
-          {/* ══ ÉTAPE 1 ══ */}
+          {/* ══════════════════════════════════════════════════
+              ÉTAPE 1 — Fichiers & Termes
+          ══════════════════════════════════════════════════ */}
           {step === 1 && (
             <>
-              {/* Tabs */}
-              <div style={{ display: "flex", gap: 1, marginBottom: 20, borderBottom: `1px solid ${C.border}` }}>
-                {[
-                  { k: "upload", lbl: "Fichiers" },
-                  { k: "termes", lbl: `Termes (${terms.length})` },
-                ].map(({ k, lbl }) => (
+              <div style={{ display: "flex", gap: 1, marginBottom: 18, borderBottom: `1px solid ${C.border}` }}>
+                {[{ k: "upload", lbl: "Fichiers" }, { k: "termes", lbl: `Termes (${terms.length})` }].map(({ k, lbl }) => (
                   <button key={k} onClick={() => { setTab(k); setErr(""); setMsg(""); }} style={{
-                    background: tab === k ? C.surface : "transparent",
-                    color: tab === k ? C.accent : C.muted,
-                    border: "none",
+                    background: "none", border: "none",
                     borderBottom: tab === k ? `2px solid ${C.accent}` : "2px solid transparent",
-                    padding: "9px 22px", marginBottom: -1,
-                    fontFamily: "'Syne Mono', monospace", fontSize: 11,
-                    letterSpacing: "0.14em", textTransform: "uppercase",
+                    padding: "8px 20px", marginBottom: -1,
+                    fontFamily: mono, fontSize: 10, letterSpacing: "0.14em", textTransform: "uppercase",
+                    color: tab === k ? C.accent : C.muted,
                     cursor: "pointer", transition: "all 0.15s",
                   }}>{lbl}</button>
                 ))}
               </div>
 
-              {/* ── Upload ── */}
+              {/* ─ Onglet Fichiers ─ */}
               {tab === "upload" && (
-                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
 
                   {/* ONID */}
-                  <div style={{ ...S.card, borderColor: onidData.length ? C.accent + "88" : C.border }}>
+                  <div style={{ ...S.card, borderColor: onidData.length ? C.accent + "66" : C.border }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                      <span style={{ fontSize: 26 }}>📋</span>
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 14, color: C.text }}>
-                          Fichier ONID <span style={{ fontFamily: "'Syne Mono', monospace", fontSize: 9, color: C.red, letterSpacing: "0.1em" }}>REQUIS</span>
+                        <span style={S.sectionLabel}>Fichier ONID <span style={{ color: C.red }}>*requis</span></span>
+                        <div style={{ fontFamily: syne, fontWeight: 700, fontSize: 14, color: C.text }}>
+                          Export SACEM — Oeuvres Non Identifiées
                         </div>
-                        <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>Export SACEM des oeuvres non identifiées</div>
+                        {onidData.length > 0 && (
+                          <div style={{ fontFamily: mono, fontSize: 10, color: C.muted, marginTop: 6, letterSpacing: "0.04em" }}>
+                            {onidFile} &nbsp;·&nbsp; {onidData.length} lignes &nbsp;·&nbsp;
+                            colonnes détectées : <span style={{ color: C.accent }}>{colTitre}</span> (titre) &nbsp;+&nbsp; <span style={{ color: C.accent }}>{colAyant}</span> (ayant droit)
+                          </div>
+                        )}
                       </div>
                       {onidData.length > 0 ? (
-                        <>
-                          <span style={S.tag(C.accent, C.accent)}>✓ {onidFile} · {onidData.length} lignes</span>
-                          <label style={{ ...S.btn(false), cursor: "pointer" }}>
-                            Changer <input type="file" accept=".xlsx,.xls,.csv" style={{ display: "none" }} onChange={e => e.target.files[0] && loadOnid(e.target.files[0])} />
-                          </label>
-                        </>
+                        <label style={{ ...S.ghostBtn, cursor: "pointer" }}>
+                          Changer <input type="file" accept=".xlsx,.xls,.csv" style={{ display: "none" }} onChange={e => e.target.files[0] && loadOnid(e.target.files[0])} />
+                        </label>
                       ) : (
                         <label style={{ ...S.btn(true), cursor: "pointer" }}>
                           Charger <input type="file" accept=".xlsx,.xls,.csv" style={{ display: "none" }} onChange={e => e.target.files[0] && loadOnid(e.target.files[0])} />
@@ -500,32 +497,31 @@
 
                   {/* Catalogues */}
                   <div style={S.card}>
-                    <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 13, color: C.text, marginBottom: 14, letterSpacing: "0.02em" }}>
-                      Catalogues <span style={{ fontFamily: "'Syne Mono', monospace", fontSize: 10, fontWeight: 400, color: C.muted }}>— au moins un requis</span>
-                    </div>
+                    <span style={S.sectionLabel}>Catalogues <span style={{ color: C.muted, fontWeight: 400 }}>(optionnel — pour le matching)</span></span>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 1, background: C.border, border: `1px solid ${C.border}` }}>
                       {CATS.map(({ key, name, color }) => {
                         const loaded = cats[key].length > 0;
                         return (
-                          <div key={key} style={{ background: C.surface2, padding: 16, position: "relative", borderTop: loaded ? `2px solid ${color}` : `2px solid transparent`, transition: "border-color 0.2s" }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-                              <div style={{ width: 8, height: 8, borderRadius: "50%", background: color, opacity: loaded ? 1 : 0.3 }} />
-                              <span style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 13, color: loaded ? C.text : C.muted }}>{name}</span>
+                          <div key={key} style={{ background: C.surface2, padding: 14, borderTop: `2px solid ${loaded ? color : "transparent"}` }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 10 }}>
+                              <div style={{ width: 7, height: 7, borderRadius: "50%", background: color, opacity: loaded ? 1 : 0.25 }} />
+                              <span style={{ fontFamily: syne, fontWeight: 700, fontSize: 13, color: loaded ? C.text : C.muted }}>{name}</span>
                             </div>
                             {loaded ? (
                               <>
-                                <div style={{ fontFamily: "'Syne Mono', monospace", fontSize: 10, color: C.muted, marginBottom: 8, wordBreak: "break-all" }}>{catFiles[key]}</div>
-                                <span style={S.tag(color, color)}>{cats[key].length} oeuvres</span>
-                                <div style={{ marginTop: 12 }}>
-                                  <label style={{ ...S.btn(false), fontSize: 10, cursor: "pointer" }}>
-                                    Changer <input type="file" accept=".xlsx,.xls,.csv" style={{ display: "none" }} onChange={e => e.target.files[0] && loadCat(key, e.target.files[0])} />
-                                  </label>
+                                <div style={{ fontFamily: mono, fontSize: 9, color: C.muted, marginBottom: 8, wordBreak: "break-all", letterSpacing: "0.04em" }}>{catFiles[key]}</div>
+                                <div style={{ fontFamily: mono, fontSize: 10, color, letterSpacing: "0.06em", marginBottom: 10 }}>{cats[key].length} oeuvres</div>
+                                <div style={{ fontFamily: mono, fontSize: 9, color: C.muted, marginBottom: 10, letterSpacing: "0.04em" }}>
+                                  Colonne titre : <span style={{ color: C.text }}>{catCols[key]}</span>
                                 </div>
+                                <label style={{ ...S.ghostBtn, fontSize: 9, cursor: "pointer" }}>
+                                  Changer <input type="file" accept=".xlsx,.xls,.csv" style={{ display: "none" }} onChange={e => e.target.files[0] && loadCat(key, e.target.files[0])} />
+                                </label>
                               </>
                             ) : (
-                              <label style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, cursor: "pointer", padding: "20px 0" }}>
-                                <span style={{ fontSize: 22, opacity: 0.4 }}>📚</span>
-                                <span style={{ fontFamily: "'Syne Mono', monospace", fontSize: 10, color: C.muted, letterSpacing: "0.1em" }}>Cliquer pour charger</span>
+                              <label style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, cursor: "pointer", padding: "18px 0" }}>
+                                <span style={{ fontSize: 20, opacity: 0.3 }}>📚</span>
+                                <span style={{ fontFamily: mono, fontSize: 9, color: C.muted, letterSpacing: "0.1em" }}>Cliquer pour charger</span>
                                 <input type="file" accept=".xlsx,.xls,.csv" style={{ display: "none" }} onChange={e => e.target.files[0] && loadCat(key, e.target.files[0])} />
                               </label>
                             )}
@@ -535,138 +531,186 @@
                     </div>
                   </div>
 
-                  <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-                    <button onClick={() => setTab("termes")} style={{ ...S.btn(false) }}>
+                  <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, paddingTop: 4 }}>
+                    <button onClick={() => { setTab("termes"); setErr(""); setMsg(""); }} style={S.ghostBtn}>
                       Gérer les termes ({terms.length}) →
                     </button>
-                    <button onClick={goMapping} style={{ ...S.btn(true), opacity: (!onidData.length || !anyCat || !terms.length) ? 0.3 : 1 }}>
-                      Vérifier les colonnes →
+                    <button onClick={() => {
+                      if (!onidData.length) { setErr("Chargez le fichier ONID."); return; }
+                      if (!terms.length)    { setErr("Ajoutez au moins un terme de recherche."); return; }
+                      setStep(2); setErr(""); setMsg("");
+                    }} style={{ ...S.btn(true), opacity: (!onidData.length || !terms.length) ? 0.35 : 1 }}>
+                      Configurer la recherche →
                     </button>
                   </div>
                 </div>
               )}
 
-              {/* ── Termes ── */}
+              {/* ─ Onglet Termes ─ */}
               {tab === "termes" && (
                 <div style={S.card}>
-                  <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 14, color: C.text, marginBottom: 4 }}>Bibliothèque de termes</div>
-                  <div style={{ fontFamily: "'Syne Mono', monospace", fontSize: 10, color: C.muted, marginBottom: 20, letterSpacing: "0.06em" }}>
-                    Sauvegardés dans le navigateur — réutilisables à chaque session
+                  <span style={S.sectionLabel}>Bibliothèque de termes</span>
+                  <div style={{ fontFamily: mono, fontSize: 10, color: C.muted, marginBottom: 18, letterSpacing: "0.04em", lineHeight: 1.8 }}>
+                    Chaque terme est cherché dans les colonnes titre et ayant droit du fichier ONID.<br />
+                    Les termes sont sauvegardés dans le navigateur et réutilisables à chaque session.
                   </div>
 
-                  <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+                  <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
                     <input style={{ ...S.input, flex: 1 }}
-                      placeholder="Ajouter un terme (ex : DAFT PUNK, MAES, IAM…)"
+                      placeholder="Ex : DAFT PUNK, MAES, IAM, SOPRANO…"
                       value={newTerm}
                       onChange={e => setNewTerm(e.target.value)}
                       onKeyDown={e => e.key === "Enter" && addTerm()}
                     />
-                    <button onClick={addTerm} style={{ ...S.btn(true), whiteSpace: "nowrap" }}>+ Ajouter</button>
-                    <label style={{ ...S.btn(false), cursor: "pointer", whiteSpace: "nowrap" }}>
+                    <button onClick={addTerm} style={S.btn(true)}>+ Ajouter</button>
+                    <label style={{ ...S.ghostBtn, cursor: "pointer" }}>
                       ↑ Importer
                       <input type="file" accept=".xlsx,.xls,.csv" style={{ display: "none" }} onChange={e => e.target.files[0] && importFile(e.target.files[0])} />
                     </label>
                   </div>
 
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-                    <span style={{ fontFamily: "'Syne Mono', monospace", fontSize: 10, color: C.muted, letterSpacing: "0.1em" }}>
-                      {terms.length} TERME{terms.length > 1 ? "S" : ""} ENREGISTRÉ{terms.length > 1 ? "S" : ""}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                    <span style={{ fontFamily: mono, fontSize: 9, color: C.muted, letterSpacing: "0.18em" }}>
+                      {terms.length} TERME{terms.length !== 1 ? "S" : ""} ENREGISTRÉ{terms.length !== 1 ? "S" : ""}
                     </span>
                     {terms.length > 0 && (
                       <button onClick={() => { if (window.confirm("Vider toute la bibliothèque ?")) persistTerms([]); }}
-                        style={{ background: "none", border: "none", color: C.red, fontSize: 11, cursor: "pointer", fontFamily: "'Syne Mono', monospace", letterSpacing: "0.08em" }}>
-                        ✕ tout effacer
+                        style={{ background: "none", border: "none", color: C.red, fontSize: 10, cursor: "pointer", fontFamily: mono, letterSpacing: "0.1em" }}>
+                        ✕ Tout effacer
                       </button>
                     )}
                   </div>
 
                   {terms.length === 0 ? (
-                    <div style={{ textAlign: "center", padding: "40px 0", color: C.muted, fontFamily: "'Syne Mono', monospace", fontSize: 11, lineHeight: 2, letterSpacing: "0.06em" }}>
-                      AUCUN TERME ENREGISTRÉ<br />Ajoutez des termes ou importez un fichier Excel.
+                    <div style={{ textAlign: "center", padding: "36px 0", color: C.muted, fontFamily: mono, fontSize: 10, lineHeight: 2.2, letterSpacing: "0.1em" }}>
+                      AUCUN TERME ENREGISTRÉ
                     </div>
                   ) : (
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
                       {terms.map((t, i) => (
                         <div key={i} style={{
                           background: C.surface2, border: `1px solid ${C.border2}`,
-                          borderRadius: 2, padding: "6px 8px 6px 12px",
+                          borderRadius: 2, padding: "5px 8px 5px 12px",
                           display: "flex", alignItems: "center", gap: 8,
-                          fontFamily: "'Syne Mono', monospace", fontSize: 11, color: C.text, letterSpacing: "0.04em",
+                          fontFamily: mono, fontSize: 11, color: C.text, letterSpacing: "0.04em",
                         }}>
                           {t}
-                          <button onClick={() => removeTerm(i)} style={{ background: "none", border: "none", cursor: "pointer", color: C.muted, fontSize: 14, padding: 0, lineHeight: 1, transition: "color 0.15s" }}>×</button>
+                          <button onClick={() => removeTerm(i)} style={{ background: "none", border: "none", cursor: "pointer", color: C.muted, fontSize: 13, padding: 0, lineHeight: 1 }}>×</button>
                         </div>
                       ))}
                     </div>
                   )}
 
                   <div style={{ marginTop: 20, display: "flex", justifyContent: "flex-end" }}>
-                    <button onClick={() => setTab("upload")} style={S.btn(true)}>← Retour aux fichiers</button>
+                    <button onClick={() => { setTab("upload"); setErr(""); setMsg(""); }} style={S.btn(true)}>← Retour aux fichiers</button>
                   </div>
                 </div>
               )}
             </>
           )}
 
-          {/* ══ ÉTAPE 2 : Colonnes ══ */}
+          {/* ══════════════════════════════════════════════════
+              ÉTAPE 2 — Configuration de la recherche
+          ══════════════════════════════════════════════════ */}
           {step === 2 && (
-            <div style={S.card}>
-              <div style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 14, color: C.text, marginBottom: 20 }}>Vérification des colonnes</div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18, marginBottom: 20 }}>
-                {[
-                  { lbl: "ONID — Titre / Libellé",       val: colTitre, set: setColTitre, opts: onidCols, data: onidData },
-                  { lbl: "ONID — Ayant droit / Artiste",  val: colAyant, set: setColAyant, opts: onidCols, data: onidData },
-                ].map(({ lbl, val, set, opts, data }) => (
-                  <div key={lbl}>
-                    <span style={S.label}>{lbl}</span>
-                    <select value={val} onChange={e => set(e.target.value)} style={S.select}>
-                      {opts.map(o => <option key={o} value={o}>{o}</option>)}
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+
+              {/* Bloc principal : colonnes ONID */}
+              <div style={S.card}>
+                <span style={S.sectionLabel}>Colonnes du fichier ONID</span>
+                <div style={{ fontFamily: mono, fontSize: 10, color: C.muted, marginBottom: 20, letterSpacing: "0.04em", lineHeight: 1.8 }}>
+                  Les termes seront recherchés dans ces deux colonnes. Vérifie que les bonnes colonnes sont sélectionnées.
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                  {/* Colonne titre */}
+                  <div style={{ background: C.surface2, border: `1px solid ${C.border}`, borderRadius: 2, padding: 16 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                      <div style={{ width: 7, height: 7, borderRadius: "50%", background: C.accent }} />
+                      <span style={{ fontFamily: syne, fontWeight: 700, fontSize: 13, color: C.text }}>Titre de l'oeuvre</span>
+                      <span style={{ fontFamily: mono, fontSize: 9, color: C.muted, marginLeft: "auto", letterSpacing: "0.08em" }}>SACEM : TITROEUV</span>
+                    </div>
+                    <select value={colTitre} onChange={e => setColTitre(e.target.value)} style={S.select}>
+                      {onidCols.map(o => <option key={o} value={o}>{o}</option>)}
                     </select>
-                    <div style={{ fontFamily: "'Syne Mono', monospace", fontSize: 10, color: C.muted, marginTop: 5, letterSpacing: "0.04em" }}>
-                      Aperçu : « {(data[0] && data[0][val]) || "—"} »
+                    <div style={{ fontFamily: mono, fontSize: 9, color: C.muted, marginTop: 8, letterSpacing: "0.04em" }}>
+                      Exemple : « {(onidData[0] && onidData[0][colTitre]) || "—"} »
                     </div>
                   </div>
-                ))}
-                {CATS.filter(c => cats[c.key].length > 0).map(({ key, name, color }) => {
-                  const opts = Object.keys((cats[key][0]) || {});
-                  return (
-                    <div key={key}>
-                      <span style={{ ...S.label, color }}>{name} — Colonne titre</span>
-                      <select value={catCols[key]} onChange={e => setCatCols(c => ({ ...c, [key]: e.target.value }))} style={S.select}>
-                        {opts.map(o => <option key={o} value={o}>{o}</option>)}
-                      </select>
-                      <div style={{ fontFamily: "'Syne Mono', monospace", fontSize: 10, color: C.muted, marginTop: 5, letterSpacing: "0.04em" }}>
-                        Aperçu : « {(cats[key][0] && cats[key][0][catCols[key]]) || "—"} »
-                      </div>
+
+                  {/* Colonne ayant droit */}
+                  <div style={{ background: C.surface2, border: `1px solid ${C.border}`, borderRadius: 2, padding: 16 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+                      <div style={{ width: 7, height: 7, borderRadius: "50%", background: C.accent }} />
+                      <span style={{ fontFamily: syne, fontWeight: 700, fontSize: 13, color: C.text }}>Ayant droit</span>
+                      <span style={{ fontFamily: mono, fontSize: 9, color: C.muted, marginLeft: "auto", letterSpacing: "0.08em" }}>SACEM : AD</span>
                     </div>
-                  );
-                })}
+                    <select value={colAyant} onChange={e => setColAyant(e.target.value)} style={S.select}>
+                      {onidCols.map(o => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                    <div style={{ fontFamily: mono, fontSize: 9, color: C.muted, marginTop: 8, letterSpacing: "0.04em" }}>
+                      Exemple : « {(onidData[0] && onidData[0][colAyant]) || "—"} »
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div style={{ background: C.surface2, border: `1px solid ${C.border}`, borderRadius: 3, padding: "11px 16px", marginBottom: 20, fontFamily: "'Syne Mono', monospace", fontSize: 11, color: C.muted, lineHeight: 2, letterSpacing: "0.06em" }}>
-                ONID : <span style={{ color: C.text }}>{onidData.length}</span> lignes &nbsp;·&nbsp;
-                Termes : <span style={{ color: C.text }}>{terms.length}</span> &nbsp;·&nbsp;
-                {CATS.filter(c => cats[c.key].length > 0).map(c => (
-                  <span key={c.key}>
-                    <span style={{ color: c.color }}>●</span> {c.name} : <span style={{ color: C.text }}>{cats[c.key].length}</span> oeuvres &nbsp;·&nbsp;
-                  </span>
-                ))}
+              {/* Bloc catalogues (si chargés) */}
+              {anyCat && (
+                <div style={S.card}>
+                  <span style={S.sectionLabel}>Colonnes titre dans les catalogues</span>
+                  <div style={{ fontFamily: mono, fontSize: 10, color: C.muted, marginBottom: 16, letterSpacing: "0.04em", lineHeight: 1.8 }}>
+                    Le titre ONID sera comparé à ces colonnes pour proposer une oeuvre correspondante.
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
+                    {CATS.filter(c => cats[c.key].length > 0).map(({ key, name, color }) => {
+                      const opts = Object.keys((cats[key][0]) || {});
+                      return (
+                        <div key={key} style={{ background: C.surface2, border: `1px solid ${C.border}`, borderRadius: 2, padding: 14, borderTop: `2px solid ${color}` }}>
+                          <div style={{ fontFamily: syne, fontWeight: 700, fontSize: 12, color, marginBottom: 10 }}>{name}</div>
+                          <select value={catCols[key]} onChange={e => setCatCols(c => ({ ...c, [key]: e.target.value }))} style={S.select}>
+                            {opts.map(o => <option key={o} value={o}>{o}</option>)}
+                          </select>
+                          <div style={{ fontFamily: mono, fontSize: 9, color: C.muted, marginTop: 8, letterSpacing: "0.04em" }}>
+                            Exemple : « {(cats[key][0] && cats[key][0][catCols[key]]) || "—"} »
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Récap avant lancement */}
+              <div style={{ background: C.surface2, border: `1px solid ${C.border}`, borderRadius: 2, padding: "14px 20px" }}>
+                <div style={{ fontFamily: mono, fontSize: 10, color: C.muted, letterSpacing: "0.06em", lineHeight: 2.2 }}>
+                  <span style={{ color: C.text }}>{terms.length}</span> terme{terms.length !== 1 ? "s" : ""} à chercher &nbsp;·&nbsp;
+                  dans <span style={{ color: C.text }}>{onidData.length}</span> lignes ONID &nbsp;·&nbsp;
+                  colonnes : <span style={{ color: C.accent }}>{colTitre}</span> + <span style={{ color: C.accent }}>{colAyant}</span>
+                  {anyCat && (
+                    <> &nbsp;·&nbsp; matching catalogue : {CATS.filter(c => cats[c.key].length > 0).map(c => (
+                      <span key={c.key} style={{ color: c.color }}>{c.name} </span>
+                    ))}</>
+                  )}
+                </div>
               </div>
 
               <div style={{ display: "flex", gap: 8 }}>
-                <button onClick={() => setStep(1)} style={S.btn(false)}>← Retour</button>
+                <button onClick={() => { setStep(1); setErr(""); setMsg(""); }} style={S.ghostBtn}>← Retour</button>
                 <button onClick={runSearch} disabled={loading} style={{ ...S.btn(true), opacity: loading ? 0.5 : 1 }}>
-                  {loading ? "⏳ Recherche…" : "Lancer la recherche →"}
+                  {loading ? "⏳ Recherche en cours…" : "Lancer la recherche →"}
                 </button>
               </div>
             </div>
           )}
 
-          {/* ══ ÉTAPE 3 : Résultats ══ */}
+          {/* ══════════════════════════════════════════════════
+              ÉTAPE 3 — Résultats
+          ══════════════════════════════════════════════════ */}
           {step === 3 && (
             <>
-              {/* Stats */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr auto", gap: 1, background: C.border, border: `1px solid ${C.border}`, marginBottom: 16 }}>
+              {/* Stats + export */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr auto", gap: 1, background: C.border, border: `1px solid ${C.border}`, marginBottom: 14 }}>
                 {[
                   { lbl: "Trouvées",   val: stats.total,   color: C.text,   f: "all"     },
                   { lbl: "En attente", val: stats.pending, color: "#f59e0b", f: "pending" },
@@ -677,89 +721,146 @@
                     background: filter === f ? C.surface : C.surface2,
                     padding: "14px 18px", cursor: "pointer",
                     borderTop: `2px solid ${filter === f ? color : "transparent"}`,
-                    transition: "all 0.15s",
+                    transition: "all 0.15s", userSelect: "none",
                   }}>
-                    <div style={{ fontFamily: "'Syne', sans-serif", fontSize: 24, fontWeight: 800, color }}>{val}</div>
-                    <div style={{ fontFamily: "'Syne Mono', monospace", fontSize: 10, color: C.muted, marginTop: 3, letterSpacing: "0.12em", textTransform: "uppercase" }}>{lbl}</div>
+                    <div style={{ fontFamily: syne, fontSize: 24, fontWeight: 800, color }}>{val}</div>
+                    <div style={{ fontFamily: mono, fontSize: 9, color: C.muted, marginTop: 3, letterSpacing: "0.14em", textTransform: "uppercase" }}>{lbl}</div>
                   </div>
                 ))}
                 <button onClick={exportXlsx} disabled={stats.v === 0} style={{
                   background: stats.v ? C.accent : C.surface2,
                   color: stats.v ? C.bg : C.muted,
                   border: "none", cursor: stats.v ? "pointer" : "default",
-                  padding: "14px 20px", fontFamily: "'Syne Mono', monospace",
-                  fontSize: 11, fontWeight: 700, letterSpacing: "0.1em",
-                  textTransform: "uppercase", lineHeight: 1.6,
-                  transition: "all 0.15s",
+                  padding: "14px 20px", fontFamily: mono,
+                  fontSize: 10, fontWeight: 700, letterSpacing: "0.1em",
+                  textTransform: "uppercase", lineHeight: 1.8, transition: "all 0.15s",
                 }}>
                   ↓ Export<br />Excel
                 </button>
               </div>
 
-              {/* Légende catalogues */}
-              <div style={{ display: "flex", gap: 8, marginBottom: 10, alignItems: "center" }}>
-                <span style={{ fontFamily: "'Syne Mono', monospace", fontSize: 10, color: C.muted, letterSpacing: "0.1em" }}>CATALOGUES :</span>
-                {CATS.filter(c => cats[c.key].length > 0).map(c => (
-                  <span key={c.key} style={S.tag(c.color, c.color)}>{c.name} · {cats[c.key].length}</span>
-                ))}
+              {/* Légende termes + catalogues */}
+              <div style={{ display: "flex", gap: 16, marginBottom: 10, alignItems: "center", flexWrap: "wrap" }}>
+                <div style={{ display: "flex", gap: 5, alignItems: "center", flexWrap: "wrap" }}>
+                  <span style={{ fontFamily: mono, fontSize: 9, color: C.muted, letterSpacing: "0.12em" }}>TERMES :</span>
+                  {terms.map((t, i) => (
+                    <span key={i} style={{ fontFamily: mono, fontSize: 9, color: C.accent, background: C.accent + "15", border: `1px solid ${C.accent}33`, borderRadius: 2, padding: "1px 6px", letterSpacing: "0.06em" }}>{t}</span>
+                  ))}
+                </div>
+                {anyCat && (
+                  <div style={{ display: "flex", gap: 5, alignItems: "center" }}>
+                    <span style={{ fontFamily: mono, fontSize: 9, color: C.muted, letterSpacing: "0.12em" }}>CATALOGUES :</span>
+                    {CATS.filter(c => cats[c.key].length > 0).map(c => (
+                      <span key={c.key} style={{ fontFamily: mono, fontSize: 9, color: c.color, background: c.color + "15", border: `1px solid ${c.color}33`, borderRadius: 2, padding: "1px 6px" }}>{c.name}</span>
+                    ))}
+                  </div>
+                )}
               </div>
 
-              {/* Table */}
-              <div style={{ border: `1px solid ${C.border}`, background: C.surface, overflow: "hidden" }}>
+              {/* Table résultats */}
+              <div style={{ border: `1px solid ${C.border}`, overflow: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
                   <thead>
-                    <tr style={{ borderBottom: `1px solid ${C.border}` }}>
-                      {["Terme", "Titre ONID", "Ayant droit", montantKey && "Montant", "Match catalogue", "Décision"]
-                        .filter(Boolean)
-                        .map(h => (
-                          <th key={h} style={{ padding: "10px 14px", textAlign: "left", fontFamily: "'Syne Mono', monospace", fontSize: 10, fontWeight: 700, color: C.muted, letterSpacing: "0.14em", textTransform: "uppercase", background: C.surface2 }}>{h}</th>
-                        ))}
+                    <tr>
+                      {["Terme", "Trouvé dans", "Titre ONID", "Ayant droit",
+                        montantKey && "Montant",
+                        anyCat && "Oeuvre catalogue (fuzzy match)",
+                        "Décision"].filter(Boolean).map(h => (
+                        <th key={h} style={{
+                          padding: "9px 14px", textAlign: "left",
+                          fontFamily: mono, fontSize: 9, fontWeight: 700,
+                          color: C.muted, letterSpacing: "0.16em", textTransform: "uppercase",
+                          background: C.surface2, borderBottom: `1px solid ${C.border}`,
+                          whiteSpace: "nowrap",
+                        }}>{h}</th>
+                      ))}
                     </tr>
                   </thead>
                   <tbody>
                     {visible.length === 0 && (
-                      <tr><td colSpan={7} style={{ padding: 48, textAlign: "center", fontFamily: "'Syne Mono', monospace", fontSize: 11, color: C.muted, letterSpacing: "0.08em" }}>
-                        {results.length === 0 ? "AUCUNE OEUVRE TROUVÉE" : "AUCUN RÉSULTAT DANS CE FILTRE"}
+                      <tr><td colSpan={8} style={{ padding: 48, textAlign: "center", fontFamily: mono, fontSize: 10, color: C.muted, letterSpacing: "0.1em" }}>
+                        {results.length === 0 ? "AUCUNE OEUVRE TROUVÉE AVEC CES TERMES" : "AUCUN RÉSULTAT DANS CE FILTRE"}
                       </td></tr>
                     )}
                     {visible.map((r, idx) => {
                       const dec = decisions[r.id];
-                      const rowBg = dec === "v" ? "#0a1a0a" : dec === "j" ? "#1a0a0a" : idx % 2 ? C.surface : C.surface2;
+                      const rowBg = dec === "v" ? C.greenBg : dec === "j" ? C.redBg : idx % 2 ? C.surface : C.surface2;
                       return (
                         <tr key={r.id} style={{ background: rowBg, borderBottom: `1px solid ${C.border}`, transition: "background 0.15s" }}>
-                          <td style={{ padding: "9px 14px" }}>
-                            <span style={{ ...S.tag(C.accent + "33", C.accent), fontSize: 10 }}>{r.terme}</span>
+
+                          {/* Terme */}
+                          <td style={{ padding: "9px 14px", whiteSpace: "nowrap" }}>
+                            <span style={{ fontFamily: mono, fontSize: 10, color: C.accent, background: C.accent + "15", border: `1px solid ${C.accent}33`, borderRadius: 2, padding: "2px 7px", letterSpacing: "0.06em" }}>
+                              {r.terme}
+                            </span>
                           </td>
-                          <td style={{ padding: "9px 14px", fontWeight: 600, maxWidth: 200, color: C.text }}>
-                            <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.row[colTitre] || "—"}</div>
+
+                          {/* Trouvé dans */}
+                          <td style={{ padding: "9px 14px", whiteSpace: "nowrap" }}>
+                            <span style={{ fontFamily: mono, fontSize: 9, color: C.muted, letterSpacing: "0.06em" }}>{r.matchIn}</span>
                           </td>
-                          <td style={{ padding: "9px 14px", color: C.muted, maxWidth: 160 }}>
-                            <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.row[colAyant] || "—"}</div>
+
+                          {/* Titre ONID */}
+                          <td style={{ padding: "9px 14px", fontWeight: 600, maxWidth: 220, color: C.text }}>
+                            <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              {r.row[colTitre] || "—"}
+                            </div>
                           </td>
+
+                          {/* Ayant droit */}
+                          <td style={{ padding: "9px 14px", color: C.muted2, maxWidth: 160 }}>
+                            <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              {r.row[colAyant] || "—"}
+                            </div>
+                          </td>
+
+                          {/* Montant */}
                           {montantKey && (
-                            <td style={{ padding: "9px 14px", color: C.text, whiteSpace: "nowrap", fontFamily: "'Syne Mono', monospace", fontSize: 11 }}>
+                            <td style={{ padding: "9px 14px", color: C.text, whiteSpace: "nowrap", fontFamily: mono, fontSize: 11 }}>
                               {r.row[montantKey] || "—"}
                             </td>
                           )}
-                          <td style={{ padding: "9px 14px", minWidth: 260 }}>
-                            {r.catMatches.length === 0
-                              ? <span style={{ fontFamily: "'Syne Mono', monospace", fontSize: 10, color: C.muted }}>—</span>
-                              : (
-                                <select value={selCat[r.id] || ""} onChange={e => pickCat(r.id, e.target.value)} style={S.select}>
-                                  <option value="">— Sélectionner —</option>
-                                  {r.catMatches.map((m, i) => (
-                                    <option key={i} value={`[${m.catalogue}] ${m.titre}`}>
-                                      [{m.catalogue}] {m.titre} — {Math.round(m.score * 100)}%
-                                    </option>
-                                  ))}
+
+                          {/* Match catalogue */}
+                          {anyCat && (
+                            <td style={{ padding: "9px 14px", minWidth: 280 }}>
+                              {r.catMatches.length === 0 ? (
+                                <span style={{ fontFamily: mono, fontSize: 9, color: C.muted, letterSpacing: "0.06em" }}>Pas de correspondance</span>
+                              ) : (
+                                <select value={selCat[r.id] || ""} onChange={e => pickCat(r.id, e.target.value)} style={{ ...S.select, fontSize: 11 }}>
+                                  <option value="">— Sélectionner une oeuvre —</option>
+                                  {r.catMatches.map((m, i) => {
+                                    const catDef = CATS.find(c => c.name === m.catalogue);
+                                    return (
+                                      <option key={i} value={`[${m.catalogue}] ${m.titre}`}>
+                                        [{m.catalogue}] {m.titre} — {Math.round(m.score * 100)}%
+                                      </option>
+                                    );
+                                  })}
                                 </select>
-                              )
-                            }
-                          </td>
+                              )}
+                            </td>
+                          )}
+
+                          {/* Décision */}
                           <td style={{ padding: "9px 14px", whiteSpace: "nowrap" }}>
                             <div style={{ display: "flex", gap: 4 }}>
-                              <button onClick={() => decide(r.id, "v")} style={{ ...S.btn(dec === "v", "#166534"), minWidth: 68, fontSize: 10, border: `1px solid ${dec === "v" ? C.green : C.border}`, color: dec === "v" ? C.green : C.muted }}>✓ Valider</button>
-                              <button onClick={() => decide(r.id, "j")} style={{ ...S.btn(dec === "j", "#7f1d1d"), minWidth: 68, fontSize: 10, border: `1px solid ${dec === "j" ? C.red   : C.border}`, color: dec === "j" ? C.red   : C.muted }}>✕ Rejeter</button>
+                              <button onClick={() => decide(r.id, "v")} style={{
+                                background: dec === "v" ? C.greenBg : "none",
+                                color: dec === "v" ? C.green : C.muted,
+                                border: `1px solid ${dec === "v" ? C.green : C.border2}`,
+                                borderRadius: 2, padding: "5px 12px",
+                                fontFamily: mono, fontSize: 9, letterSpacing: "0.1em",
+                                cursor: "pointer", textTransform: "uppercase", transition: "all 0.15s",
+                              }}>✓ Valider</button>
+                              <button onClick={() => decide(r.id, "j")} style={{
+                                background: dec === "j" ? C.redBg : "none",
+                                color: dec === "j" ? C.red : C.muted,
+                                border: `1px solid ${dec === "j" ? C.red : C.border2}`,
+                                borderRadius: 2, padding: "5px 12px",
+                                fontFamily: mono, fontSize: 9, letterSpacing: "0.1em",
+                                cursor: "pointer", textTransform: "uppercase", transition: "all 0.15s",
+                              }}>✕ Rejeter</button>
                             </div>
                           </td>
                         </tr>
@@ -770,9 +871,9 @@
               </div>
 
               <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 16 }}>
-                <button onClick={reset} style={S.btn(false)}>← Nouvelle session</button>
-                <span style={{ fontFamily: "'Syne Mono', monospace", fontSize: 10, color: C.muted, letterSpacing: "0.06em" }}>
-                  {terms.length} terme{terms.length > 1 ? "s" : ""} conservé{terms.length > 1 ? "s" : ""} pour la prochaine session.
+                <button onClick={reset} style={S.ghostBtn}>← Nouvelle session</button>
+                <span style={{ fontFamily: mono, fontSize: 9, color: C.muted, letterSpacing: "0.08em" }}>
+                  {terms.length} terme{terms.length !== 1 ? "s" : ""} conservé{terms.length !== 1 ? "s" : ""} pour la prochaine session
                 </span>
               </div>
             </>
