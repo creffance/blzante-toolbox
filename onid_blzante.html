@@ -7,723 +7,1023 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Syne+Mono&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root { --bg:#0d0d0d; --border:#2a2a2a; --text:#f0ede6; --muted:#555; --accent:#e8c547; --s:#111; --s2:#161616; }
-    body { font-family:'Inter',system-ui,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; display:flex; flex-direction:column; }
-    body::before { content:''; position:fixed; inset:0; background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px); background-size:60px 60px; opacity:.3; pointer-events:none; z-index:0; }
-    nav { position:relative; z-index:1; display:flex; align-items:center; gap:12px; padding:18px 40px; border-bottom:1px solid var(--border); font-family:'Syne Mono',monospace; font-size:.65rem; letter-spacing:.1em; }
-    nav a { color:var(--muted); text-decoration:none; transition:color .15s; }
-    nav a:hover { color:var(--accent); }
-    .sep { color:var(--border); }
-    .cur { color:var(--text); font-weight:600; }
-    #root { position:relative; z-index:1; flex:1; padding:28px 40px 48px; }
-    @media(max-width:700px){ nav,#root{padding-left:20px;padding-right:20px;} }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#0d0d0d;--b:#2a2a2a;--b2:#333;
+      --text:#f0ede6;--muted:#555;--m2:#888;
+      --s:#111;--s2:#161616;
+      --accent:#e8c547;
+      --green:#4ade80;--gbg:#0a1a0a;--gborder:#1a4a1a;
+      --red:#f87171;--rbg:#1a0a0a;--rborder:#4a1a1a;
+      --orange:#fb923c;--obg:#1a0e0a;--oborder:#4a2a1a;
+      --violet:#a78bfa;--blue:#60a5fa;
+    }
+    body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
+    body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(var(--b) 1px,transparent 1px),linear-gradient(90deg,var(--b) 1px,transparent 1px);background-size:60px 60px;opacity:.3;pointer-events:none;z-index:0}
+    nav{position:relative;z-index:1;display:flex;align-items:center;gap:12px;padding:18px 40px;border-bottom:1px solid var(--b);font-family:'Syne Mono',monospace;font-size:.65rem;letter-spacing:.1em}
+    nav a{color:var(--muted);text-decoration:none;transition:color .15s}
+    nav a:hover{color:var(--accent)}
+    #app{position:relative;z-index:1;flex:1;padding:28px 40px 48px;max-width:1400px;margin:0 auto;width:100%}
+    @media(max-width:700px){nav,#app{padding-left:20px;padding-right:20px}}
+
+    /* Typography */
+    .pg-supra{font-family:'Syne Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:.24em;text-transform:uppercase;margin-bottom:6px}
+    .pg-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:var(--text);letter-spacing:-.01em}
+    .pg-sub{font-family:'Syne Mono',monospace;font-size:10px;color:var(--muted);margin-top:4px;letter-spacing:.06em}
+    .slbl{display:block;font-family:'Syne Mono',monospace;font-size:9px;font-weight:700;color:var(--muted);letter-spacing:.22em;text-transform:uppercase;margin-bottom:8px}
+    .hint{font-family:'Syne Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:.04em;line-height:1.8}
+
+    /* Stepper */
+    .stepper{display:flex;margin-bottom:24px;border-bottom:1px solid var(--b)}
+    .step-item{padding:10px 24px;font-family:'Syne Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s}
+    .step-item.active{color:var(--accent);border-bottom-color:var(--accent)}
+    .step-item.done{color:var(--m2)}
+
+    /* Tabs */
+    .tabs{display:flex;margin-bottom:18px;border-bottom:1px solid var(--b)}
+    .tab-btn{background:none;border:none;border-bottom:2px solid transparent;padding:8px 18px;margin-bottom:-1px;font-family:'Syne Mono',monospace;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);cursor:pointer;transition:all .15s;white-space:nowrap}
+    .tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+    .tab-btn:hover:not(.active){color:var(--m2)}
+
+    /* Cards / Surfaces */
+    .card{background:var(--s);border:1px solid var(--b);border-radius:3px;padding:24px}
+    .surface{background:var(--s2);border:1px solid var(--b);border-radius:2px;padding:16px}
+
+    /* Buttons */
+    .btn-p{background:var(--accent);color:var(--bg);border:1px solid var(--accent);border-radius:2px;padding:8px 18px;font-family:'Syne Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;transition:all .15s}
+    .btn-p:hover{opacity:.85}
+    .btn-p:disabled{opacity:.3;cursor:default}
+    .btn-p.red{background:var(--red);border-color:var(--red);color:#fff}
+    .btn-g{background:none;color:var(--muted);border:1px solid var(--b2);border-radius:2px;padding:8px 18px;font-family:'Syne Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;cursor:pointer;transition:all .15s}
+    .btn-g:hover:not(:disabled){color:var(--text);border-color:var(--m2)}
+    .btn-g:disabled{opacity:.3;cursor:default}
+    .btn-sm{padding:5px 10px;font-size:9px}
+    .btn-icon{background:none;border:none;cursor:pointer;font-size:13px;padding:0;line-height:1;transition:color .15s;color:var(--muted)}
+    .btn-icon:hover{color:var(--red)}
+
+    /* Inputs */
+    input[type="text"],input:not([type]){padding:9px 13px;border-radius:2px;border:1px solid var(--b2);font-size:13px;background:var(--s2);color:var(--text);outline:none;font-family:'Inter',sans-serif;width:100%}
+    input:focus{border-color:var(--accent)}
+    select{width:100%;padding:8px 10px;border-radius:2px;border:1px solid var(--b2);font-size:12px;background:var(--s2);color:var(--text);font-family:'Syne Mono',monospace;cursor:pointer}
+
+    /* Alerts */
+    .alert-err{background:var(--rbg);border:1px solid var(--rborder);border-radius:2px;padding:9px 16px;color:var(--red);font-family:'Syne Mono',monospace;font-size:12px;letter-spacing:.04em;margin-bottom:14px}
+    .alert-ok{background:var(--gbg);border:1px solid var(--gborder);border-radius:2px;padding:9px 16px;color:var(--green);font-family:'Syne Mono',monospace;font-size:12px;letter-spacing:.04em;margin-bottom:14px}
+
+    /* Layout helpers */
+    .flex-row{display:flex;align-items:center;gap:8px}
+    .flex-col{display:flex;flex-direction:column;gap:10px}
+    .row-end{display:flex;justify-content:flex-end;gap:8px;padding-top:4px}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .grid3-bg{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--b);border:1px solid var(--b)}
+    .g3-cell{background:var(--s2);padding:14px}
+
+    /* Chips */
+    .chips-wrap{display:flex;flex-wrap:wrap;gap:5px}
+    .chip{background:var(--s2);border:1px solid var(--b2);border-radius:2px;padding:5px 8px 5px 12px;display:inline-flex;align-items:center;gap:8px;font-family:'Syne Mono',monospace;font-size:11px;color:var(--text);letter-spacing:.04em}
+    .chip.excl{border-color:var(--rborder);color:var(--red);background:var(--rbg)}
+    .chip button{background:none;border:none;cursor:pointer;color:var(--muted);font-size:13px;padding:0;line-height:1}
+    .chip button:hover{color:var(--red)}
+    .file-btn{display:inline-block;cursor:pointer}
+    .file-btn input[type="file"]{display:none}
+
+    /* Progress */
+    .prog-wrap{background:var(--s2);border:1px solid var(--b);border-radius:2px;padding:16px}
+    .prog-lbl{font-family:'Syne Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:10px;letter-spacing:.06em}
+    .prog-track{height:4px;background:var(--b);border-radius:2px;overflow:hidden}
+    .prog-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .2s}
+
+    /* Stats */
+    .stats-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:1px;background:var(--b);border:1px solid var(--b);margin-bottom:14px}
+    .stat-cell{background:var(--s2);padding:14px 18px;cursor:pointer;border-top:2px solid transparent;transition:all .15s;user-select:none}
+    .stat-cell:hover,.stat-cell.active{background:var(--s)}
+    .stat-val{font-family:'Syne',sans-serif;font-size:24px;font-weight:800}
+    .stat-lbl{font-family:'Syne Mono',monospace;font-size:9px;color:var(--muted);margin-top:3px;letter-spacing:.14em;text-transform:uppercase}
+    .export-btn{background:var(--s2);color:var(--muted);border:none;padding:14px 20px;font-family:'Syne Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;line-height:1.8;transition:all .15s;cursor:default;white-space:nowrap}
+    .export-btn.on{background:var(--accent);color:var(--bg);cursor:pointer}
+    .export-btn.on:hover{opacity:.85}
+
+    /* Pagination */
+    .pag-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px}
+    .pag-info{font-family:'Syne Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:.1em}
+    .pag-ctrl{display:flex;gap:4px}
+    .pag-btn{background:none;color:var(--muted);border:1px solid var(--b2);border-radius:2px;padding:5px 10px;font-family:'Syne Mono',monospace;font-size:9px;cursor:pointer;transition:all .15s}
+    .pag-btn:hover:not(:disabled){color:var(--text);border-color:var(--m2)}
+    .pag-btn:disabled{opacity:.3;cursor:default}
+    .pag-btn.cur{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+
+    /* Table */
+    .tbl-wrap{border:1px solid var(--b);overflow:auto}
+    table{width:100%;border-collapse:collapse;font-size:12px}
+    thead th{padding:9px 14px;text-align:left;font-family:'Syne Mono',monospace;font-size:9px;font-weight:700;color:var(--muted);letter-spacing:.16em;text-transform:uppercase;background:var(--s2);border-bottom:1px solid var(--b);white-space:nowrap}
+    tbody tr{border-bottom:1px solid var(--b);transition:background .1s}
+    tbody td{padding:9px 14px;vertical-align:middle}
+    .td-term{white-space:nowrap}
+    .term-badge{font-family:'Syne Mono',monospace;font-size:10px;color:var(--accent);background:rgba(232,197,71,.08);border:1px solid rgba(232,197,71,.2);border-radius:2px;padding:2px 7px;letter-spacing:.06em}
+    .td-match{font-family:'Syne Mono',monospace;font-size:9px;color:var(--muted);white-space:nowrap;letter-spacing:.06em}
+    .td-title{font-weight:600;max-width:200px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .td-ayant{color:var(--m2);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .td-lib{color:var(--muted);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:'Syne Mono',monospace;font-size:10px}
+    .td-amt{font-family:'Syne Mono',monospace;font-size:11px;color:var(--text);white-space:nowrap}
+    .td-cat select{font-size:11px;min-width:240px}
+    .td-no-match{font-family:'Syne Mono',monospace;font-size:9px;color:var(--muted)}
+    .td-actions{white-space:nowrap}
+    .dec-btn{background:none;color:var(--muted);border:1px solid var(--b2);border-radius:2px;padding:5px 10px;font-family:'Syne Mono',monospace;font-size:9px;letter-spacing:.1em;cursor:pointer;text-transform:uppercase;transition:all .15s}
+
+    /* Récap table */
+    .recap-tbl td{max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+    /* Misc */
+    .dot{width:7px;height:7px;border-radius:50%;display:inline-block;flex-shrink:0}
+    .empty{padding:48px;text-align:center;font-family:'Syne Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:.1em}
+    .recap-box{background:var(--s2);border:1px solid var(--b);border-radius:2px;padding:14px 20px;font-family:'Syne Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:.06em;line-height:2.2}
+    .recap-box span{color:var(--text)}
+    .separator{height:1px;background:var(--b);margin:20px 0}
+    .hidden{display:none!important}
   </style>
 </head>
 <body>
-  <nav>
-    <a href="index.html">← BLZante Toolbox</a>
-    <span class="sep">/</span>
-    <span class="cur">ONID BLZante</span>
-  </nav>
-  <div id="root"></div>
 
-  <script type="text/babel">
-    const { useState, useMemo, useCallback, useRef, useEffect } = React;
-    const XL = XLSX;
+<nav>
+  <a href="index.html">← BLZante Toolbox</a>
+  <span style="color:var(--b)">/</span>
+  <span style="color:var(--text);font-weight:600">ONID BLZante</span>
+</nav>
 
-    // ─── Utils ────────────────────────────────────────────────────────────────
+<div id="app">
 
-    function norm(str) {
-      if (str == null) return "";
-      return str.toString().toLowerCase()
-        .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
-        .replace(/[^a-z0-9\s]/g," ").replace(/\s+/g," ").trim();
-    }
+  <!-- En-tête -->
+  <div style="margin-bottom:22px">
+    <div class="pg-supra">Outils / SACEM</div>
+    <h1 class="pg-title">ONID BLZante</h1>
+    <div class="pg-sub">Identification des Oeuvres Non Identifiées SACEM</div>
+  </div>
 
-    function tokenize(s) { return norm(s).split(" ").filter(Boolean); }
+  <!-- Stepper -->
+  <div class="stepper">
+    <div class="step-item active" id="step-lbl-1">1 — Fichiers &amp; Termes</div>
+    <div class="step-item"        id="step-lbl-2">2 — Recherche</div>
+    <div class="step-item"        id="step-lbl-3">3 — Résultats</div>
+  </div>
 
-    function jaccardSim(a, b) {
-      const sa = new Set(tokenize(a)), sb = new Set(tokenize(b));
-      if (!sa.size && !sb.size) return 1;
-      const inter = [...sa].filter(x => sb.has(x)).length;
-      return inter / (sa.size + sb.size - inter);
-    }
+  <!-- Alertes -->
+  <div id="alert-err" class="alert-err hidden"></div>
+  <div id="alert-ok"  class="alert-ok  hidden"></div>
 
-    function levenshtein(a, b) {
-      const na = norm(a), nb = norm(b);
-      const m = na.length, n = nb.length;
-      if (!m) return n; if (!n) return m;
-      const p = [...Array(n+1).keys()], c = new Array(n+1);
-      for (let i=1;i<=m;i++){c[0]=i;for(let j=1;j<=n;j++)c[j]=na[i-1]===nb[j-1]?p[j-1]:1+Math.min(p[j],c[j-1],p[j-1]);p.splice(0,n+1,...c);}
-      return p[n];
-    }
+  <!-- ══════════════ ÉTAPE 1 ══════════════ -->
+  <div id="view-1">
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('upload')">Fichiers</button>
+      <button class="tab-btn"        onclick="switchTab('termes')" id="tab-lbl-termes">Termes (<span id="tc">0</span>)</button>
+      <button class="tab-btn"        onclick="switchTab('exclusions')" id="tab-lbl-excl">Exclusions (<span id="ec">0</span>)</button>
+      <button class="tab-btn"        onclick="switchTab('recap')" id="tab-lbl-recap">Récapitulatif (<span id="rc">0</span>)</button>
+    </div>
 
-    function fuzzyScore(q, c) {
-      const jac = jaccardSim(q, c);
-      const ml = Math.max(norm(q).length, norm(c).length);
-      const lev = ml ? 1 - levenshtein(q,c)/ml : 1;
-      return 0.65*jac + 0.35*lev;
-    }
+    <!-- ── Fichiers ── -->
+    <div id="tab-upload" class="flex-col">
+      <!-- ONID -->
+      <div class="card" id="onid-card">
+        <div class="flex-row" style="gap:16px">
+          <div style="flex:1">
+            <span class="slbl">Fichier ONID <span style="color:var(--red)">*requis</span></span>
+            <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:14px;color:var(--text)">Export SACEM — Oeuvres Non Identifiées</div>
+            <div id="onid-info" class="hint hidden" style="margin-top:6px"></div>
+          </div>
+          <label class="file-btn">
+            <span class="btn-p" id="onid-btn-lbl">Charger</span>
+            <input type="file" accept=".xlsx,.xls,.csv" onchange="loadOnid(this.files[0])">
+          </label>
+        </div>
+      </div>
 
-    function bestCatMatches(titre, activeCats, topN=3) {
-      const all = [];
-      for (const {name, rows, col} of activeCats) {
-        rows.forEach(row => {
-          const t = (row[col]||"").toString();
-          if (!t) return;
-          const s = fuzzyScore(titre, t);
-          if (s > 0.12) all.push({titre:t, score:s, catalogue:name});
-        });
-      }
-      return all.sort((a,b)=>b.score-a.score).slice(0,topN);
-    }
+      <!-- Catalogues -->
+      <div class="card">
+        <span class="slbl">Catalogues <span style="font-weight:400;color:var(--muted)">(optionnel — pour le matching)</span></span>
+        <div class="grid3-bg">
+          <!-- BLZante -->
+          <div class="g3-cell" id="cat-cell-blzante" style="border-top:2px solid transparent">
+            <div class="flex-row" style="margin-bottom:10px">
+              <span class="dot" style="background:var(--accent);opacity:.25" id="cat-dot-blzante"></span>
+              <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:13px;color:var(--muted)" id="cat-nm-blzante">BLZante</span>
+            </div>
+            <div id="cat-loaded-blzante" class="hidden">
+              <div id="cat-file-blzante"  class="hint" style="margin-bottom:6px;word-break:break-all"></div>
+              <div id="cat-cnt-blzante"   style="font-family:'Syne Mono',monospace;font-size:10px;letter-spacing:.06em;margin-bottom:8px"></div>
+              <div id="cat-col-blzante"   class="hint" style="margin-bottom:10px"></div>
+              <label class="file-btn"><span class="btn-g" style="font-size:9px">Changer</span><input type="file" accept=".xlsx,.xls,.csv" onchange="loadCat('blzante',this.files[0])"></label>
+            </div>
+            <div id="cat-empty-blzante">
+              <label class="file-btn" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:18px 0;width:100%">
+                <span style="font-size:20px;opacity:.3">📚</span>
+                <span class="hint">Cliquer pour charger</span>
+                <input type="file" accept=".xlsx,.xls,.csv" onchange="loadCat('blzante',this.files[0])">
+              </label>
+            </div>
+          </div>
+          <!-- Rossinante -->
+          <div class="g3-cell" id="cat-cell-rossinante" style="border-top:2px solid transparent">
+            <div class="flex-row" style="margin-bottom:10px">
+              <span class="dot" style="background:var(--violet);opacity:.25" id="cat-dot-rossinante"></span>
+              <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:13px;color:var(--muted)" id="cat-nm-rossinante">Rossinante</span>
+            </div>
+            <div id="cat-loaded-rossinante" class="hidden">
+              <div id="cat-file-rossinante"  class="hint" style="margin-bottom:6px;word-break:break-all"></div>
+              <div id="cat-cnt-rossinante"   style="font-family:'Syne Mono',monospace;font-size:10px;letter-spacing:.06em;margin-bottom:8px"></div>
+              <div id="cat-col-rossinante"   class="hint" style="margin-bottom:10px"></div>
+              <label class="file-btn"><span class="btn-g" style="font-size:9px">Changer</span><input type="file" accept=".xlsx,.xls,.csv" onchange="loadCat('rossinante',this.files[0])"></label>
+            </div>
+            <div id="cat-empty-rossinante">
+              <label class="file-btn" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:18px 0;width:100%">
+                <span style="font-size:20px;opacity:.3">📚</span>
+                <span class="hint">Cliquer pour charger</span>
+                <input type="file" accept=".xlsx,.xls,.csv" onchange="loadCat('rossinante',this.files[0])">
+              </label>
+            </div>
+          </div>
+          <!-- BLZ -->
+          <div class="g3-cell" id="cat-cell-blz" style="border-top:2px solid transparent">
+            <div class="flex-row" style="margin-bottom:10px">
+              <span class="dot" style="background:var(--blue);opacity:.25" id="cat-dot-blz"></span>
+              <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:13px;color:var(--muted)" id="cat-nm-blz">BLZ</span>
+            </div>
+            <div id="cat-loaded-blz" class="hidden">
+              <div id="cat-file-blz"  class="hint" style="margin-bottom:6px;word-break:break-all"></div>
+              <div id="cat-cnt-blz"   style="font-family:'Syne Mono',monospace;font-size:10px;letter-spacing:.06em;margin-bottom:8px"></div>
+              <div id="cat-col-blz"   class="hint" style="margin-bottom:10px"></div>
+              <label class="file-btn"><span class="btn-g" style="font-size:9px">Changer</span><input type="file" accept=".xlsx,.xls,.csv" onchange="loadCat('blz',this.files[0])"></label>
+            </div>
+            <div id="cat-empty-blz">
+              <label class="file-btn" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:18px 0;width:100%">
+                <span style="font-size:20px;opacity:.3">📚</span>
+                <span class="hint">Cliquer pour charger</span>
+                <input type="file" accept=".xlsx,.xls,.csv" onchange="loadCat('blz',this.files[0])">
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
 
-    function readExcel(file) {
-      return new Promise((res,rej) => {
-        const r = new FileReader();
-        r.onload = e => { try { const wb=XL.read(new Uint8Array(e.target.result),{type:"array"}); res(XL.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:""})); } catch(err){rej(err);} };
-        r.onerror = rej;
-        r.readAsArrayBuffer(file);
+      <div class="row-end">
+        <button class="btn-g" onclick="switchTab('termes')">Gérer les termes →</button>
+        <button class="btn-p" onclick="goStep2()">Configurer la recherche →</button>
+      </div>
+    </div>
+
+    <!-- ── Termes de recherche ── -->
+    <div id="tab-termes" class="card hidden">
+      <span class="slbl">Termes de recherche</span>
+      <div class="hint" style="margin-bottom:18px">
+        Chaque terme est cherché dans les colonnes titre et ayant droit du fichier ONID.<br>
+        Affichés par ordre alphabétique — sauvegardés dans le navigateur.
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:18px">
+        <input type="text" id="new-term-input" placeholder="Ex : DAFT PUNK, MAES, IAM…" onkeydown="if(event.key==='Enter')addTerm()">
+        <button class="btn-p" onclick="addTerm()">+ Ajouter</button>
+        <label class="file-btn">
+          <span class="btn-g">↑ Importer</span>
+          <input type="file" accept=".xlsx,.xls,.csv" onchange="importTermsFile(this.files[0])">
+        </label>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <span class="hint" id="tc-lbl">0 TERME</span>
+        <button class="btn-icon" onclick="clearTerms()" id="clear-terms-btn" style="font-size:10px;font-family:'Syne Mono',monospace;letter-spacing:.1em;color:var(--red)" class="hidden">✕ Tout effacer</button>
+      </div>
+      <div id="chips-terms" class="chips-wrap"><div class="empty" style="width:100%">AUCUN TERME</div></div>
+      <div class="row-end" style="margin-top:20px">
+        <button class="btn-p" onclick="switchTab('upload')">← Retour aux fichiers</button>
+      </div>
+    </div>
+
+    <!-- ── Termes à exclure ── -->
+    <div id="tab-exclusions" class="card hidden">
+      <span class="slbl">Termes à exclure</span>
+      <div class="hint" style="margin-bottom:18px">
+        Si une ligne ONID contient un de ces termes (dans le titre ou l'ayant droit), elle sera <strong style="color:var(--red)">exclue des résultats</strong>, même si elle correspond à un terme de recherche.<br>
+        Utile pour filtrer des éditeurs, distributeurs ou artistes homonymes non liés à vos catalogues.
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:18px">
+        <input type="text" id="new-excl-input" placeholder="Ex : UNIVERSAL, SONY, WARNER…" onkeydown="if(event.key==='Enter')addExcl()">
+        <button class="btn-p red" onclick="addExcl()">+ Exclure</button>
+        <label class="file-btn">
+          <span class="btn-g">↑ Importer</span>
+          <input type="file" accept=".xlsx,.xls,.csv" onchange="importExclFile(this.files[0])">
+        </label>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <span class="hint" id="ec-lbl">0 EXCLUSION</span>
+        <button style="background:none;border:none;color:var(--red);font-size:10px;cursor:pointer;font-family:'Syne Mono',monospace;letter-spacing:.1em" onclick="clearExcl()" id="clear-excl-btn" class="hidden">✕ Tout effacer</button>
+      </div>
+      <div id="chips-excl" class="chips-wrap"><div class="empty" style="width:100%">AUCUNE EXCLUSION</div></div>
+      <div class="row-end" style="margin-top:20px">
+        <button class="btn-p" onclick="switchTab('upload')">← Retour aux fichiers</button>
+      </div>
+    </div>
+
+    <!-- ── Récapitulatif des ONID identifiées ── -->
+    <div id="tab-recap" class="hidden">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+        <div>
+          <span class="slbl">ONID identifiées enregistrées</span>
+          <div class="hint">Correspondances validées et sauvegardées lors des sessions précédentes.</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn-g btn-sm" onclick="exportRecap()">↓ Export Excel</button>
+          <button style="background:none;border:none;color:var(--red);font-size:10px;cursor:pointer;font-family:'Syne Mono',monospace;letter-spacing:.1em" onclick="clearRecap()">✕ Tout effacer</button>
+        </div>
+      </div>
+      <div class="tbl-wrap">
+        <table class="recap-tbl">
+          <thead>
+            <tr>
+              <th>Date</th><th>Terme</th><th>Titre ONID</th><th>Ayant droit</th><th>LIB</th><th>Oeuvre identifiée</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="recap-tbody"><tr><td colspan="7" class="empty">AUCUNE IDENTIFICATION ENREGISTRÉE</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div><!-- #view-1 -->
+
+  <!-- ══════════════ ÉTAPE 2 ══════════════ -->
+  <div id="view-2" class="hidden flex-col" style="gap:14px">
+    <div class="card">
+      <span class="slbl">Colonnes du fichier ONID</span>
+      <div class="hint" style="margin-bottom:20px">Les termes seront recherchés dans les colonnes Titre et Ayant droit. Vérifie les sélections.</div>
+      <div class="grid2">
+        <div class="surface">
+          <div class="flex-row" style="margin-bottom:12px">
+            <span class="dot" style="background:var(--accent)"></span>
+            <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:13px;color:var(--text)">Titre de l'oeuvre</span>
+            <span class="hint" style="margin-left:auto">SACEM : TITROEUV</span>
+          </div>
+          <select id="sel-titre" onchange="onColChange()"></select>
+          <div id="prev-titre" class="hint" style="margin-top:8px"></div>
+        </div>
+        <div class="surface">
+          <div class="flex-row" style="margin-bottom:12px">
+            <span class="dot" style="background:var(--accent)"></span>
+            <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:13px;color:var(--text)">Ayant droit</span>
+            <span class="hint" style="margin-left:auto">SACEM : AD</span>
+          </div>
+          <select id="sel-ayant" onchange="onColChange()"></select>
+          <div id="prev-ayant" class="hint" style="margin-top:8px"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card hidden" id="cat-col-card">
+      <span class="slbl">Colonnes titre dans les catalogues</span>
+      <div class="hint" style="margin-bottom:16px">Le titre ONID sera comparé à ces colonnes pour proposer une oeuvre correspondante.</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px" id="cat-col-grid"></div>
+    </div>
+
+    <div class="recap-box" id="recap-params"></div>
+
+    <div class="prog-wrap hidden" id="prog-wrap">
+      <div class="prog-lbl" id="prog-lbl">Initialisation…</div>
+      <div class="prog-track"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+    </div>
+
+    <div style="display:flex;gap:8px">
+      <button class="btn-g" id="btn-back1" onclick="goStep1()">← Retour</button>
+      <button class="btn-p" id="btn-search" onclick="runSearch()">Lancer la recherche →</button>
+    </div>
+  </div>
+
+  <!-- ══════════════ ÉTAPE 3 ══════════════ -->
+  <div id="view-3" class="hidden">
+    <div class="stats-grid">
+      <div class="stat-cell active" id="stat-all"     onclick="changeFilter('all')">
+        <div class="stat-val" id="sv-total"   style="color:var(--text)">0</div><div class="stat-lbl">Trouvées</div>
+      </div>
+      <div class="stat-cell" id="stat-pending" onclick="changeFilter('pending')">
+        <div class="stat-val" id="sv-pending"  style="color:#f59e0b">0</div><div class="stat-lbl">En attente</div>
+      </div>
+      <div class="stat-cell" id="stat-v" onclick="changeFilter('v')">
+        <div class="stat-val" id="sv-v"        style="color:var(--green)">0</div><div class="stat-lbl">Validées</div>
+      </div>
+      <div class="stat-cell" id="stat-j" onclick="changeFilter('j')">
+        <div class="stat-val" id="sv-j"        style="color:var(--red)">0</div><div class="stat-lbl">Rejetées</div>
+      </div>
+      <button class="export-btn" id="export-btn" onclick="exportXlsx()">↓ Export<br>Excel</button>
+    </div>
+
+    <div class="pag-row">
+      <div class="pag-info" id="pag-info"></div>
+      <div class="pag-ctrl" id="pag-top"></div>
+    </div>
+
+    <div class="tbl-wrap">
+      <table><thead id="res-thead"></thead><tbody id="res-tbody"></tbody></table>
+    </div>
+
+    <div class="pag-ctrl" id="pag-bot" style="justify-content:center;margin-top:12px;display:flex;gap:4px"></div>
+
+    <div style="margin-top:16px;display:flex;align-items:center;flex-wrap:wrap;gap:10px">
+      <button class="btn-g" onclick="resetAll()">← Nouvelle session</button>
+      <button class="btn-p" id="btn-save-recap" onclick="saveToRecap()" style="background:var(--green);border-color:var(--green);color:var(--bg)" disabled>
+        ✓ Sauvegarder les identifications validées (<span id="save-count">0</span>)
+      </button>
+      <span class="hint" id="persist-msg"></span>
+    </div>
+  </div>
+
+</div><!-- #app -->
+
+<script>
+'use strict';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────────────────────────────────────
+const S = {
+  onidData:[], onidFile:'', normTitre:[], normAyant:[], colTitre:'', colAyant:'', colLib:'',
+  cats:{blzante:[],rossinante:[],blz:[]},
+  catFiles:{blzante:'',rossinante:'',blz:''},
+  catCols:{blzante:'',rossinante:'',blz:''},
+  terms:[], excludeTerms:[], identified:[],
+  results:[], decisions:{}, selCat:{},
+  filter:'all', page:0,
+  _anyCat:false, _montantKey:null,
+};
+
+const PAGE_SIZE = 50;
+const CHUNK     = 5000;
+const SK_T  = 'onid_blzante_termes';
+const SK_E  = 'onid_blzante_exclude';
+const SK_ID = 'onid_blzante_identified';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// UTILS
+// ─────────────────────────────────────────────────────────────────────────────
+function norm(s){
+  if(s==null)return'';
+  return s.toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim();
+}
+function tokenize(s){return norm(s).split(' ').filter(Boolean)}
+function jaccardSim(a,b){
+  const sa=new Set(tokenize(a)),sb=new Set(tokenize(b));
+  if(!sa.size&&!sb.size)return 1;
+  const i=[...sa].filter(x=>sb.has(x)).length;
+  return i/(sa.size+sb.size-i);
+}
+function levenshtein(a,b){
+  const na=norm(a),nb=norm(b),m=na.length,n=nb.length;
+  if(!m)return n;if(!n)return m;
+  const p=[...Array(n+1).keys()],c=new Array(n+1);
+  for(let i=1;i<=m;i++){c[0]=i;for(let j=1;j<=n;j++)c[j]=na[i-1]===nb[j-1]?p[j-1]:1+Math.min(p[j],c[j-1],p[j-1]);p.splice(0,n+1,...c)}
+  return p[n];
+}
+function fuzzy(q,c){
+  const jac=jaccardSim(q,c),ml=Math.max(norm(q).length,norm(c).length);
+  return 0.65*jac+0.35*(ml?1-levenshtein(q,c)/ml:1);
+}
+function bestMatches(titre,topN=3){
+  const all=[];
+  for(const k of['blzante','rossinante','blz']){
+    if(!S.cats[k].length)continue;
+    const col=S.catCols[k],name={blzante:'BLZante',rossinante:'Rossinante',blz:'BLZ'}[k];
+    S.cats[k].forEach(row=>{
+      const t=(row[col]||'').toString();
+      if(!t)return;
+      const sc=fuzzy(titre,t);
+      if(sc>0.12)all.push({titre:t,score:sc,catalogue:name});
+    });
+  }
+  return all.sort((a,b)=>b.score-a.score).slice(0,topN);
+}
+function autoCol(rows,...hints){
+  if(!rows.length)return'';
+  const keys=Object.keys(rows[0]);
+  for(const h of hints){const f=keys.find(k=>norm(k)===norm(h));if(f)return f}
+  for(const h of hints){const f=keys.find(k=>norm(k).includes(norm(h)));if(f)return f}
+  return keys[0];
+}
+function readExcel(file){
+  return new Promise((res,rej)=>{
+    const r=new FileReader();
+    r.onload=e=>{try{const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});res(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''}))}catch(err){rej(err)}};
+    r.onerror=rej;r.readAsArrayBuffer(file);
+  });
+}
+function fmt(n){return Number(n).toLocaleString('fr-FR')}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
+function today(){return new Date().toISOString().slice(0,10)}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PERSISTANCE
+// ─────────────────────────────────────────────────────────────────────────────
+function lsGet(k,def=[]){try{const v=localStorage.getItem(k);return v?JSON.parse(v):def}catch{return def}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ALERTES / NAVIGATION
+// ─────────────────────────────────────────────────────────────────────────────
+function showErr(m){const e=document.getElementById('alert-err');e.textContent='⚠ '+m;e.classList.remove('hidden');document.getElementById('alert-ok').classList.add('hidden')}
+function showOk(m){const o=document.getElementById('alert-ok');o.textContent=m;o.classList.remove('hidden');document.getElementById('alert-err').classList.add('hidden')}
+function clearAlerts(){document.getElementById('alert-err').classList.add('hidden');document.getElementById('alert-ok').classList.add('hidden')}
+
+const TABS=['upload','termes','exclusions','recap'];
+function switchTab(t){
+  TABS.forEach(k=>{
+    const el=document.getElementById('tab-'+k);if(el)el.classList.add('hidden');
+  });
+  document.getElementById('tab-'+t).classList.remove('hidden');
+  document.querySelectorAll('.tabs .tab-btn').forEach((b,i)=>b.classList.toggle('active',TABS[i]===t));
+  clearAlerts();
+}
+
+function showStep(n){
+  [1,2,3].forEach(i=>{
+    document.getElementById('view-'+i).classList.toggle('hidden',i!==n);
+    const l=document.getElementById('step-lbl-'+i);
+    l.classList.remove('active','done');
+    if(i===n)l.classList.add('active');else if(i<n)l.classList.add('done');
+  });
+  clearAlerts();window.scrollTo(0,0);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TERMES DE RECHERCHE
+// ─────────────────────────────────────────────────────────────────────────────
+function renderTerms(){
+  const sorted=[...S.terms].sort((a,b)=>a.localeCompare(b,'fr',{sensitivity:'base'}));
+  const n=S.terms.length;
+  document.getElementById('tc').textContent=n;
+  document.getElementById('tc-lbl').textContent=n+' TERME'+(n!==1?'S':'')+' ENREGISTRÉ'+(n!==1?'S':'');
+  const btn=document.getElementById('clear-terms-btn');if(btn)btn.classList.toggle('hidden',n===0);
+  const wrap=document.getElementById('chips-terms');
+  if(!n){wrap.innerHTML='<div class="empty" style="width:100%">AUCUN TERME</div>';return}
+  wrap.innerHTML=sorted.map(t=>`<span class="chip">${esc(t)}<button onclick="removeTerm(${esc(S.terms.indexOf(t))})">×</button></span>`).join('');
+}
+function addTerm(){
+  const input=document.getElementById('new-term-input'),t=input.value.trim();
+  if(!t)return;
+  if(S.terms.some(x=>norm(x)===norm(t))){showErr('Terme déjà présent.');return}
+  S.terms.push(t);lsSet(SK_T,S.terms);input.value='';renderTerms();clearAlerts();
+}
+function removeTerm(i){S.terms.splice(i,1);lsSet(SK_T,S.terms);renderTerms()}
+function clearTerms(){if(!confirm('Vider tous les termes de recherche ?'))return;S.terms=[];lsSet(SK_T,S.terms);renderTerms()}
+async function importTermsFile(file){
+  try{
+    const rows=await readExcel(file);if(!rows.length){showErr('Fichier vide.');return}
+    const col=Object.keys(rows[0])[0];
+    const incoming=rows.map(r=>(r[col]||'').toString().trim()).filter(Boolean);
+    let added=0;
+    incoming.forEach(t=>{if(!S.terms.some(x=>norm(x)===norm(t))){S.terms.push(t);added++}});
+    lsSet(SK_T,S.terms);renderTerms();
+    showOk('✓ '+added+' terme(s) importé(s), '+(incoming.length-added)+' doublon(s) ignoré(s).');
+  }catch(e){showErr('Erreur import : '+e.message)}
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TERMES À EXCLURE
+// ─────────────────────────────────────────────────────────────────────────────
+function renderExcl(){
+  const sorted=[...S.excludeTerms].sort((a,b)=>a.localeCompare(b,'fr',{sensitivity:'base'}));
+  const n=S.excludeTerms.length;
+  document.getElementById('ec').textContent=n;
+  document.getElementById('ec-lbl').textContent=n+' EXCLUSION'+(n!==1?'S':'');
+  const btn=document.getElementById('clear-excl-btn');if(btn)btn.classList.toggle('hidden',n===0);
+  const wrap=document.getElementById('chips-excl');
+  if(!n){wrap.innerHTML='<div class="empty" style="width:100%">AUCUNE EXCLUSION</div>';return}
+  wrap.innerHTML=sorted.map(t=>`<span class="chip excl">${esc(t)}<button onclick="removeExcl(${esc(S.excludeTerms.indexOf(t))})">×</button></span>`).join('');
+}
+function addExcl(){
+  const input=document.getElementById('new-excl-input'),t=input.value.trim();
+  if(!t)return;
+  if(S.excludeTerms.some(x=>norm(x)===norm(t))){showErr('Terme d\'exclusion déjà présent.');return}
+  S.excludeTerms.push(t);lsSet(SK_E,S.excludeTerms);input.value='';renderExcl();clearAlerts();
+}
+function removeExcl(i){S.excludeTerms.splice(i,1);lsSet(SK_E,S.excludeTerms);renderExcl()}
+function clearExcl(){if(!confirm('Vider toutes les exclusions ?'))return;S.excludeTerms=[];lsSet(SK_E,S.excludeTerms);renderExcl()}
+async function importExclFile(file){
+  try{
+    const rows=await readExcel(file);if(!rows.length){showErr('Fichier vide.');return}
+    const col=Object.keys(rows[0])[0];
+    const incoming=rows.map(r=>(r[col]||'').toString().trim()).filter(Boolean);
+    let added=0;
+    incoming.forEach(t=>{if(!S.excludeTerms.some(x=>norm(x)===norm(t))){S.excludeTerms.push(t);added++}});
+    lsSet(SK_E,S.excludeTerms);renderExcl();
+    showOk('✓ '+added+' exclusion(s) importée(s).');
+  }catch(e){showErr('Erreur import : '+e.message)}
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RÉCAPITULATIF IDENTIFICATIONS
+// ─────────────────────────────────────────────────────────────────────────────
+function renderRecap(){
+  const n=S.identified.length;
+  document.getElementById('rc').textContent=n;
+  const tbody=document.getElementById('recap-tbody');
+  if(!n){tbody.innerHTML='<tr><td colspan="7" class="empty">AUCUNE IDENTIFICATION ENREGISTRÉE</td></tr>';return}
+  // Tri : date desc, puis terme, puis titre
+  const sorted=[...S.identified].sort((a,b)=>{
+    if(b.date!==a.date)return b.date.localeCompare(a.date);
+    if(a.terme!==b.terme)return a.terme.localeCompare(b.terme,'fr',{sensitivity:'base'});
+    return(a.titreOnid||'').localeCompare(b.titreOnid||'','fr',{sensitivity:'base'});
+  });
+  tbody.innerHTML=sorted.map((row,i)=>`
+    <tr>
+      <td style="font-family:'Syne Mono',monospace;font-size:10px;color:var(--muted);white-space:nowrap">${esc(row.date)}</td>
+      <td><span class="term-badge">${esc(row.terme)}</span></td>
+      <td class="td-title" title="${esc(row.titreOnid)}">${esc(row.titreOnid||'—')}</td>
+      <td class="td-ayant" title="${esc(row.ayantDroit)}">${esc(row.ayantDroit||'—')}</td>
+      <td class="td-lib">${esc(row.lib||'—')}</td>
+      <td style="color:var(--accent);font-size:11px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(row.oeuvreIdentifiee)}">${esc(row.oeuvreIdentifiee||'—')}</td>
+      <td><button class="btn-icon" onclick="removeIdentified(${i})" title="Supprimer">✕</button></td>
+    </tr>`).join('');
+}
+function removeIdentified(i){
+  // Find in original array by index from sorted array
+  const sorted=[...S.identified].sort((a,b)=>{
+    if(b.date!==a.date)return b.date.localeCompare(a.date);
+    if(a.terme!==b.terme)return a.terme.localeCompare(b.terme,'fr',{sensitivity:'base'});
+    return(a.titreOnid||'').localeCompare(b.titreOnid||'','fr',{sensitivity:'base'});
+  });
+  const target=sorted[i];
+  const idx=S.identified.findIndex(x=>x.date===target.date&&x.terme===target.terme&&x.titreOnid===target.titreOnid&&x.oeuvreIdentifiee===target.oeuvreIdentifiee);
+  if(idx>=0){S.identified.splice(idx,1);lsSet(SK_ID,S.identified);renderRecap()}
+}
+function clearRecap(){if(!confirm('Effacer tout le récapitulatif ?'))return;S.identified=[];lsSet(SK_ID,S.identified);renderRecap()}
+function exportRecap(){
+  if(!S.identified.length){showErr('Aucune identification à exporter.');return}
+  const rows=S.identified.map(r=>({Date:r.date,Terme:r.terme,'Titre ONID':r.titreOnid,'Ayant droit':r.ayantDroit,LIB:r.lib,'Oeuvre identifiée':r.oeuvreIdentifiee}));
+  const ws=XLSX.utils.json_to_sheet(rows);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Identifiées');
+  XLSX.writeFile(wb,'ONID_identifiees_recap.xlsx');
+}
+function saveToRecap(){
+  const toSave=S.results.filter(r=>S.decisions[r.id]==='v');
+  if(!toSave.length)return;
+  const d=today();
+  toSave.forEach(r=>{
+    // Évite les doublons (même terme + même titre + même ayant droit)
+    const exists=S.identified.some(x=>x.terme===r.terme&&norm(x.titreOnid)===norm((r.row[S.colTitre]||'').toString())&&norm(x.ayantDroit)===norm((r.row[S.colAyant]||'').toString()));
+    if(!exists){
+      S.identified.push({
+        date:d,
+        terme:r.terme,
+        titreOnid:(r.row[S.colTitre]||'').toString(),
+        ayantDroit:(r.row[S.colAyant]||'').toString(),
+        lib:(r.row[S.colLib]||'').toString(),
+        oeuvreIdentifiee:S.selCat[r.id]||'',
       });
     }
+  });
+  lsSet(SK_ID,S.identified);
+  renderRecap();
+  showOk('✓ '+toSave.length+' identification(s) sauvegardée(s) dans le récapitulatif.');
+  document.getElementById('btn-save-recap').disabled=true;
+}
 
-    function autoCol(rows, ...hints) {
-      if (!rows.length) return "";
-      const keys = Object.keys(rows[0]);
-      for (const h of hints) { const f=keys.find(k=>norm(k)===norm(h)); if(f) return f; }
-      for (const h of hints) { const f=keys.find(k=>norm(k).includes(norm(h))); if(f) return f; }
-      return keys[0];
-    }
+// ─────────────────────────────────────────────────────────────────────────────
+// CHARGEMENT FICHIERS
+// ─────────────────────────────────────────────────────────────────────────────
+async function loadOnid(file){
+  if(!file)return;
+  showOk('⏳ Chargement en cours…');
+  try{
+    const rows=await readExcel(file);
+    if(!rows.length){showErr('Fichier ONID vide.');return}
+    const ct=autoCol(rows,'TITROEUV','titre','oeuvre','title');
+    const ca=autoCol(rows,'AD','ayant','artiste','editeur','author');
+    const cl=autoCol(rows,'LIB','lib'); // Colonne LIB spécifique SACEM
+    showOk('⏳ Pré-traitement des '+fmt(rows.length)+' lignes…');
+    await new Promise(r=>setTimeout(r,0));
+    S.onidData=rows;S.onidFile=file.name;
+    S.colTitre=ct;S.colAyant=ca;S.colLib=cl;
+    S.normTitre=rows.map(r=>norm((r[ct]||'').toString()));
+    S.normAyant=rows.map(r=>norm((r[ca]||'').toString()));
+    document.getElementById('onid-card').style.borderColor='rgba(232,197,71,.4)';
+    document.getElementById('onid-info').innerHTML=esc(file.name)+' &nbsp;·&nbsp; <span style="color:var(--text)">'+fmt(rows.length)+'</span> lignes &nbsp;·&nbsp; colonnes : <span style="color:var(--accent)">'+esc(ct)+'</span> + <span style="color:var(--accent)">'+esc(ca)+'</span> + <span style="color:var(--m2)">'+esc(cl)+'</span>';
+    document.getElementById('onid-info').classList.remove('hidden');
+    document.getElementById('onid-btn-lbl').textContent='Changer';
+    showOk('✓ '+fmt(rows.length)+' lignes chargées. Colonnes : '+ct+' + '+ca+' + '+cl);
+  }catch(e){showErr('Erreur ONID : '+e.message)}
+}
 
-    // ─── Recherche asynchrone par chunks ─────────────────────────────────────
-    // Cède la main au navigateur toutes les CHUNK_SIZE lignes pour éviter le freeze
+async function loadCat(key,file){
+  if(!file)return;
+  try{
+    const rows=await readExcel(file);
+    if(!rows.length){showErr('Catalogue vide.');return}
+    const col=autoCol(rows,"Titre de l'oeuvre",'titre','oeuvre','libelle','title');
+    S.cats[key]=rows;S.catFiles[key]=file.name;S.catCols[key]=col;
+    const clr={blzante:'var(--accent)',rossinante:'var(--violet)',blz:'var(--blue)'}[key];
+    document.getElementById('cat-cell-'+key).style.borderTopColor=clr;
+    document.getElementById('cat-dot-'+key).style.opacity='1';
+    document.getElementById('cat-nm-'+key).style.color='var(--text)';
+    document.getElementById('cat-file-'+key).textContent=file.name;
+    document.getElementById('cat-cnt-'+key).textContent=fmt(rows.length)+' oeuvres';
+    document.getElementById('cat-cnt-'+key).style.color=clr;
+    document.getElementById('cat-col-'+key).textContent='Colonne : '+col;
+    document.getElementById('cat-loaded-'+key).classList.remove('hidden');
+    document.getElementById('cat-empty-'+key).classList.add('hidden');
+    clearAlerts();
+  }catch(e){showErr('Erreur catalogue : '+e.message)}
+}
 
-    const CHUNK_SIZE = 5000; // lignes traitées par tick
+// ─────────────────────────────────────────────────────────────────────────────
+// ÉTAPE 2
+// ─────────────────────────────────────────────────────────────────────────────
+function goStep2(){
+  if(!S.onidData.length){showErr('Chargez le fichier ONID.');return}
+  if(!S.terms.length){showErr('Ajoutez au moins un terme de recherche.');return}
+  buildStep2();showStep(2);
+}
 
-    function searchAsync(onidData, normOnidTitre, normOnidAyant, terms, colTitre, colAyant, activeCats, onProgress, onDone) {
-      const normTerms = terms.map(t => ({raw: t, n: norm(t)}));
-      const seen = new Set();
-      const matches = [];
-      let termIdx = 0;
-      let rowIdx = 0;
+function buildStep2(){
+  const cols=Object.keys(S.onidData[0]||{});
+  ['titre','ayant'].forEach(w=>{
+    const sel=document.getElementById('sel-'+w);
+    const cur=w==='titre'?S.colTitre:S.colAyant;
+    sel.innerHTML=cols.map(c=>`<option value="${esc(c)}"${c===cur?' selected':''}>${esc(c)}</option>`).join('');
+  });
+  updatePreviews();
 
-      function tick() {
-        const deadline = Date.now() + 16; // ~1 frame
+  const loaded=['blzante','rossinante','blz'].filter(k=>S.cats[k].length>0);
+  const card=document.getElementById('cat-col-card');
+  card.classList.toggle('hidden',!loaded.length);
 
-        while (Date.now() < deadline) {
-          if (termIdx >= normTerms.length) {
-            onDone(matches);
-            return;
-          }
+  const clrMap={blzante:'var(--accent)',rossinante:'var(--violet)',blz:'var(--blue)'};
+  const nmMap={blzante:'BLZante',rossinante:'Rossinante',blz:'BLZ'};
+  document.getElementById('cat-col-grid').innerHTML=loaded.map(k=>{
+    const opts=Object.keys(S.cats[k][0]||{});
+    return`<div class="surface" style="border-top:2px solid ${clrMap[k]}">
+      <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:12px;color:${clrMap[k]};margin-bottom:10px">${nmMap[k]}</div>
+      <select onchange="S.catCols['${k}']=this.value;updateRecapParams()">
+        ${opts.map(o=>`<option value="${esc(o)}"${o===S.catCols[k]?' selected':''}>${esc(o)}</option>`).join('')}
+      </select>
+      <div class="hint" style="margin-top:8px">Exemple : « ${esc((S.cats[k][0]&&S.cats[k][0][S.catCols[k]])||'—')} »</div>
+    </div>`;
+  }).join('');
+  updateRecapParams();
+}
 
-          const {raw: terme, n: nt} = normTerms[termIdx];
-          const end = Math.min(rowIdx + CHUNK_SIZE, onidData.length);
+function updatePreviews(){
+  const ct=document.getElementById('sel-titre').value;
+  const ca=document.getElementById('sel-ayant').value;
+  document.getElementById('prev-titre').textContent='Exemple : « '+((S.onidData[0]&&S.onidData[0][ct])||'—')+' »';
+  document.getElementById('prev-ayant').textContent='Exemple : « '+((S.onidData[0]&&S.onidData[0][ca])||'—')+' »';
+  S.colTitre=ct;S.colAyant=ca;
+  S.normTitre=S.onidData.map(r=>norm((r[ct]||'').toString()));
+  S.normAyant=S.onidData.map(r=>norm((r[ca]||'').toString()));
+  updateRecapParams();
+}
+function onColChange(){updatePreviews()}
 
-          for (let i = rowIdx; i < end; i++) {
-            if (!seen.has(i)) {
-              const matchT = normOnidTitre[i].includes(nt);
-              const matchA = normOnidAyant[i].includes(nt);
-              if (matchT || matchA) {
-                seen.add(i);
-                const titre = (onidData[i][colTitre]||"").toString();
-                matches.push({
-                  id: String(i),
-                  terme,
-                  matchIn: matchT && matchA ? "titre + ayant droit" : matchT ? "titre" : "ayant droit",
-                  row: onidData[i],
-                  catMatches: activeCats.length > 0 ? bestCatMatches(titre, activeCats) : [],
-                });
-              }
+function updateRecapParams(){
+  const loaded=['blzante','rossinante','blz'].filter(k=>S.cats[k].length>0);
+  const clrMap={blzante:'var(--accent)',rossinante:'var(--violet)',blz:'var(--blue)'};
+  const nmMap={blzante:'BLZante',rossinante:'Rossinante',blz:'BLZ'};
+  let html=`<span>${S.terms.length}</span> terme${S.terms.length!==1?'s':''} à chercher`;
+  if(S.excludeTerms.length)html+=` &nbsp;·&nbsp; <span style="color:var(--red)">${S.excludeTerms.length}</span> exclusion${S.excludeTerms.length!==1?'s':''}`;
+  html+=` &nbsp;·&nbsp; dans <span>${fmt(S.onidData.length)}</span> lignes`;
+  html+=` &nbsp;·&nbsp; colonnes : <span style="color:var(--accent)">${esc(S.colTitre)}</span> + <span style="color:var(--accent)">${esc(S.colAyant)}</span>`;
+  if(loaded.length)html+=' &nbsp;·&nbsp; matching : '+loaded.map(k=>`<span style="color:${clrMap[k]}">${nmMap[k]} </span>`).join('');
+  document.getElementById('recap-params').innerHTML=html;
+}
+
+function goStep1(){showStep(1)}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RECHERCHE ASYNC PAR CHUNKS
+// ─────────────────────────────────────────────────────────────────────────────
+function runSearch(){
+  document.getElementById('btn-search').disabled=true;
+  document.getElementById('btn-back1').disabled=true;
+  document.getElementById('prog-wrap').classList.remove('hidden');
+
+  // Pré-calcul des termes d'exclusion normalisés
+  const normExcl=S.excludeTerms.map(t=>norm(t));
+  const normSearchTerms=S.terms.map(t=>({raw:t,n:norm(t)}));
+
+  const matches=[],seen=new Set();
+  let ti=0,ri=0;
+
+  function tick(){
+    const deadline=Date.now()+16;
+    while(Date.now()<deadline){
+      if(ti>=normSearchTerms.length){onDone(matches);return}
+      const{raw:terme,n:nt}=normSearchTerms[ti];
+      const end=Math.min(ri+CHUNK,S.onidData.length);
+      for(let i=ri;i<end;i++){
+        if(!seen.has(i)){
+          const mt=S.normTitre[i].includes(nt);
+          const ma=S.normAyant[i].includes(nt);
+          if(mt||ma){
+            // Vérification exclusions
+            const excluded=normExcl.some(ex=>S.normTitre[i].includes(ex)||S.normAyant[i].includes(ex));
+            if(!excluded){
+              seen.add(i);
+              const titre=(S.onidData[i][S.colTitre]||'').toString();
+              matches.push({
+                id:String(i),terme,
+                matchIn:mt&&ma?'titre + ayant droit':mt?'titre':'ayant droit',
+                row:S.onidData[i],
+                catMatches:['blzante','rossinante','blz'].some(k=>S.cats[k].length>0)?bestMatches(titre):[],
+              });
             }
           }
-
-          rowIdx = end;
-
-          if (rowIdx >= onidData.length) {
-            termIdx++;
-            rowIdx = 0;
-            const pct = Math.round((termIdx / normTerms.length) * 100);
-            onProgress(pct, termIdx, normTerms.length, matches.length);
-          }
         }
-
-        setTimeout(tick, 0);
       }
-
-      setTimeout(tick, 0);
+      ri=end;
+      if(ri>=S.onidData.length){
+        ti++;ri=0;
+        const pct=Math.round((ti/normSearchTerms.length)*100);
+        document.getElementById('prog-fill').style.width=pct+'%';
+        document.getElementById('prog-lbl').textContent='Terme '+ti+'/'+normSearchTerms.length+' — '+fmt(matches.length)+' correspondances trouvées';
+      }
     }
+    setTimeout(tick,0);
+  }
+  setTimeout(tick,0);
+}
 
-    // ─── Persistance ─────────────────────────────────────────────────────────
+function onDone(matches){
+  // Tri : terme alpha → ayant droit alpha → titre alpha
+  matches.sort((a,b)=>{
+    const ta=a.terme.toLowerCase(),tb=b.terme.toLowerCase();
+    if(ta!==tb)return ta.localeCompare(tb,'fr',{sensitivity:'base'});
+    const aa=((a.row[S.colAyant]||'').toString()).toLowerCase();
+    const ab=((b.row[S.colAyant]||'').toString()).toLowerCase();
+    if(aa!==ab)return aa.localeCompare(ab,'fr',{sensitivity:'base'});
+    const ta2=((a.row[S.colTitre]||'').toString()).toLowerCase();
+    const tb2=((b.row[S.colTitre]||'').toString()).toLowerCase();
+    return ta2.localeCompare(tb2,'fr',{sensitivity:'base'});
+  });
 
-    const SK = "onid_blzante_termes";
-    const loadTerms = () => { try{const v=localStorage.getItem(SK);return v?JSON.parse(v):[];}catch{return[];} };
-    const saveTerms = t => { try{localStorage.setItem(SK,JSON.stringify(t));}catch{} };
+  S.results=matches;S.decisions={};S.selCat={};S.filter='all';S.page=0;
+  document.getElementById('btn-search').disabled=false;
+  document.getElementById('btn-back1').disabled=false;
+  document.getElementById('prog-wrap').classList.add('hidden');
+  buildResultsHeader();
+  renderResults();
+  showStep(3);
+}
 
-    // ─── Design ───────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// RÉSULTATS
+// ─────────────────────────────────────────────────────────────────────────────
+function buildResultsHeader(){
+  S._anyCat=['blzante','rossinante','blz'].some(k=>S.cats[k].length>0);
+  S._montantKey=S.onidData.length?Object.keys(S.onidData[0]).find(k=>/montant|amount|somme/i.test(k)):null;
+  S._hasLib=!!(S.colLib&&S.onidData.length&&S.onidData[0][S.colLib]!==undefined);
 
-    const C = {
-      bg:"#0d0d0d", s:"#111", s2:"#161616", s3:"#1a1a1a",
-      b:"#2a2a2a", b2:"#333", text:"#f0ede6", muted:"#555", m2:"#888",
-      accent:"#e8c547",
-      green:"#4ade80", gBg:"#0a1a0a", gBorder:"#1a4a1a",
-      red:"#f87171",   rBg:"#1a0a0a", rBorder:"#4a1a1a",
-      violet:"#a78bfa", blue:"#60a5fa",
-    };
-    const mono = "'Syne Mono',monospace";
-    const syne = "'Syne',sans-serif";
+  const headers=['Terme','Trouvé dans','Titre ONID','Ayant droit',
+    S._hasLib?'LIB':null,
+    S._montantKey?'Montant':null,
+    S._anyCat?'Oeuvre catalogue':null,
+    'Décision'
+  ].filter(Boolean);
+  document.getElementById('res-thead').innerHTML='<tr>'+headers.map(h=>'<th>'+h+'</th>').join('')+'</tr>';
+}
 
-    const btn = (active, accent) => {
-      const a = accent || C.accent;
-      return { background:active?a:C.s2, color:active?C.bg:C.muted, border:`1px solid ${active?a:C.b2}`, borderRadius:2, padding:"8px 18px", fontFamily:mono, fontSize:10, fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase", cursor:"pointer", transition:"all .15s" };
-    };
-    const ghostBtn = { background:"none", border:`1px solid ${C.b2}`, borderRadius:2, padding:"8px 18px", fontFamily:mono, fontSize:10, fontWeight:700, letterSpacing:"0.12em", textTransform:"uppercase", color:C.muted, cursor:"pointer", transition:"all .15s" };
-    const card = { background:C.s, border:`1px solid ${C.b}`, borderRadius:3, padding:24 };
-    const sel = { width:"100%", padding:"8px 10px", borderRadius:2, border:`1px solid ${C.b2}`, fontSize:12, background:C.s2, color:C.text, fontFamily:mono, cursor:"pointer" };
-    const inp = { padding:"9px 13px", borderRadius:2, border:`1px solid ${C.b2}`, fontSize:13, background:C.s2, color:C.text, outline:"none", width:"100%", boxSizing:"border-box", fontFamily:"'Inter',sans-serif" };
-    const slbl = { fontFamily:mono, fontSize:9, fontWeight:700, color:C.muted, letterSpacing:"0.22em", textTransform:"uppercase", display:"block", marginBottom:8 };
+function getFiltered(){
+  const f=S.filter;
+  if(f==='pending')return S.results.filter(r=>!S.decisions[r.id]);
+  if(f==='v')return S.results.filter(r=>S.decisions[r.id]==='v');
+  if(f==='j')return S.results.filter(r=>S.decisions[r.id]==='j');
+  return S.results;
+}
 
-    const CATS = [
-      {key:"blzante",    name:"BLZante",    color:C.accent},
-      {key:"rossinante", name:"Rossinante", color:C.violet},
-      {key:"blz",        name:"BLZ",        color:C.blue},
-    ];
+function changeFilter(f){S.filter=f;S.page=0;renderResults()}
 
-    const PAGE_SIZE = 50;
+function decide(id,d){
+  S.decisions[id]=S.decisions[id]===d?undefined:d;
+  renderResults();
+}
+function pickCat(id,val){S.selCat[id]=val}
 
-    // ─── App ──────────────────────────────────────────────────────────────────
+function renderResults(){
+  const filtered=getFiltered();
+  const total=S.results.length,v=S.results.filter(r=>S.decisions[r.id]==='v').length;
+  const j=S.results.filter(r=>S.decisions[r.id]==='j').length,pending=total-v-j;
 
-    function App() {
-      const [step, setStep] = useState(1);
-      const [tab, setTab]   = useState("upload");
+  document.getElementById('sv-total').textContent=fmt(total);
+  document.getElementById('sv-pending').textContent=fmt(pending);
+  document.getElementById('sv-v').textContent=fmt(v);
+  document.getElementById('sv-j').textContent=fmt(j);
 
-      // ONID
-      const [onidData, setOnidData]       = useState([]);
-      const [onidFile, setOnidFile]       = useState("");
-      const [normTitre, setNormTitre]     = useState([]); // pré-normalisé
-      const [normAyant, setNormAyant]     = useState([]); // pré-normalisé
-      const [colTitre, setColTitre]       = useState("");
-      const [colAyant, setColAyant]       = useState("");
+  const filterColors={all:'var(--text)',pending:'#f59e0b',v:'var(--green)',j:'var(--red)'};
+  ['all','pending','v','j'].forEach(f=>{
+    const c=document.getElementById('stat-'+f);
+    c.classList.toggle('active',S.filter===f);
+    c.style.borderTopColor=S.filter===f?filterColors[f]:'transparent';
+  });
 
-      // Catalogues
-      const [cats, setCats]         = useState({blzante:[],rossinante:[],blz:[]});
-      const [catFiles, setCatFiles] = useState({blzante:"",rossinante:"",blz:""});
-      const [catCols, setCatCols]   = useState({blzante:"",rossinante:"",blz:""});
+  const expBtn=document.getElementById('export-btn');
+  expBtn.classList.toggle('on',v>0);
 
-      // Termes
-      const [terms, setTerms] = useState(()=>loadTerms());
-      const [newTerm, setNewTerm] = useState("");
+  // Sauvegarder btn
+  const saveBtn=document.getElementById('btn-save-recap');
+  saveBtn.disabled=v===0;
+  document.getElementById('save-count').textContent=v;
 
-      // Recherche
-      const [searching, setSearching]   = useState(false);
-      const [progress, setProgress]     = useState(0); // 0-100
-      const [progressMsg, setProgressMsg] = useState("");
+  document.getElementById('persist-msg').textContent=S.terms.length+' terme'+(S.terms.length!==1?'s':'')+' conservé'+(S.terms.length!==1?'s':'')+' pour la prochaine session';
 
-      // Résultats
-      const [results, setResults]   = useState([]);
-      const [decisions, setDec]     = useState({});
-      const [selCat, setSelCat]     = useState({});
-      const [filter, setFilter]     = useState("all");
-      const [page, setPage]         = useState(0);
+  // Pagination
+  const pageCount=Math.max(1,Math.ceil(filtered.length/PAGE_SIZE));
+  const safePage=Math.min(S.page,pageCount-1);S.page=safePage;
 
-      const [err, setErr] = useState("");
-      const [msg, setMsg] = useState("");
+  document.getElementById('pag-info').innerHTML='Page '+(safePage+1)+' / '+pageCount+' &nbsp;·&nbsp; '+fmt(filtered.length)+' résultat'+(filtered.length!==1?'s':'');
+  const ph=buildPagHTML(safePage,pageCount);
+  document.getElementById('pag-top').innerHTML=ph;
+  document.getElementById('pag-bot').innerHTML=pageCount>1?ph:'';
 
-      const onidCols   = onidData.length ? Object.keys(onidData[0]) : [];
-      const anyCat     = CATS.some(c => cats[c.key].length > 0);
-      const montantKey = onidCols.find(k => /montant|amount|somme/i.test(k));
+  const page=filtered.slice(safePage*PAGE_SIZE,(safePage+1)*PAGE_SIZE);
 
-      const persistTerms = useCallback(t => { setTerms(t); saveTerms(t); }, []);
+  if(!page.length){
+    document.getElementById('res-tbody').innerHTML='<tr><td colspan="9" class="empty">'+(S.results.length===0?'AUCUNE OEUVRE TROUVÉE AVEC CES TERMES':'AUCUN RÉSULTAT DANS CE FILTRE')+'</td></tr>';
+    return;
+  }
 
-      // ── Termes ────────────────────────────────────────────────────────────
+  document.getElementById('res-tbody').innerHTML=page.map((r,idx)=>{
+    const dec=S.decisions[r.id];
+    const bg=dec==='v'?'var(--gbg)':dec==='j'?'var(--rbg)':idx%2?'var(--s)':'var(--s2)';
 
-      function addTerm() {
-        const t = newTerm.trim();
-        if (!t) return;
-        if (terms.some(x => norm(x)===norm(t))) { setErr("Terme déjà présent."); return; }
-        persistTerms([...terms, t]);
-        setNewTerm(""); setErr(""); setMsg("");
-      }
-      function removeTerm(i) { persistTerms(terms.filter((_,j)=>j!==i)); }
-      async function importFile(file) {
-        try {
-          const rows = await readExcel(file);
-          if (!rows.length) { setErr("Fichier vide."); return; }
-          const col = Object.keys(rows[0])[0];
-          const incoming = rows.map(r=>(r[col]||"").toString().trim()).filter(Boolean);
-          const merged = [...terms]; let added=0;
-          incoming.forEach(t=>{ if(!merged.some(x=>norm(x)===norm(t))){ merged.push(t); added++; } });
-          persistTerms(merged);
-          setErr(""); setMsg(`✓ ${added} terme(s) importé(s), ${incoming.length-added} doublon(s) ignoré(s).`);
-        } catch(e) { setErr("Erreur import : "+e.message); }
-      }
+    const libCell=S._hasLib?`<td class="td-lib" title="${esc((r.row[S.colLib]||'').toString())}">${esc((r.row[S.colLib]||'—').toString())}</td>`:'';
+    const amtCell=S._montantKey?`<td class="td-amt">${esc((r.row[S._montantKey]||'—').toString())}</td>`:'';
+    const catCell=S._anyCat?(r.catMatches.length===0
+      ?'<td><span class="td-no-match">—</span></td>'
+      :`<td class="td-cat"><select onchange="pickCat('${r.id}',this.value)"><option value="">— Sélectionner —</option>${r.catMatches.map(m=>`<option value="[${esc(m.catalogue)}] ${esc(m.titre)}"${S.selCat[r.id]===`[${m.catalogue}] ${m.titre}`?' selected':''}>[${esc(m.catalogue)}] ${esc(m.titre)} — ${Math.round(m.score*100)}%</option>`).join('')}</select></td>`):'';
 
-      // ── Fichiers ──────────────────────────────────────────────────────────
-
-      async function loadOnid(file) {
-        try {
-          setMsg("⏳ Chargement en cours…"); setErr("");
-          const rows = await readExcel(file);
-          if (!rows.length) { setErr("Fichier ONID vide."); setMsg(""); return; }
-          const ct = autoCol(rows,"TITROEUV","titre","oeuvre","libelle","title");
-          const ca = autoCol(rows,"AD","ayant","artiste","editeur","compositeur","author");
-          // Pré-normalisation immédiate — fait une seule fois
-          setMsg("⏳ Pré-traitement des données…");
-          await new Promise(r=>setTimeout(r,0));
-          const nt = rows.map(r=>norm((r[ct]||"").toString()));
-          const na = rows.map(r=>norm((r[ca]||"").toString()));
-          setOnidData(rows); setOnidFile(file.name);
-          setColTitre(ct); setColAyant(ca);
-          setNormTitre(nt); setNormAyant(na);
-          setErr(""); setMsg(`✓ ${rows.length.toLocaleString("fr-FR")} lignes chargées. Colonnes détectées : ${ct} (titre) + ${ca} (ayant droit).`);
-        } catch(e) { setErr("Erreur ONID : "+e.message); setMsg(""); }
-      }
-
-      async function loadCat(key, file) {
-        try {
-          const rows = await readExcel(file);
-          if (!rows.length) { setErr(`Catalogue ${key} vide.`); return; }
-          const col = autoCol(rows,"Titre de l'oeuvre","titre","oeuvre","libelle","title");
-          setCats(c=>({...c,[key]:rows}));
-          setCatFiles(f=>({...f,[key]:file.name}));
-          setCatCols(c=>({...c,[key]:col}));
-          setErr(""); setMsg("");
-        } catch(e) { setErr("Erreur catalogue : "+e.message); }
-      }
-
-      // Recalcul des normalisés si colTitre/colAyant changent manuellement
-      function reNormalize(ct, ca) {
-        if (!onidData.length) return;
-        const nt = onidData.map(r=>norm((r[ct]||"").toString()));
-        const na = onidData.map(r=>norm((r[ca]||"").toString()));
-        setNormTitre(nt); setNormAyant(na);
-      }
-
-      // ── Recherche ─────────────────────────────────────────────────────────
-
-      function runSearch() {
-        setSearching(true); setProgress(0); setProgressMsg(`Initialisation…`); setErr("");
-        const activeCats = CATS.filter(c=>cats[c.key].length>0).map(c=>({name:c.name,rows:cats[c.key],col:catCols[c.key]}));
-        searchAsync(
-          onidData, normTitre, normAyant, terms, colTitre, colAyant, activeCats,
-          (pct, ti, total, found) => {
-            setProgress(pct);
-            setProgressMsg(`Terme ${ti}/${total} traité — ${found.toLocaleString("fr-FR")} correspondances trouvées`);
-          },
-          (matches) => {
-            setResults(matches);
-            setDec({}); setSelCat({}); setPage(0); setFilter("all");
-            setSearching(false); setStep(3);
-          }
-        );
-      }
-
-      // ── Résultats ─────────────────────────────────────────────────────────
-
-      const decide  = useCallback((id,d)=>setDec(p=>({...p,[id]:p[id]===d?undefined:d})),[]);
-      const pickCat = useCallback((id,v)=>setSelCat(p=>({...p,[id]:v})),[]);
-
-      const stats = useMemo(()=>({
-        total:   results.length,
-        v:       results.filter(r=>decisions[r.id]==="v").length,
-        j:       results.filter(r=>decisions[r.id]==="j").length,
-        pending: results.filter(r=>!decisions[r.id]).length,
-      }),[results,decisions]);
-
-      const filtered = useMemo(()=>{
-        if (filter==="pending") return results.filter(r=>!decisions[r.id]);
-        if (filter==="v")       return results.filter(r=>decisions[r.id]==="v");
-        if (filter==="j")       return results.filter(r=>decisions[r.id]==="j");
-        return results;
-      },[results,decisions,filter]);
-
-      const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-      const safePage  = Math.min(page, pageCount - 1);
-      const visible   = filtered.slice(safePage * PAGE_SIZE, (safePage+1) * PAGE_SIZE);
-
-      function changeFilter(f) { setFilter(f); setPage(0); }
-
-      function exportXlsx() {
-        const rows = results.filter(r=>decisions[r.id]==="v").map(r=>({...r.row,"Terme trouvé":r.terme,"Oeuvre identifiée":selCat[r.id]||""}));
-        const ws = XL.utils.json_to_sheet(rows);
-        const wb = XL.utils.book_new();
-        XL.utils.book_append_sheet(wb,ws,"Validées");
-        XL.writeFile(wb,"ONID_validees.xlsx");
-      }
-
-      function reset() {
-        setStep(1); setResults([]); setDec({}); setSelCat({});
-        setOnidData([]); setOnidFile(""); setNormTitre([]); setNormAyant([]);
-        setCats({blzante:[],rossinante:[],blz:[]}); setCatFiles({blzante:"",rossinante:"",blz:""});
-        setFilter("all"); setPage(0); setErr(""); setMsg(""); setTab("upload");
-        setSearching(false); setProgress(0);
-      }
-
-      // ── Tab helpers ───────────────────────────────────────────────────────
-
-      const TabBtn = ({k,lbl}) => (
-        <button onClick={()=>{setTab(k);setErr("");setMsg("");}} style={{background:"none",border:"none",borderBottom:tab===k?`2px solid ${C.accent}`:"2px solid transparent",padding:"8px 20px",marginBottom:-1,fontFamily:mono,fontSize:10,letterSpacing:"0.14em",textTransform:"uppercase",color:tab===k?C.accent:C.muted,cursor:"pointer",transition:"all .15s"}}>{lbl}</button>
-      );
-
-      // ─────────────────────────────────────────────────────────────────────
-      // RENDER
-      // ─────────────────────────────────────────────────────────────────────
-
-      return (
-        <div style={{maxWidth:1300,margin:"0 auto"}}>
-
-          {/* Titre */}
-          <div style={{marginBottom:22}}>
-            <div style={{fontFamily:mono,fontSize:9,color:C.muted,letterSpacing:"0.24em",textTransform:"uppercase",marginBottom:6}}>Outils / SACEM</div>
-            <h1 style={{fontFamily:syne,fontSize:20,fontWeight:800,color:C.text,letterSpacing:"-0.01em"}}>ONID BLZante</h1>
-            <div style={{fontFamily:mono,fontSize:10,color:C.muted,marginTop:4,letterSpacing:"0.06em"}}>Identification des Oeuvres Non Identifiées SACEM</div>
-          </div>
-
-          {/* Stepper */}
-          <div style={{display:"flex",gap:0,marginBottom:24,borderBottom:`1px solid ${C.b}`}}>
-            {["1 — Fichiers & Termes","2 — Recherche","3 — Résultats"].map((lbl,i)=>(
-              <div key={i} style={{padding:"10px 24px",fontFamily:mono,fontSize:10,letterSpacing:"0.1em",textTransform:"uppercase",color:step===i+1?C.accent:step>i+1?C.m2:C.muted,borderBottom:step===i+1?`2px solid ${C.accent}`:"2px solid transparent",marginBottom:-1}}>
-                {step>i+1?"✓ ":""}{lbl}
-              </div>
-            ))}
-          </div>
-
-          {/* Notifs */}
-          {err && <div style={{background:C.rBg,border:`1px solid ${C.rBorder}`,borderRadius:2,padding:"9px 16px",marginBottom:14,color:C.red,fontSize:12,fontFamily:mono,letterSpacing:"0.04em"}}>⚠ {err}</div>}
-          {msg && !err && <div style={{background:C.gBg,border:`1px solid ${C.gBorder}`,borderRadius:2,padding:"9px 16px",marginBottom:14,color:C.green,fontSize:12,fontFamily:mono,letterSpacing:"0.04em"}}>{msg}</div>}
-
-          {/* ══ ÉTAPE 1 ══ */}
-          {step===1 && (
-            <>
-              <div style={{display:"flex",gap:1,marginBottom:18,borderBottom:`1px solid ${C.b}`}}>
-                <TabBtn k="upload" lbl="Fichiers" />
-                <TabBtn k="termes" lbl={`Termes (${terms.length})`} />
-              </div>
-
-              {/* Fichiers */}
-              {tab==="upload" && (
-                <div style={{display:"flex",flexDirection:"column",gap:10}}>
-                  {/* ONID */}
-                  <div style={{...card,borderColor:onidData.length?C.accent+"66":C.b}}>
-                    <div style={{display:"flex",alignItems:"center",gap:16}}>
-                      <div style={{flex:1}}>
-                        <span style={slbl}>Fichier ONID <span style={{color:C.red}}>*requis</span></span>
-                        <div style={{fontFamily:syne,fontWeight:700,fontSize:14,color:C.text}}>Export SACEM — Oeuvres Non Identifiées</div>
-                        {onidData.length>0 && (
-                          <div style={{fontFamily:mono,fontSize:10,color:C.muted,marginTop:6,letterSpacing:"0.04em"}}>
-                            {onidFile} &nbsp;·&nbsp; <span style={{color:C.text}}>{onidData.length.toLocaleString("fr-FR")}</span> lignes &nbsp;·&nbsp;
-                            colonnes : <span style={{color:C.accent}}>{colTitre}</span> + <span style={{color:C.accent}}>{colAyant}</span>
-                          </div>
-                        )}
-                      </div>
-                      {onidData.length>0
-                        ? <label style={{...ghostBtn,cursor:"pointer"}}>Changer <input type="file" accept=".xlsx,.xls,.csv" style={{display:"none"}} onChange={e=>e.target.files[0]&&loadOnid(e.target.files[0])} /></label>
-                        : <label style={{...btn(true),cursor:"pointer"}}>Charger <input type="file" accept=".xlsx,.xls,.csv" style={{display:"none"}} onChange={e=>e.target.files[0]&&loadOnid(e.target.files[0])} /></label>
-                      }
-                    </div>
-                  </div>
-
-                  {/* Catalogues */}
-                  <div style={card}>
-                    <span style={slbl}>Catalogues <span style={{fontWeight:400,color:C.muted}}>(optionnel — pour le matching)</span></span>
-                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:1,background:C.b,border:`1px solid ${C.b}`}}>
-                      {CATS.map(({key,name,color})=>{
-                        const loaded=cats[key].length>0;
-                        return (
-                          <div key={key} style={{background:C.s2,padding:14,borderTop:`2px solid ${loaded?color:"transparent"}`}}>
-                            <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:10}}>
-                              <div style={{width:7,height:7,borderRadius:"50%",background:color,opacity:loaded?1:.25}}/>
-                              <span style={{fontFamily:syne,fontWeight:700,fontSize:13,color:loaded?C.text:C.muted}}>{name}</span>
-                            </div>
-                            {loaded ? (
-                              <>
-                                <div style={{fontFamily:mono,fontSize:9,color:C.muted,marginBottom:8,wordBreak:"break-all"}}>{catFiles[key]}</div>
-                                <div style={{fontFamily:mono,fontSize:10,color,letterSpacing:"0.06em",marginBottom:10}}>{cats[key].length} oeuvres</div>
-                                <div style={{fontFamily:mono,fontSize:9,color:C.muted,marginBottom:10}}>Colonne : <span style={{color:C.text}}>{catCols[key]}</span></div>
-                                <label style={{...ghostBtn,fontSize:9,cursor:"pointer"}}>Changer <input type="file" accept=".xlsx,.xls,.csv" style={{display:"none"}} onChange={e=>e.target.files[0]&&loadCat(key,e.target.files[0])} /></label>
-                              </>
-                            ) : (
-                              <label style={{display:"flex",flexDirection:"column",alignItems:"center",gap:8,cursor:"pointer",padding:"18px 0"}}>
-                                <span style={{fontSize:20,opacity:.3}}>📚</span>
-                                <span style={{fontFamily:mono,fontSize:9,color:C.muted,letterSpacing:"0.1em"}}>Cliquer pour charger</span>
-                                <input type="file" accept=".xlsx,.xls,.csv" style={{display:"none"}} onChange={e=>e.target.files[0]&&loadCat(key,e.target.files[0])} />
-                              </label>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <div style={{display:"flex",justifyContent:"flex-end",gap:8,paddingTop:4}}>
-                    <button onClick={()=>{setTab("termes");setErr("");setMsg("");}} style={ghostBtn}>Gérer les termes ({terms.length}) →</button>
-                    <button onClick={()=>{
-                      if(!onidData.length){setErr("Chargez le fichier ONID.");return;}
-                      if(!terms.length){setErr("Ajoutez au moins un terme.");return;}
-                      setStep(2);setErr("");setMsg("");
-                    }} style={{...btn(true),opacity:(!onidData.length||!terms.length)?.35:1}}>Configurer la recherche →</button>
-                  </div>
-                </div>
-              )}
-
-              {/* Termes */}
-              {tab==="termes" && (
-                <div style={card}>
-                  <span style={slbl}>Bibliothèque de termes</span>
-                  <div style={{fontFamily:mono,fontSize:10,color:C.muted,marginBottom:18,letterSpacing:"0.04em",lineHeight:1.8}}>
-                    Chaque terme est cherché dans les colonnes titre et ayant droit du fichier ONID.<br/>
-                    Sauvegardés dans le navigateur — réutilisables à chaque session.
-                  </div>
-                  <div style={{display:"flex",gap:8,marginBottom:18}}>
-                    <input style={{...inp,flex:1}} placeholder="Ex : DAFT PUNK, MAES, IAM…" value={newTerm} onChange={e=>setNewTerm(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addTerm()} />
-                    <button onClick={addTerm} style={btn(true)}>+ Ajouter</button>
-                    <label style={{...ghostBtn,cursor:"pointer"}}>↑ Importer <input type="file" accept=".xlsx,.xls,.csv" style={{display:"none"}} onChange={e=>e.target.files[0]&&importFile(e.target.files[0])} /></label>
-                  </div>
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-                    <span style={{fontFamily:mono,fontSize:9,color:C.muted,letterSpacing:"0.18em"}}>{terms.length} TERME{terms.length!==1?"S":""} ENREGISTRÉ{terms.length!==1?"S":""}</span>
-                    {terms.length>0&&<button onClick={()=>{if(window.confirm("Vider toute la bibliothèque ?"))persistTerms([]);}} style={{background:"none",border:"none",color:C.red,fontSize:10,cursor:"pointer",fontFamily:mono,letterSpacing:"0.1em"}}>✕ Tout effacer</button>}
-                  </div>
-                  {terms.length===0
-                    ? <div style={{textAlign:"center",padding:"36px 0",color:C.muted,fontFamily:mono,fontSize:10,lineHeight:2.2,letterSpacing:"0.1em"}}>AUCUN TERME ENREGISTRÉ</div>
-                    : <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
-                        {terms.map((t,i)=>(
-                          <div key={i} style={{background:C.s2,border:`1px solid ${C.b2}`,borderRadius:2,padding:"5px 8px 5px 12px",display:"flex",alignItems:"center",gap:8,fontFamily:mono,fontSize:11,color:C.text,letterSpacing:"0.04em"}}>
-                            {t}
-                            <button onClick={()=>removeTerm(i)} style={{background:"none",border:"none",cursor:"pointer",color:C.muted,fontSize:13,padding:0,lineHeight:1}}>×</button>
-                          </div>
-                        ))}
-                      </div>
-                  }
-                  <div style={{marginTop:20,display:"flex",justifyContent:"flex-end"}}>
-                    <button onClick={()=>{setTab("upload");setErr("");setMsg("");}} style={btn(true)}>← Retour aux fichiers</button>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-
-          {/* ══ ÉTAPE 2 ══ */}
-          {step===2 && (
-            <div style={{display:"flex",flexDirection:"column",gap:14}}>
-              {/* Colonnes ONID */}
-              <div style={card}>
-                <span style={slbl}>Colonnes du fichier ONID</span>
-                <div style={{fontFamily:mono,fontSize:10,color:C.muted,marginBottom:20,letterSpacing:"0.04em",lineHeight:1.8}}>
-                  Les termes seront recherchés dans ces deux colonnes. Vérifie que les bonnes colonnes sont sélectionnées, puis lance la recherche.
-                </div>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
-                  {[
-                    {label:"Titre de l'oeuvre", hint:"SACEM : TITROEUV", val:colTitre, set:v=>{setColTitre(v);reNormalize(v,colAyant);}},
-                    {label:"Ayant droit",        hint:"SACEM : AD",       val:colAyant, set:v=>{setColAyant(v);reNormalize(colTitre,v);}},
-                  ].map(({label,hint,val,set})=>(
-                    <div key={label} style={{background:C.s2,border:`1px solid ${C.b}`,borderRadius:2,padding:16}}>
-                      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
-                        <div style={{width:7,height:7,borderRadius:"50%",background:C.accent}}/>
-                        <span style={{fontFamily:syne,fontWeight:700,fontSize:13,color:C.text}}>{label}</span>
-                        <span style={{fontFamily:mono,fontSize:9,color:C.muted,marginLeft:"auto",letterSpacing:"0.08em"}}>{hint}</span>
-                      </div>
-                      <select value={val} onChange={e=>set(e.target.value)} style={sel}>
-                        {onidCols.map(o=><option key={o} value={o}>{o}</option>)}
-                      </select>
-                      <div style={{fontFamily:mono,fontSize:9,color:C.muted,marginTop:8,letterSpacing:"0.04em"}}>
-                        Exemple : « {(onidData[0]&&onidData[0][val])||"—"} »
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Catalogues */}
-              {anyCat && (
-                <div style={card}>
-                  <span style={slbl}>Colonnes titre dans les catalogues</span>
-                  <div style={{fontFamily:mono,fontSize:10,color:C.muted,marginBottom:16,letterSpacing:"0.04em",lineHeight:1.8}}>
-                    Le titre ONID sera comparé à ces colonnes pour proposer une oeuvre correspondante dans le catalogue.
-                  </div>
-                  <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
-                    {CATS.filter(c=>cats[c.key].length>0).map(({key,name,color})=>{
-                      const opts=Object.keys((cats[key][0])||{});
-                      return (
-                        <div key={key} style={{background:C.s2,border:`1px solid ${C.b}`,borderRadius:2,padding:14,borderTop:`2px solid ${color}`}}>
-                          <div style={{fontFamily:syne,fontWeight:700,fontSize:12,color,marginBottom:10}}>{name}</div>
-                          <select value={catCols[key]} onChange={e=>setCatCols(c=>({...c,[key]:e.target.value}))} style={sel}>
-                            {opts.map(o=><option key={o} value={o}>{o}</option>)}
-                          </select>
-                          <div style={{fontFamily:mono,fontSize:9,color:C.muted,marginTop:8,letterSpacing:"0.04em"}}>
-                            Exemple : « {(cats[key][0]&&cats[key][0][catCols[key]])||"—"} »
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Récap */}
-              <div style={{background:C.s2,border:`1px solid ${C.b}`,borderRadius:2,padding:"14px 20px"}}>
-                <div style={{fontFamily:mono,fontSize:10,color:C.muted,letterSpacing:"0.06em",lineHeight:2.2}}>
-                  <span style={{color:C.text}}>{terms.length}</span> terme{terms.length!==1?"s":""} à chercher &nbsp;·&nbsp;
-                  dans <span style={{color:C.text}}>{onidData.length.toLocaleString("fr-FR")}</span> lignes &nbsp;·&nbsp;
-                  colonnes : <span style={{color:C.accent}}>{colTitre}</span> + <span style={{color:C.accent}}>{colAyant}</span>
-                  {anyCat&&<> &nbsp;·&nbsp; matching : {CATS.filter(c=>cats[c.key].length>0).map(c=><span key={c.key} style={{color:c.color}}>{c.name} </span>)}</>}
-                </div>
-              </div>
-
-              {/* Barre de progression */}
-              {searching && (
-                <div style={{background:C.s2,border:`1px solid ${C.b}`,borderRadius:2,padding:16}}>
-                  <div style={{fontFamily:mono,fontSize:10,color:C.muted,marginBottom:10,letterSpacing:"0.06em"}}>{progressMsg}</div>
-                  <div style={{height:4,background:C.b,borderRadius:2,overflow:"hidden"}}>
-                    <div style={{height:"100%",background:C.accent,width:`${progress}%`,transition:"width .2s",borderRadius:2}}/>
-                  </div>
-                </div>
-              )}
-
-              <div style={{display:"flex",gap:8}}>
-                <button onClick={()=>{setStep(1);setErr("");setMsg("");}} style={ghostBtn} disabled={searching}>← Retour</button>
-                <button onClick={runSearch} disabled={searching} style={{...btn(true),opacity:searching?.5:1}}>
-                  {searching?"⏳ Recherche en cours…":"Lancer la recherche →"}
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* ══ ÉTAPE 3 ══ */}
-          {step===3 && (
-            <>
-              {/* Stats */}
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr auto",gap:1,background:C.b,border:`1px solid ${C.b}`,marginBottom:14}}>
-                {[
-                  {lbl:"Trouvées",   val:stats.total,   color:C.text,    f:"all"},
-                  {lbl:"En attente", val:stats.pending, color:"#f59e0b", f:"pending"},
-                  {lbl:"Validées",   val:stats.v,       color:C.green,   f:"v"},
-                  {lbl:"Rejetées",   val:stats.j,       color:C.red,     f:"j"},
-                ].map(({lbl,val,color,f})=>(
-                  <div key={f} onClick={()=>changeFilter(f)} style={{background:filter===f?C.s:C.s2,padding:"14px 18px",cursor:"pointer",borderTop:`2px solid ${filter===f?color:"transparent"}`,transition:"all .15s",userSelect:"none"}}>
-                    <div style={{fontFamily:syne,fontSize:24,fontWeight:800,color}}>{val.toLocaleString("fr-FR")}</div>
-                    <div style={{fontFamily:mono,fontSize:9,color:C.muted,marginTop:3,letterSpacing:"0.14em",textTransform:"uppercase"}}>{lbl}</div>
-                  </div>
-                ))}
-                <button onClick={exportXlsx} disabled={stats.v===0} style={{background:stats.v?C.accent:C.s2,color:stats.v?C.bg:C.muted,border:"none",cursor:stats.v?"pointer":"default",padding:"14px 20px",fontFamily:mono,fontSize:10,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",lineHeight:1.8,transition:"all .15s"}}>
-                  ↓ Export<br/>Excel
-                </button>
-              </div>
-
-              {/* Pagination info + contrôles */}
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10,flexWrap:"wrap",gap:8}}>
-                <div style={{fontFamily:mono,fontSize:9,color:C.muted,letterSpacing:"0.1em"}}>
-                  {filtered.length.toLocaleString("fr-FR")} résultat{filtered.length!==1?"s":""} &nbsp;·&nbsp;
-                  page {safePage+1} / {pageCount}
-                  {anyCat&&<> &nbsp;·&nbsp; {CATS.filter(c=>cats[c.key].length>0).map(c=><span key={c.key} style={{color:c.color}}>{c.name} </span>)}</>}
-                </div>
-                <div style={{display:"flex",gap:4}}>
-                  <button onClick={()=>setPage(0)} disabled={safePage===0} style={{...ghostBtn,padding:"5px 10px",fontSize:9,opacity:safePage===0?.3:1}}>«</button>
-                  <button onClick={()=>setPage(p=>Math.max(0,p-1))} disabled={safePage===0} style={{...ghostBtn,padding:"5px 10px",fontSize:9,opacity:safePage===0?.3:1}}>‹</button>
-                  <button onClick={()=>setPage(p=>Math.min(pageCount-1,p+1))} disabled={safePage>=pageCount-1} style={{...ghostBtn,padding:"5px 10px",fontSize:9,opacity:safePage>=pageCount-1?.3:1}}>›</button>
-                  <button onClick={()=>setPage(pageCount-1)} disabled={safePage>=pageCount-1} style={{...ghostBtn,padding:"5px 10px",fontSize:9,opacity:safePage>=pageCount-1?.3:1}}>»</button>
-                </div>
-              </div>
-
-              {/* Table */}
-              <div style={{border:`1px solid ${C.b}`,overflow:"auto"}}>
-                <table style={{width:"100%",borderCollapse:"collapse",fontSize:12}}>
-                  <thead>
-                    <tr>
-                      {["Terme","Trouvé dans","Titre ONID","Ayant droit",
-                        montantKey&&"Montant",
-                        anyCat&&"Oeuvre catalogue (fuzzy match)",
-                        "Décision"].filter(Boolean).map(h=>(
-                        <th key={h} style={{padding:"9px 14px",textAlign:"left",fontFamily:mono,fontSize:9,fontWeight:700,color:C.muted,letterSpacing:"0.16em",textTransform:"uppercase",background:C.s2,borderBottom:`1px solid ${C.b}`,whiteSpace:"nowrap"}}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {visible.length===0 && (
-                      <tr><td colSpan={8} style={{padding:48,textAlign:"center",fontFamily:mono,fontSize:10,color:C.muted,letterSpacing:"0.1em"}}>
-                        {results.length===0?"AUCUNE OEUVRE TROUVÉE AVEC CES TERMES":"AUCUN RÉSULTAT DANS CE FILTRE"}
-                      </td></tr>
-                    )}
-                    {visible.map((r,idx)=>{
-                      const dec=decisions[r.id];
-                      const rowBg=dec==="v"?C.gBg:dec==="j"?C.rBg:idx%2?C.s:C.s2;
-                      return (
-                        <tr key={r.id} style={{background:rowBg,borderBottom:`1px solid ${C.b}`,transition:"background .15s"}}>
-                          <td style={{padding:"9px 14px",whiteSpace:"nowrap"}}>
-                            <span style={{fontFamily:mono,fontSize:10,color:C.accent,background:C.accent+"15",border:`1px solid ${C.accent}33`,borderRadius:2,padding:"2px 7px",letterSpacing:"0.06em"}}>{r.terme}</span>
-                          </td>
-                          <td style={{padding:"9px 14px",whiteSpace:"nowrap"}}>
-                            <span style={{fontFamily:mono,fontSize:9,color:C.muted,letterSpacing:"0.06em"}}>{r.matchIn}</span>
-                          </td>
-                          <td style={{padding:"9px 14px",fontWeight:600,maxWidth:220,color:C.text}}>
-                            <div style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.row[colTitre]||"—"}</div>
-                          </td>
-                          <td style={{padding:"9px 14px",color:C.m2,maxWidth:160}}>
-                            <div style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{r.row[colAyant]||"—"}</div>
-                          </td>
-                          {montantKey&&<td style={{padding:"9px 14px",color:C.text,whiteSpace:"nowrap",fontFamily:mono,fontSize:11}}>{r.row[montantKey]||"—"}</td>}
-                          {anyCat&&(
-                            <td style={{padding:"9px 14px",minWidth:280}}>
-                              {r.catMatches.length===0
-                                ? <span style={{fontFamily:mono,fontSize:9,color:C.muted}}>—</span>
-                                : <select value={selCat[r.id]||""} onChange={e=>pickCat(r.id,e.target.value)} style={{...sel,fontSize:11}}>
-                                    <option value="">— Sélectionner —</option>
-                                    {r.catMatches.map((m,i)=>(
-                                      <option key={i} value={`[${m.catalogue}] ${m.titre}`}>[{m.catalogue}] {m.titre} — {Math.round(m.score*100)}%</option>
-                                    ))}
-                                  </select>
-                              }
-                            </td>
-                          )}
-                          <td style={{padding:"9px 14px",whiteSpace:"nowrap"}}>
-                            <div style={{display:"flex",gap:4}}>
-                              <button onClick={()=>decide(r.id,"v")} style={{background:dec==="v"?C.gBg:"none",color:dec==="v"?C.green:C.muted,border:`1px solid ${dec==="v"?C.green:C.b2}`,borderRadius:2,padding:"5px 12px",fontFamily:mono,fontSize:9,letterSpacing:"0.1em",cursor:"pointer",textTransform:"uppercase",transition:"all .15s"}}>✓ Valider</button>
-                              <button onClick={()=>decide(r.id,"j")} style={{background:dec==="j"?C.rBg:"none",color:dec==="j"?C.red:C.muted,border:`1px solid ${dec==="j"?C.red:C.b2}`,borderRadius:2,padding:"5px 12px",fontFamily:mono,fontSize:9,letterSpacing:"0.1em",cursor:"pointer",textTransform:"uppercase",transition:"all .15s"}}>✕ Rejeter</button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Pagination bas */}
-              {pageCount>1&&(
-                <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:4,marginTop:12}}>
-                  <button onClick={()=>setPage(0)} disabled={safePage===0} style={{...ghostBtn,padding:"5px 10px",fontSize:9,opacity:safePage===0?.3:1}}>«</button>
-                  <button onClick={()=>setPage(p=>Math.max(0,p-1))} disabled={safePage===0} style={{...ghostBtn,padding:"5px 10px",fontSize:9,opacity:safePage===0?.3:1}}>‹</button>
-                  {Array.from({length:Math.min(7,pageCount)},(_,i)=>{
-                    let p;
-                    if(pageCount<=7) p=i;
-                    else if(safePage<4) p=i;
-                    else if(safePage>pageCount-5) p=pageCount-7+i;
-                    else p=safePage-3+i;
-                    return(
-                      <button key={p} onClick={()=>setPage(p)} style={{...ghostBtn,padding:"5px 12px",fontSize:9,background:p===safePage?C.accent:"none",color:p===safePage?C.bg:C.muted,border:`1px solid ${p===safePage?C.accent:C.b2}`}}>{p+1}</button>
-                    );
-                  })}
-                  <button onClick={()=>setPage(p=>Math.min(pageCount-1,p+1))} disabled={safePage>=pageCount-1} style={{...ghostBtn,padding:"5px 10px",fontSize:9,opacity:safePage>=pageCount-1?.3:1}}>›</button>
-                  <button onClick={()=>setPage(pageCount-1)} disabled={safePage>=pageCount-1} style={{...ghostBtn,padding:"5px 10px",fontSize:9,opacity:safePage>=pageCount-1?.3:1}}>»</button>
-                </div>
-              )}
-
-              <div style={{marginTop:14,display:"flex",alignItems:"center",gap:16}}>
-                <button onClick={reset} style={ghostBtn}>← Nouvelle session</button>
-                <span style={{fontFamily:mono,fontSize:9,color:C.muted,letterSpacing:"0.08em"}}>{terms.length} terme{terms.length!==1?"s":""} conservé{terms.length!==1?"s":""} pour la prochaine session</span>
-              </div>
-            </>
-          )}
-
+    const vs=dec==='v',js=dec==='j';
+    return`<tr style="background:${bg}">
+      <td class="td-term"><span class="term-badge">${esc(r.terme)}</span></td>
+      <td class="td-match">${esc(r.matchIn)}</td>
+      <td><div class="td-title" title="${esc((r.row[S.colTitre]||'').toString())}">${esc((r.row[S.colTitre]||'—').toString())}</div></td>
+      <td><div class="td-ayant" title="${esc((r.row[S.colAyant]||'').toString())}">${esc((r.row[S.colAyant]||'—').toString())}</div></td>
+      ${libCell}${amtCell}${catCell}
+      <td class="td-actions">
+        <div class="flex-row" style="gap:4px">
+          <button class="dec-btn" style="background:${vs?'var(--gbg)':'none'};color:${vs?'var(--green)':'var(--muted)'};border:1px solid ${vs?'var(--green)':'var(--b2)'}" onclick="decide('${r.id}','v')">✓ Valider</button>
+          <button class="dec-btn" style="background:${js?'var(--rbg)':'none'};color:${js?'var(--red)':'var(--muted)'};border:1px solid ${js?'var(--red)':'var(--b2)'}" onclick="decide('${r.id}','j')">✕ Rejeter</button>
         </div>
-      );
-    }
+      </td>
+    </tr>`;
+  }).join('');
+}
 
-    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
-  </script>
+function buildPagHTML(cur,total){
+  const p=n=>cur===n,prev=cur>0,next=cur<total-1;
+  let pages=[];
+  if(total<=7)pages=[...Array(total).keys()];
+  else if(cur<4)pages=[0,1,2,3,4,5,6];
+  else if(cur>total-5)pages=Array.from({length:7},(_,i)=>total-7+i);
+  else pages=[cur-3,cur-2,cur-1,cur,cur+1,cur+2,cur+3];
+  return`<button class="pag-btn btn-sm" onclick="setPage(0)" ${prev?'':'disabled'}>«</button>
+    <button class="pag-btn btn-sm" onclick="setPage(${cur-1})" ${prev?'':'disabled'}>‹</button>
+    ${pages.map(pg=>`<button class="pag-btn btn-sm${p(pg)?' cur':''}" onclick="setPage(${pg})">${pg+1}</button>`).join('')}
+    <button class="pag-btn btn-sm" onclick="setPage(${cur+1})" ${next?'':'disabled'}>›</button>
+    <button class="pag-btn btn-sm" onclick="setPage(${total-1})" ${next?'':'disabled'}>»</button>`;
+}
+function setPage(p){const f=getFiltered();const pc=Math.max(1,Math.ceil(f.length/PAGE_SIZE));S.page=Math.max(0,Math.min(p,pc-1));renderResults();window.scrollTo(0,0)}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// EXPORT EXCEL
+// ─────────────────────────────────────────────────────────────────────────────
+function exportXlsx(){
+  const rows=S.results.filter(r=>S.decisions[r.id]==='v').map(r=>({...r.row,'Terme trouvé':r.terme,'Oeuvre identifiée':S.selCat[r.id]||''}));
+  const ws=XLSX.utils.json_to_sheet(rows);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Validées');
+  XLSX.writeFile(wb,'ONID_validees.xlsx');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RESET
+// ─────────────────────────────────────────────────────────────────────────────
+function resetAll(){
+  S.onidData=[];S.onidFile='';S.normTitre=[];S.normAyant=[];
+  S.cats={blzante:[],rossinante:[],blz:[]};S.catFiles={blzante:'',rossinante:'',blz:''};
+  S.results=[];S.decisions={};S.selCat={};S.filter='all';S.page=0;
+  document.getElementById('onid-card').style.borderColor='';
+  document.getElementById('onid-info').classList.add('hidden');
+  document.getElementById('onid-btn-lbl').textContent='Charger';
+  ['blzante','rossinante','blz'].forEach(k=>{
+    document.getElementById('cat-cell-'+k).style.borderTopColor='transparent';
+    document.getElementById('cat-loaded-'+k).classList.add('hidden');
+    document.getElementById('cat-empty-'+k).classList.remove('hidden');
+    document.getElementById('cat-dot-'+k).style.opacity='.25';
+    document.getElementById('cat-nm-'+k).style.color='var(--muted)';
+  });
+  switchTab('upload');showStep(1);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// INIT
+// ─────────────────────────────────────────────────────────────────────────────
+S.terms        = lsGet(SK_T,[]);
+S.excludeTerms = lsGet(SK_E,[]);
+S.identified   = lsGet(SK_ID,[]);
+renderTerms();
+renderExcl();
+renderRecap();
+</script>
 </body>
 </html>
