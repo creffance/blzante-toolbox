@@ -135,6 +135,12 @@
     /* Récap table */
     .recap-tbl td{max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
+    /* Statut badges */
+    .statut-select{width:auto;min-width:180px;font-size:10px;padding:4px 8px;border-radius:2px;font-family:'Syne Mono',monospace;letter-spacing:.04em;cursor:pointer}
+    .statut-select.s0{background:var(--rbg);  color:var(--red);   border:1px solid var(--rborder)}  /* Non déposée → rouge */
+    .statut-select.s1{background:#1a1400;    color:#e8c547;      border:1px solid #4a3e10}            /* A réclamer → jaune */
+    .statut-select.s2{background:var(--gbg); color:var(--green); border:1px solid var(--gborder)}    /* Réclamation faite → vert */
+
     /* Misc */
     .dot{width:7px;height:7px;border-radius:50%;display:inline-block;flex-shrink:0}
     .empty{padding:48px;text-align:center;font-family:'Syne Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:.1em}
@@ -337,10 +343,10 @@
         <table class="recap-tbl">
           <thead>
             <tr>
-              <th>Date</th><th>Terme</th><th>Titre ONID</th><th>Ayant droit</th><th>LIB</th><th>Oeuvre identifiée</th><th></th>
+              <th>Date</th><th>Terme</th><th>Titre ONID</th><th>Ayant droit</th><th>LIB / Montant</th><th>Oeuvre identifiée</th><th>Statut</th><th></th>
             </tr>
           </thead>
-          <tbody id="recap-tbody"><tr><td colspan="7" class="empty">AUCUNE IDENTIFICATION ENREGISTRÉE</td></tr></tbody>
+          <tbody id="recap-tbody"><tr><td colspan="8" class="empty">AUCUNE IDENTIFICATION ENREGISTRÉE</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -614,69 +620,129 @@ async function importExclFile(file){
 // ─────────────────────────────────────────────────────────────────────────────
 // RÉCAPITULATIF IDENTIFICATIONS
 // ─────────────────────────────────────────────────────────────────────────────
+
+const STATUTS = [
+  {val:'A réclamer à la SACEM',       cls:'s1'},
+  {val:'Oeuvre non déposée',           cls:'s0'},
+  {val:'Réclamation faite à la SACEM', cls:'s2'},
+];
+const STATUT_DEFAULT = 'A réclamer à la SACEM';
+
+// Extrait un nombre depuis une chaîne comme "de 0 à 49,99 Euros" → 49.99
+// ou "de 100 à 499,99 Euros" → 499.99. Renvoie -1 si non parseable.
+function parseMontant(s){
+  if(!s)return-1;
+  // Cherche le dernier nombre avant "Euro" ou en fin de chaîne
+  const matches=s.replace(/,/g,'.').match(/[\d.]+/g);
+  if(!matches)return-1;
+  // Prend le plus grand nombre trouvé (la borne haute)
+  return Math.max(...matches.map(Number).filter(n=>!isNaN(n)));
+}
+
+function statutCls(v){
+  const s=STATUTS.find(x=>x.val===v);
+  return s?s.cls:'s1';
+}
+
 function renderRecap(){
   const n=S.identified.length;
   document.getElementById('rc').textContent=n;
   const tbody=document.getElementById('recap-tbody');
-  if(!n){tbody.innerHTML='<tr><td colspan="7" class="empty">AUCUNE IDENTIFICATION ENREGISTRÉE</td></tr>';return}
-  // Tri : date desc, puis terme, puis titre
+  if(!n){tbody.innerHTML='<tr><td colspan="8" class="empty">AUCUNE IDENTIFICATION ENREGISTRÉE</td></tr>';return}
+
+  // Tri :
+  // 1. "Réclamation faite à la SACEM" → tout en bas
+  // 2. Sinon : montant desc (plus grand en haut)
+  // 3. À égalité de montant : date desc
   const sorted=[...S.identified].sort((a,b)=>{
-    if(b.date!==a.date)return b.date.localeCompare(a.date);
-    if(a.terme!==b.terme)return a.terme.localeCompare(b.terme,'fr',{sensitivity:'base'});
-    return(a.titreOnid||'').localeCompare(b.titreOnid||'','fr',{sensitivity:'base'});
+    const aFait=a.statut==='Réclamation faite à la SACEM';
+    const bFait=b.statut==='Réclamation faite à la SACEM';
+    if(aFait!==bFait)return aFait?1:-1;          // réclamés → bas
+    const ma=parseMontant(a.lib),mb=parseMontant(b.lib);
+    if(mb!==ma)return mb-ma;                       // montant desc
+    return b.date.localeCompare(a.date);           // date desc
   });
-  tbody.innerHTML=sorted.map((row,i)=>`
-    <tr>
+
+  tbody.innerHTML=sorted.map((row)=>{
+    const uid=esc(row._uid||'');
+    const sc=statutCls(row.statut||STATUT_DEFAULT);
+    const opts=STATUTS.map(s=>`<option value="${esc(s.val)}"${(row.statut||STATUT_DEFAULT)===s.val?' selected':''}>${esc(s.val)}</option>`).join('');
+    const rowBg='';
+    return`<tr style="${rowBg}">
       <td style="font-family:'Syne Mono',monospace;font-size:10px;color:var(--muted);white-space:nowrap">${esc(row.date)}</td>
       <td><span class="term-badge">${esc(row.terme)}</span></td>
       <td class="td-title" title="${esc(row.titreOnid)}">${esc(row.titreOnid||'—')}</td>
       <td class="td-ayant" title="${esc(row.ayantDroit)}">${esc(row.ayantDroit||'—')}</td>
       <td class="td-lib">${esc(row.lib||'—')}</td>
       <td style="color:var(--accent);font-size:11px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(row.oeuvreIdentifiee)}">${esc(row.oeuvreIdentifiee||'—')}</td>
-      <td><button class="btn-icon" onclick="removeIdentified(${i})" title="Supprimer">✕</button></td>
-    </tr>`).join('');
+      <td style="white-space:nowrap">
+        <select class="statut-select ${sc}" onchange="changeStatut('${uid}',this.value,this)">${opts}</select>
+      </td>
+      <td><button class="btn-icon" onclick="removeIdentified('${uid}')" title="Supprimer cette entrée">✕</button></td>
+    </tr>`;
+  }).join('');
 }
-function removeIdentified(i){
-  // Find in original array by index from sorted array
-  const sorted=[...S.identified].sort((a,b)=>{
-    if(b.date!==a.date)return b.date.localeCompare(a.date);
-    if(a.terme!==b.terme)return a.terme.localeCompare(b.terme,'fr',{sensitivity:'base'});
-    return(a.titreOnid||'').localeCompare(b.titreOnid||'','fr',{sensitivity:'base'});
-  });
-  const target=sorted[i];
-  const idx=S.identified.findIndex(x=>x.date===target.date&&x.terme===target.terme&&x.titreOnid===target.titreOnid&&x.oeuvreIdentifiee===target.oeuvreIdentifiee);
+
+function changeStatut(uid,val,selectEl){
+  const idx=S.identified.findIndex(x=>x._uid===uid);
+  if(idx<0)return;
+  S.identified[idx].statut=val;
+  lsSet(SK_ID,S.identified);
+  // Met à jour la classe CSS du select sans re-render complet
+  selectEl.className='statut-select '+statutCls(val);
+  // Re-render pour repositionner la ligne si elle passe en "Réclamation faite"
+  renderRecap();
+}
+
+function removeIdentified(uid){
+  if(!confirm('Supprimer cette entrée du récapitulatif ?'))return;
+  const idx=S.identified.findIndex(x=>x._uid===uid);
   if(idx>=0){S.identified.splice(idx,1);lsSet(SK_ID,S.identified);renderRecap()}
 }
+
 function clearRecap(){if(!confirm('Effacer tout le récapitulatif ?'))return;S.identified=[];lsSet(SK_ID,S.identified);renderRecap()}
+
 function exportRecap(){
   if(!S.identified.length){showErr('Aucune identification à exporter.');return}
-  const rows=S.identified.map(r=>({Date:r.date,Terme:r.terme,'Titre ONID':r.titreOnid,'Ayant droit':r.ayantDroit,LIB:r.lib,'Oeuvre identifiée':r.oeuvreIdentifiee}));
+  const rows=S.identified.map(r=>({
+    Date:r.date,
+    Terme:r.terme,
+    'Titre ONID':r.titreOnid,
+    'Ayant droit':r.ayantDroit,
+    'LIB / Montant':r.lib,
+    'Oeuvre identifiée':r.oeuvreIdentifiee,
+    Statut:r.statut||STATUT_DEFAULT,
+  }));
   const ws=XLSX.utils.json_to_sheet(rows);
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,'Identifiées');
   XLSX.writeFile(wb,'ONID_identifiees_recap.xlsx');
 }
+
 function saveToRecap(){
   const toSave=S.results.filter(r=>S.decisions[r.id]==='v');
   if(!toSave.length)return;
   const d=today();
+  let added=0;
   toSave.forEach(r=>{
-    // Évite les doublons (même terme + même titre + même ayant droit)
     const exists=S.identified.some(x=>x.terme===r.terme&&norm(x.titreOnid)===norm((r.row[S.colTitre]||'').toString())&&norm(x.ayantDroit)===norm((r.row[S.colAyant]||'').toString()));
     if(!exists){
       S.identified.push({
+        _uid: d+'_'+Math.random().toString(36).slice(2,8),
         date:d,
         terme:r.terme,
         titreOnid:(r.row[S.colTitre]||'').toString(),
         ayantDroit:(r.row[S.colAyant]||'').toString(),
         lib:(r.row[S.colLib]||'').toString(),
         oeuvreIdentifiee:S.selCat[r.id]||'',
+        statut:STATUT_DEFAULT,
       });
+      added++;
     }
   });
   lsSet(SK_ID,S.identified);
   renderRecap();
-  showOk('✓ '+toSave.length+' identification(s) sauvegardée(s) dans le récapitulatif.');
+  showOk('✓ '+added+' identification(s) sauvegardée(s) dans le récapitulatif.'+(added<toSave.length?' ('+(toSave.length-added)+' doublon(s) ignoré(s))':''));
   document.getElementById('btn-save-recap').disabled=true;
 }
 
