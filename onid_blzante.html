@@ -134,6 +134,7 @@
 
     /* Récap table */
     .recap-tbl td{max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .recap-tbl td.td-free{max-width:none;overflow:visible;white-space:nowrap}
 
     /* Statut badges */
     .statut-select{width:auto;min-width:180px;font-size:10px;padding:4px 8px;border-radius:2px;font-family:'Syne Mono',monospace;letter-spacing:.04em;cursor:pointer}
@@ -343,10 +344,10 @@
         <table class="recap-tbl">
           <thead>
             <tr>
-              <th>Date</th><th>Terme</th><th>Titre ONID</th><th>Ayant droit</th><th>LIB / Montant</th><th>Oeuvre identifiée</th><th>Statut</th><th></th>
+              <th>Date</th><th>Terme</th><th>Titre ONID</th><th>Ayant droit</th><th>LIB / Montant</th><th>Oeuvre identifiée</th><th>Code oeuvre</th><th>Statut</th><th></th>
             </tr>
           </thead>
-          <tbody id="recap-tbody"><tr><td colspan="8" class="empty">AUCUNE IDENTIFICATION ENREGISTRÉE</td></tr></tbody>
+          <tbody id="recap-tbody"><tr><td colspan="9" class="empty">AUCUNE IDENTIFICATION ENREGISTRÉE</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -648,7 +649,7 @@ function renderRecap(){
   const n=S.identified.length;
   document.getElementById('rc').textContent=n;
   const tbody=document.getElementById('recap-tbody');
-  if(!n){tbody.innerHTML='<tr><td colspan="8" class="empty">AUCUNE IDENTIFICATION ENREGISTRÉE</td></tr>';return}
+  if(!n){tbody.innerHTML='<tr><td colspan="9" class="empty">AUCUNE IDENTIFICATION ENREGISTRÉE</td></tr>';return}
 
   // Tri :
   // 1. "Réclamation faite à la SACEM" → tout en bas
@@ -675,15 +676,29 @@ function renderRecap(){
       <td class="td-ayant" title="${esc(row.ayantDroit)}">${esc(row.ayantDroit||'—')}</td>
       <td class="td-lib">${esc(row.lib||'—')}</td>
       <td style="color:var(--accent);font-size:11px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(row.oeuvreIdentifiee)}">${esc(row.oeuvreIdentifiee||'—')}</td>
-      <td style="white-space:nowrap">
+      <td class="td-free">
+        <input type="text" value="${esc(row.codeOeuvre||'')}"
+          placeholder="ISWC, ref…"
+          style="width:120px;padding:4px 8px;font-size:11px;font-family:'Syne Mono',monospace;background:var(--s2);border:1px solid var(--b2);color:var(--text);border-radius:2px;outline:none"
+          onchange="changeCode('${uid}',this.value)"
+          onfocus="this.style.borderColor='var(--accent)'"
+          onblur="this.style.borderColor='var(--b2)'"
+        >
+      </td>
+      <td class="td-free">
         <select class="statut-select ${sc}" onchange="changeStatut('${uid}',this.value,this)">${opts}</select>
       </td>
-      <td><button class="btn-icon" onclick="removeIdentified('${uid}')" title="Supprimer cette entrée">✕</button></td>
+      <td class="td-free"><button class="btn-icon" onclick="removeIdentified('${uid}')" title="Supprimer cette entrée">✕</button></td>
     </tr>`;
   }).join('');
 }
 
-function changeStatut(uid,val,selectEl){
+function changeCode(uid,val){
+  const idx=S.identified.findIndex(x=>x._uid===uid);
+  if(idx<0)return;
+  S.identified[idx].codeOeuvre=val.trim();
+  lsSet(SK_ID,S.identified);
+}
   const idx=S.identified.findIndex(x=>x._uid===uid);
   if(idx<0)return;
   S.identified[idx].statut=val;
@@ -711,6 +726,7 @@ function exportRecap(){
     'Ayant droit':r.ayantDroit,
     'LIB / Montant':r.lib,
     'Oeuvre identifiée':r.oeuvreIdentifiee,
+    'Code oeuvre':r.codeOeuvre||'',
     Statut:r.statut||STATUT_DEFAULT,
   }));
   const ws=XLSX.utils.json_to_sheet(rows);
@@ -735,6 +751,7 @@ function saveToRecap(){
         ayantDroit:(r.row[S.colAyant]||'').toString(),
         lib:(r.row[S.colLib]||'').toString(),
         oeuvreIdentifiee:S.selCat[r.id]||'',
+        codeOeuvre:'',
         statut:STATUT_DEFAULT,
       });
       added++;
@@ -1086,7 +1103,12 @@ function resetAll(){
 // ─────────────────────────────────────────────────────────────────────────────
 S.terms        = lsGet(SK_T,[]);
 S.excludeTerms = lsGet(SK_E,[]);
-S.identified   = lsGet(SK_ID,[]);
+// Migration : ajoute _uid aux entrées qui n'en ont pas
+S.identified = lsGet(SK_ID,[]).map(r=>{
+  if(!r._uid) r._uid = Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);
+  return r;
+});
+lsSet(SK_ID, S.identified);
 renderTerms();
 renderExcl();
 renderRecap();
