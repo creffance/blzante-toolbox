@@ -276,6 +276,16 @@
         <button class="btn-g" onclick="switchTab('termes')">Gérer les termes →</button>
         <button class="btn-p" onclick="goStep2()">Configurer la recherche →</button>
       </div>
+
+      <!-- Sauvegarde / Restauration globale -->
+      <div style="margin-top:8px;border-top:1px solid var(--b);padding-top:16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span class="hint" style="flex:1">Sauvegarde complète (termes, exclusions, récapitulatif) :</span>
+        <button class="btn-g btn-sm" onclick="exportConfig()">↓ Exporter la config</button>
+        <label class="file-btn">
+          <span class="btn-g btn-sm">↑ Importer la config</span>
+          <input type="file" accept=".json" onchange="importConfig(this.files[0])">
+        </label>
+      </div>
     </div>
 
     <!-- ── Termes de recherche ── -->
@@ -699,13 +709,12 @@ function changeCode(uid,val){
   S.identified[idx].codeOeuvre=val.trim();
   lsSet(SK_ID,S.identified);
 }
+function changeStatut(uid,val,selectEl){
   const idx=S.identified.findIndex(x=>x._uid===uid);
   if(idx<0)return;
   S.identified[idx].statut=val;
   lsSet(SK_ID,S.identified);
-  // Met à jour la classe CSS du select sans re-render complet
   selectEl.className='statut-select '+statutCls(val);
-  // Re-render pour repositionner la ligne si elle passe en "Réclamation faite"
   renderRecap();
 }
 
@@ -1096,6 +1105,55 @@ function resetAll(){
     document.getElementById('cat-nm-'+k).style.color='var(--muted)';
   });
   switchTab('upload');showStep(1);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// EXPORT / IMPORT CONFIG GLOBALE
+// ─────────────────────────────────────────────────────────────────────────────
+function exportConfig(){
+  const config={
+    version:1,
+    exported:today(),
+    terms:S.terms,
+    excludeTerms:S.excludeTerms,
+    identified:S.identified,
+  };
+  const blob=new Blob([JSON.stringify(config,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download='onid_blzante_config_'+today()+'.json';
+  a.click();URL.revokeObjectURL(url);
+}
+
+async function importConfig(file){
+  if(!file)return;
+  try{
+    const text=await file.text();
+    const config=JSON.parse(text);
+    if(!config.version||!Array.isArray(config.terms)){
+      showErr('Fichier de config invalide.');return;
+    }
+    if(!confirm(
+      'Importer cette config ?\n\n'+
+      '• '+config.terms.length+' terme(s) de recherche\n'+
+      '• '+(config.excludeTerms||[]).length+' exclusion(s)\n'+
+      '• '+(config.identified||[]).length+' oeuvre(s) identifiée(s)\n\n'+
+      'Les données actuelles seront remplacées.'
+    ))return;
+    // Migration _uid si besoin
+    const identified=(config.identified||[]).map(r=>{
+      if(!r._uid)r._uid=Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);
+      return r;
+    });
+    S.terms=config.terms||[];
+    S.excludeTerms=config.excludeTerms||[];
+    S.identified=identified;
+    lsSet(SK_T,S.terms);
+    lsSet(SK_E,S.excludeTerms);
+    lsSet(SK_ID,S.identified);
+    renderTerms();renderExcl();renderRecap();
+    showOk('✓ Config importée : '+S.terms.length+' terme(s), '+S.excludeTerms.length+' exclusion(s), '+S.identified.length+' oeuvre(s) identifiée(s).');
+  }catch(e){showErr('Erreur import config : '+e.message)}
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
