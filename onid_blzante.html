@@ -1239,8 +1239,20 @@ async function syncPull(){
   try{
     const res = await fetch(DB + DB_KEY);
     const data = await res.json();
-    if(data) applyRemoteData(data);
-    setSyncStatus('ok');
+    if(data){
+      // Firebase a des données → on les applique
+      applyRemoteData(data);
+      setSyncStatus('ok');
+    } else {
+      // Firebase est vide → on pousse les données locales existantes
+      const hasLocal = S.terms.length || S.excludeTerms.length || S.identified.length;
+      if(hasLocal){
+        await syncPush();
+        showOk('✓ Données locales migrées vers Firebase ('+S.terms.length+' termes, '+S.excludeTerms.length+' exclusions, '+S.identified.length+' identifications).');
+      } else {
+        setSyncStatus('idle');
+      }
+    }
   }catch(e){ setSyncStatus('error','Erreur chargement : '+e.message); }
 }
 
