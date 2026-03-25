@@ -186,6 +186,7 @@
       <button class="tab-btn"        onclick="switchTab('termes')" id="tab-lbl-termes">Termes (<span id="tc">0</span>)</button>
       <button class="tab-btn"        onclick="switchTab('exclusions')" id="tab-lbl-excl">Exclusions (<span id="ec">0</span>)</button>
       <button class="tab-btn"        onclick="switchTab('recap')" id="tab-lbl-recap">Récapitulatif (<span id="rc">0</span>)</button>
+      <button class="tab-btn"        onclick="switchTab('sync')" id="tab-lbl-sync">🔄 Sync</button>
     </div>
 
     <!-- ── Fichiers ── -->
@@ -360,8 +361,32 @@
           <tbody id="recap-tbody"><tr><td colspan="9" class="empty">AUCUNE IDENTIFICATION ENREGISTRÉE</td></tr></tbody>
         </table>
       </div>
+    </div><!-- tab-recap -->
+
+    <!-- ── Synchronisation ── -->
+    <div id="tab-sync" class="card hidden">
+      <span class="slbl">Synchronisation entre collègues</span>
+      <div class="hint" style="margin-bottom:20px;line-height:2">
+        Les données (termes, exclusions, récapitulatif) sont synchronisées automatiquement via <strong style="color:var(--text)">Firebase</strong> — la même base que le Planning et les Fiches Artistes.<br>
+        Toutes les personnes qui ouvrent cet outil partagent les mêmes données en temps réel.<br>
+        <strong style="color:var(--accent)">Aucune configuration nécessaire.</strong>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">
+        <button class="btn-g btn-sm" onclick="syncPull()">↓ Recharger depuis Firebase</button>
+        <button class="btn-g btn-sm" onclick="syncPush()">↑ Pousser manuellement</button>
+      </div>
+      <div id="sync-status" style="font-family:'Syne Mono',monospace;font-size:10px;letter-spacing:.06em;padding:10px 14px;border-radius:2px;border:1px solid var(--b);background:var(--s2);color:var(--muted)">
+        Connexion en cours…
+      </div>
     </div>
+
   </div><!-- #view-1 -->
+
+  <!-- Barre de statut sync (visible sur toutes les étapes) -->
+  <div id="sync-bar" class="hidden" style="position:fixed;bottom:16px;right:20px;z-index:100;background:var(--s);border:1px solid var(--b2);border-radius:3px;padding:6px 14px;font-family:'Syne Mono',monospace;font-size:10px;letter-spacing:.06em;display:flex;align-items:center;gap:8px;box-shadow:0 4px 20px rgba(0,0,0,.4)">
+    <span id="sync-bar-dot" style="width:6px;height:6px;border-radius:50%;background:var(--muted);flex-shrink:0"></span>
+    <span id="sync-bar-msg">—</span>
+  </div>
 
   <!-- ══════════════ ÉTAPE 2 ══════════════ -->
   <div id="view-2" class="hidden flex-col" style="gap:14px">
@@ -542,7 +567,7 @@ function showErr(m){const e=document.getElementById('alert-err');e.textContent='
 function showOk(m){const o=document.getElementById('alert-ok');o.textContent=m;o.classList.remove('hidden');document.getElementById('alert-err').classList.add('hidden')}
 function clearAlerts(){document.getElementById('alert-err').classList.add('hidden');document.getElementById('alert-ok').classList.add('hidden')}
 
-const TABS=['upload','termes','exclusions','recap'];
+const TABS=['upload','termes','exclusions','recap','sync'];
 function switchTab(t){
   TABS.forEach(k=>{
     const el=document.getElementById('tab-'+k);if(el)el.classList.add('hidden');
@@ -579,10 +604,10 @@ function addTerm(){
   const input=document.getElementById('new-term-input'),t=input.value.trim();
   if(!t)return;
   if(S.terms.some(x=>norm(x)===norm(t))){showErr('Terme déjà présent.');return}
-  S.terms.push(t);lsSet(SK_T,S.terms);input.value='';renderTerms();clearAlerts();
+  S.terms.push(t);lsSet(SK_T,S.terms);input.value='';renderTerms();clearAlerts();autoSync();
 }
-function removeTerm(i){S.terms.splice(i,1);lsSet(SK_T,S.terms);renderTerms()}
-function clearTerms(){if(!confirm('Vider tous les termes de recherche ?'))return;S.terms=[];lsSet(SK_T,S.terms);renderTerms()}
+function removeTerm(i){S.terms.splice(i,1);lsSet(SK_T,S.terms);renderTerms();autoSync()}
+function clearTerms(){if(!confirm('Vider tous les termes de recherche ?'))return;S.terms=[];lsSet(SK_T,S.terms);renderTerms();autoSync()}
 async function importTermsFile(file){
   try{
     const rows=await readExcel(file);if(!rows.length){showErr('Fichier vide.');return}
@@ -592,6 +617,7 @@ async function importTermsFile(file){
     incoming.forEach(t=>{if(!S.terms.some(x=>norm(x)===norm(t))){S.terms.push(t);added++}});
     lsSet(SK_T,S.terms);renderTerms();
     showOk('✓ '+added+' terme(s) importé(s), '+(incoming.length-added)+' doublon(s) ignoré(s).');
+    autoSync();
   }catch(e){showErr('Erreur import : '+e.message)}
 }
 
@@ -612,10 +638,10 @@ function addExcl(){
   const input=document.getElementById('new-excl-input'),t=input.value.trim();
   if(!t)return;
   if(S.excludeTerms.some(x=>norm(x)===norm(t))){showErr('Terme d\'exclusion déjà présent.');return}
-  S.excludeTerms.push(t);lsSet(SK_E,S.excludeTerms);input.value='';renderExcl();clearAlerts();
+  S.excludeTerms.push(t);lsSet(SK_E,S.excludeTerms);input.value='';renderExcl();clearAlerts();autoSync();
 }
-function removeExcl(i){S.excludeTerms.splice(i,1);lsSet(SK_E,S.excludeTerms);renderExcl()}
-function clearExcl(){if(!confirm('Vider toutes les exclusions ?'))return;S.excludeTerms=[];lsSet(SK_E,S.excludeTerms);renderExcl()}
+function removeExcl(i){S.excludeTerms.splice(i,1);lsSet(SK_E,S.excludeTerms);renderExcl();autoSync()}
+function clearExcl(){if(!confirm('Vider toutes les exclusions ?'))return;S.excludeTerms=[];lsSet(SK_E,S.excludeTerms);renderExcl();autoSync()}
 async function importExclFile(file){
   try{
     const rows=await readExcel(file);if(!rows.length){showErr('Fichier vide.');return}
@@ -625,6 +651,7 @@ async function importExclFile(file){
     incoming.forEach(t=>{if(!S.excludeTerms.some(x=>norm(x)===norm(t))){S.excludeTerms.push(t);added++}});
     lsSet(SK_E,S.excludeTerms);renderExcl();
     showOk('✓ '+added+' exclusion(s) importée(s).');
+    autoSync();
   }catch(e){showErr('Erreur import : '+e.message)}
 }
 
@@ -708,6 +735,7 @@ function changeCode(uid,val){
   if(idx<0)return;
   S.identified[idx].codeOeuvre=val.trim();
   lsSet(SK_ID,S.identified);
+  autoSync();
 }
 function changeStatut(uid,val,selectEl){
   const idx=S.identified.findIndex(x=>x._uid===uid);
@@ -716,15 +744,16 @@ function changeStatut(uid,val,selectEl){
   lsSet(SK_ID,S.identified);
   selectEl.className='statut-select '+statutCls(val);
   renderRecap();
+  autoSync();
 }
 
 function removeIdentified(uid){
   if(!confirm('Supprimer cette entrée du récapitulatif ?'))return;
   const idx=S.identified.findIndex(x=>x._uid===uid);
-  if(idx>=0){S.identified.splice(idx,1);lsSet(SK_ID,S.identified);renderRecap()}
+  if(idx>=0){S.identified.splice(idx,1);lsSet(SK_ID,S.identified);renderRecap();autoSync()}
 }
 
-function clearRecap(){if(!confirm('Effacer tout le récapitulatif ?'))return;S.identified=[];lsSet(SK_ID,S.identified);renderRecap()}
+function clearRecap(){if(!confirm('Effacer tout le récapitulatif ?'))return;S.identified=[];lsSet(SK_ID,S.identified);renderRecap();autoSync()}
 
 function exportRecap(){
   if(!S.identified.length){showErr('Aucune identification à exporter.');return}
@@ -770,6 +799,7 @@ function saveToRecap(){
   renderRecap();
   showOk('✓ '+added+' identification(s) sauvegardée(s) dans le récapitulatif.'+(added<toSave.length?' ('+(toSave.length-added)+' doublon(s) ignoré(s))':''));
   document.getElementById('btn-save-recap').disabled=true;
+  autoSync();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1157,12 +1187,88 @@ async function importConfig(file){
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// SYNCHRONISATION FIREBASE REALTIME DATABASE
+// (même pattern que release_planning.html)
+// ─────────────────────────────────────────────────────────────────────────────
+const DB = 'https://blzante-toolbox-default-rtdb.europe-west1.firebasedatabase.app';
+const DB_KEY = '/onid_blzante.json';
+
+let syncDebounceTimer = null;
+
+function setSyncStatus(state, msg){
+  const bar    = document.getElementById('sync-bar');
+  const dot    = document.getElementById('sync-bar-dot');
+  const barMsg = document.getElementById('sync-bar-msg');
+  const statusEl = document.getElementById('sync-status');
+
+  const states = {
+    syncing: {color:'#f59e0b', text:'Synchronisation…',           barShow:true},
+    ok:      {color:'var(--green)', text:'Synchronisé — '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}), barShow:true},
+    error:   {color:'var(--red)',   text:msg||'Erreur de sync',    barShow:true},
+    idle:    {color:'var(--green)', text:'Firebase connecté',      barShow:false},
+  };
+  const st = states[state] || states.idle;
+
+  if(statusEl){ statusEl.textContent = st.text; statusEl.style.color = st.color; }
+  if(dot)    dot.style.background = st.color;
+  if(barMsg) barMsg.textContent   = st.text;
+  if(bar)    bar.classList.toggle('hidden', !st.barShow);
+  if(state==='ok') setTimeout(()=>{ if(bar)bar.classList.add('hidden'); }, 3000);
+}
+
+function syncPayload(){
+  return { terms: S.terms, excludeTerms: S.excludeTerms, identified: S.identified };
+}
+
+function applyRemoteData(data){
+  if(!data) return;
+  S.terms        = data.terms        || [];
+  S.excludeTerms = data.excludeTerms || [];
+  S.identified   = (data.identified  || []).map(r=>{
+    if(!r._uid) r._uid = Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);
+    return r;
+  });
+  lsSet(SK_T,  S.terms);
+  lsSet(SK_E,  S.excludeTerms);
+  lsSet(SK_ID, S.identified);
+  renderTerms(); renderExcl(); renderRecap();
+}
+
+async function syncPull(){
+  setSyncStatus('syncing');
+  try{
+    const res = await fetch(DB + DB_KEY);
+    const data = await res.json();
+    if(data) applyRemoteData(data);
+    setSyncStatus('ok');
+  }catch(e){ setSyncStatus('error','Erreur chargement : '+e.message); }
+}
+
+async function syncPush(){
+  setSyncStatus('syncing');
+  try{
+    await fetch(DB + DB_KEY, {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(syncPayload()),
+    });
+    setSyncStatus('ok');
+  }catch(e){ setSyncStatus('error','Erreur sauvegarde : '+e.message); }
+}
+
+// Pousse automatiquement après chaque modification (debounce 800ms)
+function autoSync(){
+  clearTimeout(syncDebounceTimer);
+  setSyncStatus('syncing');
+  syncDebounceTimer = setTimeout(()=>syncPush(), 800);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // INIT
 // ─────────────────────────────────────────────────────────────────────────────
 S.terms        = lsGet(SK_T,[]);
 S.excludeTerms = lsGet(SK_E,[]);
-// Migration : ajoute _uid aux entrées qui n'en ont pas
-S.identified = lsGet(SK_ID,[]).map(r=>{
+S.identified   = lsGet(SK_ID,[]).map(r=>{
   if(!r._uid) r._uid = Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);
   return r;
 });
@@ -1170,6 +1276,9 @@ lsSet(SK_ID, S.identified);
 renderTerms();
 renderExcl();
 renderRecap();
+
+// Auto-pull Firebase au chargement
+syncPull();
 </script>
 </body>
 </html>
