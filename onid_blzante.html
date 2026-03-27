@@ -141,6 +141,7 @@
     .statut-select.s0{background:var(--rbg);  color:var(--red);   border:1px solid var(--rborder)}  /* Non déposée → rouge */
     .statut-select.s1{background:#1a1400;    color:#e8c547;      border:1px solid #4a3e10}            /* A réclamer → jaune */
     .statut-select.s2{background:var(--gbg); color:var(--green); border:1px solid var(--gborder)}    /* Réclamation faite → vert */
+    .statut-select.s3{background:#0e1420;    color:#60a5fa;      border:1px solid #1a2a4a}            /* Hors catalogue → bleu */
 
     /* Misc */
     .dot{width:7px;height:7px;border-radius:50%;display:inline-block;flex-shrink:0}
@@ -662,6 +663,7 @@ async function importExclFile(file){
 const STATUTS = [
   {val:'A réclamer à la SACEM',       cls:'s1'},
   {val:'Oeuvre non déposée',           cls:'s0'},
+  {val:'Hors catalogue',               cls:'s3'},
   {val:'Réclamation faite à la SACEM', cls:'s2'},
 ];
 const STATUT_DEFAULT = 'A réclamer à la SACEM';
