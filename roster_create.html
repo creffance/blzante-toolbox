@@ -364,7 +364,7 @@ function addCert(type, level, artist, project, artwork) {
   certCount++;
   const div = document.createElement('div'); div.className = 'cert-item'; div.dataset.cid = certCount;
   div.innerHTML = `<select class="form-select" data-f="type"><option value="">Type</option><option value="Single" ${type==='Single'?'selected':''}>Single</option><option value="Album" ${type==='Album'?'selected':''}>Album</option></select>` +
-    `<select class="form-select" data-f="level"><option value="">Certif</option><option value="Or" ${level==='Or'?'selected':''}>Or</option><option value="Platine" ${level==='Platine'?'selected':''}>Platine</option><option value="Diamant" ${level==='Diamant'?'selected':''}>Diamant</option></select>` +
+    `<select class="form-select" data-f="level"><option value="">Certif</option><option value="Or" ${level==='Or'?'selected':''}>Or</option><option value="Platine" ${level==='Platine'?'selected':''}>Platine</option><option value="Double platine" ${level==='Double platine'?'selected':''}>Double platine</option><option value="Triple platine" ${level==='Triple platine'?'selected':''}>Triple platine</option><option value="Diamant" ${level==='Diamant'?'selected':''}>Diamant</option></select>` +
     `<input type="text" class="form-input" placeholder="Artiste" value="${artist||''}" data-f="artist" />` +
     `<input type="text" class="form-input" placeholder="Projet" value="${project||''}" data-f="project" />` +
     `<input type="file" accept="image/*" style="display:none" data-f="file" />` +
