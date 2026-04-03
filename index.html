@@ -242,13 +242,14 @@ nav { animation: fadeUp 0.4s ease both; }
 }
 </style>
 </head>
-<body>
+<body style="visibility:hidden">
 <div class="wrap">
 
   <nav>
     <a class="nav-logo" href="index.html"><img src="data:image/png;base64,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" alt="BLZante" class="nav-logo-img" /><span>BLZante</span></a>
     <span class="nav-label">Toolbox</span>
-  </nav>
+  <button onclick="firebase.auth().signOut().then(()=>location.href='login.html')" style="background:none;border:1px solid var(--border);color:var(--muted);font-family:'Syne Mono',monospace;font-size:0.55rem;padding:4px 10px;cursor:pointer;letter-spacing:0.08em;text-transform:uppercase;transition:all 0.15s" onmouseover="this.style.borderColor='#555';this.style.color='#fff'" onmouseout="this.style.borderColor='';this.style.color=''">Déconnexion</button>
+</nav>
 
   <main>
     <div class="section-label">Roster</div>
@@ -310,13 +311,6 @@ nav { animation: fadeUp 0.4s ease both; }
         </div>
         <div class="tool-name">SACEM Dépôt<br>to ZIP Filezilla</div>
       </a>
-
-      <a class="tool-card" href="onid_blzante.html">
-        <div class="card-top">
-          <span class="tool-arrow">↗</span>
-        </div>
-        <div class="tool-name">ONID BLZante</div>
-      </a>
     </div>
 
   </main>
@@ -327,5 +321,12 @@ nav { animation: fadeUp 0.4s ease both; }
   </footer>
 
 </div>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script>
+firebase.initializeApp({apiKey:"AIzaSyBuwwcRdlxLf7-ZdmUAi0ajB5uL3y-m800",authDomain:"blzante-toolbox.firebaseapp.com",databaseURL:"https://blzante-toolbox-default-rtdb.europe-west1.firebasedatabase.app",projectId:"blzante-toolbox",storageBucket:"blzante-toolbox.firebasestorage.app",messagingSenderId:"599088931653",appId:"1:599088931653:web:34f936e8302e894afb942c"});
+firebase.auth().onAuthStateChanged(u=>{if(!u)window.location.href='login.html';else document.body.style.visibility='visible';});
+</script>
 </body>
 </html>
