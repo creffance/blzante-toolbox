@@ -576,6 +576,7 @@ nav {
     rgba(0,0,0,0.75) 100%
   );
   z-index: 1;
+  pointer-events: none;
 }
 .pv-logo {
   position: absolute;
@@ -584,12 +585,13 @@ nav {
   width: 11cqi;
   height: auto;
   z-index: 4;
+  pointer-events: none;
 }
 
 /* Artwork container — below the title/artist block */
 .pv-artwork-wrap {
   position: absolute;
-  top: 58%;
+  top: 52%;
   left: 50%;
   transform: translate(-50%, -50%);
   width: 56cqi;
@@ -600,7 +602,7 @@ nav {
 }
 .preview-frame[data-format="9:16"] .pv-artwork-wrap {
   width: 58cqi;
-  top: 54%;
+  top: 50%;
 }
 .pv-artwork {
   width: 100%;
@@ -628,15 +630,16 @@ nav {
 /* Info TOP block (above the artwork): type → artist → title */
 .pv-info-top {
   position: absolute;
-  top: 13%;
+  top: 20%;
   left: 5cqi;
   right: 5cqi;
   z-index: 3;
   color: #fff;
   text-align: center;
   font-family: 'Syne', sans-serif;
+  pointer-events: none;
 }
-.preview-frame[data-format="9:16"] .pv-info-top { top: 12%; }
+.preview-frame[data-format="9:16"] .pv-info-top { top: 24%; }
 
 .pv-info-type {
   font-size: 2.2cqi;
@@ -672,14 +675,16 @@ nav {
 /* Credits BOTTOM block: label line + names line */
 .pv-credits-block {
   position: absolute;
-  bottom: 6cqi;
+  bottom: 18%;
   left: 5cqi;
   right: 5cqi;
   z-index: 3;
   color: #fff;
   text-align: center;
   font-family: 'Syne', sans-serif;
+  pointer-events: none;
 }
+.preview-frame[data-format="9:16"] .pv-credits-block { bottom: 22%; }
 .pv-credits-label {
   font-family: 'Syne Mono', monospace;
   font-size: 2.2cqi;
@@ -831,10 +836,10 @@ nav {
         <div class="section-label">Médias</div>
 
         <div class="form-group">
-          <label class="form-label">Image de fond</label>
+          <label class="form-label">Image ou vidéo de fond</label>
           <label class="file-upload" id="bgUploadLabel">
-            <span id="bgUploadText">📷 &nbsp;Glisser une image ici ou cliquer pour choisir</span>
-            <input type="file" id="bgUpload" accept="image/*" />
+            <span id="bgUploadText">📷 &nbsp;Glisser une image ou vidéo ici, ou cliquer</span>
+            <input type="file" id="bgUpload" accept="image/*,video/*" />
           </label>
           <div class="media-controls" id="bgControls">
             <span class="media-controls-label">Zoom</span>
@@ -842,7 +847,7 @@ nav {
             <span class="zoom-value" id="bgZoomVal">100%</span>
             <button type="button" class="media-delete-btn" id="bgDelete">× Supprimer</button>
           </div>
-          <div class="file-hint">JPG / PNG — format portrait de préférence. Le support vidéo arrive en v2.</div>
+          <div class="file-hint">Image JPG/PNG ou vidéo MP4/WebM. Cliquez et glissez sur le preview pour repositionner.</div>
         </div>
 
         <div class="form-group">
@@ -872,8 +877,9 @@ nav {
           <div class="preview-dims" id="previewDims">1080 × 1350</div>
         </div>
         <div class="preview-frame" id="previewFrame" data-format="4:5">
-          <div class="pv-bg-placeholder" id="bgPlaceholder">Image de fond</div>
+          <div class="pv-bg-placeholder" id="bgPlaceholder">Image / vidéo de fond</div>
           <img class="pv-bg" id="pvBg" style="display:none" />
+          <video class="pv-bg" id="pvBgVideo" style="display:none" muted loop playsinline autoplay></video>
           <div class="pv-overlay"></div>
           <img class="pv-logo" id="pvLogo" src="blzante_spiral_white.png" alt="" />
           <div class="pv-info-top">
@@ -946,6 +952,7 @@ const S = {
   relation: 'avec',  // avec | par
   songwriters: [],
   bgImageSrc: null,
+  bgType: 'image',         // 'image' | 'video'
   artworkSrc: null,
   bgZoom: 1,
   artZoom: 1,
@@ -1091,12 +1098,36 @@ function readFileAsDataURL(file) {
 document.getElementById('bgUpload').addEventListener('change', async (e) => {
   const file = e.target.files[0];
   if (!file) return;
-  const dataUrl = await readFileAsDataURL(file);
-  S.bgImageSrc = dataUrl;
+
+  // Revoke previous blob URL if any (to free memory)
+  if (S.bgImageSrc && S.bgImageSrc.startsWith('blob:')) {
+    URL.revokeObjectURL(S.bgImageSrc);
+  }
+
+  const isVideo = file.type.startsWith('video/');
+  const url = URL.createObjectURL(file);
+  S.bgImageSrc = url;
+  S.bgType = isVideo ? 'video' : 'image';
   S.bgX = 0; S.bgY = 0; S.bgZoom = 1;
-  const img = document.getElementById('pvBg');
-  img.src = dataUrl;
-  img.style.display = 'block';
+
+  const imgEl = document.getElementById('pvBg');
+  const videoEl = document.getElementById('pvBgVideo');
+
+  if (isVideo) {
+    imgEl.style.display = 'none';
+    imgEl.removeAttribute('src');
+    videoEl.src = url;
+    videoEl.style.display = 'block';
+    videoEl.load();
+    videoEl.play().catch(() => {});
+  } else {
+    videoEl.style.display = 'none';
+    videoEl.pause();
+    videoEl.removeAttribute('src');
+    imgEl.src = url;
+    imgEl.style.display = 'block';
+  }
+
   document.getElementById('bgPlaceholder').style.display = 'none';
   document.getElementById('bgUploadLabel').classList.add('has-file');
   document.getElementById('bgUploadText').textContent = '✓ ' + file.name;
@@ -1128,15 +1159,24 @@ document.getElementById('artUpload').addEventListener('change', async (e) => {
 
 // ─── Delete uploaded media ─────────────────────────────────────────
 document.getElementById('bgDelete').addEventListener('click', () => {
+  if (S.bgImageSrc && S.bgImageSrc.startsWith('blob:')) {
+    URL.revokeObjectURL(S.bgImageSrc);
+  }
   S.bgImageSrc = null;
+  S.bgType = 'image';
   S.bgZoom = 1;
   S.bgX = 0; S.bgY = 0;
   document.getElementById('bgUpload').value = '';
-  document.getElementById('pvBg').removeAttribute('src');
-  document.getElementById('pvBg').style.display = 'none';
+  const imgEl = document.getElementById('pvBg');
+  const videoEl = document.getElementById('pvBgVideo');
+  imgEl.removeAttribute('src');
+  imgEl.style.display = 'none';
+  videoEl.pause();
+  videoEl.removeAttribute('src');
+  videoEl.style.display = 'none';
   document.getElementById('bgPlaceholder').style.display = 'flex';
   document.getElementById('bgUploadLabel').classList.remove('has-file');
-  document.getElementById('bgUploadText').textContent = '📷 \u00a0Glisser une image ici ou cliquer pour choisir';
+  document.getElementById('bgUploadText').textContent = '📷 \u00a0Glisser une image ou vidéo ici, ou cliquer';
   document.getElementById('bgControls').classList.remove('visible');
   document.getElementById('bgZoom').value = 1;
   document.getElementById('bgZoomVal').textContent = '100%';
@@ -1332,6 +1372,23 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
     const targetW = 1080;
     const targetH = S.format === '4:5' ? 1350 : 1920;
 
+    // If bg is a video, capture the currently-visible frame as a data URL
+    // so we can render it statically in the export clone.
+    let videoFrameDataUrl = null;
+    if (S.bgType === 'video' && S.bgImageSrc) {
+      const videoEl = document.getElementById('pvBgVideo');
+      try {
+        const fc = document.createElement('canvas');
+        fc.width = videoEl.videoWidth || 1080;
+        fc.height = videoEl.videoHeight || 1920;
+        const fctx = fc.getContext('2d');
+        fctx.drawImage(videoEl, 0, 0, fc.width, fc.height);
+        videoFrameDataUrl = fc.toDataURL('image/png');
+      } catch (err) {
+        console.warn('Video frame capture failed:', err);
+      }
+    }
+
     // Clone the preview into a hidden fixed-size container for pixel-perfect export
     const holder = document.getElementById('exportHolder');
     holder.innerHTML = '';
@@ -1340,6 +1397,20 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
     clone.style.width = targetW + 'px';
     clone.style.height = targetH + 'px';
     clone.style.aspectRatio = 'auto';
+
+    // If we have a captured video frame, swap the video element out for the image
+    // inside the clone so html-to-image can render it.
+    if (videoFrameDataUrl) {
+      const cloneImg = clone.querySelector('#pvBg');
+      const cloneVideo = clone.querySelector('#pvBgVideo');
+      if (cloneImg && cloneVideo) {
+        cloneImg.src = videoFrameDataUrl;
+        cloneImg.style.display = 'block';
+        cloneVideo.style.display = 'none';
+        cloneVideo.removeAttribute('src');
+      }
+    }
+
     holder.appendChild(clone);
 
     // Wait for images inside the clone to be fully decoded
