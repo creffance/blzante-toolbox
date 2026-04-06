@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IG Generator — BLZante Toolbox</title>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.13/dist/html-to-image.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Syne+Mono&display=swap');
+
+:root {
+  --bg: #0a0a0a;
+  --surface: #141414;
+  --surface-2: #1a1a1a;
+  --border: #262626;
+  --border-hi: #3a3a3a;
+  --text: #e8e8e8;
+  --muted: #777;
+  --muted-2: #555;
+  --accent: #e8c547;
+  --success: #4ade80;
+  --error: #ff6b6b;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); }
+body {
+  font-family: 'Syne Mono', monospace;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 60px 60px;
+  opacity: 0.3;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ─────────────────────────────── NAV ─────────────────────────────── */
+nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 40px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+  z-index: 1;
+}
+.nav-logo {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #fff;
+  text-decoration: none;
+  letter-spacing: 0.08em;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.nav-logo-img { height: 28px; width: auto; display: block; }
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.65rem;
+  color: var(--muted);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.nav-back {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.65rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  transition: color 0.15s;
+}
+.nav-back:hover { color: #fff; }
+.nav-sep { color: var(--border); }
+.nav-signout {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-family: 'Syne Mono', monospace;
+  font-size: 0.55rem;
+  padding: 4px 10px;
+  cursor: pointer;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: all 0.15s;
+}
+.nav-signout:hover { border-color: #555; color: #fff; }
+
+/* ─────────────────────────────── LAYOUT ─────────────────────────────── */
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 32px 40px 60px;
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  width: 100%;
+}
+.page-heading {
+  margin-bottom: 28px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 20px;
+}
+.page-heading h1 {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.3;
+}
+.page-heading .sub {
+  font-size: 0.7rem;
+  color: var(--muted);
+  margin-top: 4px;
+  letter-spacing: 0.05em;
+}
+
+.main-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 520px);
+  gap: 32px;
+  align-items: start;
+}
+@media (max-width: 1024px) {
+  .main-grid { grid-template-columns: 1fr; }
+}
+
+.section-label {
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 10px;
+  margin-top: 22px;
+}
+.section-label:first-child { margin-top: 0; }
+
+/* ─────────────────────────────── POST TYPE TILES ─────────────────────────────── */
+.type-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 6px;
+}
+@media (max-width: 640px) { .type-grid { grid-template-columns: repeat(2, 1fr); } }
+
+.type-tile {
+  padding: 16px 14px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+  position: relative;
+}
+.type-tile:hover:not(.disabled) { border-color: var(--border-hi); background: var(--surface-2); }
+.type-tile.active {
+  border-color: var(--accent);
+  background: var(--surface-2);
+}
+.type-tile.active::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 2px;
+  background: var(--accent);
+}
+.type-tile.disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.type-tile-name {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 0.82rem;
+  color: var(--text);
+  letter-spacing: 0.02em;
+}
+.type-tile-desc {
+  font-size: 0.6rem;
+  color: var(--muted);
+  margin-top: 4px;
+  letter-spacing: 0.05em;
+}
+.type-tile .badge {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  font-size: 0.5rem;
+  color: var(--muted-2);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ─────────────────────────────── FORMAT TOGGLE ─────────────────────────────── */
+.format-toggle {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  padding: 3px;
+  gap: 3px;
+}
+.format-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-family: 'Syne Mono', monospace;
+  font-size: 0.7rem;
+  padding: 8px 16px;
+  cursor: pointer;
+  letter-spacing: 0.08em;
+  transition: all 0.15s;
+}
+.format-btn.active {
+  background: var(--accent);
+  color: #0a0a0a;
+  font-weight: 700;
+}
+
+/* ─────────────────────────────── FORM ─────────────────────────────── */
+.form-group { margin-bottom: 16px; }
+.form-label {
+  font-size: 0.58rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+  display: block;
+}
+.form-input, .form-select {
+  width: 100%;
+  font-family: 'Syne Mono', monospace;
+  font-size: 0.82rem;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s;
+  appearance: none;
+}
+.form-input:focus, .form-select:focus { border-color: #555; }
+.form-input::placeholder { color: #444; }
+.form-select {
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23777'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 36px;
+}
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* Checkbox / radio groups */
+.option-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.option-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  cursor: pointer;
+  font-size: 0.72rem;
+  color: var(--muted);
+  transition: all 0.15s;
+  user-select: none;
+}
+.option-pill:hover { border-color: var(--border-hi); color: var(--text); }
+.option-pill input {
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border: 1px solid var(--border-hi);
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+}
+.option-pill input[type="radio"] { border-radius: 50%; }
+.option-pill input:checked { background: var(--accent); border-color: var(--accent); }
+.option-pill:has(input:checked) { border-color: var(--accent); color: var(--text); }
+
+/* Songwriters multi-select */
+.sw-picker { position: relative; }
+.sw-picker-input {
+  width: 100%;
+  font-family: 'Syne Mono', monospace;
+  font-size: 0.82rem;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s;
+}
+.sw-picker-input:focus { border-color: #555; }
+.sw-picker-input::placeholder { color: #444; }
+.sw-dropdown {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: none;
+  max-height: 240px;
+  overflow-y: auto;
+}
+.sw-dropdown.open { display: block; }
+.sw-option {
+  padding: 10px 14px;
+  font-size: 0.76rem;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.sw-option:hover { background: #1a1a1a; }
+.sw-option.selected { color: var(--accent); }
+.sw-option.hidden { display: none; }
+.sw-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.sw-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  font-size: 0.66rem;
+  background: #1a1a1a;
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+.sw-tag-remove {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1;
+  transition: color 0.15s;
+}
+.sw-tag-remove:hover { color: var(--error); }
+
+/* File upload */
+.file-upload {
+  display: block;
+  border: 1px dashed var(--border);
+  padding: 14px;
+  text-align: center;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.72rem;
+  transition: all 0.15s;
+  background: var(--surface);
+}
+.file-upload:hover { border-color: var(--border-hi); color: var(--text); }
+.file-upload.has-file {
+  border-style: solid;
+  border-color: var(--success);
+  color: var(--success);
+}
+.file-upload input { display: none; }
+.file-hint {
+  font-size: 0.58rem;
+  color: var(--muted-2);
+  margin-top: 4px;
+  letter-spacing: 0.04em;
+}
+
+/* Submit / export */
+.export-btn {
+  margin-top: 20px;
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #fff 0%, #bbb 100%);
+  color: #0a0a0a;
+  border: none;
+  cursor: pointer;
+  font-family: 'Syne', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  transition: opacity 0.2s;
+}
+.export-btn:hover { opacity: 0.88; }
+.export-btn:disabled {
+  background: linear-gradient(135deg, #333 0%, #222 100%);
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
+.status {
+  margin-top: 12px;
+  font-size: 0.68rem;
+  min-height: 18px;
+}
+.status.success { color: var(--success); }
+.status.error { color: var(--error); }
+
+/* ─────────────────────────────── PREVIEW ─────────────────────────────── */
+.preview-wrap {
+  position: sticky;
+  top: 20px;
+}
+.preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.preview-title {
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.preview-dims {
+  font-size: 0.58rem;
+  color: var(--muted-2);
+  letter-spacing: 0.08em;
+}
+
+/* The preview canvas uses container queries for auto-scaling text */
+.preview-frame {
+  background: #000;
+  border: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  container-type: inline-size;
+  font-family: 'Syne', sans-serif;
+}
+.preview-frame[data-format="4:5"] { aspect-ratio: 4 / 5; }
+.preview-frame[data-format="9:16"] { aspect-ratio: 9 / 16; }
+
+.pv-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+}
+.pv-bg-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #333;
+  font-family: 'Syne Mono', monospace;
+  font-size: 3cqi;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  background:
+    repeating-linear-gradient(45deg, #0a0a0a 0 12px, #141414 12px 24px);
+}
+.pv-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(0,0,0,0.55) 0%,
+    rgba(0,0,0,0.15) 30%,
+    rgba(0,0,0,0.15) 50%,
+    rgba(0,0,0,0.75) 100%
+  );
+  z-index: 1;
+}
+.pv-logo {
+  position: absolute;
+  top: 4.5cqi;
+  left: 4.5cqi;
+  width: 11cqi;
+  height: auto;
+  z-index: 3;
+}
+
+/* Artwork container — centered on upper half */
+.pv-artwork-wrap {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -58%);
+  width: 56cqi;
+  aspect-ratio: 1;
+  z-index: 2;
+}
+.preview-frame[data-format="9:16"] .pv-artwork-wrap {
+  width: 58cqi;
+  transform: translate(-50%, -62%);
+}
+.pv-artwork {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  box-shadow: 0 1.5cqi 5cqi rgba(0,0,0,0.55);
+}
+.pv-artwork-placeholder {
+  width: 100%;
+  height: 100%;
+  border: 0.3cqi dashed rgba(255,255,255,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255,255,255,0.35);
+  font-family: 'Syne Mono', monospace;
+  font-size: 2.4cqi;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+/* Info block */
+.pv-info {
+  position: absolute;
+  bottom: 6cqi;
+  left: 5cqi;
+  right: 5cqi;
+  z-index: 3;
+  color: #fff;
+  text-align: center;
+  font-family: 'Syne', sans-serif;
+}
+.pv-info-type {
+  font-size: 2.2cqi;
+  letter-spacing: 0.32em;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 1.2cqi;
+  text-transform: uppercase;
+}
+.pv-info-title {
+  font-size: 7cqi;
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  margin-bottom: 1cqi;
+  text-shadow: 0 0.3cqi 1.5cqi rgba(0,0,0,0.5);
+  word-break: break-word;
+}
+.pv-info-artist {
+  font-size: 3.3cqi;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  opacity: 0.92;
+  margin-bottom: 1.8cqi;
+}
+.pv-info-credits {
+  font-family: 'Syne Mono', monospace;
+  font-size: 1.9cqi;
+  letter-spacing: 0.06em;
+  opacity: 0.78;
+  line-height: 1.45;
+  max-width: 85%;
+  margin: 0 auto;
+}
+.pv-info-credits:empty { display: none; }
+
+/* Hidden high-res export clone holder */
+#exportHolder {
+  position: fixed;
+  left: -99999px;
+  top: 0;
+  pointer-events: none;
+}
+</style>
+</head>
+<body style="visibility:hidden">
+<nav>
+  <a class="nav-logo" href="index.html">
+    <img src="blzante_logo_white.png" alt="BLZante" class="nav-logo-img" />
+    <span>BLZante</span>
+  </a>
+  <div class="nav-right">
+    <button class="nav-signout" onclick="firebase.auth().signOut().then(()=>location.href='login.html')">Déconnexion</button>
+    <a class="nav-back" href="index.html">&larr; Toolbox</a>
+    <span class="nav-sep">/</span>
+    <span>IG Generator</span>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="page-heading">
+    <h1>IG Content Generator</h1>
+    <div class="sub">Génère des posts et Reels Instagram pour le label — v1 : post Sortie, image de fond, export PNG</div>
+  </div>
+
+  <div class="main-grid">
+    <!-- ========== LEFT : FORM ========== -->
+    <div>
+      <div class="section-label">Type de post</div>
+      <div class="type-grid">
+        <button class="type-tile active" data-type="sortie">
+          <div class="type-tile-name">Sortie</div>
+          <div class="type-tile-desc">Single / EP / Album</div>
+        </button>
+        <button class="type-tile disabled" data-type="certif" disabled>
+          <div class="badge">bientôt</div>
+          <div class="type-tile-name">Certification</div>
+          <div class="type-tile-desc">Or / Platine / Diamant</div>
+        </button>
+        <button class="type-tile disabled" data-type="actu" disabled>
+          <div class="badge">bientôt</div>
+          <div class="type-tile-name">Actu</div>
+          <div class="type-tile-desc">Freestyle, presse, prix</div>
+        </button>
+        <button class="type-tile disabled" data-type="concert" disabled>
+          <div class="badge">bientôt</div>
+          <div class="type-tile-name">Concert</div>
+          <div class="type-tile-desc">Salle, festival, showcase</div>
+        </button>
+      </div>
+
+      <div class="section-label">Format de sortie</div>
+      <div class="format-toggle">
+        <button class="format-btn active" data-format="4:5">4:5 &nbsp;—&nbsp; Post (1080×1350)</button>
+        <button class="format-btn" data-format="9:16">9:16 &nbsp;—&nbsp; Reel (1080×1920)</button>
+      </div>
+
+      <!-- ===== FORM SORTIE ===== -->
+      <div id="formSortie">
+        <div class="section-label">Informations</div>
+
+        <div class="form-group">
+          <label class="form-label">Nom de l'artiste</label>
+          <input type="text" class="form-input" id="f_artist" placeholder="NOM ARTISTE" autocomplete="off" />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Type de sortie</label>
+            <select class="form-select" id="f_type">
+              <option value="Single">Single</option>
+              <option value="EP">EP</option>
+              <option value="Album">Album</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Titre du track / projet</label>
+            <input type="text" class="form-input" id="f_title" placeholder="Titre" autocomplete="off" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Songwriters BLZante</label>
+          <div class="sw-picker">
+            <input type="text" class="sw-picker-input" id="swSearch" placeholder="Rechercher un songwriter…" autocomplete="off" />
+            <div class="sw-dropdown" id="swDropdown"></div>
+          </div>
+          <div class="sw-tags" id="swTags"></div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Contribution</label>
+            <div class="option-row">
+              <label class="option-pill"><input type="checkbox" id="f_ecrit" checked /> Écrit</label>
+              <label class="option-pill"><input type="checkbox" id="f_compose" checked /> Composé</label>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Relation</label>
+            <div class="option-row">
+              <label class="option-pill"><input type="radio" name="rel" id="f_avec" value="avec" checked /> Avec</label>
+              <label class="option-pill"><input type="radio" name="rel" id="f_par" value="par" /> Par</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-label">Médias</div>
+
+        <div class="form-group">
+          <label class="form-label">Image de fond</label>
+          <label class="file-upload" id="bgUploadLabel">
+            <span id="bgUploadText">📷 &nbsp;Glisser une image ici ou cliquer pour choisir</span>
+            <input type="file" id="bgUpload" accept="image/*" />
+          </label>
+          <div class="file-hint">JPG / PNG — format portrait de préférence. Le support vidéo arrive en v2.</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Artwork de la sortie</label>
+          <label class="file-upload" id="artUploadLabel">
+            <span id="artUploadText">🎨 &nbsp;Uploader la cover (format carré)</span>
+            <input type="file" id="artUpload" accept="image/*" />
+          </label>
+        </div>
+
+        <button class="export-btn" id="exportBtn">⬇ Exporter le PNG</button>
+        <div class="status" id="statusMsg"></div>
+      </div>
+    </div>
+
+    <!-- ========== RIGHT : PREVIEW ========== -->
+    <div>
+      <div class="preview-wrap">
+        <div class="preview-header">
+          <div class="preview-title">Preview live</div>
+          <div class="preview-dims" id="previewDims">1080 × 1350</div>
+        </div>
+        <div class="preview-frame" id="previewFrame" data-format="4:5">
+          <div class="pv-bg-placeholder" id="bgPlaceholder">Image de fond</div>
+          <img class="pv-bg" id="pvBg" style="display:none" />
+          <div class="pv-overlay"></div>
+          <img class="pv-logo" src="blzante_logo_white.png" alt="" />
+          <div class="pv-artwork-wrap">
+            <div class="pv-artwork-placeholder" id="artPlaceholder">Artwork</div>
+            <img class="pv-artwork" id="pvArt" style="display:none" />
+          </div>
+          <div class="pv-info">
+            <div class="pv-info-type" id="pvType">NOUVEAU SINGLE</div>
+            <div class="pv-info-title" id="pvTitle">Titre du track</div>
+            <div class="pv-info-artist" id="pvArtist">NOM ARTISTE</div>
+            <div class="pv-info-credits" id="pvCredits"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="exportHolder"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// FIREBASE AUTH (même pattern que release_create.html)
+// ═══════════════════════════════════════════════════════════════════
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyBuwwcRdlxLf7-ZdmUAi0ajB5uL3y-m800",
+  authDomain: "blzante-toolbox.firebaseapp.com",
+  databaseURL: "https://blzante-toolbox-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "blzante-toolbox",
+  storageBucket: "blzante-toolbox.firebasestorage.app",
+  messagingSenderId: "599088931653",
+  appId: "1:599088931653:web:34f936e8302e894afb942c"
+};
+if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+
+function _waitAuth() {
+  return new Promise((res, rej) => {
+    firebase.auth().onAuthStateChanged(u => {
+      if (!u) { window.location.href = 'login.html'; rej(); }
+      else { document.body.style.visibility = 'visible'; res(u); }
+    });
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// DONNÉES — Songwriters BLZante (synchro avec release_create.html)
+// ═══════════════════════════════════════════════════════════════════
+const SONGWRITERS = [
+  '2B', 'AKATCHE', 'OZZY', 'BRO', 'CHERI', 'DANI TERREUR', 'EMY JO',
+  'GABRIEL MABILAT', 'HADRIEN MABILAT', 'HUGO LARDENET', 'IVY', 'KEV 117',
+  'LAURINA MALAKA', 'LEANDRE', 'LEITH', 'MATSHIMOTO', 'NOLAN', 'PABLO',
+  'PALMAE', 'PIERRE-LAURENT FAURE', 'RITUAL X', 'ROI LUIS', 'SACHA MALAKA',
+  'SEBASTIEN ROUSSELET', 'VINCHA', 'VJ', 'YANNICK SERI'
+];
+
+// ═══════════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════════
+const S = {
+  format: '4:5',
+  type: 'sortie',
+  artist: '',
+  title: '',
+  releaseType: 'Single',
+  ecrit: true,
+  compose: true,
+  relation: 'avec',  // avec | par
+  songwriters: [],
+  bgImageSrc: null,
+  artworkSrc: null
+};
+
+// ═══════════════════════════════════════════════════════════════════
+// FORMAT TOGGLE
+// ═══════════════════════════════════════════════════════════════════
+const previewFrame = document.getElementById('previewFrame');
+const previewDims = document.getElementById('previewDims');
+
+document.querySelectorAll('.format-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.format-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    S.format = btn.dataset.format;
+    previewFrame.dataset.format = S.format;
+    previewDims.textContent = S.format === '4:5' ? '1080 × 1350' : '1080 × 1920';
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// POST TYPE (v1 : sortie uniquement)
+// ═══════════════════════════════════════════════════════════════════
+document.querySelectorAll('.type-tile').forEach(tile => {
+  tile.addEventListener('click', () => {
+    if (tile.classList.contains('disabled')) return;
+    document.querySelectorAll('.type-tile').forEach(t => t.classList.remove('active'));
+    tile.classList.add('active');
+    S.type = tile.dataset.type;
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// SONGWRITERS MULTI-SELECT
+// ═══════════════════════════════════════════════════════════════════
+const swSearch = document.getElementById('swSearch');
+const swDropdown = document.getElementById('swDropdown');
+const swTags = document.getElementById('swTags');
+
+// Build options
+SONGWRITERS.forEach(name => {
+  const opt = document.createElement('div');
+  opt.className = 'sw-option';
+  opt.dataset.name = name;
+  opt.textContent = name;
+  opt.addEventListener('click', () => {
+    const idx = S.songwriters.indexOf(name);
+    if (idx >= 0) {
+      S.songwriters.splice(idx, 1);
+      opt.classList.remove('selected');
+    } else {
+      S.songwriters.push(name);
+      opt.classList.add('selected');
+    }
+    renderTags();
+    updatePreview();
+  });
+  swDropdown.appendChild(opt);
+});
+
+swSearch.addEventListener('focus', () => swDropdown.classList.add('open'));
+swSearch.addEventListener('input', () => {
+  const q = swSearch.value.trim().toUpperCase();
+  swDropdown.querySelectorAll('.sw-option').forEach(o => {
+    o.classList.toggle('hidden', q && !o.dataset.name.includes(q));
+  });
+  swDropdown.classList.add('open');
+});
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.sw-picker')) swDropdown.classList.remove('open');
+});
+
+function renderTags() {
+  swTags.innerHTML = '';
+  S.songwriters.forEach(name => {
+    const tag = document.createElement('div');
+    tag.className = 'sw-tag';
+    tag.innerHTML = `<span>${name}</span><span class="sw-tag-remove" data-name="${name}">×</span>`;
+    swTags.appendChild(tag);
+  });
+  swTags.querySelectorAll('.sw-tag-remove').forEach(el => {
+    el.addEventListener('click', (e) => {
+      const name = e.target.dataset.name;
+      S.songwriters = S.songwriters.filter(n => n !== name);
+      const opt = swDropdown.querySelector(`[data-name="${CSS.escape(name)}"]`);
+      if (opt) opt.classList.remove('selected');
+      renderTags();
+      updatePreview();
+    });
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// FORM INPUTS → STATE → PREVIEW
+// ═══════════════════════════════════════════════════════════════════
+const bind = (id, key, event = 'input') => {
+  document.getElementById(id).addEventListener(event, (e) => {
+    S[key] = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+    updatePreview();
+  });
+};
+bind('f_artist', 'artist');
+bind('f_title', 'title');
+bind('f_type', 'releaseType', 'change');
+bind('f_ecrit', 'ecrit', 'change');
+bind('f_compose', 'compose', 'change');
+document.getElementById('f_avec').addEventListener('change', () => { S.relation = 'avec'; updatePreview(); });
+document.getElementById('f_par').addEventListener('change', () => { S.relation = 'par'; updatePreview(); });
+
+// ═══════════════════════════════════════════════════════════════════
+// FILE UPLOADS
+// ═══════════════════════════════════════════════════════════════════
+function readFileAsDataURL(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result);
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+}
+
+document.getElementById('bgUpload').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const dataUrl = await readFileAsDataURL(file);
+  S.bgImageSrc = dataUrl;
+  const img = document.getElementById('pvBg');
+  img.src = dataUrl;
+  img.style.display = 'block';
+  document.getElementById('bgPlaceholder').style.display = 'none';
+  document.getElementById('bgUploadLabel').classList.add('has-file');
+  document.getElementById('bgUploadText').textContent = '✓ ' + file.name;
+});
+
+document.getElementById('artUpload').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const dataUrl = await readFileAsDataURL(file);
+  S.artworkSrc = dataUrl;
+  const img = document.getElementById('pvArt');
+  img.src = dataUrl;
+  img.style.display = 'block';
+  document.getElementById('artPlaceholder').style.display = 'none';
+  document.getElementById('artUploadLabel').classList.add('has-file');
+  document.getElementById('artUploadText').textContent = '✓ ' + file.name;
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// PREVIEW UPDATE + AUTO-FIT FONT SIZING
+// ═══════════════════════════════════════════════════════════════════
+const pvType = document.getElementById('pvType');
+const pvTitle = document.getElementById('pvTitle');
+const pvArtist = document.getElementById('pvArtist');
+const pvCredits = document.getElementById('pvCredits');
+
+function buildCreditsLine() {
+  if (S.songwriters.length === 0) return '';
+  let action = '';
+  if (S.ecrit && S.compose) action = 'Écrit et composé';
+  else if (S.ecrit) action = 'Écrit';
+  else if (S.compose) action = 'Composé';
+  else return '';
+  const rel = S.relation === 'par' ? 'par' : 'avec';
+  return `${action} ${rel} ${S.songwriters.join(' · ')}`;
+}
+
+function updatePreview() {
+  pvType.textContent = 'NOUVEAU ' + (S.releaseType || 'SINGLE').toUpperCase();
+  pvTitle.textContent = S.title || 'Titre du track';
+  pvArtist.textContent = (S.artist || 'NOM ARTISTE').toUpperCase();
+  pvCredits.textContent = buildCreditsLine();
+
+  // Auto-fit title: reduce font size if overflow
+  requestAnimationFrame(() => {
+    autoFit(pvTitle, 7, 3.5);   // start at 7cqi, min 3.5cqi
+    autoFit(pvArtist, 3.3, 2.2);
+  });
+}
+
+function autoFit(el, maxCqi, minCqi) {
+  const container = el.closest('.preview-frame');
+  if (!container) return;
+  const cw = container.getBoundingClientRect().width;
+  if (!cw) return;
+  // Reset to max
+  let cqi = maxCqi;
+  el.style.fontSize = (cqi * cw / 100) + 'px';
+  // Shrink until fits inside info block width
+  const info = el.closest('.pv-info');
+  const maxW = info.getBoundingClientRect().width;
+  let guard = 40;
+  while (el.scrollWidth > maxW && cqi > minCqi && guard-- > 0) {
+    cqi -= 0.25;
+    el.style.fontSize = (cqi * cw / 100) + 'px';
+  }
+}
+
+window.addEventListener('resize', () => updatePreview());
+
+// ═══════════════════════════════════════════════════════════════════
+// EXPORT PNG (haute résolution)
+// ═══════════════════════════════════════════════════════════════════
+document.getElementById('exportBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('exportBtn');
+  const status = document.getElementById('statusMsg');
+  btn.disabled = true;
+  btn.textContent = '⏳ Génération…';
+  status.textContent = '';
+  status.className = 'status';
+
+  try {
+    // Target resolution
+    const targetW = 1080;
+    const targetH = S.format === '4:5' ? 1350 : 1920;
+
+    // Clone the preview into a hidden fixed-size container for pixel-perfect export
+    const holder = document.getElementById('exportHolder');
+    holder.innerHTML = '';
+    const clone = previewFrame.cloneNode(true);
+    clone.id = 'exportClone';
+    clone.style.width = targetW + 'px';
+    clone.style.height = targetH + 'px';
+    clone.style.aspectRatio = 'auto';
+    holder.appendChild(clone);
+
+    // Wait for images inside the clone to be fully decoded
+    const imgs = clone.querySelectorAll('img');
+    await Promise.all(Array.from(imgs).map(img => {
+      if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+      return new Promise(res => {
+        img.onload = res;
+        img.onerror = res;
+      });
+    }));
+
+    // Re-run autofit on the clone (sized to 1080px width, 100cqi = 1080px)
+    const cloneTitle = clone.querySelector('.pv-info-title');
+    const cloneArtist = clone.querySelector('.pv-info-artist');
+    const info = clone.querySelector('.pv-info');
+    await new Promise(r => requestAnimationFrame(r));
+
+    const fitClone = (el, maxCqi, minCqi) => {
+      let cqi = maxCqi;
+      el.style.fontSize = (cqi * targetW / 100) + 'px';
+      const maxW = info.getBoundingClientRect().width;
+      let guard = 60;
+      while (el.scrollWidth > maxW && cqi > minCqi && guard-- > 0) {
+        cqi -= 0.2;
+        el.style.fontSize = (cqi * targetW / 100) + 'px';
+      }
+    };
+    fitClone(cloneTitle, 7, 3.5);
+    fitClone(cloneArtist, 3.3, 2.2);
+
+    // Render with html-to-image at pixelRatio=1 (since clone is already target size)
+    const dataUrl = await htmlToImage.toPng(clone, {
+      width: targetW,
+      height: targetH,
+      pixelRatio: 1,
+      cacheBust: true,
+      backgroundColor: '#000'
+    });
+
+    // Download
+    const filename = buildFilename();
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    holder.innerHTML = '';
+    status.textContent = '✓ PNG exporté : ' + filename;
+    status.className = 'status success';
+  } catch (err) {
+    console.error(err);
+    status.textContent = '⚠ Erreur export : ' + (err.message || err);
+    status.className = 'status error';
+  }
+
+  btn.disabled = false;
+  btn.textContent = '⬇ Exporter le PNG';
+});
+
+function buildFilename() {
+  const slug = (s) => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+  const parts = [
+    slug(S.artist) || 'artiste',
+    slug(S.title) || 'titre',
+    S.format === '4:5' ? 'post' : 'reel'
+  ];
+  return 'blzante_sortie_' + parts.join('_') + '.png';
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════════
+(async () => {
+  try { await _waitAuth(); } catch(e) { return; }
+  updatePreview();
+})();
+</script>
+</body>
+</html>
