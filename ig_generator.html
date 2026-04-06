@@ -334,7 +334,8 @@ nav {
 .sw-option:hover { background: #1a1a1a; }
 .sw-option.selected { color: var(--accent); }
 .sw-option.hidden { display: none; }
-.sw-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.sw-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.sw-tags:empty { display: none; }
 .sw-tag {
   display: inline-flex;
   align-items: center;
@@ -630,7 +631,7 @@ nav {
 /* Info TOP block (above the artwork): type → artist → title */
 .pv-info-top {
   position: absolute;
-  top: 20%;
+  top: 17%;
   left: 5cqi;
   right: 5cqi;
   z-index: 3;
@@ -639,29 +640,30 @@ nav {
   font-family: 'Syne', sans-serif;
   pointer-events: none;
 }
-.preview-frame[data-format="9:16"] .pv-info-top { top: 24%; }
+.preview-frame[data-format="9:16"] .pv-info-top { top: 21%; }
 
 .pv-info-type {
-  font-size: 2.2cqi;
+  font-size: 2.6cqi;
   letter-spacing: 0.32em;
   font-weight: 600;
-  color: var(--accent-color, #e8c547);
+  color: #fff;
   margin-bottom: 1.4cqi;
   text-transform: uppercase;
+  text-shadow: 0 0.2cqi 1cqi rgba(0,0,0,0.55);
 }
 .pv-info-artist {
-  font-size: 8cqi;
+  font-size: 9cqi;
   font-weight: 800;
   line-height: 1.0;
   letter-spacing: 0.01em;
   text-transform: uppercase;
-  margin-bottom: 0.6cqi;
+  margin-bottom: 0.7cqi;
   text-shadow: 0 0.3cqi 1.5cqi rgba(0,0,0,0.55);
   word-break: break-word;
   color: var(--accent-color, #e8c547);
 }
 .pv-info-title {
-  font-size: 4.2cqi;
+  font-size: 4.8cqi;
   font-weight: 600;
   line-height: 1.15;
   letter-spacing: 0.04em;
@@ -675,7 +677,7 @@ nav {
 /* Credits BOTTOM block: label line + names line */
 .pv-credits-block {
   position: absolute;
-  bottom: 18%;
+  bottom: 22%;
   left: 5cqi;
   right: 5cqi;
   z-index: 3;
@@ -684,21 +686,23 @@ nav {
   font-family: 'Syne', sans-serif;
   pointer-events: none;
 }
-.preview-frame[data-format="9:16"] .pv-credits-block { bottom: 22%; }
+.preview-frame[data-format="9:16"] .pv-credits-block { bottom: 26%; }
 .pv-credits-label {
   font-family: 'Syne Mono', monospace;
-  font-size: 2.2cqi;
+  font-size: 2.6cqi;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  opacity: 0.72;
-  margin-bottom: 1cqi;
+  color: #fff;
+  margin-bottom: 1.1cqi;
+  text-shadow: 0 0.2cqi 1cqi rgba(0,0,0,0.55);
 }
 .pv-credits-names {
   font-family: 'Syne', sans-serif;
-  font-size: 3.2cqi;
+  font-size: 3.8cqi;
   font-weight: 700;
   letter-spacing: 0.04em;
   line-height: 1.25;
+  color: var(--accent-color, #e8c547);
   text-shadow: 0 0.2cqi 1cqi rgba(0,0,0,0.5);
   max-width: 92%;
   margin: 0 auto;
@@ -792,11 +796,11 @@ nav {
 
         <div class="form-group">
           <label class="form-label">Songwriters BLZante</label>
+          <div class="sw-tags" id="swTags"></div>
           <div class="sw-picker">
             <input type="text" class="sw-picker-input" id="swSearch" placeholder="Rechercher un songwriter…" autocomplete="off" />
             <div class="sw-dropdown" id="swDropdown"></div>
           </div>
-          <div class="sw-tags" id="swTags"></div>
         </div>
 
         <div class="form-row">
@@ -1100,13 +1104,11 @@ document.getElementById('bgUpload').addEventListener('change', async (e) => {
   if (!file) return;
 
   // Revoke previous blob URL if any (to free memory)
-  if (S.bgImageSrc && S.bgImageSrc.startsWith('blob:')) {
+  if (S.bgImageSrc && typeof S.bgImageSrc === 'string' && S.bgImageSrc.startsWith('blob:')) {
     URL.revokeObjectURL(S.bgImageSrc);
   }
 
   const isVideo = file.type.startsWith('video/');
-  const url = URL.createObjectURL(file);
-  S.bgImageSrc = url;
   S.bgType = isVideo ? 'video' : 'image';
   S.bgX = 0; S.bgY = 0; S.bgZoom = 1;
 
@@ -1114,17 +1116,23 @@ document.getElementById('bgUpload').addEventListener('change', async (e) => {
   const videoEl = document.getElementById('pvBgVideo');
 
   if (isVideo) {
+    // Videos: use blob URL (too big for base64 data URL)
+    const url = URL.createObjectURL(file);
+    S.bgImageSrc = url;
     imgEl.style.display = 'none';
     imgEl.removeAttribute('src');
     videoEl.src = url;
     videoEl.style.display = 'block';
     videoEl.load();
-    videoEl.play().catch(() => {});
+    try { await videoEl.play(); } catch(_) {}
   } else {
+    // Images: use data URL (better compatibility with html-to-image)
+    const dataUrl = await readFileAsDataURL(file);
+    S.bgImageSrc = dataUrl;
     videoEl.style.display = 'none';
     videoEl.pause();
     videoEl.removeAttribute('src');
-    imgEl.src = url;
+    imgEl.src = dataUrl;
     imgEl.style.display = 'block';
   }
 
@@ -1159,7 +1167,7 @@ document.getElementById('artUpload').addEventListener('change', async (e) => {
 
 // ─── Delete uploaded media ─────────────────────────────────────────
 document.getElementById('bgDelete').addEventListener('click', () => {
-  if (S.bgImageSrc && S.bgImageSrc.startsWith('blob:')) {
+  if (S.bgImageSrc && typeof S.bgImageSrc === 'string' && S.bgImageSrc.startsWith('blob:')) {
     URL.revokeObjectURL(S.bgImageSrc);
   }
   S.bgImageSrc = null;
@@ -1332,9 +1340,9 @@ function updatePreview() {
   applyStyleVars(previewFrame);
 
   requestAnimationFrame(() => {
-    autoFit(pvArtist, 8, 4);
-    autoFit(pvTitle, 4.2, 2.4);
-    autoFit(pvCreditsNames, 3.2, 1.8);
+    autoFit(pvArtist, 9, 4.5);
+    autoFit(pvTitle, 4.8, 2.8);
+    autoFit(pvCreditsNames, 3.8, 2.2);
   });
 }
 
@@ -1372,11 +1380,18 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
     const targetW = 1080;
     const targetH = S.format === '4:5' ? 1350 : 1920;
 
-    // If bg is a video, capture the currently-visible frame as a data URL
-    // so we can render it statically in the export clone.
+    // If bg is a video, ensure it has enough data, then capture the currently
+    // visible frame as a data URL so we can render it statically in the clone.
     let videoFrameDataUrl = null;
     if (S.bgType === 'video' && S.bgImageSrc) {
       const videoEl = document.getElementById('pvBgVideo');
+      if (videoEl.readyState < 2) {
+        await new Promise((res) => {
+          const done = () => { videoEl.removeEventListener('loadeddata', done); res(); };
+          videoEl.addEventListener('loadeddata', done);
+          setTimeout(done, 3000); // hard timeout fallback
+        });
+      }
       try {
         const fc = document.createElement('canvas');
         fc.width = videoEl.videoWidth || 1080;
@@ -1386,6 +1401,7 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
         videoFrameDataUrl = fc.toDataURL('image/png');
       } catch (err) {
         console.warn('Video frame capture failed:', err);
+        throw new Error('Impossible de capturer la frame vidéo');
       }
     }
 
@@ -1398,16 +1414,16 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
     clone.style.height = targetH + 'px';
     clone.style.aspectRatio = 'auto';
 
-    // If we have a captured video frame, swap the video element out for the image
-    // inside the clone so html-to-image can render it.
+    // ALWAYS remove the video element from the clone — html-to-image doesn't
+    // render <video> reliably. If we had a video bg, substitute the captured
+    // frame into the img element instead.
+    const cloneVideo = clone.querySelector('#pvBgVideo');
+    if (cloneVideo) cloneVideo.remove();
     if (videoFrameDataUrl) {
       const cloneImg = clone.querySelector('#pvBg');
-      const cloneVideo = clone.querySelector('#pvBgVideo');
-      if (cloneImg && cloneVideo) {
+      if (cloneImg) {
         cloneImg.src = videoFrameDataUrl;
         cloneImg.style.display = 'block';
-        cloneVideo.style.display = 'none';
-        cloneVideo.removeAttribute('src');
       }
     }
 
@@ -1445,9 +1461,9 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
         el.style.fontSize = (cqi * targetW / 100) + 'px';
       }
     };
-    fitClone(cloneArtist, 8, 4);
-    fitClone(cloneTitle, 4.2, 2.4);
-    fitClone(cloneCreditsNames, 3.2, 1.8);
+    fitClone(cloneArtist, 9, 4.5);
+    fitClone(cloneTitle, 4.8, 2.8);
+    fitClone(cloneCreditsNames, 3.8, 2.2);
 
     // Render with html-to-image at pixelRatio=1 (since clone is already target size)
     const dataUrl = await htmlToImage.toPng(clone, {
@@ -1471,8 +1487,12 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
     status.textContent = '✓ PNG exporté : ' + filename;
     status.className = 'status success';
   } catch (err) {
-    console.error(err);
-    status.textContent = '⚠ Erreur export : ' + (err.message || err);
+    console.error('Export error:', err);
+    let msg;
+    if (err && err.message) msg = err.message;
+    else if (err instanceof Event) msg = 'Chargement d\'une image échoué (type: ' + err.type + ')';
+    else msg = String(err);
+    status.textContent = '⚠ Erreur export : ' + msg;
     status.className = 'status error';
   }
 
