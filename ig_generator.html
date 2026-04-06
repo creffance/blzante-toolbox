@@ -380,6 +380,94 @@ nav {
   letter-spacing: 0.04em;
 }
 
+/* Color swatches (typo dominante) */
+.color-swatches {
+  display: flex;
+  gap: 10px;
+}
+.color-swatch {
+  width: 44px;
+  height: 44px;
+  border: 2px solid var(--border);
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+  background: var(--sw-color);
+}
+.color-swatch:hover { transform: translateY(-2px); border-color: var(--border-hi); }
+.color-swatch.active {
+  border-color: #fff;
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 3px #fff;
+}
+
+/* Media controls panel (zoom + delete) shown after upload */
+.media-controls {
+  display: none;
+  margin-top: 8px;
+  padding: 10px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  gap: 12px;
+  align-items: center;
+}
+.media-controls.visible { display: flex; }
+.media-controls-label {
+  font-size: 0.58rem;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.zoom-slider {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 3px;
+  background: var(--border-hi);
+  outline: none;
+  cursor: pointer;
+}
+.zoom-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background: var(--accent);
+  cursor: pointer;
+  border-radius: 50%;
+}
+.zoom-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: var(--accent);
+  cursor: pointer;
+  border-radius: 50%;
+  border: none;
+}
+.zoom-value {
+  font-size: 0.65rem;
+  color: var(--text);
+  min-width: 38px;
+  text-align: right;
+  font-family: 'Syne Mono', monospace;
+}
+.media-delete-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-family: 'Syne Mono', monospace;
+  font-size: 0.6rem;
+  padding: 5px 9px;
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.media-delete-btn:hover {
+  border-color: var(--error);
+  color: var(--error);
+}
+
 /* Submit / export */
 .export-btn {
   margin-top: 20px;
@@ -454,6 +542,8 @@ nav {
   height: 100%;
   object-fit: cover;
   z-index: 0;
+  transform: scale(var(--bg-zoom, 1));
+  transform-origin: center;
 }
 .pv-bg-placeholder {
   position: absolute;
@@ -487,28 +577,31 @@ nav {
   left: 4.5cqi;
   width: 11cqi;
   height: auto;
-  z-index: 3;
+  z-index: 4;
 }
 
-/* Artwork container — centered on upper half */
+/* Artwork container — below the title/artist block */
 .pv-artwork-wrap {
   position: absolute;
-  top: 50%;
+  top: 58%;
   left: 50%;
-  transform: translate(-50%, -58%);
+  transform: translate(-50%, -50%);
   width: 56cqi;
   aspect-ratio: 1;
   z-index: 2;
+  overflow: hidden;
+  box-shadow: 0 1.5cqi 5cqi rgba(0,0,0,0.55);
 }
 .preview-frame[data-format="9:16"] .pv-artwork-wrap {
   width: 58cqi;
-  transform: translate(-50%, -62%);
+  top: 54%;
 }
 .pv-artwork {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  box-shadow: 0 1.5cqi 5cqi rgba(0,0,0,0.55);
+  transform: scale(var(--art-zoom, 1));
+  transform-origin: center;
 }
 .pv-artwork-placeholder {
   width: 100%;
@@ -524,8 +617,52 @@ nav {
   text-transform: uppercase;
 }
 
-/* Info block */
-.pv-info {
+/* Info TOP block (above the artwork): type → artist → title */
+.pv-info-top {
+  position: absolute;
+  top: 13%;
+  left: 5cqi;
+  right: 5cqi;
+  z-index: 3;
+  color: #fff;
+  text-align: center;
+  font-family: 'Syne', sans-serif;
+}
+.preview-frame[data-format="9:16"] .pv-info-top { top: 12%; }
+
+.pv-info-type {
+  font-size: 2.2cqi;
+  letter-spacing: 0.32em;
+  font-weight: 600;
+  color: var(--accent-color, #e8c547);
+  margin-bottom: 1.4cqi;
+  text-transform: uppercase;
+}
+.pv-info-artist {
+  font-size: 8cqi;
+  font-weight: 800;
+  line-height: 1.0;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  margin-bottom: 0.6cqi;
+  text-shadow: 0 0.3cqi 1.5cqi rgba(0,0,0,0.55);
+  word-break: break-word;
+  color: var(--accent-color, #e8c547);
+}
+.pv-info-title {
+  font-size: 4.2cqi;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.95;
+  word-break: break-word;
+  color: #fff;
+  text-shadow: 0 0.25cqi 1.2cqi rgba(0,0,0,0.55);
+}
+
+/* Credits BOTTOM block: label line + names line */
+.pv-credits-block {
   position: absolute;
   bottom: 6cqi;
   left: 5cqi;
@@ -535,42 +672,26 @@ nav {
   text-align: center;
   font-family: 'Syne', sans-serif;
 }
-.pv-info-type {
-  font-size: 2.2cqi;
-  letter-spacing: 0.32em;
-  font-weight: 600;
-  color: var(--accent);
-  margin-bottom: 1.2cqi;
-  text-transform: uppercase;
-}
-.pv-info-title {
-  font-size: 7cqi;
-  font-weight: 800;
-  line-height: 1.05;
-  letter-spacing: -0.01em;
-  text-transform: uppercase;
-  margin-bottom: 1cqi;
-  text-shadow: 0 0.3cqi 1.5cqi rgba(0,0,0,0.5);
-  word-break: break-word;
-}
-.pv-info-artist {
-  font-size: 3.3cqi;
-  font-weight: 600;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  opacity: 0.92;
-  margin-bottom: 1.8cqi;
-}
-.pv-info-credits {
+.pv-credits-label {
   font-family: 'Syne Mono', monospace;
-  font-size: 1.9cqi;
-  letter-spacing: 0.06em;
-  opacity: 0.78;
-  line-height: 1.45;
-  max-width: 85%;
+  font-size: 2.2cqi;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.72;
+  margin-bottom: 1cqi;
+}
+.pv-credits-names {
+  font-family: 'Syne', sans-serif;
+  font-size: 3.2cqi;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.25;
+  text-transform: uppercase;
+  text-shadow: 0 0.2cqi 1cqi rgba(0,0,0,0.5);
+  max-width: 92%;
   margin: 0 auto;
 }
-.pv-info-credits:empty { display: none; }
+.pv-credits-label:empty, .pv-credits-names:empty { display: none; }
 
 /* Hidden high-res export clone holder */
 #exportHolder {
@@ -584,7 +705,7 @@ nav {
 <body style="visibility:hidden">
 <nav>
   <a class="nav-logo" href="index.html">
-    <img src="blzante_logo_white.png" alt="BLZante" class="nav-logo-img" />
+    <img src="blzante_spiral_white.png" alt="BLZante" class="nav-logo-img" />
     <span>BLZante</span>
   </a>
   <div class="nav-right">
@@ -683,6 +804,23 @@ nav {
           </div>
         </div>
 
+        <div class="section-label">Style</div>
+        <div class="form-group">
+          <label class="form-label">Couleur de la typo dominante</label>
+          <div class="color-swatches" id="colorSwatches">
+            <div class="color-swatch" data-color="#f4d03f" style="--sw-color:#f4d03f"></div>
+            <div class="color-swatch active" data-color="#e8c547" style="--sw-color:#e8c547"></div>
+            <div class="color-swatch" data-color="#c9a227" style="--sw-color:#c9a227"></div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Couleur du logo spirale</label>
+          <div class="option-row">
+            <label class="option-pill"><input type="radio" name="logoColor" id="f_logo_white" value="white" checked /> Blanc</label>
+            <label class="option-pill"><input type="radio" name="logoColor" id="f_logo_black" value="black" /> Noir</label>
+          </div>
+        </div>
+
         <div class="section-label">Médias</div>
 
         <div class="form-group">
@@ -691,6 +829,12 @@ nav {
             <span id="bgUploadText">📷 &nbsp;Glisser une image ici ou cliquer pour choisir</span>
             <input type="file" id="bgUpload" accept="image/*" />
           </label>
+          <div class="media-controls" id="bgControls">
+            <span class="media-controls-label">Zoom</span>
+            <input type="range" class="zoom-slider" id="bgZoom" min="1" max="3" step="0.05" value="1" />
+            <span class="zoom-value" id="bgZoomVal">100%</span>
+            <button type="button" class="media-delete-btn" id="bgDelete">× Supprimer</button>
+          </div>
           <div class="file-hint">JPG / PNG — format portrait de préférence. Le support vidéo arrive en v2.</div>
         </div>
 
@@ -700,6 +844,12 @@ nav {
             <span id="artUploadText">🎨 &nbsp;Uploader la cover (format carré)</span>
             <input type="file" id="artUpload" accept="image/*" />
           </label>
+          <div class="media-controls" id="artControls">
+            <span class="media-controls-label">Zoom</span>
+            <input type="range" class="zoom-slider" id="artZoom" min="1" max="3" step="0.05" value="1" />
+            <span class="zoom-value" id="artZoomVal">100%</span>
+            <button type="button" class="media-delete-btn" id="artDelete">× Supprimer</button>
+          </div>
         </div>
 
         <button class="export-btn" id="exportBtn">⬇ Exporter le PNG</button>
@@ -718,16 +868,19 @@ nav {
           <div class="pv-bg-placeholder" id="bgPlaceholder">Image de fond</div>
           <img class="pv-bg" id="pvBg" style="display:none" />
           <div class="pv-overlay"></div>
-          <img class="pv-logo" src="blzante_logo_white.png" alt="" />
+          <img class="pv-logo" id="pvLogo" src="blzante_spiral_white.png" alt="" />
+          <div class="pv-info-top">
+            <div class="pv-info-type" id="pvType">NOUVEAU SINGLE</div>
+            <div class="pv-info-artist" id="pvArtist">NOM ARTISTE</div>
+            <div class="pv-info-title" id="pvTitle">Titre du track</div>
+          </div>
           <div class="pv-artwork-wrap">
             <div class="pv-artwork-placeholder" id="artPlaceholder">Artwork</div>
             <img class="pv-artwork" id="pvArt" style="display:none" />
           </div>
-          <div class="pv-info">
-            <div class="pv-info-type" id="pvType">NOUVEAU SINGLE</div>
-            <div class="pv-info-title" id="pvTitle">Titre du track</div>
-            <div class="pv-info-artist" id="pvArtist">NOM ARTISTE</div>
-            <div class="pv-info-credits" id="pvCredits"></div>
+          <div class="pv-credits-block">
+            <div class="pv-credits-label" id="pvCreditsLabel"></div>
+            <div class="pv-credits-names" id="pvCreditsNames"></div>
           </div>
         </div>
       </div>
@@ -786,8 +939,18 @@ const S = {
   relation: 'avec',  // avec | par
   songwriters: [],
   bgImageSrc: null,
-  artworkSrc: null
+  artworkSrc: null,
+  bgZoom: 1,
+  artZoom: 1,
+  accentColor: '#e8c547',
+  logoColor: 'white'
 };
+
+function applyStyleVars(el) {
+  el.style.setProperty('--bg-zoom', S.bgZoom);
+  el.style.setProperty('--art-zoom', S.artZoom);
+  el.style.setProperty('--accent-color', S.accentColor);
+}
 
 // ═══════════════════════════════════════════════════════════════════
 // FORMAT TOGGLE
@@ -917,6 +1080,7 @@ document.getElementById('bgUpload').addEventListener('change', async (e) => {
   document.getElementById('bgPlaceholder').style.display = 'none';
   document.getElementById('bgUploadLabel').classList.add('has-file');
   document.getElementById('bgUploadText').textContent = '✓ ' + file.name;
+  document.getElementById('bgControls').classList.add('visible');
 });
 
 document.getElementById('artUpload').addEventListener('change', async (e) => {
@@ -930,6 +1094,74 @@ document.getElementById('artUpload').addEventListener('change', async (e) => {
   document.getElementById('artPlaceholder').style.display = 'none';
   document.getElementById('artUploadLabel').classList.add('has-file');
   document.getElementById('artUploadText').textContent = '✓ ' + file.name;
+  document.getElementById('artControls').classList.add('visible');
+});
+
+// ─── Delete uploaded media ─────────────────────────────────────────
+document.getElementById('bgDelete').addEventListener('click', () => {
+  S.bgImageSrc = null;
+  S.bgZoom = 1;
+  document.getElementById('bgUpload').value = '';
+  document.getElementById('pvBg').removeAttribute('src');
+  document.getElementById('pvBg').style.display = 'none';
+  document.getElementById('bgPlaceholder').style.display = 'flex';
+  document.getElementById('bgUploadLabel').classList.remove('has-file');
+  document.getElementById('bgUploadText').textContent = '📷 \u00a0Glisser une image ici ou cliquer pour choisir';
+  document.getElementById('bgControls').classList.remove('visible');
+  document.getElementById('bgZoom').value = 1;
+  document.getElementById('bgZoomVal').textContent = '100%';
+  applyStyleVars(previewFrame);
+});
+
+document.getElementById('artDelete').addEventListener('click', () => {
+  S.artworkSrc = null;
+  S.artZoom = 1;
+  document.getElementById('artUpload').value = '';
+  document.getElementById('pvArt').removeAttribute('src');
+  document.getElementById('pvArt').style.display = 'none';
+  document.getElementById('artPlaceholder').style.display = 'flex';
+  document.getElementById('artUploadLabel').classList.remove('has-file');
+  document.getElementById('artUploadText').textContent = '🎨 \u00a0Uploader la cover (format carré)';
+  document.getElementById('artControls').classList.remove('visible');
+  document.getElementById('artZoom').value = 1;
+  document.getElementById('artZoomVal').textContent = '100%';
+  applyStyleVars(previewFrame);
+});
+
+// ─── Zoom sliders ───────────────────────────────────────────────────
+document.getElementById('bgZoom').addEventListener('input', (e) => {
+  S.bgZoom = parseFloat(e.target.value);
+  document.getElementById('bgZoomVal').textContent = Math.round(S.bgZoom * 100) + '%';
+  applyStyleVars(previewFrame);
+});
+document.getElementById('artZoom').addEventListener('input', (e) => {
+  S.artZoom = parseFloat(e.target.value);
+  document.getElementById('artZoomVal').textContent = Math.round(S.artZoom * 100) + '%';
+  applyStyleVars(previewFrame);
+});
+
+// ─── Color picker (typo dominante) ─────────────────────────────────
+document.querySelectorAll('.color-swatch').forEach(sw => {
+  sw.addEventListener('click', () => {
+    document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+    sw.classList.add('active');
+    S.accentColor = sw.dataset.color;
+    applyStyleVars(previewFrame);
+  });
+});
+
+// ─── Logo color (white / black spiral) ─────────────────────────────
+const pvLogo = document.getElementById('pvLogo');
+function applyLogoColor() {
+  pvLogo.src = S.logoColor === 'black'
+    ? 'blzante_spiral_black.png'
+    : 'blzante_spiral_white.png';
+}
+document.getElementById('f_logo_white').addEventListener('change', () => {
+  S.logoColor = 'white'; applyLogoColor();
+});
+document.getElementById('f_logo_black').addEventListener('change', () => {
+  S.logoColor = 'black'; applyLogoColor();
 });
 
 // ═══════════════════════════════════════════════════════════════════
@@ -938,29 +1170,46 @@ document.getElementById('artUpload').addEventListener('change', async (e) => {
 const pvType = document.getElementById('pvType');
 const pvTitle = document.getElementById('pvTitle');
 const pvArtist = document.getElementById('pvArtist');
-const pvCredits = document.getElementById('pvCredits');
+const pvCreditsLabel = document.getElementById('pvCreditsLabel');
+const pvCreditsNames = document.getElementById('pvCreditsNames');
 
-function buildCreditsLine() {
-  if (S.songwriters.length === 0) return '';
-  let action = '';
+// Joint les noms à la française : "A", "A et B", "A, B et C"
+function formatNames(names) {
+  if (names.length === 0) return '';
+  if (names.length === 1) return names[0];
+  if (names.length === 2) return names[0] + ' et ' + names[1];
+  return names.slice(0, -1).join(', ') + ' et ' + names[names.length - 1];
+}
+
+function getCreditsLines() {
+  if (!S.songwriters.length) return { label: '', names: '' };
+  if (!S.ecrit && !S.compose) return { label: '', names: '' };
+  let action;
   if (S.ecrit && S.compose) action = 'Écrit et composé';
   else if (S.ecrit) action = 'Écrit';
-  else if (S.compose) action = 'Composé';
-  else return '';
+  else action = 'Composé';
   const rel = S.relation === 'par' ? 'par' : 'avec';
-  return `${action} ${rel} ${S.songwriters.join(' · ')}`;
+  return {
+    label: action + ' ' + rel,
+    names: formatNames(S.songwriters)
+  };
 }
 
 function updatePreview() {
   pvType.textContent = 'NOUVEAU ' + (S.releaseType || 'SINGLE').toUpperCase();
-  pvTitle.textContent = S.title || 'Titre du track';
   pvArtist.textContent = (S.artist || 'NOM ARTISTE').toUpperCase();
-  pvCredits.textContent = buildCreditsLine();
+  pvTitle.textContent = (S.title || 'Titre du track').toUpperCase();
 
-  // Auto-fit title: reduce font size if overflow
+  const c = getCreditsLines();
+  pvCreditsLabel.textContent = c.label;
+  pvCreditsNames.textContent = c.names;
+
+  applyStyleVars(previewFrame);
+
   requestAnimationFrame(() => {
-    autoFit(pvTitle, 7, 3.5);   // start at 7cqi, min 3.5cqi
-    autoFit(pvArtist, 3.3, 2.2);
+    autoFit(pvArtist, 8, 4);
+    autoFit(pvTitle, 4.2, 2.4);
+    autoFit(pvCreditsNames, 3.2, 1.8);
   });
 }
 
@@ -969,15 +1218,13 @@ function autoFit(el, maxCqi, minCqi) {
   if (!container) return;
   const cw = container.getBoundingClientRect().width;
   if (!cw) return;
-  // Reset to max
   let cqi = maxCqi;
   el.style.fontSize = (cqi * cw / 100) + 'px';
-  // Shrink until fits inside info block width
-  const info = el.closest('.pv-info');
+  const info = el.parentElement;
   const maxW = info.getBoundingClientRect().width;
-  let guard = 40;
+  let guard = 50;
   while (el.scrollWidth > maxW && cqi > minCqi && guard-- > 0) {
-    cqi -= 0.25;
+    cqi -= 0.2;
     el.style.fontSize = (cqi * cw / 100) + 'px';
   }
 }
@@ -1021,23 +1268,26 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
     }));
 
     // Re-run autofit on the clone (sized to 1080px width, 100cqi = 1080px)
-    const cloneTitle = clone.querySelector('.pv-info-title');
     const cloneArtist = clone.querySelector('.pv-info-artist');
-    const info = clone.querySelector('.pv-info');
+    const cloneTitle = clone.querySelector('.pv-info-title');
+    const cloneCreditsNames = clone.querySelector('.pv-credits-names');
     await new Promise(r => requestAnimationFrame(r));
 
     const fitClone = (el, maxCqi, minCqi) => {
+      if (!el) return;
       let cqi = maxCqi;
       el.style.fontSize = (cqi * targetW / 100) + 'px';
-      const maxW = info.getBoundingClientRect().width;
-      let guard = 60;
+      const parent = el.parentElement;
+      const maxW = parent.getBoundingClientRect().width;
+      let guard = 80;
       while (el.scrollWidth > maxW && cqi > minCqi && guard-- > 0) {
-        cqi -= 0.2;
+        cqi -= 0.15;
         el.style.fontSize = (cqi * targetW / 100) + 'px';
       }
     };
-    fitClone(cloneTitle, 7, 3.5);
-    fitClone(cloneArtist, 3.3, 2.2);
+    fitClone(cloneArtist, 8, 4);
+    fitClone(cloneTitle, 4.2, 2.4);
+    fitClone(cloneCreditsNames, 3.2, 1.8);
 
     // Render with html-to-image at pixelRatio=1 (since clone is already target size)
     const dataUrl = await htmlToImage.toPng(clone, {
