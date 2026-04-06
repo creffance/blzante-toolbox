@@ -534,6 +534,10 @@ nav {
 }
 .preview-frame[data-format="4:5"] { aspect-ratio: 4 / 5; }
 .preview-frame[data-format="9:16"] { aspect-ratio: 9 / 16; }
+.preview-frame.has-bg, .preview-frame.has-art { cursor: grab; }
+.preview-frame.dragging, .preview-frame.dragging * { cursor: grabbing !important; }
+.preview-frame.dragging .pv-bg,
+.preview-frame.dragging .pv-artwork { transition: none; }
 
 .pv-bg {
   position: absolute;
@@ -542,8 +546,10 @@ nav {
   height: 100%;
   object-fit: cover;
   z-index: 0;
-  transform: scale(var(--bg-zoom, 1));
+  transform: translate(var(--bg-x, 0px), var(--bg-y, 0px)) scale(var(--bg-zoom, 1));
   transform-origin: center;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 .pv-bg-placeholder {
   position: absolute;
@@ -600,8 +606,10 @@ nav {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transform: scale(var(--art-zoom, 1));
+  transform: translate(var(--art-x, 0px), var(--art-y, 0px)) scale(var(--art-zoom, 1));
   transform-origin: center;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 .pv-artwork-placeholder {
   width: 100%;
@@ -686,7 +694,6 @@ nav {
   font-weight: 700;
   letter-spacing: 0.04em;
   line-height: 1.25;
-  text-transform: uppercase;
   text-shadow: 0 0.2cqi 1cqi rgba(0,0,0,0.5);
   max-width: 92%;
   margin: 0 auto;
@@ -942,12 +949,24 @@ const S = {
   artworkSrc: null,
   bgZoom: 1,
   artZoom: 1,
+  bgX: 0, bgY: 0,   // drag offsets in % of preview-frame width
+  artX: 0, artY: 0,
   accentColor: '#e8c547',
   logoColor: 'white'
 };
 
+// Applies current state to CSS variables on the given element.
+// Offsets are stored as % of preview width — we convert to pixels
+// based on the element's current rendered width so the same state
+// scales perfectly between the live preview (small) and the export clone (1080).
 function applyStyleVars(el) {
+  const rect = el.getBoundingClientRect();
+  const w = rect.width || 1080;
+  el.style.setProperty('--bg-x', (S.bgX * w / 100) + 'px');
+  el.style.setProperty('--bg-y', (S.bgY * w / 100) + 'px');
   el.style.setProperty('--bg-zoom', S.bgZoom);
+  el.style.setProperty('--art-x', (S.artX * w / 100) + 'px');
+  el.style.setProperty('--art-y', (S.artY * w / 100) + 'px');
   el.style.setProperty('--art-zoom', S.artZoom);
   el.style.setProperty('--accent-color', S.accentColor);
 }
@@ -1074,6 +1093,7 @@ document.getElementById('bgUpload').addEventListener('change', async (e) => {
   if (!file) return;
   const dataUrl = await readFileAsDataURL(file);
   S.bgImageSrc = dataUrl;
+  S.bgX = 0; S.bgY = 0; S.bgZoom = 1;
   const img = document.getElementById('pvBg');
   img.src = dataUrl;
   img.style.display = 'block';
@@ -1081,6 +1101,10 @@ document.getElementById('bgUpload').addEventListener('change', async (e) => {
   document.getElementById('bgUploadLabel').classList.add('has-file');
   document.getElementById('bgUploadText').textContent = '✓ ' + file.name;
   document.getElementById('bgControls').classList.add('visible');
+  document.getElementById('bgZoom').value = 1;
+  document.getElementById('bgZoomVal').textContent = '100%';
+  previewFrame.classList.add('has-bg');
+  applyStyleVars(previewFrame);
 });
 
 document.getElementById('artUpload').addEventListener('change', async (e) => {
@@ -1088,6 +1112,7 @@ document.getElementById('artUpload').addEventListener('change', async (e) => {
   if (!file) return;
   const dataUrl = await readFileAsDataURL(file);
   S.artworkSrc = dataUrl;
+  S.artX = 0; S.artY = 0; S.artZoom = 1;
   const img = document.getElementById('pvArt');
   img.src = dataUrl;
   img.style.display = 'block';
@@ -1095,12 +1120,17 @@ document.getElementById('artUpload').addEventListener('change', async (e) => {
   document.getElementById('artUploadLabel').classList.add('has-file');
   document.getElementById('artUploadText').textContent = '✓ ' + file.name;
   document.getElementById('artControls').classList.add('visible');
+  document.getElementById('artZoom').value = 1;
+  document.getElementById('artZoomVal').textContent = '100%';
+  previewFrame.classList.add('has-art');
+  applyStyleVars(previewFrame);
 });
 
 // ─── Delete uploaded media ─────────────────────────────────────────
 document.getElementById('bgDelete').addEventListener('click', () => {
   S.bgImageSrc = null;
   S.bgZoom = 1;
+  S.bgX = 0; S.bgY = 0;
   document.getElementById('bgUpload').value = '';
   document.getElementById('pvBg').removeAttribute('src');
   document.getElementById('pvBg').style.display = 'none';
@@ -1110,12 +1140,14 @@ document.getElementById('bgDelete').addEventListener('click', () => {
   document.getElementById('bgControls').classList.remove('visible');
   document.getElementById('bgZoom').value = 1;
   document.getElementById('bgZoomVal').textContent = '100%';
+  previewFrame.classList.remove('has-bg');
   applyStyleVars(previewFrame);
 });
 
 document.getElementById('artDelete').addEventListener('click', () => {
   S.artworkSrc = null;
   S.artZoom = 1;
+  S.artX = 0; S.artY = 0;
   document.getElementById('artUpload').value = '';
   document.getElementById('pvArt').removeAttribute('src');
   document.getElementById('pvArt').style.display = 'none';
@@ -1125,6 +1157,7 @@ document.getElementById('artDelete').addEventListener('click', () => {
   document.getElementById('artControls').classList.remove('visible');
   document.getElementById('artZoom').value = 1;
   document.getElementById('artZoomVal').textContent = '100%';
+  previewFrame.classList.remove('has-art');
   applyStyleVars(previewFrame);
 });
 
@@ -1164,6 +1197,45 @@ document.getElementById('f_logo_black').addEventListener('change', () => {
   S.logoColor = 'black'; applyLogoColor();
 });
 
+// ─── Drag & drop repositionnement ──────────────────────────────────
+// Clic + drag sur l'artwork → déplace l'artwork.
+// Clic + drag ailleurs dans le preview → déplace l'image de fond.
+previewFrame.addEventListener('pointerdown', (e) => {
+  const onArtwork = !!e.target.closest('.pv-artwork-wrap');
+  const canDragArt = onArtwork && S.artworkSrc;
+  const canDragBg  = !onArtwork && S.bgImageSrc;
+  if (!canDragArt && !canDragBg) return;
+
+  e.preventDefault();
+  const xKey = canDragArt ? 'artX' : 'bgX';
+  const yKey = canDragArt ? 'artY' : 'bgY';
+  const startCX = e.clientX;
+  const startCY = e.clientY;
+  const origX = S[xKey];
+  const origY = S[yKey];
+  const rect = previewFrame.getBoundingClientRect();
+
+  previewFrame.classList.add('dragging');
+  try { previewFrame.setPointerCapture(e.pointerId); } catch(_) {}
+
+  const onMove = (ev) => {
+    const dx = (ev.clientX - startCX) / rect.width * 100;
+    const dy = (ev.clientY - startCY) / rect.width * 100;
+    S[xKey] = origX + dx;
+    S[yKey] = origY + dy;
+    applyStyleVars(previewFrame);
+  };
+  const onUp = () => {
+    previewFrame.classList.remove('dragging');
+    previewFrame.removeEventListener('pointermove', onMove);
+    previewFrame.removeEventListener('pointerup', onUp);
+    previewFrame.removeEventListener('pointercancel', onUp);
+  };
+  previewFrame.addEventListener('pointermove', onMove);
+  previewFrame.addEventListener('pointerup', onUp);
+  previewFrame.addEventListener('pointercancel', onUp);
+});
+
 // ═══════════════════════════════════════════════════════════════════
 // PREVIEW UPDATE + AUTO-FIT FONT SIZING
 // ═══════════════════════════════════════════════════════════════════
@@ -1173,12 +1245,25 @@ const pvArtist = document.getElementById('pvArtist');
 const pvCreditsLabel = document.getElementById('pvCreditsLabel');
 const pvCreditsNames = document.getElementById('pvCreditsNames');
 
+// Title-case un nom de songwriter en respectant les alias courts (2B, VJ, X…)
+// et les séparateurs (espace, trait d'union).
+function titleCaseName(name) {
+  return name.split(/(\s+|-)/).map(token => {
+    if (/^\s+$/.test(token) || token === '-') return token;
+    if (token.length === 1) return token;                  // X → X
+    if (token.length === 2 && /^[A-Z]+$/.test(token)) return token; // VJ → VJ
+    if (/^\d/.test(token)) return token;                   // 2B → 2B, 117 → 117
+    return token.charAt(0).toUpperCase() + token.slice(1).toLowerCase();
+  }).join('');
+}
+
 // Joint les noms à la française : "A", "A et B", "A, B et C"
 function formatNames(names) {
-  if (names.length === 0) return '';
-  if (names.length === 1) return names[0];
-  if (names.length === 2) return names[0] + ' et ' + names[1];
-  return names.slice(0, -1).join(', ') + ' et ' + names[names.length - 1];
+  const nice = names.map(titleCaseName);
+  if (nice.length === 0) return '';
+  if (nice.length === 1) return nice[0];
+  if (nice.length === 2) return nice[0] + ' et ' + nice[1];
+  return nice.slice(0, -1).join(', ') + ' et ' + nice[nice.length - 1];
 }
 
 function getCreditsLines() {
@@ -1266,6 +1351,10 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
         img.onerror = res;
       });
     }));
+
+    // Re-apply CSS vars on the clone so drag offsets (% of width) convert
+    // to pixel values appropriate for the 1080-wide export.
+    applyStyleVars(clone);
 
     // Re-run autofit on the clone (sized to 1080px width, 100cqi = 1080px)
     const cloneArtist = clone.querySelector('.pv-info-artist');
