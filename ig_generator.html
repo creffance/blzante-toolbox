@@ -1144,6 +1144,7 @@ document.getElementById('bgUpload').addEventListener('change', async (e) => {
   document.getElementById('bgZoomVal').textContent = '100%';
   previewFrame.classList.add('has-bg');
   applyStyleVars(previewFrame);
+  updateExportButtonLabel();
 });
 
 document.getElementById('artUpload').addEventListener('change', async (e) => {
@@ -1190,6 +1191,7 @@ document.getElementById('bgDelete').addEventListener('click', () => {
   document.getElementById('bgZoomVal').textContent = '100%';
   previewFrame.classList.remove('has-bg');
   applyStyleVars(previewFrame);
+  updateExportButtonLabel();
 });
 
 document.getElementById('artDelete').addEventListener('click', () => {
@@ -1367,7 +1369,121 @@ window.addEventListener('resize', () => updatePreview());
 // ═══════════════════════════════════════════════════════════════════
 // EXPORT PNG (haute résolution)
 // ═══════════════════════════════════════════════════════════════════
-document.getElementById('exportBtn').addEventListener('click', async () => {
+// ═══════════════════════════════════════════════════════════════════
+// HELPERS EXPORT
+// ═══════════════════════════════════════════════════════════════════
+
+// Attend que le <video> ait atteint un temps donné (seek).
+function seekVideo(videoEl, t) {
+  return new Promise((resolve) => {
+    // Si on est déjà à peu près au bon endroit, on évite un re-seek
+    if (Math.abs(videoEl.currentTime - t) < 0.0005) { resolve(); return; }
+    const onSeeked = () => {
+      videoEl.removeEventListener('seeked', onSeeked);
+      resolve();
+    };
+    videoEl.addEventListener('seeked', onSeeked);
+    videoEl.currentTime = t;
+  });
+}
+
+// Dessine un élément source (image/vidéo) en mode "cover" sur un canvas,
+// avec un éventuel zoom et un offset de drag en pixels (dans l'espace canvas).
+function drawBgCover(ctx, source, canvasW, canvasH, zoom, offsetX, offsetY) {
+  const sw = source.videoWidth || source.naturalWidth;
+  const sh = source.videoHeight || source.naturalHeight;
+  if (!sw || !sh) return;
+  const scaleCover = Math.max(canvasW / sw, canvasH / sh);
+  const drawW = sw * scaleCover * zoom;
+  const drawH = sh * scaleCover * zoom;
+  const cx = canvasW / 2 + offsetX;
+  const cy = canvasH / 2 + offsetY;
+  ctx.drawImage(source, cx - drawW / 2, cy - drawH / 2, drawW, drawH);
+}
+
+// Construit le calque d'overlay (gradient + logo + artwork + textes) comme
+// une image RGBA à fond transparent, qu'on pourra draw au-dessus de chaque
+// frame vidéo lors de l'encodage.
+async function buildOverlayLayer(targetW, targetH) {
+  const clone = previewFrame.cloneNode(true);
+  clone.id = 'exportCloneOverlay';
+  clone.style.width = targetW + 'px';
+  clone.style.height = targetH + 'px';
+  clone.style.aspectRatio = 'auto';
+  clone.style.background = 'transparent';
+
+  // On retire tout ce qui concerne le fond — il sera composé séparément
+  ['#pvBg', '#pvBgVideo', '#bgPlaceholder'].forEach(sel => {
+    const el = clone.querySelector(sel);
+    if (el) el.remove();
+  });
+
+  const holder = document.getElementById('exportHolder');
+  holder.innerHTML = '';
+  holder.appendChild(clone);
+
+  // Wait for images (logo spirale + artwork)
+  const imgs = clone.querySelectorAll('img');
+  await Promise.all(Array.from(imgs).map(img => {
+    if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+    return new Promise(res => { img.onload = res; img.onerror = res; });
+  }));
+
+  applyStyleVars(clone);
+  await new Promise(r => requestAnimationFrame(r));
+
+  // Autofit text pour la résolution cible
+  const fitClone = (el, maxCqi, minCqi) => {
+    if (!el) return;
+    let cqi = maxCqi;
+    el.style.fontSize = (cqi * targetW / 100) + 'px';
+    const parent = el.parentElement;
+    const maxW = parent.getBoundingClientRect().width;
+    let guard = 80;
+    while (el.scrollWidth > maxW && cqi > minCqi && guard-- > 0) {
+      cqi -= 0.15;
+      el.style.fontSize = (cqi * targetW / 100) + 'px';
+    }
+  };
+  fitClone(clone.querySelector('.pv-info-artist'), 9, 4.5);
+  fitClone(clone.querySelector('.pv-info-title'), 4.8, 2.8);
+  fitClone(clone.querySelector('.pv-credits-names'), 3.8, 2.2);
+
+  // Rendu en PNG à fond transparent
+  const dataUrl = await htmlToImage.toPng(clone, {
+    width: targetW,
+    height: targetH,
+    pixelRatio: 1,
+    cacheBust: true,
+    backgroundColor: null
+  });
+
+  holder.innerHTML = '';
+
+  // Retour en HTMLImageElement prêt à être dessiné
+  const img = new Image();
+  await new Promise((res, rej) => {
+    img.onload = res;
+    img.onerror = () => rej(new Error('Overlay image failed to load'));
+    img.src = dataUrl;
+  });
+  return img;
+}
+
+// Met à jour le label du bouton selon le type de media chargé
+function updateExportButtonLabel() {
+  const btn = document.getElementById('exportBtn');
+  if (S.bgType === 'video' && S.bgImageSrc) {
+    btn.textContent = '⬇ Exporter la vidéo MP4';
+  } else {
+    btn.textContent = '⬇ Exporter le PNG';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// EXPORT PNG (image statique — flow original)
+// ═══════════════════════════════════════════════════════════════════
+async function exportPNG() {
   const btn = document.getElementById('exportBtn');
   const status = document.getElementById('statusMsg');
   btn.disabled = true;
@@ -1376,12 +1492,10 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
   status.className = 'status';
 
   try {
-    // Target resolution
     const targetW = 1080;
     const targetH = S.format === '4:5' ? 1350 : 1920;
 
-    // If bg is a video, ensure it has enough data, then capture the currently
-    // visible frame as a data URL so we can render it statically in the clone.
+    // Si c'est une vidéo, on capture la frame courante comme image
     let videoFrameDataUrl = null;
     if (S.bgType === 'video' && S.bgImageSrc) {
       const videoEl = document.getElementById('pvBgVideo');
@@ -1389,23 +1503,16 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
         await new Promise((res) => {
           const done = () => { videoEl.removeEventListener('loadeddata', done); res(); };
           videoEl.addEventListener('loadeddata', done);
-          setTimeout(done, 3000); // hard timeout fallback
+          setTimeout(done, 3000);
         });
       }
-      try {
-        const fc = document.createElement('canvas');
-        fc.width = videoEl.videoWidth || 1080;
-        fc.height = videoEl.videoHeight || 1920;
-        const fctx = fc.getContext('2d');
-        fctx.drawImage(videoEl, 0, 0, fc.width, fc.height);
-        videoFrameDataUrl = fc.toDataURL('image/png');
-      } catch (err) {
-        console.warn('Video frame capture failed:', err);
-        throw new Error('Impossible de capturer la frame vidéo');
-      }
+      const fc = document.createElement('canvas');
+      fc.width = videoEl.videoWidth || 1080;
+      fc.height = videoEl.videoHeight || 1920;
+      fc.getContext('2d').drawImage(videoEl, 0, 0, fc.width, fc.height);
+      videoFrameDataUrl = fc.toDataURL('image/png');
     }
 
-    // Clone the preview into a hidden fixed-size container for pixel-perfect export
     const holder = document.getElementById('exportHolder');
     holder.innerHTML = '';
     const clone = previewFrame.cloneNode(true);
@@ -1414,9 +1521,6 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
     clone.style.height = targetH + 'px';
     clone.style.aspectRatio = 'auto';
 
-    // ALWAYS remove the video element from the clone — html-to-image doesn't
-    // render <video> reliably. If we had a video bg, substitute the captured
-    // frame into the img element instead.
     const cloneVideo = clone.querySelector('#pvBgVideo');
     if (cloneVideo) cloneVideo.remove();
     if (videoFrameDataUrl) {
@@ -1426,27 +1530,15 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
         cloneImg.style.display = 'block';
       }
     }
-
     holder.appendChild(clone);
 
-    // Wait for images inside the clone to be fully decoded
     const imgs = clone.querySelectorAll('img');
     await Promise.all(Array.from(imgs).map(img => {
       if (img.complete && img.naturalWidth > 0) return Promise.resolve();
-      return new Promise(res => {
-        img.onload = res;
-        img.onerror = res;
-      });
+      return new Promise(res => { img.onload = res; img.onerror = res; });
     }));
 
-    // Re-apply CSS vars on the clone so drag offsets (% of width) convert
-    // to pixel values appropriate for the 1080-wide export.
     applyStyleVars(clone);
-
-    // Re-run autofit on the clone (sized to 1080px width, 100cqi = 1080px)
-    const cloneArtist = clone.querySelector('.pv-info-artist');
-    const cloneTitle = clone.querySelector('.pv-info-title');
-    const cloneCreditsNames = clone.querySelector('.pv-credits-names');
     await new Promise(r => requestAnimationFrame(r));
 
     const fitClone = (el, maxCqi, minCqi) => {
@@ -1461,21 +1553,15 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
         el.style.fontSize = (cqi * targetW / 100) + 'px';
       }
     };
-    fitClone(cloneArtist, 9, 4.5);
-    fitClone(cloneTitle, 4.8, 2.8);
-    fitClone(cloneCreditsNames, 3.8, 2.2);
+    fitClone(clone.querySelector('.pv-info-artist'), 9, 4.5);
+    fitClone(clone.querySelector('.pv-info-title'), 4.8, 2.8);
+    fitClone(clone.querySelector('.pv-credits-names'), 3.8, 2.2);
 
-    // Render with html-to-image at pixelRatio=1 (since clone is already target size)
     const dataUrl = await htmlToImage.toPng(clone, {
-      width: targetW,
-      height: targetH,
-      pixelRatio: 1,
-      cacheBust: true,
-      backgroundColor: '#000'
+      width: targetW, height: targetH, pixelRatio: 1, cacheBust: true, backgroundColor: '#000'
     });
 
-    // Download
-    const filename = buildFilename();
+    const filename = buildFilename('png');
     const a = document.createElement('a');
     a.href = dataUrl;
     a.download = filename;
@@ -1487,27 +1573,364 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
     status.textContent = '✓ PNG exporté : ' + filename;
     status.className = 'status success';
   } catch (err) {
-    console.error('Export error:', err);
+    console.error('Export PNG error:', err);
     let msg;
     if (err && err.message) msg = err.message;
-    else if (err instanceof Event) msg = 'Chargement d\'une image échoué (type: ' + err.type + ')';
+    else if (err instanceof Event) msg = 'Chargement d\'une image échoué (' + err.type + ')';
     else msg = String(err);
     status.textContent = '⚠ Erreur export : ' + msg;
     status.className = 'status error';
   }
+  btn.disabled = false;
+  updateExportButtonLabel();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// AUDIO HELPERS — décodage de la piste audio source + ré-encodage AAC
+// ═══════════════════════════════════════════════════════════════════
+
+// Décode la piste audio d'un fichier vidéo via Web Audio API.
+// Retourne un AudioBuffer ou null si le fichier n'a pas d'audio.
+async function decodeAudioFromVideoSrc(srcUrl) {
+  const ACtor = window.AudioContext || window.webkitAudioContext;
+  if (!ACtor) return null;
+  let response, arrayBuffer;
+  try {
+    response = await fetch(srcUrl);
+    arrayBuffer = await response.arrayBuffer();
+  } catch (e) {
+    console.warn('Audio fetch failed:', e);
+    return null;
+  }
+  // Utilise un contexte temporaire — sa sample rate n'a pas d'importance,
+  // decodeAudioData renvoie l'audio à sa rate native.
+  const ac = new ACtor();
+  let audioBuffer = null;
+  try {
+    audioBuffer = await ac.decodeAudioData(arrayBuffer);
+  } catch (e) {
+    console.warn('decodeAudioData failed (vidéo sans audio ?):', e);
+  } finally {
+    try { await ac.close(); } catch(_) {}
+  }
+  return audioBuffer;
+}
+
+// Encode un AudioBuffer dans un AudioEncoder déjà configuré.
+// Découpe en chunks de `samplesPerChunk` frames par canal (format f32-planar).
+async function encodeAudioBuffer(audioEncoder, audioBuffer, maxDurationSec) {
+  const numChannels = audioBuffer.numberOfChannels;
+  const sampleRate = audioBuffer.sampleRate;
+  const totalSamples = Math.min(
+    audioBuffer.length,
+    Math.floor(maxDurationSec * sampleRate)
+  );
+  const samplesPerChunk = 4096;
+
+  // Pré-charge les channelData (une seule fois pour tout le buffer)
+  const channels = [];
+  for (let ch = 0; ch < numChannels; ch++) {
+    channels.push(audioBuffer.getChannelData(ch));
+  }
+
+  let pos = 0;
+  while (pos < totalSamples) {
+    const chunkSize = Math.min(samplesPerChunk, totalSamples - pos);
+
+    // Format f32-planar : [ch0_samples..., ch1_samples..., ...]
+    const planar = new Float32Array(chunkSize * numChannels);
+    for (let ch = 0; ch < numChannels; ch++) {
+      planar.set(channels[ch].subarray(pos, pos + chunkSize), ch * chunkSize);
+    }
+
+    const audioData = new AudioData({
+      format: 'f32-planar',
+      sampleRate,
+      numberOfFrames: chunkSize,
+      numberOfChannels: numChannels,
+      timestamp: Math.round(pos * 1e6 / sampleRate),
+      data: planar
+    });
+    audioEncoder.encode(audioData);
+    audioData.close();
+
+    pos += chunkSize;
+
+    // Backpressure + yield occasionnel
+    while (audioEncoder.encodeQueueSize > 30) {
+      await new Promise(r => setTimeout(r, 5));
+    }
+    if ((pos / samplesPerChunk) % 20 === 0) {
+      await new Promise(r => setTimeout(r, 0));
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// EXPORT VIDÉO MP4 (WebCodecs + mp4-muxer)
+// ═══════════════════════════════════════════════════════════════════
+async function exportVideo() {
+  const btn = document.getElementById('exportBtn');
+  const status = document.getElementById('statusMsg');
+  btn.disabled = true;
+  status.textContent = '';
+  status.className = 'status';
+
+  const videoEl = document.getElementById('pvBgVideo');
+  const wasPaused = videoEl.paused;
+  const resumeAt = videoEl.currentTime;
+
+  try {
+    if (typeof VideoEncoder === 'undefined') {
+      throw new Error('WebCodecs non supporté dans ce navigateur (utilise Chrome/Edge récent)');
+    }
+
+    // Import dynamique du muxer MP4 (ESM via jsdelivr)
+    btn.textContent = '⏳ Chargement du muxer…';
+    let Muxer, ArrayBufferTarget;
+    try {
+      const mod = await import('https://cdn.jsdelivr.net/npm/mp4-muxer@5.2.1/+esm');
+      Muxer = mod.Muxer;
+      ArrayBufferTarget = mod.ArrayBufferTarget;
+    } catch (e) {
+      throw new Error('Échec du chargement de mp4-muxer (connexion internet ?)');
+    }
+
+    const targetW = 1080;
+    const targetH = S.format === '4:5' ? 1350 : 1920;
+
+    // S'assurer que la vidéo est prête
+    if (videoEl.readyState < 2) {
+      await new Promise((res) => {
+        const done = () => { videoEl.removeEventListener('loadeddata', done); res(); };
+        videoEl.addEventListener('loadeddata', done);
+        setTimeout(done, 5000);
+      });
+    }
+    if (!videoEl.videoWidth || !isFinite(videoEl.duration)) {
+      throw new Error('Vidéo pas prête, réessaie dans une seconde');
+    }
+
+    const fps = 30;
+    const duration = Math.min(videoEl.duration, 90); // cap à 90s
+    const totalFrames = Math.max(1, Math.floor(duration * fps));
+
+    // Décodage de la piste audio source (peut être null si vidéo muette)
+    btn.textContent = '⏳ Décodage audio…';
+    let audioBuffer = null;
+    if (typeof AudioEncoder !== 'undefined') {
+      audioBuffer = await decodeAudioFromVideoSrc(S.bgImageSrc);
+    }
+
+    // Construire le calque d'overlay une seule fois
+    btn.textContent = '⏳ Préparation du calque…';
+    const overlayImg = await buildOverlayLayer(targetW, targetH);
+
+    // Trouver un codec H.264 supporté
+    btn.textContent = '⏳ Initialisation de l\'encodeur…';
+    const codecOptions = ['avc1.640029', 'avc1.4D0029', 'avc1.42002A', 'avc1.42E02A', 'avc1.640028'];
+    let codec = null;
+    for (const c of codecOptions) {
+      try {
+        const support = await VideoEncoder.isConfigSupported({
+          codec: c, width: targetW, height: targetH, bitrate: 8_000_000, framerate: fps
+        });
+        if (support && support.supported) { codec = c; break; }
+      } catch(_) {}
+    }
+    if (!codec) throw new Error('Aucun codec H.264 supporté par ce navigateur');
+
+    // Vérifie que AAC est supporté si on a de l'audio à encoder
+    let audioCodec = null;
+    if (audioBuffer) {
+      const aacOptions = ['mp4a.40.2', 'mp4a.40.5'];
+      for (const c of aacOptions) {
+        try {
+          const support = await AudioEncoder.isConfigSupported({
+            codec: c,
+            sampleRate: audioBuffer.sampleRate,
+            numberOfChannels: audioBuffer.numberOfChannels,
+            bitrate: 192_000
+          });
+          if (support && support.supported) { audioCodec = c; break; }
+        } catch(_) {}
+      }
+      if (!audioCodec) {
+        console.warn('AAC non supporté, export sans audio');
+        audioBuffer = null;
+      }
+    }
+
+    // Muxer + encoder (audio inclus si décodé avec succès)
+    const muxerConfig = {
+      target: new ArrayBufferTarget(),
+      video: { codec: 'avc', width: targetW, height: targetH, frameRate: fps },
+      fastStart: 'in-memory'
+    };
+    if (audioBuffer) {
+      muxerConfig.audio = {
+        codec: 'aac',
+        numberOfChannels: audioBuffer.numberOfChannels,
+        sampleRate: audioBuffer.sampleRate
+      };
+    }
+    const muxer = new Muxer(muxerConfig);
+
+    let encoderError = null;
+    const encoder = new VideoEncoder({
+      output: (chunk, meta) => muxer.addVideoChunk(chunk, meta),
+      error: (e) => { console.error('Video encoder error:', e); encoderError = e; }
+    });
+    encoder.configure({
+      codec,
+      width: targetW,
+      height: targetH,
+      bitrate: 8_000_000,
+      framerate: fps
+    });
+
+    // Audio encoder (si on a une piste audio)
+    let audioEncoder = null;
+    let audioEncoderError = null;
+    if (audioBuffer) {
+      audioEncoder = new AudioEncoder({
+        output: (chunk, meta) => muxer.addAudioChunk(chunk, meta),
+        error: (e) => { console.error('Audio encoder error:', e); audioEncoderError = e; }
+      });
+      audioEncoder.configure({
+        codec: audioCodec,
+        sampleRate: audioBuffer.sampleRate,
+        numberOfChannels: audioBuffer.numberOfChannels,
+        bitrate: 192_000
+      });
+    }
+
+    // Canvas de compositing
+    const canvas = document.createElement('canvas');
+    canvas.width = targetW;
+    canvas.height = targetH;
+    const ctx = canvas.getContext('2d', { alpha: false });
+
+    // Offsets de drag convertis en pixels dans l'espace cible 1080
+    const bgOffsetX = S.bgX * targetW / 100;
+    const bgOffsetY = S.bgY * targetW / 100;
+
+    videoEl.pause();
+    videoEl.currentTime = 0;
+    await seekVideo(videoEl, 0);
+
+    // Encode chaque frame
+    for (let i = 0; i < totalFrames; i++) {
+      if (encoderError) throw encoderError;
+
+      const t = i / fps;
+      await seekVideo(videoEl, t);
+
+      // Fond noir de base
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, targetW, targetH);
+
+      // Vidéo en cover + transform
+      drawBgCover(ctx, videoEl, targetW, targetH, S.bgZoom, bgOffsetX, bgOffsetY);
+
+      // Overlay (gradient + logo + artwork + textes)
+      ctx.drawImage(overlayImg, 0, 0, targetW, targetH);
+
+      // Encode la frame
+      const frame = new VideoFrame(canvas, { timestamp: Math.round(i * 1e6 / fps) });
+      encoder.encode(frame, { keyFrame: i % 60 === 0 });
+      frame.close();
+
+      // Progress + yield to event loop
+      if (i % 3 === 0) {
+        const pct = Math.round(100 * (i + 1) / totalFrames);
+        btn.textContent = `⏳ Encodage ${pct}%`;
+        await new Promise(r => setTimeout(r, 0));
+      }
+
+      // Backpressure : si la queue déborde, on attend
+      while (encoder.encodeQueueSize > 12) {
+        await new Promise(r => setTimeout(r, 8));
+      }
+    }
+
+    btn.textContent = '⏳ Finalisation vidéo…';
+    await encoder.flush();
+    if (encoderError) throw encoderError;
+
+    // Encode l'audio si présent
+    if (audioBuffer && audioEncoder) {
+      btn.textContent = '⏳ Encodage audio…';
+      try {
+        await encodeAudioBuffer(audioEncoder, audioBuffer, duration);
+        await audioEncoder.flush();
+        if (audioEncoderError) throw audioEncoderError;
+      } catch (audioErr) {
+        // Si l'audio plante, on garde au moins la vidéo
+        console.warn('Audio encoding failed, exporting video-only:', audioErr);
+        try { audioEncoder.close(); } catch(_) {}
+        // Note : muxer va probablement râler car il s'attend à de l'audio.
+        // On le laisse finaliser quand même, l'utilisateur verra la vidéo sans audio.
+      }
+    }
+
+    btn.textContent = '⏳ Finalisation MP4…';
+    muxer.finalize();
+
+    // Télécharger le MP4
+    const { buffer } = muxer.target;
+    const blob = new Blob([buffer], { type: 'video/mp4' });
+    const url = URL.createObjectURL(blob);
+    const filename = buildFilename('mp4');
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+
+    status.textContent = '✓ Vidéo exportée : ' + filename + ' (' + (blob.size / 1024 / 1024).toFixed(1) + ' Mo)';
+    status.className = 'status success';
+  } catch (err) {
+    console.error('Export video error:', err);
+    let msg;
+    if (err && err.message) msg = err.message;
+    else if (err instanceof Event) msg = 'Événement d\'erreur (' + err.type + ')';
+    else msg = String(err);
+    status.textContent = '⚠ Erreur export vidéo : ' + msg;
+    status.className = 'status error';
+  }
+
+  // Reprendre la lecture de la preview là où on était
+  try {
+    videoEl.currentTime = resumeAt;
+    if (!wasPaused) await videoEl.play();
+  } catch(_) {}
 
   btn.disabled = false;
-  btn.textContent = '⬇ Exporter le PNG';
+  updateExportButtonLabel();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// DISPATCH : choix de l'export selon le type de fond
+// ═══════════════════════════════════════════════════════════════════
+document.getElementById('exportBtn').addEventListener('click', async () => {
+  if (S.bgType === 'video' && S.bgImageSrc) {
+    await exportVideo();
+  } else {
+    await exportPNG();
+  }
 });
 
-function buildFilename() {
+function buildFilename(ext) {
   const slug = (s) => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
   const parts = [
     slug(S.artist) || 'artiste',
     slug(S.title) || 'titre',
     S.format === '4:5' ? 'post' : 'reel'
   ];
-  return 'blzante_sortie_' + parts.join('_') + '.png';
+  return 'blzante_sortie_' + parts.join('_') + '.' + (ext || 'png');
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1516,6 +1939,7 @@ function buildFilename() {
 (async () => {
   try { await _waitAuth(); } catch(e) { return; }
   updatePreview();
+  updateExportButtonLabel();
 })();
 </script>
 </body>
