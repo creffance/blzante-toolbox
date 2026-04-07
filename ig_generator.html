@@ -4,12 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>IG Generator — BLZante Toolbox</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Syne+Mono&display=block">
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.13/dist/html-to-image.min.js"></script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Syne+Mono&display=swap');
-
 :root {
   --bg: #0a0a0a;
   --surface: #141414;
@@ -1405,6 +1406,9 @@ function drawBgCover(ctx, source, canvasW, canvasH, zoom, offsetX, offsetY) {
 // une image RGBA à fond transparent, qu'on pourra draw au-dessus de chaque
 // frame vidéo lors de l'encodage.
 async function buildOverlayLayer(targetW, targetH) {
+  // Filet de sécurité fonts (cf. waitForFonts dans init)
+  if (document.fonts && document.fonts.ready) await document.fonts.ready;
+
   const clone = previewFrame.cloneNode(true);
   clone.id = 'exportCloneOverlay';
   clone.style.width = targetW + 'px';
@@ -1492,6 +1496,9 @@ async function exportPNG() {
   status.className = 'status';
 
   try {
+    // Filet de sécurité fonts (cf. waitForFonts dans init)
+    if (document.fonts && document.fonts.ready) await document.fonts.ready;
+
     const targetW = 1080;
     const targetH = S.format === '4:5' ? 1350 : 1920;
 
@@ -1936,10 +1943,45 @@ function buildFilename(ext) {
 // ═══════════════════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════════════════
+
+// Attend que la police Syne soit complètement chargée. Sans ça, le premier
+// autoFit() s'exécute avec la police de fallback (Helvetica/Arial), mesure
+// les largeurs avec les mauvaises métriques et fige une taille en pixels qui
+// ne correspond plus une fois Syne arrivée. Particulièrement visible sur Mac
+// où le fallback est plus différent de Syne qu'Arial sur Windows.
+async function waitForFonts() {
+  if (!document.fonts) return;
+  try {
+    // Force-load les couples poids/famille qu'on utilise dans le preview
+    await Promise.all([
+      document.fonts.load('800 16px "Syne"'),  // pv-info-artist
+      document.fonts.load('700 16px "Syne"'),  // pv-credits-names
+      document.fonts.load('600 16px "Syne"'),  // pv-info-type, pv-info-title
+      document.fonts.load('400 16px "Syne Mono"')
+    ]);
+    await document.fonts.ready;
+  } catch (e) {
+    console.warn('Font load wait failed:', e);
+  }
+}
+
 (async () => {
   try { await _waitAuth(); } catch(e) { return; }
+  await waitForFonts();
   updatePreview();
   updateExportButtonLabel();
+
+  // Filet de sécurité : si pour une raison quelconque la police arrive après
+  // le premier rendu (cache vide + connexion lente), on relance updatePreview
+  // pour que autoFit recalcule avec les bonnes métriques.
+  if (document.fonts && document.fonts.addEventListener) {
+    let safetyDone = false;
+    document.fonts.addEventListener('loadingdone', () => {
+      if (safetyDone) return;
+      safetyDone = true;
+      updatePreview();
+    });
+  }
 })();
 </script>
 </body>
