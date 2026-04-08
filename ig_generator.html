@@ -891,6 +891,7 @@ nav {
             <div class="option-row">
               <label class="option-pill"><input type="checkbox" id="f_ecrit" checked /> Écrit</label>
               <label class="option-pill"><input type="checkbox" id="f_compose" checked /> Composé</label>
+              <label class="option-pill"><input type="checkbox" id="f_realise" /> Réalisé</label>
             </div>
           </div>
           <div class="form-group">
@@ -1067,6 +1068,7 @@ const S = {
   releaseType: 'Single',
   ecrit: true,
   compose: true,
+  realise: false,
   relation: 'avec',  // avec | par
   songwriters: [],
   bgImageSrc: null,
@@ -1201,6 +1203,7 @@ bind('f_title', 'title');
 bind('f_type', 'releaseType', 'change');
 bind('f_ecrit', 'ecrit', 'change');
 bind('f_compose', 'compose', 'change');
+bind('f_realise', 'realise', 'change');
 document.getElementById('f_avec').addEventListener('change', () => { S.relation = 'avec'; updatePreview(); });
 document.getElementById('f_par').addEventListener('change', () => { S.relation = 'par'; updatePreview(); });
 
@@ -1466,17 +1469,30 @@ function formatNames(names) {
   const nice = names.map(titleCaseName);
   if (nice.length === 0) return '';
   if (nice.length === 1) return nice[0];
-  if (nice.length === 2) return nice[0] + ' et ' + nice[1];
-  return nice.slice(0, -1).join(', ') + ' et ' + nice[nice.length - 1];
+  if (nice.length === 2) return nice[0] + ' & ' + nice[1];
+  return nice.slice(0, -1).join(', ') + ' & ' + nice[nice.length - 1];
 }
 
 function getCreditsLines() {
   if (!S.songwriters.length) return { label: '', names: '' };
-  if (!S.ecrit && !S.compose) return { label: '', names: '' };
+  if (!S.ecrit && !S.compose && !S.realise) return { label: '', names: '' };
+
+  // Construit l'action en français selon les contributions cochées :
+  // 1 → "Écrit" / "Composé" / "Réalisé"
+  // 2 → "Écrit et composé", "Écrit et réalisé", "Composé et réalisé"
+  // 3 → "Écrit, composé et réalisé"
+  const verbs = [];
+  if (S.ecrit)   verbs.push('écrit');
+  if (S.compose) verbs.push('composé');
+  if (S.realise) verbs.push('réalisé');
+
   let action;
-  if (S.ecrit && S.compose) action = 'Écrit et composé';
-  else if (S.ecrit) action = 'Écrit';
-  else action = 'Composé';
+  if (verbs.length === 1) action = verbs[0];
+  else if (verbs.length === 2) action = verbs.join(' et ');
+  else action = verbs.slice(0, -1).join(', ') + ' et ' + verbs[verbs.length - 1];
+  // Capitalize first letter
+  action = action.charAt(0).toUpperCase() + action.slice(1);
+
   const rel = S.relation === 'par' ? 'par' : 'avec';
   return {
     label: action + ' ' + rel,
@@ -1504,14 +1520,20 @@ function updatePreview() {
   // Quand l'utilisateur agrandit le bloc du haut (artiste ou titre), on
   // élargit dynamiquement la max-height pour que la nouvelle taille tienne.
   // Boost agressif (3cqi par cran d'artiste, 1.5 par cran de titre) pour
-  // garantir que chaque clic produit un changement visible. L'utilisateur
-  // prend la responsabilité d'un éventuel chevauchement avec le logo en haut.
-  // Le bloc reste TOUJOURS au-dessus de l'artwork puisqu'il est ancré par
-  // son bord inférieur (CSS bottom: %).
-  const baseMaxH = S.format === '4:5' ? 24 : 30;
+  // garantir que chaque clic produit un changement visible.
+  //
+  // CAP DUR : on plafonne la max-height à un ceiling (36cqi en 4:5, 50cqi
+  // en 9:16) qui garantit que le bord supérieur du bloc ne sort jamais du
+  // cadre du frame, peu importe les ajustements utilisateur ou les
+  // micro-différences de rendu de polices entre machines. Quand le cap est
+  // atteint, autoFitBlock vertical-fit shrinkera l'artiste/titre pour faire
+  // tenir le contenu dans le ceiling.
+  const baseMaxH    = S.format === '4:5' ? 24 : 30;
+  const ceilingMaxH = S.format === '4:5' ? 36 : 50;
   const sizeBoost = Math.max(0, S.sizes.artist) * 3
                   + Math.max(0, S.sizes.title)  * 1.5;
-  previewFrame.style.setProperty('--info-max-h', (baseMaxH + sizeBoost) + 'cqi');
+  const finalMaxH = Math.min(baseMaxH + sizeBoost, ceilingMaxH);
+  previewFrame.style.setProperty('--info-max-h', finalMaxH + 'cqi');
 
   requestAnimationFrame(() => {
     autoFitBlock(pvArtist.parentElement, [
