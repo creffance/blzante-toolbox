@@ -114,6 +114,11 @@ nav {
   margin-bottom: 28px;
   border-bottom: 1px solid var(--border);
   padding-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 .page-heading h1 {
   font-family: 'Syne', sans-serif;
@@ -122,11 +127,33 @@ nav {
   color: var(--text);
   line-height: 1.3;
 }
-.page-heading .sub {
-  font-size: 0.7rem;
-  color: var(--muted);
-  margin-top: 4px;
-  letter-spacing: 0.05em;
+
+/* Reset button — visible en haut et en bas de page */
+.reset-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Syne Mono', monospace;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 10px 16px;
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border-hi);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.reset-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.reset-btn-full {
+  width: 100%;
+  justify-content: center;
+  margin-top: 20px;
+  padding: 14px 16px;
+  font-size: 0.78rem;
 }
 
 .main-grid {
@@ -319,8 +346,18 @@ nav {
   color: #444;
   pointer-events: none;
 }
-.rich-textarea strong { font-weight: 800; }
-.rich-textarea .actu-red { color: var(--accent-color, #FF2D3A); }
+.rich-textarea strong {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  font-weight: 800;
+}
+.rich-textarea .actu-red {
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  color: var(--accent-color, #FF2D3A);
+}
 .form-select {
   cursor: pointer;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23777'/%3E%3C/svg%3E");
@@ -922,10 +959,27 @@ nav {
 .pv-actu-desc:empty { display: none; }
 
 /* Rich text formatting inside the rendered description.
-   - <strong> from execCommand('bold') → weight 800
-   - <span class="actu-red"> from custom toggle → couleur dominante */
-.pv-actu-desc strong { font-weight: 800; }
-.pv-actu-desc .actu-red { color: var(--accent-color, #FF2D3A); }
+   - <strong> from execCommand('bold') → weight 800, MÊME police/taille
+   - <span class="actu-red"> from custom toggle → couleur dominante
+   IMPORTANT : on force l'héritage pour que le gras ne change pas la police
+   ni la taille (sans ça, certains browsers utilisent une police système
+   différente sur <strong>). */
+.pv-actu-desc strong {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+  font-style: inherit;
+  font-weight: 800;
+}
+.pv-actu-desc .actu-red {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+  font-weight: inherit;
+  color: var(--accent-color, #FF2D3A);
+}
 
 .pv-actu-credits-label {
   font-family: 'Syne', sans-serif;
@@ -1003,7 +1057,7 @@ nav {
 <div class="container">
   <div class="page-heading">
     <h1>IG Content Generator</h1>
-    <div class="sub">Génère des posts et Reels Instagram pour le label — v1 : post Sortie, image de fond, export PNG</div>
+    <button type="button" class="reset-btn" id="resetBtnTop">↻ Créer un nouveau post</button>
   </div>
 
   <div class="main-grid">
@@ -1210,6 +1264,7 @@ nav {
         <button class="export-btn" id="exportBtn">⬇ Exporter le PNG</button>
         <button class="export-btn" id="coverBtn" style="display:none; margin-top:8px; background:#1f1f1f; color:var(--text); border:1px solid var(--border-hi);">🖼️ Cover 3:4 pour le feed</button>
         <div class="status" id="statusMsg"></div>
+        <button type="button" class="reset-btn reset-btn-full" id="resetBtnBottom">↻ Créer un nouveau post</button>
       </div>
     </div>
 
@@ -2920,6 +2975,20 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
 document.getElementById('coverBtn').addEventListener('click', async () => {
   await exportPNG('3:4');
 });
+
+// Reset post : recharge la page complètement pour réinitialiser tous les
+// champs, le state, les uploads et la preview. Approche la plus fiable —
+// un reset manuel champ par champ laisserait probablement traîner un état.
+function confirmReset() {
+  // Si rien n'a été saisi, pas besoin de confirmer
+  const hasContent = S.artist || S.title || S.actuTitle || S.actuDesc ||
+                     S.songwriters.length > 0 || S.bgImageSrc || S.artworkSrc;
+  if (!hasContent || confirm('Créer un nouveau post ? Toutes les modifications en cours seront perdues.')) {
+    window.location.reload();
+  }
+}
+document.getElementById('resetBtnTop').addEventListener('click', confirmReset);
+document.getElementById('resetBtnBottom').addEventListener('click', confirmReset);
 
 function buildFilename(ext, suffix) {
   const slug = (s) => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
