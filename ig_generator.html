@@ -255,6 +255,72 @@ nav {
 }
 .form-input:focus, .form-select:focus { border-color: #555; }
 .form-input::placeholder { color: #444; }
+
+/* Rich text editor for actu description */
+.rich-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-bottom: none;
+}
+.rich-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--border-hi);
+  color: var(--text);
+  cursor: pointer;
+  font-family: 'Syne', sans-serif;
+  font-size: 0.8rem;
+  padding: 0;
+  transition: all 0.15s;
+}
+.rich-btn:hover { border-color: var(--accent); color: var(--accent); }
+.rich-btn strong { font-weight: 800; }
+.rich-color-swatch {
+  display: block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #FF2D3A;
+}
+.rich-hint {
+  margin-left: 8px;
+  font-family: 'Syne Mono', monospace;
+  font-size: 0.62rem;
+  color: var(--muted-2);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.rich-textarea {
+  width: 100%;
+  min-height: 80px;
+  font-family: 'Syne Mono', monospace;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.rich-textarea:focus { border-color: #555; }
+.rich-textarea:empty:before {
+  content: attr(data-placeholder);
+  color: #444;
+  pointer-events: none;
+}
+.rich-textarea strong { font-weight: 800; }
+.rich-textarea .actu-red { color: var(--accent-color, #FF2D3A); }
 .form-select {
   cursor: pointer;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23777'/%3E%3C/svg%3E");
@@ -813,18 +879,6 @@ nav {
   pointer-events: none;
 }
 
-.pv-actu-label {
-  font-family: 'Syne', sans-serif;
-  font-size: 2.6cqi;
-  line-height: 1;
-  letter-spacing: 0.32em;
-  font-weight: 600;
-  color: #fff;
-  margin-bottom: 1.4cqi;
-  text-transform: uppercase;
-  text-shadow: 0 0.2cqi 1cqi rgba(0,0,0,0.55);
-}
-
 .pv-actu-artist {
   font-size: 7.2cqi;
   font-weight: 800;
@@ -862,6 +916,12 @@ nav {
   text-shadow: 0 0.2cqi 1cqi rgba(0,0,0,0.5);
 }
 .pv-actu-desc:empty { display: none; }
+
+/* Rich text formatting inside the rendered description.
+   - <strong> from execCommand('bold') → weight 800
+   - <span class="actu-red"> from custom toggle → couleur dominante */
+.pv-actu-desc strong { font-weight: 800; }
+.pv-actu-desc .actu-red { color: var(--accent-color, #FF2D3A); }
 
 .pv-actu-credits-label {
   font-family: 'Syne', sans-serif;
@@ -1008,15 +1068,22 @@ nav {
           </div>
           <div class="form-group">
             <label class="form-label">Description de l'actu</label>
-            <textarea class="form-input" id="f_actu_desc" rows="3" placeholder="Courte description (1 à 3 lignes)"></textarea>
+            <div class="rich-toolbar">
+              <button type="button" class="rich-btn" id="f_actu_desc_bold" title="Gras"><strong>B</strong></button>
+              <button type="button" class="rich-btn" id="f_actu_desc_red" title="Couleur dominante">
+                <span class="rich-color-swatch"></span>
+              </button>
+              <span class="rich-hint">Sélectionne du texte puis clique sur B ou ●</span>
+            </div>
+            <div class="rich-textarea" id="f_actu_desc" contenteditable="true" data-placeholder="Courte description (1 à 3 lignes)…"></div>
           </div>
           <div class="form-group">
             <label class="form-label">Position verticale du bloc de texte</label>
             <div class="slider-row">
               <button class="size-btn" type="button" id="f_actu_y_minus">↑</button>
-              <input type="range" id="f_actu_y" class="zoom-slider" min="-35" max="35" step="1" value="0" />
+              <input type="range" id="f_actu_y" class="zoom-slider" min="-40" max="60" step="1" value="35" />
               <button class="size-btn" type="button" id="f_actu_y_plus">↓</button>
-              <span class="zoom-value" id="f_actu_y_val">Centre</span>
+              <span class="zoom-value" id="f_actu_y_val">Bas +35</span>
             </div>
           </div>
         </div>
@@ -1172,7 +1239,6 @@ nav {
 
           <!-- ===== ACTU elements ===== -->
           <div class="pv-actu-wrap">
-            <div class="pv-actu-label" id="pvActuLabel">ACTU</div>
             <div class="pv-actu-artist" id="pvActuArtist">NOM ARTISTE</div>
             <div class="pv-actu-title" id="pvActuTitle">TITRE DE L'ACTU</div>
             <div class="pv-actu-desc" id="pvActuDesc"></div>
@@ -1234,7 +1300,7 @@ const S = {
   // Actu-specific
   actuTitle: '',
   actuDesc: '',
-  actuY: 0,          // vertical offset in cqi, -35..+35
+  actuY: 35,         // vertical offset in cqi, -40..+60 (default: bottom-positioned)
   ecrit: true,
   compose: true,
   realise: false,
@@ -1402,7 +1468,138 @@ bind('f_realise', 'realise', 'change');
 
 // ─── Actu bindings ─────────────────────────────────────────────────
 bind('f_actu_title', 'actuTitle');
-bind('f_actu_desc', 'actuDesc');
+
+// Description riche : contenteditable div + toolbar Bold/Rouge.
+// On capture innerHTML à chaque modification (saisie ou bouton) et on
+// le stocke dans S.actuDesc (que updatePreviewActu utilise via innerHTML).
+const actuDescEl = document.getElementById('f_actu_desc');
+
+// Sync helper : appelé après chaque modification du contenu
+const syncActuDesc = () => {
+  // Sanitize : on autorise seulement <br>, <strong>, <span class="actu-red">
+  // Tout le reste est nettoyé pour éviter d'injecter du HTML hostile dans
+  // la preview.
+  S.actuDesc = sanitizeRichText(actuDescEl.innerHTML);
+  updatePreview();
+};
+actuDescEl.addEventListener('input', syncActuDesc);
+
+// Sanitize : whitelist stricte d'éléments et d'attributs.
+function sanitizeRichText(html) {
+  const wrap = document.createElement('div');
+  wrap.innerHTML = html;
+  const walk = (node) => {
+    const children = Array.from(node.childNodes);
+    for (const child of children) {
+      if (child.nodeType === Node.TEXT_NODE) continue;
+      if (child.nodeType !== Node.ELEMENT_NODE) { child.remove(); continue; }
+      const tag = child.tagName.toLowerCase();
+      if (tag === 'br') continue;
+      if (tag === 'strong' || tag === 'b') {
+        // Normalise <b> en <strong>
+        if (tag === 'b') {
+          const s = document.createElement('strong');
+          while (child.firstChild) s.appendChild(child.firstChild);
+          child.replaceWith(s);
+          walk(s);
+        } else {
+          walk(child);
+        }
+        continue;
+      }
+      if (tag === 'span' && child.classList.contains('actu-red')) {
+        // Conserve uniquement la classe actu-red
+        const span = document.createElement('span');
+        span.className = 'actu-red';
+        while (child.firstChild) span.appendChild(child.firstChild);
+        child.replaceWith(span);
+        walk(span);
+        continue;
+      }
+      if (tag === 'div' || tag === 'p') {
+        // execCommand peut créer des <div> sur Enter — convertir en <br>
+        const br = document.createElement('br');
+        const frag = document.createDocumentFragment();
+        if (child.previousSibling && !(child.previousSibling.nodeName === 'BR')) {
+          frag.appendChild(br.cloneNode());
+        }
+        while (child.firstChild) frag.appendChild(child.firstChild);
+        child.replaceWith(frag);
+        walk(node);
+        return;
+      }
+      // Élément non whitelisté : remplacer par son contenu textuel
+      const text = document.createTextNode(child.textContent);
+      child.replaceWith(text);
+    }
+  };
+  walk(wrap);
+  return wrap.innerHTML;
+}
+
+// Bouton Bold : utilise execCommand qui gère le toggle nativement
+document.getElementById('f_actu_desc_bold').addEventListener('mousedown', (e) => {
+  e.preventDefault(); // ne pas perdre le focus de la sélection
+  actuDescEl.focus();
+  document.execCommand('bold');
+  syncActuDesc();
+});
+
+// Bouton Rouge : custom toggle pour wrap/unwrap dans <span class="actu-red">
+function toggleRedOnSelection() {
+  const sel = window.getSelection();
+  if (!sel.rangeCount || sel.isCollapsed) return;
+  const range = sel.getRangeAt(0);
+
+  // Vérifier que la sélection est bien dans le contenteditable
+  if (!actuDescEl.contains(range.commonAncestorContainer)) return;
+
+  // Cherche le plus proche ancêtre .actu-red englobant la sélection
+  const startEl = range.startContainer.nodeType === 3
+    ? range.startContainer.parentElement
+    : range.startContainer;
+  const wrappingRed = startEl.closest('.actu-red');
+  const isInsideRed = wrappingRed
+    && actuDescEl.contains(wrappingRed)
+    && wrappingRed.contains(range.endContainer);
+
+  if (isInsideRed) {
+    // Déjà rouge → unwrap (remplace le span par son contenu)
+    const parent = wrappingRed.parentNode;
+    while (wrappingRed.firstChild) {
+      parent.insertBefore(wrappingRed.firstChild, wrappingRed);
+    }
+    parent.removeChild(wrappingRed);
+  } else {
+    // Pas rouge → wrap la sélection dans un span
+    try {
+      const contents = range.extractContents();
+      const span = document.createElement('span');
+      span.className = 'actu-red';
+      span.appendChild(contents);
+      range.insertNode(span);
+      // Replace selection on the new span
+      sel.removeAllRanges();
+      const newRange = document.createRange();
+      newRange.selectNodeContents(span);
+      sel.addRange(newRange);
+    } catch (e) {
+      console.warn('Red wrap failed:', e);
+    }
+  }
+}
+document.getElementById('f_actu_desc_red').addEventListener('mousedown', (e) => {
+  e.preventDefault();
+  actuDescEl.focus();
+  toggleRedOnSelection();
+  syncActuDesc();
+});
+
+// Met à jour la pastille du bouton Rouge avec la couleur dominante actuelle
+function refreshRedSwatch() {
+  const sw = document.querySelector('.rich-color-swatch');
+  if (sw) sw.style.background = S.accentColor;
+}
 
 // Slider de position verticale du bloc Actu
 const actuYInput = document.getElementById('f_actu_y');
@@ -1422,13 +1619,13 @@ actuYInput.addEventListener('input', (e) => {
 });
 
 document.getElementById('f_actu_y_minus').addEventListener('click', () => {
-  S.actuY = Math.max(-35, S.actuY - 5);
+  S.actuY = Math.max(-40, S.actuY - 5);
   actuYInput.value = S.actuY;
   updateActuYLabel();
   applyStyleVars(previewFrame);
 });
 document.getElementById('f_actu_y_plus').addEventListener('click', () => {
-  S.actuY = Math.min(35, S.actuY + 5);
+  S.actuY = Math.min(60, S.actuY + 5);
   actuYInput.value = S.actuY;
   updateActuYLabel();
   applyStyleVars(previewFrame);
@@ -1579,6 +1776,10 @@ document.querySelectorAll('.color-swatch').forEach(sw => {
     sw.classList.add('active');
     S.accentColor = sw.dataset.color;
     applyStyleVars(previewFrame);
+    refreshRedSwatch();
+    // Sync la couleur dans l'éditeur (pour que les .actu-red du textarea
+    // reflètent en live la couleur dominante)
+    actuDescEl.style.setProperty('--accent-color', S.accentColor);
   });
 });
 
@@ -1683,7 +1884,6 @@ const pvCreditsLabel = document.getElementById('pvCreditsLabel');
 const pvCreditsNames = document.getElementById('pvCreditsNames');
 
 // Actu element refs
-const pvActuLabel = document.getElementById('pvActuLabel');
 const pvActuArtist = document.getElementById('pvActuArtist');
 const pvActuTitle = document.getElementById('pvActuTitle');
 const pvActuDesc = document.getElementById('pvActuDesc');
@@ -1784,10 +1984,9 @@ function updatePreviewSortie() {
 
 function updatePreviewActu() {
   // Texte
-  pvActuLabel.textContent = 'ACTU';
   pvActuArtist.textContent = (S.artist || 'NOM ARTISTE').toUpperCase();
   pvActuTitle.textContent = (S.actuTitle || "TITRE DE L'ACTU").toUpperCase();
-  pvActuDesc.textContent = S.actuDesc || '';
+  pvActuDesc.innerHTML = S.actuDesc || '';
 
   // Crédits — réutilise getCreditsLines (s'affiche seulement si songwriters
   // sélectionnés ET au moins une contribution cochée)
@@ -1795,12 +1994,14 @@ function updatePreviewActu() {
   pvActuCreditsLabel.textContent = c.label;
   pvActuCreditsNames.textContent = c.names;
 
-  // Multiplicateurs de taille (mêmes contrôles +/- que pour Sortie)
+  // Multiplicateurs de taille (mêmes contrôles +/- que pour Sortie).
+  // Bases ajustées par défaut : artiste 80% (5.76), titre 70% (3.15),
+  // description 110% (2.86) — choix Pierre après tests visuels.
   const mult = (k) => 1 + S.sizes[k] * SIZE_STEP_PCT;
-  const artistMax  = 7.2 * mult('artist');
-  const titleMax   = 4.5 * mult('title');
-  const descMax    = 2.6 * mult('desc');
-  const creditsMax = 3.2 * mult('credits');
+  const artistMax  = 5.76 * mult('artist');
+  const titleMax   = 3.15 * mult('title');
+  const descMax    = 2.86 * mult('desc');
+  const creditsMax = 3.2  * mult('credits');
 
   // Application directe pour la description (pas d'autoFit, le texte est
   // multi-lignes et s'enveloppe naturellement)
@@ -1952,11 +2153,11 @@ async function buildOverlayLayer(targetW, targetH) {
   if (S.type === 'actu') {
     // Description : taille appliquée directement (pas d'autoFit)
     const descEl = clone.querySelector('.pv-actu-desc');
-    if (descEl) descEl.style.fontSize = (2.6 * _m('desc') * targetW / 100) + 'px';
+    if (descEl) descEl.style.fontSize = (2.86 * _m('desc') * targetW / 100) + 'px';
 
     autoFitBlock(clone.querySelector('.pv-actu-wrap'), [
-      { el: clone.querySelector('.pv-actu-artist'), max: 7.2 * _m('artist'), min: 3.0 },
-      { el: clone.querySelector('.pv-actu-title'),  max: 4.5 * _m('title'),  min: 2.0 }
+      { el: clone.querySelector('.pv-actu-artist'), max: 5.76 * _m('artist'), min: 3.0 },
+      { el: clone.querySelector('.pv-actu-title'),  max: 3.15 * _m('title'),  min: 2.0 }
     ]);
     autoFitBlock(clone.querySelector('.pv-actu-wrap'), [
       { el: clone.querySelector('.pv-actu-credits-names'), max: 3.2 * _m('credits'), min: 1.5 }
@@ -2094,11 +2295,11 @@ async function exportPNG() {
     if (S.type === 'actu') {
       // Description : taille appliquée directement (pas d'autoFit)
       const descEl = clone.querySelector('.pv-actu-desc');
-      if (descEl) descEl.style.fontSize = (2.6 * _m2('desc') * targetW / 100) + 'px';
+      if (descEl) descEl.style.fontSize = (2.86 * _m2('desc') * targetW / 100) + 'px';
 
       autoFitBlock(clone.querySelector('.pv-actu-wrap'), [
-        { el: clone.querySelector('.pv-actu-artist'), max: 7.2 * _m2('artist'), min: 3.0 },
-        { el: clone.querySelector('.pv-actu-title'),  max: 4.5 * _m2('title'),  min: 2.0 }
+        { el: clone.querySelector('.pv-actu-artist'), max: 5.76 * _m2('artist'), min: 3.0 },
+        { el: clone.querySelector('.pv-actu-title'),  max: 3.15 * _m2('title'),  min: 2.0 }
       ]);
       autoFitBlock(clone.querySelector('.pv-actu-wrap'), [
         { el: clone.querySelector('.pv-actu-credits-names'), max: 3.2 * _m2('credits'), min: 1.5 }
@@ -2618,6 +2819,10 @@ async function waitForFonts() {
   applyTypeUI();
   updateActuYLabel();
   refreshSizeUI();
+  refreshRedSwatch();
+  // Initialise --accent-color sur l'éditeur de description riche pour que
+  // la couleur des .actu-red dans le textarea reflète la couleur dominante
+  if (actuDescEl) actuDescEl.style.setProperty('--accent-color', S.accentColor);
   updatePreview();
   updateExportButtonLabel();
 
