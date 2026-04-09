@@ -7,7 +7,7 @@
 <title>IG Generator — BLZante Toolbox</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Syne+Mono&display=block">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Syne:wght@400;600;700;800&family=Syne+Mono&display=block">
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.13/dist/html-to-image.min.js"></script>
@@ -329,12 +329,9 @@ nav {
 .rich-textarea {
   width: 100%;
   min-height: 80px;
-  /* Syne (sans-serif) au lieu de Syne Mono parce que Syne Mono n'a pas de
-     variante bold chargée — le browser fallback sur une police système
-     quand on met du texte en gras, ce qui change complètement la typo.
-     Syne a les poids 400/600/700/800 tous chargés, donc bold fonctionne.
-     Weight 400 = même que .pv-actu-desc pour un rendu identique. */
-  font-family: 'Syne', sans-serif;
+  /* Inter — police neutre, lisible, chargée en 400 et 700.
+     Correspond au rendu de .pv-actu-desc pour cohérence WYSIWYG. */
+  font-family: 'Inter', sans-serif;
   font-size: 0.9rem;
   font-weight: 400;
   line-height: 1.5;
@@ -357,7 +354,7 @@ nav {
   font-family: inherit;
   font-size: inherit;
   line-height: inherit;
-  font-weight: 800;
+  font-weight: 700;
 }
 .rich-textarea .actu-red {
   font-family: inherit;
@@ -953,10 +950,11 @@ nav {
 }
 
 .pv-actu-desc {
-  font-family: 'Syne', sans-serif;
+  /* Inter pour la description : police neutre et lisible, chargée en 400
+     et 700 pour gérer proprement le gras sans fallback système. Différente
+     de Syne (utilisée pour les titres) pour hiérarchiser visuellement. */
+  font-family: 'Inter', sans-serif;
   font-size: 2.6cqi;
-  /* font-weight 400 (pas 500) : seuls 400/600/700/800 sont chargés depuis
-     Google Fonts, 500 déclenche un fallback non-déterministe selon browser. */
   font-weight: 400;
   line-height: 1.4;
   color: #fff;
@@ -979,7 +977,7 @@ nav {
   line-height: inherit;
   letter-spacing: inherit;
   font-style: inherit;
-  font-weight: 800;
+  font-weight: 700;
 }
 .pv-actu-desc .actu-red {
   font-family: inherit;
@@ -3028,7 +3026,9 @@ async function waitForFonts() {
       document.fonts.load('800 16px "Syne"'),  // pv-info-artist
       document.fonts.load('700 16px "Syne"'),  // pv-credits-names
       document.fonts.load('600 16px "Syne"'),  // pv-info-type, pv-info-title
-      document.fonts.load('400 16px "Syne Mono"')
+      document.fonts.load('400 16px "Syne Mono"'),
+      document.fonts.load('400 16px "Inter"'), // pv-actu-desc regular
+      document.fonts.load('700 16px "Inter"')  // pv-actu-desc strong (bold)
     ]);
     await document.fonts.ready;
   } catch (e) {
