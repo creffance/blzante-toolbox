@@ -714,7 +714,7 @@ nav {
   pointer-events: none;
 }
 .preview-frame[data-format="9:16"] .pv-logo {
-  top: 8cqi;
+  top: 26cqi;
   left: 7cqi;
 }
 
@@ -1235,7 +1235,7 @@ nav {
           </div>
           <div class="pv-artwork-wrap">
             <div class="pv-artwork-placeholder" id="artPlaceholder">Artwork</div>
-            <img class="pv-artwork" id="pvArt" style="display:none" />
+            <img class="pv-artwork" id="pvArt" src="data:image/gif;base64,R0lGODlhAQABAIABAP///wAAACwAAAAAAQABAAACAkQBADs=" style="display:none" />
           </div>
           <div class="pv-credits-block">
             <div class="pv-credits-label" id="pvCreditsLabel"></div>
@@ -2118,28 +2118,74 @@ function drawBgCover(ctx, source, canvasW, canvasH, zoom, offsetX, offsetY) {
   ctx.drawImage(source, cx - drawW / 2, cy - drawH / 2, drawW, drawH);
 }
 
+// Filter pour html-to-image : retourne false pour les nodes à exclure.
+// Troisième niveau de défense contre les crashes sur imgs cassées :
+// exclut par-dessus tout ce que cleanupCloneForType aurait pu laisser passer.
+function exportFilterNode(node) {
+  if (!node || node.nodeType !== 1) return true; // text nodes etc.
+  const tag = node.tagName;
+  const cls = node.classList;
+
+  // Exclut tout <img> sans src valide (defense against src-less pvArt)
+  if (tag === 'IMG') {
+    const src = node.getAttribute('src') || '';
+    if (!src || src === window.location.href || src === window.location.origin + '/') return false;
+  }
+
+  // Exclut les blocs du template inactif
+  if (cls) {
+    if (S.type === 'actu') {
+      if (cls.contains('pv-info-top') ||
+          cls.contains('pv-artwork-wrap') ||
+          cls.contains('pv-artwork') ||
+          cls.contains('pv-artwork-placeholder') ||
+          cls.contains('pv-credits-block')) {
+        return false;
+      }
+    } else {
+      if (cls.contains('pv-actu-wrap')) return false;
+    }
+  }
+
+  return true;
+}
+
 // Retire du clone les éléments DOM qui ne servent pas pour le type courant.
-// En Actu, on vire les éléments Sortie (dont .pv-artwork-wrap qui contient
-// <img id="pvArt"> sans src — html-to-image essaie de l'inliner et crashe
-// avec un Event d'erreur). En Sortie, on vire les éléments Actu.
-// Au passage on supprime TOUS les <img> sans src restants comme filet de
-// sécurité.
+// Fonction défensive : on combine sélecteurs par classe ET par ID, plus un
+// passage final qui vire tout <img> sans src valide.
 function cleanupCloneForType(clone) {
   const type = S.type;
-  const remove = (sel) => {
-    const el = clone.querySelector(sel);
-    if (el) el.remove();
+  const removeAll = (sel) => {
+    clone.querySelectorAll(sel).forEach(el => el.remove());
   };
+
   if (type === 'actu') {
-    remove('.pv-info-top');
-    remove('.pv-artwork-wrap');
-    remove('.pv-credits-block');
+    // Retire le template Sortie complet
+    removeAll('.pv-info-top');
+    removeAll('.pv-artwork-wrap');
+    removeAll('.pv-artwork');
+    removeAll('.pv-artwork-placeholder');
+    removeAll('.pv-credits-block');
+    // Aussi par ID pour être sûr
+    removeAll('#pvArt');
+    removeAll('#artPlaceholder');
+    removeAll('#pvType');
+    removeAll('#pvArtist');
+    removeAll('#pvTitle');
+    removeAll('#pvCreditsLabel');
+    removeAll('#pvCreditsNames');
   } else {
-    remove('.pv-actu-wrap');
+    removeAll('.pv-actu-wrap');
+    removeAll('#pvActuArtist');
+    removeAll('#pvActuTitle');
+    removeAll('#pvActuDesc');
+    removeAll('#pvActuCreditsLabel');
+    removeAll('#pvActuCreditsNames');
   }
-  // Safety : supprime tout <img> sans src valide qui pourrait encore rester
+  // Safety : supprime TOUT <img> sans src valide restant
   clone.querySelectorAll('img').forEach(img => {
-    if (!img.src || img.src === window.location.href) {
+    const src = img.getAttribute('src') || '';
+    if (!src || src === window.location.href || src === window.location.origin + '/') {
       img.remove();
     }
   });
@@ -2231,7 +2277,13 @@ async function buildOverlayLayer(targetW, targetH) {
     pixelRatio: 1,
     cacheBust: false,
     backgroundColor: null,
-    fontEmbedCSS: overlayFontCSS
+    fontEmbedCSS: overlayFontCSS,
+    // Si html-to-image tombe sur une image cassée, utilise ce GIF 1px
+    // transparent au lieu de planter avec un Event d'erreur.
+    imagePlaceholder: 'data:image/gif;base64,R0lGODlhAQABAIABAP///wAAACwAAAAAAQABAAACAkQBADs=',
+    // Filet de sécurité : exclut les imgs sans src valide et les éléments
+    // du template inactif (Sortie en mode Actu, et vice-versa).
+    filter: exportFilterNode
   };
   let overlayBlob;
   try {
@@ -2419,7 +2471,9 @@ async function exportPNG(forceFormat) {
       pixelRatio: 1,
       cacheBust: false,
       backgroundColor: '#000',
-      fontEmbedCSS
+      fontEmbedCSS,
+      imagePlaceholder: 'data:image/gif;base64,R0lGODlhAQABAIABAP///wAAACwAAAAAAQABAAACAkQBADs=',
+      filter: exportFilterNode
     };
 
     let blob;
