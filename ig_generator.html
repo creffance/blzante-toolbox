@@ -731,7 +731,7 @@ nav {
   margin-bottom: 0.4cqi;
   text-shadow: 0 0.3cqi 1.5cqi rgba(0,0,0,0.55);
   word-break: break-word;
-  color: var(--accent-color, #e8c547);
+  color: var(--accent-color, #FF2D3A);
 }
 .pv-info-title {
   font-size: 3.36cqi;
@@ -785,7 +785,7 @@ nav {
   font-weight: 700;
   letter-spacing: 0.04em;
   line-height: 1.25;
-  color: var(--accent-color, #e8c547);
+  color: var(--accent-color, #FF2D3A);
   text-shadow: 0 0.2cqi 1cqi rgba(0,0,0,0.5);
   max-width: 92%;
   margin: 0 auto;
@@ -910,9 +910,9 @@ nav {
           <div class="color-swatches" id="colorSwatches">
             <div class="color-swatch" data-color="#FF6C75" style="--sw-color:#FF6C75"></div>
             <div class="color-swatch" data-color="#FF4C57" style="--sw-color:#FF4C57"></div>
-            <div class="color-swatch" data-color="#f4d03f" style="--sw-color:#f4d03f"></div>
-            <div class="color-swatch active" data-color="#e8c547" style="--sw-color:#e8c547"></div>
-            <div class="color-swatch" data-color="#c9a227" style="--sw-color:#c9a227"></div>
+            <div class="color-swatch active" data-color="#FF2D3A" style="--sw-color:#FF2D3A"></div>
+            <div class="color-swatch" data-color="#D82631" style="--sw-color:#D82631"></div>
+            <div class="color-swatch" data-color="#B21F28" style="--sw-color:#B21F28"></div>
           </div>
         </div>
         <div class="form-group">
@@ -1079,9 +1079,9 @@ const S = {
   artZoom: 1,
   bgX: 0, bgY: 0,   // drag offsets in % of preview-frame width
   artX: 0, artY: 0,
-  accentColor: '#e8c547',
+  accentColor: '#FF2D3A',
   logoColor: 'white',
-  // Manual size adjustments — integer steps (-3 to +5), each step = ±10%
+  // Manual size adjustments — integer steps (-5 to +5), each step = ±10%
   sizes: { artist: 0, title: 0, credits: 0 }
 };
 
@@ -2053,9 +2053,34 @@ async function exportVideo() {
     }
     const muxer = new Muxer(muxerConfig);
 
+    // Safari fix : son VideoEncoder ne renvoie pas toujours un decoderConfig
+    // complet (notamment pas de colorSpace), ce qui fait planter mp4-muxer
+    // avec "null is not an object (evaluating 't.info.decoderConfig.colorSpace')".
+    // On comble les champs manquants avec les valeurs standard BT.709 (sRGB).
+    const ensureMeta = (meta) => {
+      if (!meta) meta = {};
+      if (!meta.decoderConfig) meta.decoderConfig = {};
+      if (!meta.decoderConfig.colorSpace) {
+        meta.decoderConfig.colorSpace = {
+          primaries: 'bt709',
+          transfer: 'bt709',
+          matrix: 'bt709',
+          fullRange: false
+        };
+      }
+      return meta;
+    };
+
     let encoderError = null;
     const encoder = new VideoEncoder({
-      output: (chunk, meta) => muxer.addVideoChunk(chunk, meta),
+      output: (chunk, meta) => {
+        try {
+          muxer.addVideoChunk(chunk, ensureMeta(meta));
+        } catch (e) {
+          console.error('addVideoChunk failed:', e);
+          encoderError = e;
+        }
+      },
       error: (e) => { console.error('Video encoder error:', e); encoderError = e; }
     });
     encoder.configure({
@@ -2071,7 +2096,14 @@ async function exportVideo() {
     let audioEncoderError = null;
     if (audioBuffer) {
       audioEncoder = new AudioEncoder({
-        output: (chunk, meta) => muxer.addAudioChunk(chunk, meta),
+        output: (chunk, meta) => {
+          try {
+            muxer.addAudioChunk(chunk, meta || {});
+          } catch (e) {
+            console.error('addAudioChunk failed:', e);
+            audioEncoderError = e;
+          }
+        },
         error: (e) => { console.error('Audio encoder error:', e); audioEncoderError = e; }
       });
       audioEncoder.configure({
