@@ -350,18 +350,25 @@ nav {
   color: #444;
   pointer-events: none;
 }
-.rich-textarea strong {
-  font-family: inherit;
-  font-size: inherit;
-  line-height: inherit;
-  font-weight: 700;
-}
+/* Éditeur de description : mêmes règles bulletproof que le rendu preview
+   pour que l'alignement soit identique en saisie et en rendu. */
+.rich-textarea strong,
 .rich-textarea .actu-red {
-  font-family: inherit;
-  font-size: inherit;
-  font-weight: inherit;
-  color: var(--accent-color, #FF2D3A);
+  font: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+  word-spacing: inherit;
+  text-transform: inherit;
+  text-decoration: inherit;
+  vertical-align: baseline;
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
+.rich-textarea strong { font-weight: 700; }
+.rich-textarea .actu-red { color: var(--accent-color, #FF2D3A); }
 .form-select {
   cursor: pointer;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23777'/%3E%3C/svg%3E");
@@ -966,27 +973,29 @@ nav {
 .pv-actu-desc:empty { display: none; }
 
 /* Rich text formatting inside the rendered description.
-   - <strong> from execCommand('bold') → weight 800, MÊME police/taille
+   - <strong> from execCommand('bold') → weight 700, MÊME police/taille
    - <span class="actu-red"> from custom toggle → couleur dominante
-   IMPORTANT : on force l'héritage pour que le gras ne change pas la police
-   ni la taille (sans ça, certains browsers utilisent une police système
-   différente sur <strong>). */
-.pv-actu-desc strong {
-  font-family: inherit;
-  font-size: inherit;
-  line-height: inherit;
-  letter-spacing: inherit;
-  font-style: inherit;
-  font-weight: 700;
-}
+   BULLETPROOF : on force TOUTES les propriétés d'inline formatting pour
+   éviter tout décalage de baseline. Inter a des métriques précises et le
+   moindre pixel de shift se voit visuellement. */
+.pv-actu-desc strong,
 .pv-actu-desc .actu-red {
-  font-family: inherit;
-  font-size: inherit;
+  font: inherit;
   line-height: inherit;
   letter-spacing: inherit;
-  font-weight: inherit;
-  color: var(--accent-color, #FF2D3A);
+  word-spacing: inherit;
+  text-transform: inherit;
+  text-decoration: inherit;
+  text-shadow: inherit;
+  vertical-align: baseline;
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
+.pv-actu-desc strong { font-weight: 700; }
+.pv-actu-desc .actu-red { color: var(--accent-color, #FF2D3A); }
 
 .pv-actu-credits-label {
   font-family: 'Syne', sans-serif;
