@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="blzante_spiral_black.png">
 <title>IG Generator — BLZante Toolbox</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -328,8 +329,14 @@ nav {
 .rich-textarea {
   width: 100%;
   min-height: 80px;
-  font-family: 'Syne Mono', monospace;
-  font-size: 0.82rem;
+  /* Syne (sans-serif) au lieu de Syne Mono parce que Syne Mono n'a pas de
+     variante bold chargée — le browser fallback sur une police système
+     quand on met du texte en gras, ce qui change complètement la typo.
+     Syne a les poids 400/600/700/800 tous chargés, donc bold fonctionne.
+     Weight 400 = même que .pv-actu-desc pour un rendu identique. */
+  font-family: 'Syne', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 400;
   line-height: 1.5;
   padding: 12px 14px;
   border: 1px solid var(--border);
@@ -948,7 +955,9 @@ nav {
 .pv-actu-desc {
   font-family: 'Syne', sans-serif;
   font-size: 2.6cqi;
-  font-weight: 500;
+  /* font-weight 400 (pas 500) : seuls 400/600/700/800 sont chargés depuis
+     Google Fonts, 500 déclenche un fallback non-déterministe selon browser. */
+  font-weight: 400;
   line-height: 1.4;
   color: #fff;
   max-width: 88%;
