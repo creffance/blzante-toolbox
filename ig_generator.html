@@ -2053,7 +2053,7 @@ async function exportVideo() {
     }
     const muxer = new Muxer(muxerConfig);
 
-    // Safari fix : son VideoEncoder ne renvoie pas toujours un decoderConfig
+    // Safari fix #1 : son VideoEncoder ne renvoie pas toujours un decoderConfig
     // complet (notamment pas de colorSpace), ce qui fait planter mp4-muxer
     // avec "null is not an object (evaluating 't.info.decoderConfig.colorSpace')".
     // On comble les champs manquants avec les valeurs standard BT.709 (sRGB).
@@ -2071,13 +2071,36 @@ async function exportVideo() {
       return meta;
     };
 
+    // Safari fix #2 : EncodedVideoChunk.duration est souvent null sur Safari,
+    // ce qui fait planter muxer.addVideoChunk avec "addVideoChunkRaw's fourth
+    // argument (duration) must be a non-negative real number". On contourne
+    // en utilisant addVideoChunkRaw directement avec une duration calculée
+    // depuis notre framerate connu (1e6 / fps microsecondes par frame).
+    const videoFrameDurationUs = Math.round(1e6 / fps);
+
+    const readChunkData = (chunk) => {
+      const data = new Uint8Array(chunk.byteLength);
+      chunk.copyTo(data);
+      return data;
+    };
+
+    const safeDuration = (d, fallback) => {
+      return (typeof d === 'number' && isFinite(d) && d >= 0) ? d : fallback;
+    };
+    const safeTimestamp = (ts) => {
+      return (typeof ts === 'number' && isFinite(ts) && ts >= 0) ? ts : 0;
+    };
+
     let encoderError = null;
     const encoder = new VideoEncoder({
       output: (chunk, meta) => {
         try {
-          muxer.addVideoChunk(chunk, ensureMeta(meta));
+          const data = readChunkData(chunk);
+          const ts = safeTimestamp(chunk.timestamp);
+          const dur = safeDuration(chunk.duration, videoFrameDurationUs);
+          muxer.addVideoChunkRaw(data, chunk.type, ts, dur, ensureMeta(meta));
         } catch (e) {
-          console.error('addVideoChunk failed:', e);
+          console.error('addVideoChunkRaw failed:', e);
           encoderError = e;
         }
       },
@@ -2091,16 +2114,24 @@ async function exportVideo() {
       framerate: fps
     });
 
-    // Audio encoder (si on a une piste audio)
+    // Audio encoder (si on a une piste audio) — même fix duration pour Safari
+    // La durée d'un chunk audio correspond au nombre de samples encodés par
+    // chunk (4096 dans encodeAudioBuffer) divisé par le sample rate.
     let audioEncoder = null;
     let audioEncoderError = null;
     if (audioBuffer) {
+      const audioChunkDurationUs = audioBuffer
+        ? Math.round(4096 * 1e6 / audioBuffer.sampleRate)
+        : 0;
       audioEncoder = new AudioEncoder({
         output: (chunk, meta) => {
           try {
-            muxer.addAudioChunk(chunk, meta || {});
+            const data = readChunkData(chunk);
+            const ts = safeTimestamp(chunk.timestamp);
+            const dur = safeDuration(chunk.duration, audioChunkDurationUs);
+            muxer.addAudioChunkRaw(data, chunk.type, ts, dur, meta || {});
           } catch (e) {
-            console.error('addAudioChunk failed:', e);
+            console.error('addAudioChunkRaw failed:', e);
             audioEncoderError = e;
           }
         },
