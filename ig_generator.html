@@ -2118,6 +2118,33 @@ function drawBgCover(ctx, source, canvasW, canvasH, zoom, offsetX, offsetY) {
   ctx.drawImage(source, cx - drawW / 2, cy - drawH / 2, drawW, drawH);
 }
 
+// Retire du clone les éléments DOM qui ne servent pas pour le type courant.
+// En Actu, on vire les éléments Sortie (dont .pv-artwork-wrap qui contient
+// <img id="pvArt"> sans src — html-to-image essaie de l'inliner et crashe
+// avec un Event d'erreur). En Sortie, on vire les éléments Actu.
+// Au passage on supprime TOUS les <img> sans src restants comme filet de
+// sécurité.
+function cleanupCloneForType(clone) {
+  const type = S.type;
+  const remove = (sel) => {
+    const el = clone.querySelector(sel);
+    if (el) el.remove();
+  };
+  if (type === 'actu') {
+    remove('.pv-info-top');
+    remove('.pv-artwork-wrap');
+    remove('.pv-credits-block');
+  } else {
+    remove('.pv-actu-wrap');
+  }
+  // Safety : supprime tout <img> sans src valide qui pourrait encore rester
+  clone.querySelectorAll('img').forEach(img => {
+    if (!img.src || img.src === window.location.href) {
+      img.remove();
+    }
+  });
+}
+
 // Construit le calque d'overlay (gradient + logo + artwork + textes) comme
 // une image RGBA à fond transparent, qu'on pourra draw au-dessus de chaque
 // frame vidéo lors de l'encodage.
@@ -2137,6 +2164,10 @@ async function buildOverlayLayer(targetW, targetH) {
     const el = clone.querySelector(sel);
     if (el) el.remove();
   });
+
+  // Cleanup DOM selon le type (Sortie vs Actu) — crucial pour éviter les
+  // crashes html-to-image sur les imgs orphelines du template inactif
+  cleanupCloneForType(clone);
 
   const holder = document.getElementById('exportHolder');
   holder.innerHTML = '';
@@ -2317,6 +2348,11 @@ async function exportPNG(forceFormat) {
         cloneImg.style.display = 'block';
       }
     }
+
+    // Cleanup DOM selon le type (Sortie vs Actu) — évite les crashes
+    // html-to-image sur les imgs orphelines du template inactif
+    cleanupCloneForType(clone);
+
     holder.appendChild(clone);
 
     // Wait images (skip src-less to avoid hang — cf buildOverlayLayer)
