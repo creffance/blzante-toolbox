@@ -1504,7 +1504,8 @@ function getCreditsLines() {
 function updatePreview() {
   pvType.textContent = 'NOUVEAU ' + (S.releaseType || 'SINGLE').toUpperCase();
   pvArtist.textContent = (S.artist || 'NOM ARTISTE').toUpperCase();
-  pvTitle.textContent = (S.title || 'Titre du track').toUpperCase();
+  // Le titre est automatiquement entouré de guillemets droits
+  pvTitle.textContent = '"' + (S.title || 'Titre du track').toUpperCase() + '"';
 
   const c = getCreditsLines();
   pvCreditsLabel.textContent = c.label;
@@ -1554,6 +1555,13 @@ function autoFitBlock(block, lines) {
   const cw = frame.getBoundingClientRect().width;
   if (!cw) return;
 
+  // Tolérance en pixels pour absorber les différences sub-pixel de rendu
+  // de polices entre OS (Mac vs Windows). Sans cette tolérance, le rendu
+  // Syne 800 weight uppercase mesurait quelques pixels de plus sur Windows
+  // que sur Mac, ce qui déclenchait un shrinking horizontal immédiat et
+  // annulait les ajustements +/- de l'utilisateur.
+  const TOL = 4;
+
   const setPx = (el, cqi) => { el.style.fontSize = (cqi * cw / 100) + 'px'; };
   const sizes = lines.map(l => l.max);
   lines.forEach((l, i) => setPx(l.el, sizes[i]));
@@ -1561,19 +1569,18 @@ function autoFitBlock(block, lines) {
   const blockW = block.getBoundingClientRect().width;
   if (!blockW) return;
 
-  // 1. Fit horizontal par ligne
+  // 1. Fit horizontal par ligne (avec tolérance)
   for (let i = 0; i < lines.length; i++) {
     let g = 60;
-    while (lines[i].el.scrollWidth > blockW && sizes[i] > lines[i].min && g-- > 0) {
+    while (lines[i].el.scrollWidth > blockW + TOL && sizes[i] > lines[i].min && g-- > 0) {
       sizes[i] -= 0.2;
       setPx(lines[i].el, sizes[i]);
     }
   }
 
-  // 2. Fit vertical du bloc (nécessite max-height + overflow:hidden en CSS).
-  //    Sans ces propriétés, scrollHeight === clientHeight et la boucle ne tourne pas.
+  // 2. Fit vertical du bloc (avec tolérance)
   let g = 240;
-  while (block.scrollHeight > block.clientHeight && g-- > 0) {
+  while (block.scrollHeight > block.clientHeight + TOL && g-- > 0) {
     let shrunk = false;
     for (let i = 0; i < lines.length; i++) {
       if (sizes[i] > lines[i].min) {
@@ -1666,24 +1673,45 @@ async function buildOverlayLayer(targetW, targetH) {
     { el: clone.querySelector('.pv-credits-names'), max: 3.8 * _m('credits'), min: 1.5 }
   ]);
 
-  // Rendu en PNG à fond transparent
-  const dataUrl = await htmlToImage.toPng(clone, {
+  // Rendu en PNG à fond transparent — fixes Safari identiques à exportPNG
+  let overlayFontCSS = '';
+  try {
+    overlayFontCSS = await htmlToImage.getFontEmbedCSS(clone);
+  } catch (e) {
+    console.warn('Overlay getFontEmbedCSS failed:', e);
+  }
+  const overlayOpts = {
     width: targetW,
     height: targetH,
     pixelRatio: 1,
-    cacheBust: true,
-    backgroundColor: null
-  });
+    cacheBust: false,
+    backgroundColor: null,
+    fontEmbedCSS: overlayFontCSS
+  };
+  let overlayBlob;
+  try {
+    overlayBlob = await htmlToImage.toBlob(clone, overlayOpts);
+  } catch (e1) {
+    console.warn('Overlay toBlob retry:', e1);
+    overlayBlob = await htmlToImage.toBlob(clone, overlayOpts);
+  }
+  if (!overlayBlob) throw new Error('Rendu du calque overlay échoué');
 
   holder.innerHTML = '';
 
-  // Retour en HTMLImageElement prêt à être dessiné
+  // Retour en HTMLImageElement prêt à être dessiné sur le canvas vidéo
+  const overlayBlobUrl = URL.createObjectURL(overlayBlob);
   const img = new Image();
-  await new Promise((res, rej) => {
-    img.onload = res;
-    img.onerror = () => rej(new Error('Overlay image failed to load'));
-    img.src = dataUrl;
-  });
+  try {
+    await new Promise((res, rej) => {
+      img.onload = res;
+      img.onerror = () => rej(new Error('Overlay image failed to load'));
+      img.src = overlayBlobUrl;
+    });
+  } finally {
+    // Libère le blob URL une fois l'image chargée (l'Image a ses propres refs)
+    setTimeout(() => URL.revokeObjectURL(overlayBlobUrl), 5000);
+  }
   return img;
 }
 
@@ -1772,17 +1800,51 @@ async function exportPNG() {
       { el: clone.querySelector('.pv-credits-names'), max: 3.8 * _m2('credits'), min: 1.5 }
     ]);
 
-    const dataUrl = await htmlToImage.toPng(clone, {
-      width: targetW, height: targetH, pixelRatio: 1, cacheBust: true, backgroundColor: '#000'
-    });
+    // === Rendu via html-to-image ===
+    // Safari a des problèmes connus avec les polices externes et les data URLs
+    // trop grosses. Solution :
+    //   1. Pré-récupérer les polices via getFontEmbedCSS (évite les problèmes
+    //      CORS et les races conditions sur le chargement des fonts)
+    //   2. Utiliser toBlob au lieu de toPng (évite la limite de taille de
+    //      data URL sur Safari qui plante avec les gros PNG)
+    //   3. cacheBust: false (cacheBust ajoute des query strings qui cassent
+    //      CORS sur Safari)
+    //   4. Télécharger via URL.createObjectURL (pas de data URL dans le href)
+    let fontEmbedCSS = '';
+    try {
+      fontEmbedCSS = await htmlToImage.getFontEmbedCSS(clone);
+    } catch (e) {
+      console.warn('getFontEmbedCSS failed (continuing without):', e);
+    }
+
+    const renderOpts = {
+      width: targetW,
+      height: targetH,
+      pixelRatio: 1,
+      cacheBust: false,
+      backgroundColor: '#000',
+      fontEmbedCSS
+    };
+
+    let blob;
+    try {
+      blob = await htmlToImage.toBlob(clone, renderOpts);
+    } catch (e1) {
+      console.warn('toBlob first attempt failed, retrying:', e1);
+      // Safari workaround : parfois le premier appel échoue en silence
+      blob = await htmlToImage.toBlob(clone, renderOpts);
+    }
+    if (!blob) throw new Error('Rendu du PNG échoué (blob vide)');
 
     const filename = buildFilename('png');
+    const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = dataUrl;
+    a.href = url;
     a.download = filename;
     document.body.appendChild(a);
     a.click();
     a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
 
     holder.innerHTML = '';
     status.textContent = '✓ PNG exporté : ' + filename;
