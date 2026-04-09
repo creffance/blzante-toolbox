@@ -713,6 +713,10 @@ nav {
   z-index: 4;
   pointer-events: none;
 }
+.preview-frame[data-format="9:16"] .pv-logo {
+  top: 8cqi;
+  left: 7cqi;
+}
 
 /* Artwork container — below the title/artist block */
 .pv-artwork-wrap {
@@ -1204,6 +1208,7 @@ nav {
         </div>
 
         <button class="export-btn" id="exportBtn">⬇ Exporter le PNG</button>
+        <button class="export-btn" id="coverBtn" style="display:none; margin-top:8px; background:#1f1f1f; color:var(--text); border:1px solid var(--border-hi);">🖼️ Cover 3:4 pour le feed</button>
         <div class="status" id="statusMsg"></div>
       </div>
     </div>
@@ -1350,6 +1355,7 @@ document.querySelectorAll('.format-btn').forEach(btn => {
     previewFrame.dataset.format = S.format;
     previewDims.textContent = S.format === '4:5' ? '1080 × 1350' : '1080 × 1920';
     updatePreview();
+    updateExportButtonLabel();
   });
 });
 
@@ -2136,11 +2142,20 @@ async function buildOverlayLayer(targetW, targetH) {
   holder.innerHTML = '';
   holder.appendChild(clone);
 
-  // Wait for images (logo spirale + artwork)
+  // Wait for images (logo spirale + artwork).
+  // IMPORTANT : on skippe les imgs sans src (ex : pvArt quand l'utilisateur
+  // n'a pas uploadé d'artwork, ou en mode Actu où l'artwork est caché).
+  // Sans ça, l'export reste bloqué car onload/onerror ne partent jamais
+  // sur un img vide.
   const imgs = clone.querySelectorAll('img');
   await Promise.all(Array.from(imgs).map(img => {
+    if (!img.src || img.src === window.location.href) return Promise.resolve();
     if (img.complete && img.naturalWidth > 0) return Promise.resolve();
-    return new Promise(res => { img.onload = res; img.onerror = res; });
+    return new Promise(res => {
+      img.onload = res;
+      img.onerror = res;
+      setTimeout(res, 3000); // hard timeout anti-blocage
+    });
   }));
 
   applyStyleVars(clone);
@@ -2214,24 +2229,38 @@ async function buildOverlayLayer(targetW, targetH) {
   return img;
 }
 
-// Met à jour le label du bouton selon le type de media chargé
+// Met à jour le label du bouton selon le type de media chargé.
+// Le bouton cover est TOUJOURS visible (feed grid s'applique aux posts
+// comme aux Reels).
 function updateExportButtonLabel() {
   const btn = document.getElementById('exportBtn');
+  const coverBtn = document.getElementById('coverBtn');
   if (S.bgType === 'video' && S.bgImageSrc) {
     btn.textContent = '⬇ Exporter la vidéo MP4';
   } else {
     btn.textContent = '⬇ Exporter le PNG';
   }
+  if (coverBtn) {
+    coverBtn.style.display = '';
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════
 // EXPORT PNG (image statique — flow original)
+//
+// forceFormat : si fourni ('4:5' ou '9:16'), l'export utilise ce format
+// indépendamment de S.format. Utilisé pour générer une cover 4:5 quand
+// le preview est en 9:16 (cover d'un Reel).
 // ═══════════════════════════════════════════════════════════════════
-async function exportPNG() {
+async function exportPNG(forceFormat) {
   const btn = document.getElementById('exportBtn');
+  const coverBtn = document.getElementById('coverBtn');
+  const isCover = !!forceFormat;
+  const activeBtn = isCover ? coverBtn : btn;
   const status = document.getElementById('statusMsg');
   btn.disabled = true;
-  btn.textContent = '⏳ Génération…';
+  if (coverBtn) coverBtn.disabled = true;
+  activeBtn.textContent = '⏳ Génération…';
   status.textContent = '';
   status.className = 'status';
 
@@ -2239,8 +2268,16 @@ async function exportPNG() {
     // Filet de sécurité fonts (cf. waitForFonts dans init)
     if (document.fonts && document.fonts.ready) await document.fonts.ready;
 
+    const outputFormat = forceFormat || S.format;
     const targetW = 1080;
-    const targetH = S.format === '4:5' ? 1350 : 1920;
+    // Dimensions : 4:5 = 1350, 3:4 = 1440 (cover feed), 9:16 = 1920
+    const targetH = outputFormat === '4:5' ? 1350
+                  : outputFormat === '3:4' ? 1440
+                  : 1920;
+    // Pour les règles CSS, on mappe 3:4 sur 4:5 (très proche visuellement,
+    // les positions en % se recalent naturellement sur la nouvelle hauteur).
+    // Plus besoin d'ajouter un set de règles [data-format="3:4"] dédiées.
+    const cssFormat = outputFormat === '3:4' ? '4:5' : outputFormat;
 
     // Si c'est une vidéo, on capture la frame courante comme image
     let videoFrameDataUrl = null;
@@ -2267,6 +2304,9 @@ async function exportPNG() {
     clone.style.width = targetW + 'px';
     clone.style.height = targetH + 'px';
     clone.style.aspectRatio = 'auto';
+    // On applique les règles CSS du format source (4:5 ou 9:16). Pour le 3:4
+    // on force 4:5 car les deux formats sont visuellement très similaires.
+    clone.dataset.format = cssFormat;
 
     const cloneVideo = clone.querySelector('#pvBgVideo');
     if (cloneVideo) cloneVideo.remove();
@@ -2279,10 +2319,16 @@ async function exportPNG() {
     }
     holder.appendChild(clone);
 
+    // Wait images (skip src-less to avoid hang — cf buildOverlayLayer)
     const imgs = clone.querySelectorAll('img');
     await Promise.all(Array.from(imgs).map(img => {
+      if (!img.src || img.src === window.location.href) return Promise.resolve();
       if (img.complete && img.naturalWidth > 0) return Promise.resolve();
-      return new Promise(res => { img.onload = res; img.onerror = res; });
+      return new Promise(res => {
+        img.onload = res;
+        img.onerror = res;
+        setTimeout(res, 3000);
+      });
     }));
 
     applyStyleVars(clone);
@@ -2350,7 +2396,7 @@ async function exportPNG() {
     }
     if (!blob) throw new Error('Rendu du PNG échoué (blob vide)');
 
-    const filename = buildFilename('png');
+    const filename = buildFilename('png', isCover ? 'cover' : null);
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -2361,7 +2407,7 @@ async function exportPNG() {
     setTimeout(() => URL.revokeObjectURL(url), 5000);
 
     holder.innerHTML = '';
-    status.textContent = '✓ PNG exporté : ' + filename;
+    status.textContent = (isCover ? '✓ Cover exportée : ' : '✓ PNG exporté : ') + filename;
     status.className = 'status success';
   } catch (err) {
     console.error('Export PNG error:', err);
@@ -2373,6 +2419,7 @@ async function exportPNG() {
     status.className = 'status error';
   }
   btn.disabled = false;
+  if (coverBtn) coverBtn.disabled = false;
   updateExportButtonLabel();
 }
 
@@ -2777,7 +2824,14 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
   }
 });
 
-function buildFilename(ext) {
+// Bouton cover : génère un PNG 3:4 (1080×1440) du contenu actuel, utilisé
+// comme miniature feed/profile grid. Disponible en 4:5 et 9:16 — c'est le
+// format requis par Instagram pour les thumbnails de posts et Reels.
+document.getElementById('coverBtn').addEventListener('click', async () => {
+  await exportPNG('3:4');
+});
+
+function buildFilename(ext, suffix) {
   const slug = (s) => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
   const titleField = S.type === 'actu' ? S.actuTitle : S.title;
   const parts = [
@@ -2785,6 +2839,7 @@ function buildFilename(ext) {
     slug(titleField) || (S.type === 'actu' ? 'actu' : 'titre'),
     S.format === '4:5' ? 'post' : 'reel'
   ];
+  if (suffix) parts.push(suffix);
   return 'blzante_' + S.type + '_' + parts.join('_') + '.' + (ext || 'png');
 }
 
