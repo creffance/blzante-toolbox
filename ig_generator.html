@@ -792,6 +792,127 @@ nav {
 }
 .pv-credits-label:empty, .pv-credits-names:empty { display: none; }
 
+/* ═══════════════════════════════════════════════════════════════════
+   ACTU TEMPLATE — single centered text block, vertically positionable
+   ═══════════════════════════════════════════════════════════════════ */
+
+.pv-actu-wrap {
+  position: absolute;
+  left: 5cqi;
+  right: 5cqi;
+  top: calc(50% + var(--actu-y, 0cqi));
+  transform: translateY(-50%);
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-family: 'Syne', sans-serif;
+  color: #fff;
+  pointer-events: none;
+}
+
+.pv-actu-label {
+  font-family: 'Syne', sans-serif;
+  font-size: 2.6cqi;
+  line-height: 1;
+  letter-spacing: 0.32em;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 1.4cqi;
+  text-transform: uppercase;
+  text-shadow: 0 0.2cqi 1cqi rgba(0,0,0,0.55);
+}
+
+.pv-actu-artist {
+  font-size: 7.2cqi;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  margin-bottom: 0.6cqi;
+  text-shadow: 0 0.3cqi 1.5cqi rgba(0,0,0,0.55);
+  word-break: break-word;
+  color: var(--accent-color, #FF2D3A);
+}
+
+.pv-actu-title {
+  font-size: 4.5cqi;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  opacity: 0.98;
+  color: #fff;
+  margin-bottom: 1.4cqi;
+  word-break: break-word;
+  text-shadow: 0 0.25cqi 1.2cqi rgba(0,0,0,0.55);
+}
+
+.pv-actu-desc {
+  font-family: 'Syne', sans-serif;
+  font-size: 2.6cqi;
+  font-weight: 500;
+  line-height: 1.4;
+  color: #fff;
+  max-width: 88%;
+  margin: 0 auto 1.6cqi;
+  white-space: pre-wrap;
+  text-shadow: 0 0.2cqi 1cqi rgba(0,0,0,0.5);
+}
+.pv-actu-desc:empty { display: none; }
+
+.pv-actu-credits-label {
+  font-family: 'Syne', sans-serif;
+  font-size: 2.0cqi;
+  line-height: 1;
+  letter-spacing: 0.32em;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #fff;
+  margin-top: 0.8cqi;
+  margin-bottom: 0.9cqi;
+  text-shadow: 0 0.2cqi 1cqi rgba(0,0,0,0.55);
+}
+
+.pv-actu-credits-names {
+  font-family: 'Syne', sans-serif;
+  font-size: 3.2cqi;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.25;
+  color: var(--accent-color, #FF2D3A);
+  text-shadow: 0 0.2cqi 1cqi rgba(0,0,0,0.5);
+  max-width: 92%;
+  margin: 0 auto;
+}
+.pv-actu-credits-label:empty, .pv-actu-credits-names:empty { display: none; }
+
+/* Type-based show/hide — Sortie vs Actu */
+.preview-frame[data-type="sortie"] .pv-actu-wrap { display: none; }
+.preview-frame[data-type="actu"] .pv-info-top,
+.preview-frame[data-type="actu"] .pv-artwork-wrap,
+.preview-frame[data-type="actu"] .pv-credits-block { display: none; }
+
+/* Slider row (used for Actu vertical position) */
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+.slider-row .zoom-slider { flex: 1; }
+.slider-row .zoom-value {
+  min-width: 56px;
+  text-align: right;
+  font-family: 'Syne Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
 /* Hidden high-res export clone holder */
 #exportHolder {
   position: fixed;
@@ -835,8 +956,7 @@ nav {
           <div class="type-tile-name">Certification</div>
           <div class="type-tile-desc">Or / Platine / Diamant</div>
         </button>
-        <button class="type-tile disabled" data-type="actu" disabled>
-          <div class="badge">bientôt</div>
+        <button class="type-tile" data-type="actu">
           <div class="type-tile-name">Actu</div>
           <div class="type-tile-desc">Freestyle, presse, prix</div>
         </button>
@@ -862,18 +982,42 @@ nav {
           <input type="text" class="form-input" id="f_artist" placeholder="NOM ARTISTE" autocomplete="off" />
         </div>
 
-        <div class="form-row">
+        <!-- ===== Sortie-specific fields ===== -->
+        <div id="formSortieFields">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Type de sortie</label>
+              <select class="form-select" id="f_type">
+                <option value="Single">Single</option>
+                <option value="EP">EP</option>
+                <option value="Album">Album</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Titre du track / projet</label>
+              <input type="text" class="form-input" id="f_title" placeholder="Titre" autocomplete="off" />
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== Actu-specific fields ===== -->
+        <div id="formActuFields" style="display:none">
           <div class="form-group">
-            <label class="form-label">Type de sortie</label>
-            <select class="form-select" id="f_type">
-              <option value="Single">Single</option>
-              <option value="EP">EP</option>
-              <option value="Album">Album</option>
-            </select>
+            <label class="form-label">Titre de l'actu</label>
+            <input type="text" class="form-input" id="f_actu_title" placeholder="Ex : Nouveau freestyle, Article Les Inrocks…" autocomplete="off" />
           </div>
           <div class="form-group">
-            <label class="form-label">Titre du track / projet</label>
-            <input type="text" class="form-input" id="f_title" placeholder="Titre" autocomplete="off" />
+            <label class="form-label">Description de l'actu</label>
+            <textarea class="form-input" id="f_actu_desc" rows="3" placeholder="Courte description (1 à 3 lignes)"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Position verticale du bloc de texte</label>
+            <div class="slider-row">
+              <button class="size-btn" type="button" id="f_actu_y_minus">↑</button>
+              <input type="range" id="f_actu_y" class="zoom-slider" min="-35" max="35" step="1" value="0" />
+              <button class="size-btn" type="button" id="f_actu_y_plus">↓</button>
+              <span class="zoom-value" id="f_actu_y_val">Centre</span>
+            </div>
           </div>
         </div>
 
@@ -935,11 +1079,19 @@ nav {
               </div>
             </div>
             <div class="size-row">
-              <span class="size-row-label">Titre de la sortie</span>
+              <span class="size-row-label" id="sizeTitleLabel">Titre de la sortie</span>
               <div class="size-row-buttons">
                 <button class="size-btn" type="button" data-size="title" data-dir="-1">−</button>
                 <span class="size-row-value" id="sizeTitleVal">100%</span>
                 <button class="size-btn" type="button" data-size="title" data-dir="1">+</button>
+              </div>
+            </div>
+            <div class="size-row" id="sizeDescRow" style="display:none">
+              <span class="size-row-label">Description</span>
+              <div class="size-row-buttons">
+                <button class="size-btn" type="button" data-size="desc" data-dir="-1">−</button>
+                <span class="size-row-value" id="sizeDescVal">100%</span>
+                <button class="size-btn" type="button" data-size="desc" data-dir="1">+</button>
               </div>
             </div>
             <div class="size-row">
@@ -970,7 +1122,7 @@ nav {
           <div class="file-hint">Image JPG/PNG ou vidéo MP4/WebM. Cliquez et glissez sur le preview pour repositionner.</div>
         </div>
 
-        <div class="form-group">
+        <div class="form-group" id="artworkFormGroup">
           <label class="form-label">Artwork de la sortie</label>
           <label class="file-upload" id="artUploadLabel">
             <span id="artUploadText">🎨 &nbsp;Uploader la cover (format carré)</span>
@@ -996,12 +1148,14 @@ nav {
           <div class="preview-title">Preview live</div>
           <div class="preview-dims" id="previewDims">1080 × 1350</div>
         </div>
-        <div class="preview-frame" id="previewFrame" data-format="4:5">
+        <div class="preview-frame" id="previewFrame" data-format="4:5" data-type="sortie">
           <div class="pv-bg-placeholder" id="bgPlaceholder">Image / vidéo de fond</div>
           <img class="pv-bg" id="pvBg" style="display:none" />
           <video class="pv-bg" id="pvBgVideo" style="display:none" muted loop playsinline autoplay></video>
           <div class="pv-overlay"></div>
           <img class="pv-logo" id="pvLogo" src="blzante_spiral_white.png" alt="" />
+
+          <!-- ===== SORTIE elements ===== -->
           <div class="pv-info-top">
             <div class="pv-info-type" id="pvType">NOUVEAU SINGLE</div>
             <div class="pv-info-artist" id="pvArtist">NOM ARTISTE</div>
@@ -1014,6 +1168,16 @@ nav {
           <div class="pv-credits-block">
             <div class="pv-credits-label" id="pvCreditsLabel"></div>
             <div class="pv-credits-names" id="pvCreditsNames"></div>
+          </div>
+
+          <!-- ===== ACTU elements ===== -->
+          <div class="pv-actu-wrap">
+            <div class="pv-actu-label" id="pvActuLabel">ACTU</div>
+            <div class="pv-actu-artist" id="pvActuArtist">NOM ARTISTE</div>
+            <div class="pv-actu-title" id="pvActuTitle">TITRE DE L'ACTU</div>
+            <div class="pv-actu-desc" id="pvActuDesc"></div>
+            <div class="pv-actu-credits-label" id="pvActuCreditsLabel"></div>
+            <div class="pv-actu-credits-names" id="pvActuCreditsNames"></div>
           </div>
         </div>
       </div>
@@ -1067,6 +1231,10 @@ const S = {
   artist: '',
   title: '',
   releaseType: 'Single',
+  // Actu-specific
+  actuTitle: '',
+  actuDesc: '',
+  actuY: 0,          // vertical offset in cqi, -35..+35
   ecrit: true,
   compose: true,
   realise: false,
@@ -1082,7 +1250,7 @@ const S = {
   accentColor: '#FF2D3A',
   logoColor: 'white',
   // Manual size adjustments — integer steps (-5 to +5), each step = ±10%
-  sizes: { artist: 0, title: 0, credits: 0 }
+  sizes: { artist: 0, title: 0, credits: 0, desc: 0 }
 };
 
 // Applies current state to CSS variables on the given element.
@@ -1099,6 +1267,7 @@ function applyStyleVars(el) {
   el.style.setProperty('--art-y', (S.artY * w / 100) + 'px');
   el.style.setProperty('--art-zoom', S.artZoom);
   el.style.setProperty('--accent-color', S.accentColor);
+  el.style.setProperty('--actu-y', S.actuY + 'cqi');
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1119,14 +1288,39 @@ document.querySelectorAll('.format-btn').forEach(btn => {
 });
 
 // ═══════════════════════════════════════════════════════════════════
-// POST TYPE (v1 : sortie uniquement)
+// POST TYPE — Sortie / Actu (et plus tard Certif / Concert)
 // ═══════════════════════════════════════════════════════════════════
+function applyTypeUI() {
+  // previewFrame data-type active les bonnes règles CSS
+  previewFrame.dataset.type = S.type;
+
+  // Affiche/masque les blocs de formulaire spécifiques au type
+  document.getElementById('formSortieFields').style.display = S.type === 'sortie' ? '' : 'none';
+  document.getElementById('formActuFields').style.display = S.type === 'actu' ? '' : 'none';
+
+  // L'artwork n'existe que pour Sortie
+  const artGroup = document.getElementById('artworkFormGroup');
+  if (artGroup) artGroup.style.display = S.type === 'sortie' ? '' : 'none';
+
+  // Label dynamique du contrôle de taille "Titre"
+  const titleLabel = document.getElementById('sizeTitleLabel');
+  if (titleLabel) titleLabel.textContent = S.type === 'actu'
+    ? "Titre de l'actu"
+    : 'Titre de la sortie';
+
+  // Ligne de contrôle de taille "Description" : visible seulement en Actu
+  const descRow = document.getElementById('sizeDescRow');
+  if (descRow) descRow.style.display = S.type === 'actu' ? '' : 'none';
+}
+
 document.querySelectorAll('.type-tile').forEach(tile => {
   tile.addEventListener('click', () => {
     if (tile.classList.contains('disabled')) return;
     document.querySelectorAll('.type-tile').forEach(t => t.classList.remove('active'));
     tile.classList.add('active');
     S.type = tile.dataset.type;
+    applyTypeUI();
+    updatePreview();
   });
 });
 
@@ -1205,6 +1399,40 @@ bind('f_type', 'releaseType', 'change');
 bind('f_ecrit', 'ecrit', 'change');
 bind('f_compose', 'compose', 'change');
 bind('f_realise', 'realise', 'change');
+
+// ─── Actu bindings ─────────────────────────────────────────────────
+bind('f_actu_title', 'actuTitle');
+bind('f_actu_desc', 'actuDesc');
+
+// Slider de position verticale du bloc Actu
+const actuYInput = document.getElementById('f_actu_y');
+const actuYVal = document.getElementById('f_actu_y_val');
+
+function updateActuYLabel() {
+  const v = S.actuY;
+  if (v === 0) actuYVal.textContent = 'Centre';
+  else if (v < 0) actuYVal.textContent = 'Haut ' + v;
+  else actuYVal.textContent = 'Bas +' + v;
+}
+
+actuYInput.addEventListener('input', (e) => {
+  S.actuY = parseInt(e.target.value, 10) || 0;
+  updateActuYLabel();
+  applyStyleVars(previewFrame);
+});
+
+document.getElementById('f_actu_y_minus').addEventListener('click', () => {
+  S.actuY = Math.max(-35, S.actuY - 5);
+  actuYInput.value = S.actuY;
+  updateActuYLabel();
+  applyStyleVars(previewFrame);
+});
+document.getElementById('f_actu_y_plus').addEventListener('click', () => {
+  S.actuY = Math.min(35, S.actuY + 5);
+  actuYInput.value = S.actuY;
+  updateActuYLabel();
+  applyStyleVars(previewFrame);
+});
 document.getElementById('f_avec').addEventListener('change', () => { S.relation = 'avec'; updatePreview(); });
 document.getElementById('f_par').addEventListener('change', () => { S.relation = 'par'; updatePreview(); });
 
@@ -1375,7 +1603,8 @@ const SIZE_MAX_STEP = 5;        // 150% max
 const SIZE_VAL_IDS = {
   artist:  'sizeArtistVal',
   title:   'sizeTitleVal',
-  credits: 'sizeCreditsVal'
+  credits: 'sizeCreditsVal',
+  desc:    'sizeDescVal'
 };
 
 function refreshSizeUI() {
@@ -1453,6 +1682,14 @@ const pvArtist = document.getElementById('pvArtist');
 const pvCreditsLabel = document.getElementById('pvCreditsLabel');
 const pvCreditsNames = document.getElementById('pvCreditsNames');
 
+// Actu element refs
+const pvActuLabel = document.getElementById('pvActuLabel');
+const pvActuArtist = document.getElementById('pvActuArtist');
+const pvActuTitle = document.getElementById('pvActuTitle');
+const pvActuDesc = document.getElementById('pvActuDesc');
+const pvActuCreditsLabel = document.getElementById('pvActuCreditsLabel');
+const pvActuCreditsNames = document.getElementById('pvActuCreditsNames');
+
 // Title-case un nom de songwriter en respectant les alias courts (2B, VJ, X…)
 // et les séparateurs (espace, trait d'union).
 function titleCaseName(name) {
@@ -1502,6 +1739,15 @@ function getCreditsLines() {
 }
 
 function updatePreview() {
+  applyStyleVars(previewFrame);
+  if (S.type === 'actu') {
+    updatePreviewActu();
+  } else {
+    updatePreviewSortie();
+  }
+}
+
+function updatePreviewSortie() {
   pvType.textContent = 'NOUVEAU ' + (S.releaseType || 'SINGLE').toUpperCase();
   pvArtist.textContent = (S.artist || 'NOM ARTISTE').toUpperCase();
   // Le titre est automatiquement entouré de guillemets droits
@@ -1510,8 +1756,6 @@ function updatePreview() {
   const c = getCreditsLines();
   pvCreditsLabel.textContent = c.label;
   pvCreditsNames.textContent = c.names;
-
-  applyStyleVars(previewFrame);
 
   // Bases de taille (nouvelles valeurs par défaut, plus petites qu'avant).
   // artist 7.2 = 80% de l'ancien 9, title 3.36 = 70% de l'ancien 4.8 (choix
@@ -1534,6 +1778,45 @@ function updatePreview() {
     ]);
     autoFitBlock(pvCreditsNames.parentElement, [
       { el: pvCreditsNames, max: creditsMax, min: 1.5 }
+    ]);
+  });
+}
+
+function updatePreviewActu() {
+  // Texte
+  pvActuLabel.textContent = 'ACTU';
+  pvActuArtist.textContent = (S.artist || 'NOM ARTISTE').toUpperCase();
+  pvActuTitle.textContent = (S.actuTitle || "TITRE DE L'ACTU").toUpperCase();
+  pvActuDesc.textContent = S.actuDesc || '';
+
+  // Crédits — réutilise getCreditsLines (s'affiche seulement si songwriters
+  // sélectionnés ET au moins une contribution cochée)
+  const c = getCreditsLines();
+  pvActuCreditsLabel.textContent = c.label;
+  pvActuCreditsNames.textContent = c.names;
+
+  // Multiplicateurs de taille (mêmes contrôles +/- que pour Sortie)
+  const mult = (k) => 1 + S.sizes[k] * SIZE_STEP_PCT;
+  const artistMax  = 7.2 * mult('artist');
+  const titleMax   = 4.5 * mult('title');
+  const descMax    = 2.6 * mult('desc');
+  const creditsMax = 3.2 * mult('credits');
+
+  // Application directe pour la description (pas d'autoFit, le texte est
+  // multi-lignes et s'enveloppe naturellement)
+  const cw = previewFrame.getBoundingClientRect().width;
+  if (cw) {
+    pvActuDesc.style.fontSize = (descMax * cw / 100) + 'px';
+  }
+
+  // Auto-fit horizontal de l'artiste et du titre (pour gérer les noms longs)
+  requestAnimationFrame(() => {
+    autoFitBlock(pvActuArtist.parentElement, [
+      { el: pvActuArtist, max: artistMax, min: 3.0 },
+      { el: pvActuTitle,  max: titleMax,  min: 2.0 }
+    ]);
+    autoFitBlock(pvActuCreditsNames.parentElement, [
+      { el: pvActuCreditsNames, max: creditsMax, min: 1.5 }
     ]);
   });
 }
@@ -1665,13 +1948,28 @@ async function buildOverlayLayer(targetW, targetH) {
   // Auto-fit (horizontal + vertical) sur les blocs du clone
   // Tailles ajustées par les contrôles +/- (state.sizes)
   const _m = (k) => 1 + S.sizes[k] * SIZE_STEP_PCT;
-  autoFitBlock(clone.querySelector('.pv-info-top'), [
-    { el: clone.querySelector('.pv-info-artist'), max: 7.2  * _m('artist'), min: 3.0 },
-    { el: clone.querySelector('.pv-info-title'),  max: 3.36 * _m('title'),  min: 1.5 }
-  ]);
-  autoFitBlock(clone.querySelector('.pv-credits-block'), [
-    { el: clone.querySelector('.pv-credits-names'), max: 3.8 * _m('credits'), min: 1.5 }
-  ]);
+
+  if (S.type === 'actu') {
+    // Description : taille appliquée directement (pas d'autoFit)
+    const descEl = clone.querySelector('.pv-actu-desc');
+    if (descEl) descEl.style.fontSize = (2.6 * _m('desc') * targetW / 100) + 'px';
+
+    autoFitBlock(clone.querySelector('.pv-actu-wrap'), [
+      { el: clone.querySelector('.pv-actu-artist'), max: 7.2 * _m('artist'), min: 3.0 },
+      { el: clone.querySelector('.pv-actu-title'),  max: 4.5 * _m('title'),  min: 2.0 }
+    ]);
+    autoFitBlock(clone.querySelector('.pv-actu-wrap'), [
+      { el: clone.querySelector('.pv-actu-credits-names'), max: 3.2 * _m('credits'), min: 1.5 }
+    ]);
+  } else {
+    autoFitBlock(clone.querySelector('.pv-info-top'), [
+      { el: clone.querySelector('.pv-info-artist'), max: 7.2  * _m('artist'), min: 3.0 },
+      { el: clone.querySelector('.pv-info-title'),  max: 3.36 * _m('title'),  min: 1.5 }
+    ]);
+    autoFitBlock(clone.querySelector('.pv-credits-block'), [
+      { el: clone.querySelector('.pv-credits-names'), max: 3.8 * _m('credits'), min: 1.5 }
+    ]);
+  }
 
   // Rendu en PNG à fond transparent — fixes Safari identiques à exportPNG
   let overlayFontCSS = '';
@@ -1792,13 +2090,28 @@ async function exportPNG() {
     // Auto-fit (horizontal + vertical) sur les blocs du clone
     // Tailles ajustées par les contrôles +/- (state.sizes)
     const _m2 = (k) => 1 + S.sizes[k] * SIZE_STEP_PCT;
-    autoFitBlock(clone.querySelector('.pv-info-top'), [
-      { el: clone.querySelector('.pv-info-artist'), max: 7.2  * _m2('artist'), min: 3.0 },
-      { el: clone.querySelector('.pv-info-title'),  max: 3.36 * _m2('title'),  min: 1.5 }
-    ]);
-    autoFitBlock(clone.querySelector('.pv-credits-block'), [
-      { el: clone.querySelector('.pv-credits-names'), max: 3.8 * _m2('credits'), min: 1.5 }
-    ]);
+
+    if (S.type === 'actu') {
+      // Description : taille appliquée directement (pas d'autoFit)
+      const descEl = clone.querySelector('.pv-actu-desc');
+      if (descEl) descEl.style.fontSize = (2.6 * _m2('desc') * targetW / 100) + 'px';
+
+      autoFitBlock(clone.querySelector('.pv-actu-wrap'), [
+        { el: clone.querySelector('.pv-actu-artist'), max: 7.2 * _m2('artist'), min: 3.0 },
+        { el: clone.querySelector('.pv-actu-title'),  max: 4.5 * _m2('title'),  min: 2.0 }
+      ]);
+      autoFitBlock(clone.querySelector('.pv-actu-wrap'), [
+        { el: clone.querySelector('.pv-actu-credits-names'), max: 3.2 * _m2('credits'), min: 1.5 }
+      ]);
+    } else {
+      autoFitBlock(clone.querySelector('.pv-info-top'), [
+        { el: clone.querySelector('.pv-info-artist'), max: 7.2  * _m2('artist'), min: 3.0 },
+        { el: clone.querySelector('.pv-info-title'),  max: 3.36 * _m2('title'),  min: 1.5 }
+      ]);
+      autoFitBlock(clone.querySelector('.pv-credits-block'), [
+        { el: clone.querySelector('.pv-credits-names'), max: 3.8 * _m2('credits'), min: 1.5 }
+      ]);
+    }
 
     // === Rendu via html-to-image ===
     // Safari a des problèmes connus avec les polices externes et les data URLs
@@ -2265,12 +2578,13 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
 
 function buildFilename(ext) {
   const slug = (s) => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+  const titleField = S.type === 'actu' ? S.actuTitle : S.title;
   const parts = [
     slug(S.artist) || 'artiste',
-    slug(S.title) || 'titre',
+    slug(titleField) || (S.type === 'actu' ? 'actu' : 'titre'),
     S.format === '4:5' ? 'post' : 'reel'
   ];
-  return 'blzante_sortie_' + parts.join('_') + '.' + (ext || 'png');
+  return 'blzante_' + S.type + '_' + parts.join('_') + '.' + (ext || 'png');
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -2301,6 +2615,8 @@ async function waitForFonts() {
 (async () => {
   try { await _waitAuth(); } catch(e) { return; }
   await waitForFonts();
+  applyTypeUI();
+  updateActuYLabel();
   refreshSizeUI();
   updatePreview();
   updateExportButtonLabel();
