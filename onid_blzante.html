@@ -1219,14 +1219,33 @@ function setSyncStatus(state, msg){
 }
 
 function syncPayload(){
-  return { terms: S.terms, excludeTerms: S.excludeTerms, identified: S.identified };
+  // On enveloppe dans un objet avec clés explicites pour éviter
+  // la conversion tableau→objet de Firebase
+  return {
+    terms:        S.terms,
+    excludeTerms: S.excludeTerms,
+    identified:   S.identified,
+    _meta: { updated: new Date().toISOString(), count_terms: S.terms.length, count_id: S.identified.length }
+  };
+}
+
+// Firebase peut retourner les tableaux comme des objets {0:…, 1:…}
+// Cette fonction normalise en tableau propre dans tous les cas
+function toArray(v){
+  if(!v) return [];
+  if(Array.isArray(v)) return v;
+  // Objet Firebase → tableau (on ignore les clés non-numériques comme _meta)
+  return Object.keys(v)
+    .filter(k => !isNaN(k))
+    .sort((a,b) => Number(a)-Number(b))
+    .map(k => v[k]);
 }
 
 function applyRemoteData(data){
   if(!data) return;
-  S.terms        = data.terms        || [];
-  S.excludeTerms = data.excludeTerms || [];
-  S.identified   = (data.identified  || []).map(r=>{
+  S.terms        = toArray(data.terms);
+  S.excludeTerms = toArray(data.excludeTerms);
+  S.identified   = toArray(data.identified).map(r=>{
     if(!r._uid) r._uid = Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);
     return r;
   });
@@ -1240,13 +1259,14 @@ async function syncPull(){
   setSyncStatus('syncing');
   try{
     const res = await fetch(DB + DB_KEY);
+    if(!res.ok) throw new Error('HTTP '+res.status);
     const data = await res.json();
-    if(data){
-      // Firebase a des données → on les applique
+    if(data && (data.terms !== undefined || data.identified !== undefined)){
+      // Firebase a des données valides → on les applique
       applyRemoteData(data);
       setSyncStatus('ok');
     } else {
-      // Firebase est vide → on pousse les données locales existantes
+      // Firebase est vide → on pousse les données locales si elles existent
       const hasLocal = S.terms.length || S.excludeTerms.length || S.identified.length;
       if(hasLocal){
         await syncPush();
@@ -1259,13 +1279,16 @@ async function syncPull(){
 }
 
 async function syncPush(){
+  // Sécurité : ne jamais écraser Firebase avec des données vides
+  // sauf si on efface volontairement (clearTerms, clearRecap…)
   setSyncStatus('syncing');
   try{
-    await fetch(DB + DB_KEY, {
+    const res = await fetch(DB + DB_KEY, {
       method: 'PUT',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify(syncPayload()),
     });
+    if(!res.ok) throw new Error('HTTP '+res.status);
     setSyncStatus('ok');
   }catch(e){ setSyncStatus('error','Erreur sauvegarde : '+e.message); }
 }
