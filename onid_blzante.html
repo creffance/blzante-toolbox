@@ -8,6 +8,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Syne+Mono&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     :root{
@@ -152,12 +154,13 @@
     .hidden{display:none!important}
   </style>
 </head>
-<body>
+<body style="visibility:hidden">
 
 <nav>
   <a href="index.html">← BLZante Toolbox</a>
   <span style="color:var(--b)">/</span>
   <span style="color:var(--text);font-weight:600">ONID BLZante</span>
+  <button onclick="firebase.auth().signOut().then(()=>location.href='login.html')" style="margin-left:auto;background:none;border:1px solid var(--b);color:var(--muted);font-family:'Syne Mono',monospace;font-size:0.55rem;padding:4px 10px;cursor:pointer;letter-spacing:0.08em;text-transform:uppercase;transition:all 0.15s" onmouseover="this.style.borderColor='#555';this.style.color='#fff'" onmouseout="this.style.borderColor='';this.style.color=''">Déconnexion</button>
 </nav>
 
 <div id="app">
@@ -1195,6 +1198,12 @@ async function importConfig(file){
 const DB = 'https://blzante-toolbox-default-rtdb.europe-west1.firebasedatabase.app';
 const DB_KEY = '/onid_blzante.json';
 
+const FIREBASE_CONFIG={apiKey:"AIzaSyBuwwcRdlxLf7-ZdmUAi0ajB5uL3y-m800",authDomain:"blzante-toolbox.firebaseapp.com",databaseURL:"https://blzante-toolbox-default-rtdb.europe-west1.firebasedatabase.app",projectId:"blzante-toolbox",storageBucket:"blzante-toolbox.firebasestorage.app",messagingSenderId:"599088931653",appId:"1:599088931653:web:34f936e8302e894afb942c"};
+if(!firebase.apps.length)firebase.initializeApp(FIREBASE_CONFIG);
+window._fbToken='';
+function dbFetch(path,opts){const sep=path.includes('?')?'&':'?';return fetch(DB+path+sep+'auth='+window._fbToken,opts);}
+function _waitAuth(){return new Promise((res,rej)=>{firebase.auth().onAuthStateChanged(async u=>{if(!u){window.location.href='login.html';rej();}else{window._fbToken=await u.getIdToken();document.body.style.visibility='visible';res(u);}});});}
+
 let syncDebounceTimer = null;
 
 function setSyncStatus(state, msg){
@@ -1258,7 +1267,7 @@ function applyRemoteData(data){
 async function syncPull(){
   setSyncStatus('syncing');
   try{
-    const res = await fetch(DB + DB_KEY);
+    const res = await dbFetch(DB_KEY);
     if(!res.ok) throw new Error('HTTP '+res.status);
     const data = await res.json();
     if(data && (data.terms !== undefined || data.identified !== undefined)){
@@ -1283,7 +1292,7 @@ async function syncPush(){
   // sauf si on efface volontairement (clearTerms, clearRecap…)
   setSyncStatus('syncing');
   try{
-    const res = await fetch(DB + DB_KEY, {
+    const res = await dbFetch(DB_KEY, {
       method: 'PUT',
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify(syncPayload()),
@@ -1303,19 +1312,23 @@ function autoSync(){
 // ─────────────────────────────────────────────────────────────────────────────
 // INIT
 // ─────────────────────────────────────────────────────────────────────────────
-S.terms        = lsGet(SK_T,[]);
-S.excludeTerms = lsGet(SK_E,[]);
-S.identified   = lsGet(SK_ID,[]).map(r=>{
-  if(!r._uid) r._uid = Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);
-  return r;
-});
-lsSet(SK_ID, S.identified);
-renderTerms();
-renderExcl();
-renderRecap();
+(async () => {
+  try { await _waitAuth(); } catch(e) { return; }
 
-// Auto-pull Firebase au chargement
-syncPull();
+  S.terms        = lsGet(SK_T,[]);
+  S.excludeTerms = lsGet(SK_E,[]);
+  S.identified   = lsGet(SK_ID,[]).map(r=>{
+    if(!r._uid) r._uid = Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8);
+    return r;
+  });
+  lsSet(SK_ID, S.identified);
+  renderTerms();
+  renderExcl();
+  renderRecap();
+
+  // Auto-pull Firebase au chargement
+  syncPull();
+})();
 </script>
 </body>
 </html>
