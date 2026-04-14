@@ -1024,10 +1024,34 @@ nav {
 .pv-actu-credits-label:empty, .pv-actu-credits-names:empty { display: none; }
 
 /* Type-based show/hide — Sortie vs Actu */
-.preview-frame[data-type="sortie"] .pv-actu-wrap { display: none; }
+.preview-frame:not([data-type="actu"]) .pv-actu-wrap { display: none; }
 .preview-frame[data-type="actu"] .pv-info-top,
 .preview-frame[data-type="actu"] .pv-artwork-wrap,
 .preview-frame[data-type="actu"] .pv-credits-block { display: none; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   CERTIF TEMPLATE — médaillon SNEP en bas-gauche, chevauchant l'artwork
+   Réutilise la même structure que Sortie (info-top, artwork, credits).
+   Le médaillon est positionné absolument sur la preview-frame et son
+   ancrage (left + bottom) est calculé pour qu'environ 60% du médaillon
+   recouvre le coin bas-gauche de l'artwork.
+   ═══════════════════════════════════════════════════════════════════ */
+.pv-cert-medallion {
+  position: absolute;
+  width: 28cqi;
+  height: auto;          /* préserve le ratio (les certifs x2/x3 sont plus larges) */
+  z-index: 5;            /* au-dessus de l'artwork (z-index 2) et du logo (z-index 4) */
+  pointer-events: none;
+  bottom: 9%;            /* 4:5 : artwork bottom ~80% → médaillon chevauche ~moitié dehors */
+  left: 8%;
+  filter: drop-shadow(0 1.2cqi 2.5cqi rgba(0,0,0,0.6));
+}
+.preview-frame[data-format="9:16"] .pv-cert-medallion {
+  bottom: 24%;           /* 9:16 : artwork bottom ~66% */
+  left: 9%;
+  width: 30cqi;
+}
+.preview-frame:not([data-type="certif"]) .pv-cert-medallion { display: none !important; }
 
 /* Slider row (used for Actu vertical position) */
 .slider-row {
@@ -1085,8 +1109,7 @@ nav {
           <div class="type-tile-name">Sortie</div>
           <div class="type-tile-desc">Single / EP / Album</div>
         </button>
-        <button class="type-tile disabled" data-type="certif" disabled>
-          <div class="badge">bientôt</div>
+        <button class="type-tile" data-type="certif">
           <div class="type-tile-name">Certification</div>
           <div class="type-tile-desc">Or / Platine / Diamant</div>
         </button>
@@ -1159,6 +1182,33 @@ nav {
               <button class="size-btn" type="button" id="f_actu_y_plus">↓</button>
               <span class="zoom-value" id="f_actu_y_val">Bas +35</span>
             </div>
+          </div>
+        </div>
+
+        <!-- ===== Certif-specific fields ===== -->
+        <div id="formCertifFields" style="display:none">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Certification de</label>
+              <select class="form-select" id="f_cert_type">
+                <option value="Single">Single</option>
+                <option value="Album">Album</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Niveau</label>
+              <select class="form-select" id="f_cert_level">
+                <option value="Or">Or</option>
+                <option value="Platine">Platine</option>
+                <option value="Double platine">Double platine</option>
+                <option value="Triple platine">Triple platine</option>
+                <option value="Diamant">Diamant</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Titre du track / projet</label>
+            <input type="text" class="form-input" id="f_cert_title" placeholder="Titre" autocomplete="off" />
           </div>
         </div>
 
@@ -1313,6 +1363,9 @@ nav {
             <div class="pv-credits-names" id="pvCreditsNames"></div>
           </div>
 
+          <!-- ===== CERTIF medallion (overlapping bottom-left of artwork) ===== -->
+          <img class="pv-cert-medallion" id="pvCertMedallion" alt="" style="display:none" />
+
           <!-- ===== ACTU elements ===== -->
           <div class="pv-actu-wrap">
             <div class="pv-actu-artist" id="pvActuArtist">NOM ARTISTE</div>
@@ -1377,6 +1430,10 @@ const S = {
   actuTitle: '',
   actuDesc: '',
   actuY: 35,         // vertical offset in cqi, -40..+60 (default: bottom-positioned)
+  // Certif-specific
+  certType: 'Single',
+  certLevel: 'Or',
+  certTitle: '',
   ecrit: true,
   compose: true,
   realise: false,
@@ -1440,16 +1497,18 @@ function applyTypeUI() {
   // Affiche/masque les blocs de formulaire spécifiques au type
   document.getElementById('formSortieFields').style.display = S.type === 'sortie' ? '' : 'none';
   document.getElementById('formActuFields').style.display = S.type === 'actu' ? '' : 'none';
+  document.getElementById('formCertifFields').style.display = S.type === 'certif' ? '' : 'none';
 
-  // L'artwork n'existe que pour Sortie
+  // L'artwork existe pour Sortie ET Certif (le médaillon le chevauche)
   const artGroup = document.getElementById('artworkFormGroup');
-  if (artGroup) artGroup.style.display = S.type === 'sortie' ? '' : 'none';
+  if (artGroup) artGroup.style.display = (S.type === 'sortie' || S.type === 'certif') ? '' : 'none';
 
   // Label dynamique du contrôle de taille "Titre"
   const titleLabel = document.getElementById('sizeTitleLabel');
-  if (titleLabel) titleLabel.textContent = S.type === 'actu'
-    ? "Titre de l'actu"
-    : 'Titre de la sortie';
+  if (titleLabel) titleLabel.textContent =
+    S.type === 'actu'   ? "Titre de l'actu" :
+    S.type === 'certif' ? 'Titre du track / projet' :
+                          'Titre de la sortie';
 
   // Ligne de contrôle de taille "Description" : visible seulement en Actu
   const descRow = document.getElementById('sizeDescRow');
@@ -1542,6 +1601,11 @@ bind('f_type', 'releaseType', 'change');
 bind('f_ecrit', 'ecrit', 'change');
 bind('f_compose', 'compose', 'change');
 bind('f_realise', 'realise', 'change');
+
+// ─── Certif bindings ───────────────────────────────────────────────
+bind('f_cert_type', 'certType', 'change');
+bind('f_cert_level', 'certLevel', 'change');
+bind('f_cert_title', 'certTitle');
 
 // ─── Actu bindings ─────────────────────────────────────────────────
 bind('f_actu_title', 'actuTitle');
@@ -2019,9 +2083,59 @@ function updatePreview() {
   applyStyleVars(previewFrame);
   if (S.type === 'actu') {
     updatePreviewActu();
+  } else if (S.type === 'certif') {
+    updatePreviewCertif();
   } else {
     updatePreviewSortie();
   }
+}
+
+// Convertit "Double platine" → "double_platine" pour matcher le nom de fichier
+// du médaillon SNEP correspondant (cert_double_platine.png).
+function certLevelSlug(level) {
+  if (!level) return null;
+  return level.toLowerCase().replace(/\s+/g, '_');
+}
+
+function updatePreviewCertif() {
+  // Top label : "CERTIFIÉ <NIVEAU>" (ex : "CERTIFIÉ DOUBLE PLATINE")
+  const level = (S.certLevel || 'OR').toUpperCase();
+  pvType.textContent = 'CERTIFIÉ ' + level;
+  pvArtist.textContent = (S.artist || 'NOM ARTISTE').toUpperCase();
+  pvTitle.textContent = '"' + (S.certTitle || 'Titre du track').toUpperCase() + '"';
+
+  // Médaillon : on charge le PNG correspondant au niveau choisi
+  const certImg = document.getElementById('pvCertMedallion');
+  const slug = certLevelSlug(S.certLevel);
+  if (slug) {
+    const newSrc = 'cert_' + slug + '.png';
+    if (!certImg.src.endsWith(newSrc)) certImg.src = newSrc;
+    certImg.style.display = '';
+  } else {
+    certImg.style.display = 'none';
+    certImg.removeAttribute('src');
+  }
+
+  // Crédits — même logique que Sortie
+  const c = getCreditsLines();
+  pvCreditsLabel.textContent = c.label;
+  pvCreditsNames.textContent = c.names;
+
+  // Auto-fit : mêmes bases que Sortie
+  const mult = (k) => 1 + S.sizes[k] * SIZE_STEP_PCT;
+  const artistMax  = 7.2  * mult('artist');
+  const titleMax   = 3.36 * mult('title');
+  const creditsMax = 3.8  * mult('credits');
+
+  requestAnimationFrame(() => {
+    autoFitBlock(pvArtist.parentElement, [
+      { el: pvArtist, max: artistMax, min: 3.0 },
+      { el: pvTitle,  max: titleMax,  min: 1.5 }
+    ]);
+    autoFitBlock(pvCreditsNames.parentElement, [
+      { el: pvCreditsNames, max: creditsMax, min: 1.5 }
+    ]);
+  });
 }
 
 function updatePreviewSortie() {
@@ -2210,11 +2324,16 @@ function exportFilterNode(node) {
           cls.contains('pv-artwork-wrap') ||
           cls.contains('pv-artwork') ||
           cls.contains('pv-artwork-placeholder') ||
-          cls.contains('pv-credits-block')) {
+          cls.contains('pv-credits-block') ||
+          cls.contains('pv-cert-medallion')) {
         return false;
       }
-    } else {
+    } else if (S.type === 'certif') {
       if (cls.contains('pv-actu-wrap')) return false;
+      // Médaillon GARDÉ (visible uniquement pour certif)
+    } else {
+      // sortie
+      if (cls.contains('pv-actu-wrap') || cls.contains('pv-cert-medallion')) return false;
     }
   }
 
@@ -2231,12 +2350,13 @@ function cleanupCloneForType(clone) {
   };
 
   if (type === 'actu') {
-    // Retire le template Sortie complet
+    // Retire le template Sortie complet + le médaillon
     removeAll('.pv-info-top');
     removeAll('.pv-artwork-wrap');
     removeAll('.pv-artwork');
     removeAll('.pv-artwork-placeholder');
     removeAll('.pv-credits-block');
+    removeAll('.pv-cert-medallion');
     // Aussi par ID pour être sûr
     removeAll('#pvArt');
     removeAll('#artPlaceholder');
@@ -2245,13 +2365,25 @@ function cleanupCloneForType(clone) {
     removeAll('#pvTitle');
     removeAll('#pvCreditsLabel');
     removeAll('#pvCreditsNames');
-  } else {
+    removeAll('#pvCertMedallion');
+  } else if (type === 'certif') {
+    // Garde tous les éléments Sortie + le médaillon, retire seulement Actu
     removeAll('.pv-actu-wrap');
     removeAll('#pvActuArtist');
     removeAll('#pvActuTitle');
     removeAll('#pvActuDesc');
     removeAll('#pvActuCreditsLabel');
     removeAll('#pvActuCreditsNames');
+  } else {
+    // sortie : retire Actu + médaillon
+    removeAll('.pv-actu-wrap');
+    removeAll('.pv-cert-medallion');
+    removeAll('#pvActuArtist');
+    removeAll('#pvActuTitle');
+    removeAll('#pvActuDesc');
+    removeAll('#pvActuCreditsLabel');
+    removeAll('#pvActuCreditsNames');
+    removeAll('#pvCertMedallion');
   }
   // Safety : supprime TOUT <img> sans src valide restant
   clone.querySelectorAll('img').forEach(img => {
