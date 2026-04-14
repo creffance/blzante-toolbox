@@ -1038,18 +1038,23 @@ nav {
    ═══════════════════════════════════════════════════════════════════ */
 .pv-cert-medallion {
   position: absolute;
-  width: 28cqi;
+  width: 22cqi;          /* taille réduite par rapport au 28cqi initial */
   height: auto;          /* préserve le ratio (les certifs x2/x3 sont plus larges) */
   z-index: 5;            /* au-dessus de l'artwork (z-index 2) et du logo (z-index 4) */
   pointer-events: none;
-  bottom: 9%;            /* 4:5 : artwork bottom ~80% → médaillon chevauche ~moitié dehors */
-  left: 8%;
+  /* 4:5 : artwork bottom ~80% du haut, credits-block top à 84%.
+     Médaillon bottom à 17% du bas (= 83% du haut) → chevauche l'artwork
+     sans toucher les crédits. */
+  bottom: 17%;
+  left: 6%;
   filter: drop-shadow(0 1.2cqi 2.5cqi rgba(0,0,0,0.6));
 }
 .preview-frame[data-format="9:16"] .pv-cert-medallion {
-  bottom: 24%;           /* 9:16 : artwork bottom ~66% */
-  left: 9%;
-  width: 30cqi;
+  /* 9:16 : artwork bottom ~66% du haut, credits-block top à 69%.
+     Médaillon bottom à 32% du bas (= 68% du haut). */
+  width: 24cqi;
+  bottom: 32%;
+  left: 7%;
 }
 .preview-frame:not([data-type="certif"]) .pv-cert-medallion { display: none !important; }
 
@@ -2098,9 +2103,11 @@ function certLevelSlug(level) {
 }
 
 function updatePreviewCertif() {
-  // Top label : "CERTIFIÉ <NIVEAU>" (ex : "CERTIFIÉ DOUBLE PLATINE")
+  // Top label : "CERTIFICATION <TYPE> <NIVEAU>"
+  // (ex : "CERTIFICATION SINGLE OR", "CERTIFICATION ALBUM DOUBLE PLATINE")
+  const type  = (S.certType  || 'SINGLE').toUpperCase();
   const level = (S.certLevel || 'OR').toUpperCase();
-  pvType.textContent = 'CERTIFIÉ ' + level;
+  pvType.textContent = 'CERTIFICATION ' + type + ' ' + level;
   pvArtist.textContent = (S.artist || 'NOM ARTISTE').toUpperCase();
   pvTitle.textContent = '"' + (S.certTitle || 'Titre du track').toUpperCase() + '"';
 
@@ -2121,11 +2128,14 @@ function updatePreviewCertif() {
   pvCreditsLabel.textContent = c.label;
   pvCreditsNames.textContent = c.names;
 
-  // Auto-fit : mêmes bases que Sortie
+  // Auto-fit : bases ajustées POUR CERTIF :
+  //   - nom d'artiste : 80% de la base Sortie (ie 7.2 × 0.8 = 5.76)
+  //   - titre du track : 120% de la base Sortie (ie 3.36 × 1.2 = 4.032)
+  // Les boutons +/- restent fonctionnels et partent de cette base.
   const mult = (k) => 1 + S.sizes[k] * SIZE_STEP_PCT;
-  const artistMax  = 7.2  * mult('artist');
-  const titleMax   = 3.36 * mult('title');
-  const creditsMax = 3.8  * mult('credits');
+  const artistMax  = 7.2  * 0.8 * mult('artist');
+  const titleMax   = 3.36 * 1.2 * mult('title');
+  const creditsMax = 3.8        * mult('credits');
 
   requestAnimationFrame(() => {
     autoFitBlock(pvArtist.parentElement, [
