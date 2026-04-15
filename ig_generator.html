@@ -1038,8 +1038,11 @@ nav {
    ═══════════════════════════════════════════════════════════════════ */
 .pv-cert-medallion {
   position: absolute;
-  width: 22cqi;          /* taille réduite par rapport au 28cqi initial */
-  height: auto;          /* préserve le ratio (les certifs x2/x3 sont plus larges) */
+  /* On fixe la HAUTEUR (pas la largeur) pour que tous les médaillons aient
+     la même taille visuelle, même les x2/x3 Platine qui sont plus larges
+     que hauts à cause des médaillons empilés. */
+  height: 22cqi;
+  width: auto;
   z-index: 5;            /* au-dessus de l'artwork (z-index 2) et du logo (z-index 4) */
   pointer-events: none;
   /* 4:5 : artwork bottom ~80% du haut, credits-block top à 84%.
@@ -1052,7 +1055,8 @@ nav {
 .preview-frame[data-format="9:16"] .pv-cert-medallion {
   /* 9:16 : artwork bottom ~66% du haut, credits-block top à 69%.
      Médaillon bottom à 32% du bas (= 68% du haut). */
-  width: 24cqi;
+  height: 24cqi;
+  width: auto;
   bottom: 32%;
   left: 7%;
 }
