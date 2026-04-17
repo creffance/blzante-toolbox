@@ -7,7 +7,7 @@
 <title>IG Generator — BLZante Toolbox</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Syne:wght@400;600;700;800&family=Syne+Mono&display=block">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Manrope:wght@600;700;800&family=Syne:wght@400;600;700;800&family=Syne+Mono&display=block">
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.13/dist/html-to-image.min.js"></script>
@@ -887,7 +887,7 @@ nav {
   top: 69%;
 }
 .pv-credits-label {
-  font-family: 'Syne', sans-serif;
+  font-family: 'Manrope', sans-serif;
   font-size: 2.2cqi;
   line-height: 1;
   letter-spacing: 0.32em;
@@ -898,7 +898,7 @@ nav {
   text-shadow: 0 0.2cqi 1cqi rgba(0,0,0,0.55);
 }
 .pv-credits-names {
-  font-family: 'Syne', sans-serif;
+  font-family: 'Manrope', sans-serif;
   font-size: 3.8cqi;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -998,7 +998,7 @@ nav {
 .pv-actu-desc .actu-red { color: var(--accent-color, #FF2D3A); }
 
 .pv-actu-credits-label {
-  font-family: 'Syne', sans-serif;
+  font-family: 'Manrope', sans-serif;
   font-size: 2.0cqi;
   line-height: 1;
   letter-spacing: 0.32em;
@@ -1011,7 +1011,7 @@ nav {
 }
 
 .pv-actu-credits-names {
-  font-family: 'Syne', sans-serif;
+  font-family: 'Manrope', sans-serif;
   font-size: 3.2cqi;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -1446,8 +1446,8 @@ function _waitAuth() {
 const SONGWRITERS = [
   '2B', 'AKATCHE', 'BRÖ', 'CHERI', 'DANI TERREUR', 'EMY JO',
   'GABRIEL MABILAT', 'HADRIEN MABILAT', 'HUGO LARDENET', 'IVY', 'KEV 117',
-  'LAURINA MALAKA', 'LEANDRE', 'LEITH', 'MAB', 'MALAKA', 'MATSHIMOTO', 'NOLAN',
-  'OZZY', 'PABLO', 'PALMAE', 'PIERRE-LAURENT FAURE', 'RITUAL X', 'ROI LUIS',
+  'LAURINA MALAKA', 'LEANDRE', 'LEITH', 'MAB', 'MALAKA', 'MATSHIMOTO', 'NINO VELLA',
+  'NOLAN', 'OZZY', 'PABLO', 'PALMAE', 'PIERRE-LAURENT FAURE', 'RITUAL X', 'ROI LUIS',
   'SACHA MALAKA', 'SEBASTIEN ROUSSELET', 'VINCHA', 'VJ', 'YANNICK SERI'
 ];
 
@@ -3207,7 +3207,8 @@ async function waitForFonts() {
     // Force-load les couples poids/famille qu'on utilise dans le preview
     await Promise.all([
       document.fonts.load('800 16px "Syne"'),  // pv-info-artist
-      document.fonts.load('700 16px "Syne"'),  // pv-credits-names
+      document.fonts.load('700 16px "Manrope"'),  // pv-credits-names
+      document.fonts.load('600 16px "Manrope"'),  // pv-credits-label
       document.fonts.load('600 16px "Syne"'),  // pv-info-type, pv-info-title
       document.fonts.load('400 16px "Syne Mono"'),
       document.fonts.load('400 16px "Inter"'), // pv-actu-desc regular
