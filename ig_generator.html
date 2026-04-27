@@ -7,7 +7,7 @@
 <title>IG Generator — BLZante Toolbox</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Syne:wght@400;600;700;800&family=Syne+Mono&display=block">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Manrope:wght@600;700;800&family=Syne:wght@400;600;700;800&family=Syne+Mono&display=block">
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.13/dist/html-to-image.min.js"></script>
@@ -351,32 +351,24 @@ nav {
   pointer-events: none;
 }
 /* Éditeur de description : mêmes règles bulletproof que le rendu preview
-   pour garantir un alignement identique en saisie et en rendu final. */
+   pour que l'alignement soit identique en saisie et en rendu. */
 .rich-textarea strong,
 .rich-textarea .actu-red {
-  font-family: 'Inter', sans-serif !important;
-  font-size: inherit !important;
-  font-style: normal !important;
-  font-synthesis: none !important;
-  line-height: inherit !important;
-  letter-spacing: inherit !important;
-  word-spacing: inherit !important;
-  text-transform: inherit !important;
-  text-decoration: inherit !important;
-  vertical-align: baseline !important;
-  display: inline !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  border: 0 !important;
-  background: transparent !important;
+  font: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+  word-spacing: inherit;
+  text-transform: inherit;
+  text-decoration: inherit;
+  vertical-align: baseline;
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
-.rich-textarea strong { font-weight: 700 !important; }
-.rich-textarea .actu-red { color: var(--accent-color, #FF2D3A) !important; }
-.rich-textarea strong .actu-red,
-.rich-textarea .actu-red strong {
-  font-weight: 700 !important;
-  color: var(--accent-color, #FF2D3A) !important;
-}
+.rich-textarea strong { font-weight: 700; }
+.rich-textarea .actu-red { color: var(--accent-color, #FF2D3A); }
 .form-select {
   cursor: pointer;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23777'/%3E%3C/svg%3E");
@@ -864,6 +856,7 @@ nav {
   font-weight: 600;
   line-height: 1.25;
   letter-spacing: 0.04em;
+  text-transform: uppercase;
   opacity: 0.95;
   word-break: break-word;
   color: #fff;
@@ -894,7 +887,7 @@ nav {
   top: 69%;
 }
 .pv-credits-label {
-  font-family: 'Syne', sans-serif;
+  font-family: 'Manrope', sans-serif;
   font-size: 2.2cqi;
   line-height: 1;
   letter-spacing: 0.32em;
@@ -905,7 +898,7 @@ nav {
   text-shadow: 0 0.2cqi 1cqi rgba(0,0,0,0.55);
 }
 .pv-credits-names {
-  font-family: 'Syne', sans-serif;
+  font-family: 'Manrope', sans-serif;
   font-size: 3.8cqi;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -980,44 +973,32 @@ nav {
 .pv-actu-desc:empty { display: none; }
 
 /* Rich text formatting inside the rendered description.
-   BULLETPROOF ROUND 2 : au lieu de `font: inherit` (qui fuit parfois vers
-   Syne à cause de la cascade depuis .pv-actu-wrap), on force explicitement
-   'Inter' avec !important sur chaque propriété critique. Sans ça, les
-   spans rouges se rendent en Syne (visible : letter shapes géométriques
-   identiques aux titres artiste) avec des métriques différentes d'Inter,
-   ce qui cause un décalage de baseline de plusieurs pixels. */
+   - <strong> from execCommand('bold') → weight 700, MÊME police/taille
+   - <span class="actu-red"> from custom toggle → couleur dominante
+   BULLETPROOF : on force TOUTES les propriétés d'inline formatting pour
+   éviter tout décalage de baseline. Inter a des métriques précises et le
+   moindre pixel de shift se voit visuellement. */
 .pv-actu-desc strong,
 .pv-actu-desc .actu-red {
-  font-family: 'Inter', sans-serif !important;
-  font-size: inherit !important;
-  font-style: normal !important;
-  font-variant: normal !important;
-  font-stretch: normal !important;
-  font-synthesis: none !important;
-  line-height: inherit !important;
-  letter-spacing: inherit !important;
-  word-spacing: inherit !important;
-  text-transform: inherit !important;
-  text-decoration: inherit !important;
-  text-shadow: inherit !important;
-  vertical-align: baseline !important;
-  display: inline !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  border: 0 !important;
-  background: transparent !important;
+  font: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+  word-spacing: inherit;
+  text-transform: inherit;
+  text-decoration: inherit;
+  text-shadow: inherit;
+  vertical-align: baseline;
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
-.pv-actu-desc strong { font-weight: 700 !important; }
-.pv-actu-desc .actu-red { color: var(--accent-color, #FF2D3A) !important; }
-/* Cas nested : <strong><span class="actu-red"> ou l'inverse */
-.pv-actu-desc strong .actu-red,
-.pv-actu-desc .actu-red strong {
-  font-weight: 700 !important;
-  color: var(--accent-color, #FF2D3A) !important;
-}
+.pv-actu-desc strong { font-weight: 700; }
+.pv-actu-desc .actu-red { color: var(--accent-color, #FF2D3A); }
 
 .pv-actu-credits-label {
-  font-family: 'Syne', sans-serif;
+  font-family: 'Manrope', sans-serif;
   font-size: 2.0cqi;
   line-height: 1;
   letter-spacing: 0.32em;
@@ -1030,7 +1011,7 @@ nav {
 }
 
 .pv-actu-credits-names {
-  font-family: 'Syne', sans-serif;
+  font-family: 'Manrope', sans-serif;
   font-size: 3.2cqi;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -1043,10 +1024,68 @@ nav {
 .pv-actu-credits-label:empty, .pv-actu-credits-names:empty { display: none; }
 
 /* Type-based show/hide — Sortie vs Actu */
-.preview-frame[data-type="sortie"] .pv-actu-wrap { display: none; }
+.preview-frame:not([data-type="actu"]) .pv-actu-wrap { display: none; }
 .preview-frame[data-type="actu"] .pv-info-top,
 .preview-frame[data-type="actu"] .pv-artwork-wrap,
 .preview-frame[data-type="actu"] .pv-credits-block { display: none; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   CERTIF TEMPLATE — médaillon SNEP en bas-gauche, chevauchant l'artwork
+   Réutilise la même structure que Sortie (info-top, artwork, credits).
+   Le médaillon est positionné absolument sur la preview-frame et son
+   ancrage (left + bottom) est calculé pour qu'environ 60% du médaillon
+   recouvre le coin bas-gauche de l'artwork.
+   ═══════════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════════════
+   CERTIF TEMPLATE — layout override : tout remonté de ~5% pour laisser
+   plus de place au bloc crédits (écrit/composé avec…) en bas.
+   ═══════════════════════════════════════════════════════════════════ */
+.preview-frame[data-type="certif"] .pv-artwork-wrap {
+  top: 53%;
+}
+.preview-frame[data-type="certif"] .pv-info-top {
+  bottom: 73%;
+}
+.preview-frame[data-type="certif"] .pv-credits-block {
+  top: 79%;
+}
+.preview-frame[data-type="certif"][data-format="9:16"] .pv-artwork-wrap {
+  top: 46%;
+}
+.preview-frame[data-type="certif"][data-format="9:16"] .pv-info-top {
+  bottom: 73%;
+}
+.preview-frame[data-type="certif"][data-format="9:16"] .pv-credits-block {
+  top: 66%;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   CERTIF TEMPLATE — médaillon SNEP centré sur l'arête gauche de l'artwork
+   Le translateX(-50%) centre le médaillon horizontalement pile sur le bord
+   gauche de l'artwork (calc(50% - 28cqi) = position du bord gauche quand
+   l'artwork fait 56cqi de large et est centré à left:50%).
+   ═══════════════════════════════════════════════════════════════════ */
+.pv-cert-medallion {
+  position: absolute;
+  height: 22cqi;
+  width: auto;
+  z-index: 5;
+  pointer-events: none;
+  /* 4:5 : artwork bottom ~79% du haut (shifted) → 21% du bas.
+     On place le bottom du médaillon juste au-dessus des crédits. */
+  bottom: 22%;
+  left: calc(50% - 28cqi);
+  transform: translateX(-50%);
+  filter: drop-shadow(0 1.2cqi 2.5cqi rgba(0,0,0,0.6));
+}
+.preview-frame[data-format="9:16"] .pv-cert-medallion {
+  height: 24cqi;
+  width: auto;
+  bottom: 35%;
+  left: calc(50% - 29cqi);
+  transform: translateX(-50%);
+}
+.preview-frame:not([data-type="certif"]) .pv-cert-medallion { display: none !important; }
 
 /* Slider row (used for Actu vertical position) */
 .slider-row {
@@ -1104,8 +1143,7 @@ nav {
           <div class="type-tile-name">Sortie</div>
           <div class="type-tile-desc">Single / EP / Album</div>
         </button>
-        <button class="type-tile disabled" data-type="certif" disabled>
-          <div class="badge">bientôt</div>
+        <button class="type-tile" data-type="certif">
           <div class="type-tile-name">Certification</div>
           <div class="type-tile-desc">Or / Platine / Diamant</div>
         </button>
@@ -1178,6 +1216,33 @@ nav {
               <button class="size-btn" type="button" id="f_actu_y_plus">↓</button>
               <span class="zoom-value" id="f_actu_y_val">Bas +35</span>
             </div>
+          </div>
+        </div>
+
+        <!-- ===== Certif-specific fields ===== -->
+        <div id="formCertifFields" style="display:none">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Certification de</label>
+              <select class="form-select" id="f_cert_type">
+                <option value="Single">Single</option>
+                <option value="Album">Album</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Niveau</label>
+              <select class="form-select" id="f_cert_level">
+                <option value="Or">Or</option>
+                <option value="Platine">Platine</option>
+                <option value="Double platine">Double platine</option>
+                <option value="Triple platine">Triple platine</option>
+                <option value="Diamant">Diamant</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Titre du track / projet</label>
+            <input type="text" class="form-input" id="f_cert_title" placeholder="Titre" autocomplete="off" />
           </div>
         </div>
 
@@ -1332,6 +1397,9 @@ nav {
             <div class="pv-credits-names" id="pvCreditsNames"></div>
           </div>
 
+          <!-- ===== CERTIF medallion (overlapping bottom-left of artwork) ===== -->
+          <img class="pv-cert-medallion" id="pvCertMedallion" alt="" style="display:none" />
+
           <!-- ===== ACTU elements ===== -->
           <div class="pv-actu-wrap">
             <div class="pv-actu-artist" id="pvActuArtist">NOM ARTISTE</div>
@@ -1376,11 +1444,11 @@ function _waitAuth() {
 // DONNÉES — Songwriters BLZante (synchro avec release_create.html)
 // ═══════════════════════════════════════════════════════════════════
 const SONGWRITERS = [
-  '2B', 'AKATCHE', 'OZZY', 'BRO', 'CHERI', 'DANI TERREUR', 'EMY JO',
+  '2B', 'AKATCHE', 'BRÖ', 'CHERI', 'DANI TERREUR', 'EMY JO',
   'GABRIEL MABILAT', 'HADRIEN MABILAT', 'HUGO LARDENET', 'IVY', 'KEV 117',
-  'LAURINA MALAKA', 'LEANDRE', 'LEITH', 'MATSHIMOTO', 'NOLAN', 'PABLO',
-  'PALMAE', 'PIERRE-LAURENT FAURE', 'RITUAL X', 'ROI LUIS', 'SACHA MALAKA',
-  'SEBASTIEN ROUSSELET', 'VINCHA', 'VJ', 'YANNICK SERI'
+  'LAGOS IN PARIS', 'LAURINA MALAKA', 'LEANDRE', 'LEITH', 'LONIR', 'MAB', 'MALAKA', 'MATSHIMOTO', 'NINO VELLA',
+  'NOLAN', 'OZZY', 'PABLO', 'PALMAE', 'PIERRE-LAURENT FAURE', 'RITUAL X', 'ROI LUIS',
+  'SACHA MALAKA', 'SEBASTIEN ROUSSELET', 'VINCHA', 'VJ', 'YANNICK SERI'
 ];
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1396,6 +1464,10 @@ const S = {
   actuTitle: '',
   actuDesc: '',
   actuY: 35,         // vertical offset in cqi, -40..+60 (default: bottom-positioned)
+  // Certif-specific
+  certType: 'Single',
+  certLevel: 'Or',
+  certTitle: '',
   ecrit: true,
   compose: true,
   realise: false,
@@ -1459,16 +1531,18 @@ function applyTypeUI() {
   // Affiche/masque les blocs de formulaire spécifiques au type
   document.getElementById('formSortieFields').style.display = S.type === 'sortie' ? '' : 'none';
   document.getElementById('formActuFields').style.display = S.type === 'actu' ? '' : 'none';
+  document.getElementById('formCertifFields').style.display = S.type === 'certif' ? '' : 'none';
 
-  // L'artwork n'existe que pour Sortie
+  // L'artwork existe pour Sortie ET Certif (le médaillon le chevauche)
   const artGroup = document.getElementById('artworkFormGroup');
-  if (artGroup) artGroup.style.display = S.type === 'sortie' ? '' : 'none';
+  if (artGroup) artGroup.style.display = (S.type === 'sortie' || S.type === 'certif') ? '' : 'none';
 
   // Label dynamique du contrôle de taille "Titre"
   const titleLabel = document.getElementById('sizeTitleLabel');
-  if (titleLabel) titleLabel.textContent = S.type === 'actu'
-    ? "Titre de l'actu"
-    : 'Titre de la sortie';
+  if (titleLabel) titleLabel.textContent =
+    S.type === 'actu'   ? "Titre de l'actu" :
+    S.type === 'certif' ? 'Titre du track / projet' :
+                          'Titre de la sortie';
 
   // Ligne de contrôle de taille "Description" : visible seulement en Actu
   const descRow = document.getElementById('sizeDescRow');
@@ -1561,6 +1635,11 @@ bind('f_type', 'releaseType', 'change');
 bind('f_ecrit', 'ecrit', 'change');
 bind('f_compose', 'compose', 'change');
 bind('f_realise', 'realise', 'change');
+
+// ─── Certif bindings ───────────────────────────────────────────────
+bind('f_cert_type', 'certType', 'change');
+bind('f_cert_level', 'certLevel', 'change');
+bind('f_cert_title', 'certTitle');
 
 // ─── Actu bindings ─────────────────────────────────────────────────
 bind('f_actu_title', 'actuTitle');
@@ -1988,9 +2067,14 @@ const pvActuCreditsNames = document.getElementById('pvActuCreditsNames');
 
 // Title-case un nom de songwriter en respectant les alias courts (2B, VJ, X…)
 // et les séparateurs (espace, trait d'union).
+// Noms toujours en majuscules (aliases/duos courts)
+const UPPERCASE_NAMES = new Set(['MAB', 'BRÖ', 'IVY', 'VJ', 'OZZY']);
 function titleCaseName(name) {
+  if (UPPERCASE_NAMES.has(name.toUpperCase())) return name.toUpperCase();
+  const LOWERCASE_WORDS = new Set(['in', 'of', 'the', 'a', 'an', 'de', 'du', 'et', 'le', 'la', 'les', 'des', 'au', 'aux', 'en']);
   return name.split(/(\s+|-)/).map(token => {
     if (/^\s+$/.test(token) || token === '-') return token;
+    if (LOWERCASE_WORDS.has(token.toLowerCase())) return token.toLowerCase();
     if (token.length === 1) return token;                  // X → X
     if (token.length === 2 && /^[A-Z]+$/.test(token)) return token; // VJ → VJ
     if (/^\d/.test(token)) return token;                   // 2B → 2B, 117 → 117
@@ -2038,16 +2122,71 @@ function updatePreview() {
   applyStyleVars(previewFrame);
   if (S.type === 'actu') {
     updatePreviewActu();
+  } else if (S.type === 'certif') {
+    updatePreviewCertif();
   } else {
     updatePreviewSortie();
   }
+}
+
+// Convertit "Double platine" → "double_platine" pour matcher le nom de fichier
+// du médaillon SNEP correspondant (cert_double_platine.png).
+function certLevelSlug(level) {
+  if (!level) return null;
+  return level.toLowerCase().replace(/\s+/g, '_');
+}
+
+function updatePreviewCertif() {
+  // Top label : "CERTIFICATION <TYPE> <NIVEAU>"
+  // (ex : "CERTIFICATION SINGLE OR", "CERTIFICATION ALBUM DOUBLE PLATINE")
+  const type  = (S.certType  || 'SINGLE').toUpperCase();
+  const level = (S.certLevel || 'OR').toUpperCase();
+  pvType.textContent = 'CERTIFICATION ' + type + ' ' + level;
+  pvArtist.textContent = (S.artist || 'NOM ARTISTE').toUpperCase();
+  pvTitle.textContent = '"' + (S.certTitle || 'Titre du track').toUpperCase() + '"';
+
+  // Médaillon : on charge le PNG correspondant au niveau choisi
+  const certImg = document.getElementById('pvCertMedallion');
+  const slug = certLevelSlug(S.certLevel);
+  if (slug) {
+    const newSrc = 'cert_' + slug + '.png';
+    if (!certImg.src.endsWith(newSrc)) certImg.src = newSrc;
+    certImg.style.display = '';
+  } else {
+    certImg.style.display = 'none';
+    certImg.removeAttribute('src');
+  }
+
+  // Crédits — même logique que Sortie
+  const c = getCreditsLines();
+  pvCreditsLabel.textContent = c.label;
+  pvCreditsNames.textContent = c.names;
+
+  // Auto-fit : bases ajustées POUR CERTIF :
+  //   - nom d'artiste : 80% de la base Sortie (ie 7.2 × 0.8 = 5.76)
+  //   - titre du track : 120% de la base Sortie (ie 3.36 × 1.2 = 4.032)
+  // Les boutons +/- restent fonctionnels et partent de cette base.
+  const mult = (k) => 1 + S.sizes[k] * SIZE_STEP_PCT;
+  const artistMax  = 7.2  * 0.8 * mult('artist');
+  const titleMax   = 3.36 * 1.2 * mult('title');
+  const creditsMax = 3.8        * mult('credits');
+
+  requestAnimationFrame(() => {
+    autoFitBlock(pvArtist.parentElement, [
+      { el: pvArtist, max: artistMax, min: 3.0 },
+      { el: pvTitle,  max: titleMax,  min: 1.5 }
+    ]);
+    autoFitBlock(pvCreditsNames.parentElement, [
+      { el: pvCreditsNames, max: creditsMax, min: 1.5 }
+    ]);
+  });
 }
 
 function updatePreviewSortie() {
   pvType.textContent = 'NOUVEAU ' + (S.releaseType || 'SINGLE').toUpperCase();
   pvArtist.textContent = (S.artist || 'NOM ARTISTE').toUpperCase();
   // Le titre est automatiquement entouré de guillemets droits
-  pvTitle.textContent = '"' + (S.title || 'Titre du track') + '"';
+  pvTitle.textContent = '"' + (S.title || 'Titre du track').toUpperCase() + '"';
 
   const c = getCreditsLines();
   pvCreditsLabel.textContent = c.label;
@@ -2229,11 +2368,16 @@ function exportFilterNode(node) {
           cls.contains('pv-artwork-wrap') ||
           cls.contains('pv-artwork') ||
           cls.contains('pv-artwork-placeholder') ||
-          cls.contains('pv-credits-block')) {
+          cls.contains('pv-credits-block') ||
+          cls.contains('pv-cert-medallion')) {
         return false;
       }
-    } else {
+    } else if (S.type === 'certif') {
       if (cls.contains('pv-actu-wrap')) return false;
+      // Médaillon GARDÉ (visible uniquement pour certif)
+    } else {
+      // sortie
+      if (cls.contains('pv-actu-wrap') || cls.contains('pv-cert-medallion')) return false;
     }
   }
 
@@ -2250,12 +2394,13 @@ function cleanupCloneForType(clone) {
   };
 
   if (type === 'actu') {
-    // Retire le template Sortie complet
+    // Retire le template Sortie complet + le médaillon
     removeAll('.pv-info-top');
     removeAll('.pv-artwork-wrap');
     removeAll('.pv-artwork');
     removeAll('.pv-artwork-placeholder');
     removeAll('.pv-credits-block');
+    removeAll('.pv-cert-medallion');
     // Aussi par ID pour être sûr
     removeAll('#pvArt');
     removeAll('#artPlaceholder');
@@ -2264,13 +2409,25 @@ function cleanupCloneForType(clone) {
     removeAll('#pvTitle');
     removeAll('#pvCreditsLabel');
     removeAll('#pvCreditsNames');
-  } else {
+    removeAll('#pvCertMedallion');
+  } else if (type === 'certif') {
+    // Garde tous les éléments Sortie + le médaillon, retire seulement Actu
     removeAll('.pv-actu-wrap');
     removeAll('#pvActuArtist');
     removeAll('#pvActuTitle');
     removeAll('#pvActuDesc');
     removeAll('#pvActuCreditsLabel');
     removeAll('#pvActuCreditsNames');
+  } else {
+    // sortie : retire Actu + médaillon
+    removeAll('.pv-actu-wrap');
+    removeAll('.pv-cert-medallion');
+    removeAll('#pvActuArtist');
+    removeAll('#pvActuTitle');
+    removeAll('#pvActuDesc');
+    removeAll('#pvActuCreditsLabel');
+    removeAll('#pvActuCreditsNames');
+    removeAll('#pvCertMedallion');
   }
   // Safety : supprime TOUT <img> sans src valide restant
   clone.querySelectorAll('img').forEach(img => {
@@ -3052,7 +3209,8 @@ async function waitForFonts() {
     // Force-load les couples poids/famille qu'on utilise dans le preview
     await Promise.all([
       document.fonts.load('800 16px "Syne"'),  // pv-info-artist
-      document.fonts.load('700 16px "Syne"'),  // pv-credits-names
+      document.fonts.load('700 16px "Manrope"'),  // pv-credits-names
+      document.fonts.load('600 16px "Manrope"'),  // pv-credits-label
       document.fonts.load('600 16px "Syne"'),  // pv-info-type, pv-info-title
       document.fonts.load('400 16px "Syne Mono"'),
       document.fonts.load('400 16px "Inter"'), // pv-actu-desc regular
