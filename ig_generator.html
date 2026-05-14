@@ -919,6 +919,10 @@ nav {
 /* Hide the shared credits block in synchro (credits are in synchro-bottom) */
 .preview-frame[data-type="synchro"] .pv-credits-block { display: none; }
 
+/* Push info-top higher to sit above the taller 4:5 poster */
+.preview-frame[data-type="synchro"] .pv-info-top { bottom: 78%; max-height: 22cqi; }
+.preview-frame[data-type="synchro"][data-format="9:16"] .pv-info-top { bottom: 77%; max-height: 36cqi; }
+
 /* Content title: one line, no wrap */
 .preview-frame[data-type="synchro"] .pv-info-artist {
   white-space: nowrap;
@@ -929,32 +933,32 @@ nav {
 /* Type line: mixed case allowed */
 .preview-frame[data-type="synchro"] .pv-info-title { text-transform: none; }
 
-/* Poster: rectangular (not square), adjustable via --synchro-poster-y */
+/* Poster: 4:5 portrait ratio, same width as artwork, adjustable via --synchro-poster-y */
 .preview-frame[data-type="synchro"] .pv-artwork-wrap {
-  aspect-ratio: auto;
+  aspect-ratio: 4/5;
   width: 56cqi;
-  height: 36cqi;
+  height: auto;
   top: calc(52% + var(--synchro-poster-y, 0px));
 }
 .preview-frame[data-type="synchro"][data-format="9:16"] .pv-artwork-wrap {
   width: 58cqi;
-  height: 38cqi;
+  height: auto;
   top: calc(44% + var(--synchro-poster-y, 0px));
 }
 
 /* Bottom block: below poster, left-aligned */
 .pv-synchro-bottom {
   position: absolute;
-  top: 76%;
+  top: 86%;
   left: 22%;
   right: 5cqi;
   z-index: 3;
   display: flex;
   flex-direction: column;
-  gap: 0.8cqi;
+  gap: 0.6cqi;
   pointer-events: none;
 }
-.preview-frame[data-format="9:16"] .pv-synchro-bottom { top: 68%; left: 21%; }
+.preview-frame[data-format="9:16"] .pv-synchro-bottom { top: 72%; left: 21%; }
 
 .pv-synchro-comment {
   font-family: 'Syne Mono', monospace;
@@ -1679,7 +1683,7 @@ function applyTypeUI() {
     artGroup.style.display = (S.type === 'sortie' || S.type === 'certif' || S.type === 'synchro') ? '' : 'none';
     // Dynamic label for artwork
     const artLabel = artGroup.querySelector('.form-label');
-    if (artLabel) artLabel.textContent = S.type === 'synchro' ? 'Affiche / Poster' : 'Artwork de la sortie';
+    if (artLabel) artLabel.textContent = S.type === 'synchro' ? 'Affiche / Poster (format 4:5)' : 'Artwork de la sortie';
   }
 
   // Label dynamique du contrôle de taille "Artist" (in synchro = content title)
