@@ -943,13 +943,16 @@ nav {
 /* Type line: mixed case allowed, smaller */
 .preview-frame[data-type="synchro"] .pv-info-title { text-transform: none; font-size: 2.6cqi; }
 
-/* Poster: 4:5 portrait ratio, same width as artwork, anchored below text block */
+/* Poster: same height as sortie artwork (square container), full image visible */
 .preview-frame[data-type="synchro"] .pv-artwork-wrap {
-  aspect-ratio: 4/5;
+  aspect-ratio: 1;
   width: 56cqi;
   height: auto;
   top: calc(37cqi + var(--vertical-y, 0px));
   transform: translateX(-50%);
+}
+.preview-frame[data-type="synchro"] .pv-artwork {
+  object-fit: contain;
 }
 .preview-frame[data-type="synchro"][data-format="9:16"] .pv-artwork-wrap {
   width: 58cqi;
@@ -961,7 +964,7 @@ nav {
 /* Bottom block: below poster, left-aligned, moves with poster */
 .pv-synchro-bottom {
   position: absolute;
-  top: calc(109cqi + var(--vertical-y, 0px));
+  top: calc(96cqi + var(--vertical-y, 0px));
   left: 22%;
   right: 5cqi;
   z-index: 3;
@@ -971,7 +974,7 @@ nav {
   pointer-events: none;
 }
 .preview-frame[data-format="9:16"] .pv-synchro-bottom {
-  top: calc(128cqi + var(--vertical-y, 0px));
+  top: calc(115cqi + var(--vertical-y, 0px));
   left: 21%;
 }
 
@@ -1478,7 +1481,7 @@ nav {
           </label>
           <div class="media-controls" id="bgControls">
             <span class="media-controls-label">Zoom</span>
-            <input type="range" class="zoom-slider" id="bgZoom" min="1" max="3" step="0.05" value="1" />
+            <input type="range" class="zoom-slider" id="bgZoom" min="0.5" max="3" step="0.05" value="1" />
             <span class="zoom-value" id="bgZoomVal">100%</span>
             <button type="button" class="media-delete-btn" id="bgDelete">× Supprimer</button>
           </div>
@@ -1493,7 +1496,7 @@ nav {
           </label>
           <div class="media-controls" id="artControls">
             <span class="media-controls-label">Zoom</span>
-            <input type="range" class="zoom-slider" id="artZoom" min="1" max="3" step="0.05" value="1" />
+            <input type="range" class="zoom-slider" id="artZoom" min="0.5" max="3" step="0.05" value="1" />
             <span class="zoom-value" id="artZoomVal">100%</span>
             <button type="button" class="media-delete-btn" id="artDelete">× Supprimer</button>
           </div>
@@ -1691,7 +1694,7 @@ function applyTypeUI() {
     artGroup.style.display = (S.type === 'sortie' || S.type === 'certif' || S.type === 'synchro') ? '' : 'none';
     // Dynamic label for artwork
     const artLabel = artGroup.querySelector('.form-label');
-    if (artLabel) artLabel.textContent = S.type === 'synchro' ? 'Affiche / Poster (format 4:5)' : 'Artwork de la sortie';
+    if (artLabel) artLabel.textContent = S.type === 'synchro' ? 'Affiche / Poster' : 'Artwork de la sortie';
   }
 
   // Hide shared artist field in synchro (has its own inside synchro section)
@@ -2309,7 +2312,7 @@ function updatePreviewSynchro() {
   else if (trackName) trackline = '"' + trackName + '"';
   document.getElementById('pvSynchroTrackline').textContent = trackline;
 
-  // Credits in synchro bottom block (same line: label + names)
+  // Credits in synchro bottom block
   const c = getCreditsLines();
   document.getElementById('pvSynchroCreditsLabel').textContent = c.label;
   document.getElementById('pvSynchroCreditsNames').textContent = c.names;
@@ -2318,6 +2321,10 @@ function updatePreviewSynchro() {
   const mult = (k) => 1 + S.sizes[k] * SIZE_STEP_PCT;
   const artistMax  = 5.5 * mult('artist');
   const titleMax   = 2.6 * mult('title');
+  const creditsMult = mult('credits');
+
+  // Apply credits size multiplier to synchro credits names
+  document.getElementById('pvSynchroCreditsNames').style.fontSize = (3.0 * creditsMult) + 'cqi';
 
   requestAnimationFrame(() => {
     autoFitBlock(pvArtist.parentElement, [
@@ -2730,6 +2737,8 @@ async function buildOverlayLayer(targetW, targetH) {
       { el: clone.querySelector('.pv-info-artist'), max: 5.5 * _m('artist'), min: 2.5 },
       { el: clone.querySelector('.pv-info-title'),  max: 2.6 * _m('title'),  min: 1.2 }
     ]);
+    const synCredits = clone.querySelector('.pv-synchro-credits-names');
+    if (synCredits) synCredits.style.fontSize = (3.0 * _m('credits') * targetW / 100) + 'px';
   } else {
     autoFitBlock(clone.querySelector('.pv-info-top'), [
       { el: clone.querySelector('.pv-info-artist'), max: 7.2  * _m('artist'), min: 3.0 },
@@ -2919,6 +2928,8 @@ async function exportPNG(forceFormat) {
         { el: clone.querySelector('.pv-info-artist'), max: 5.5 * _m2('artist'), min: 2.5 },
         { el: clone.querySelector('.pv-info-title'),  max: 2.6 * _m2('title'),  min: 1.2 }
       ]);
+      const synCredits2 = clone.querySelector('.pv-synchro-credits-names');
+      if (synCredits2) synCredits2.style.fontSize = (3.0 * _m2('credits') * targetW / 100) + 'px';
     } else {
       autoFitBlock(clone.querySelector('.pv-info-top'), [
         { el: clone.querySelector('.pv-info-artist'), max: 7.2  * _m2('artist'), min: 3.0 },
