@@ -922,13 +922,13 @@ nav {
 /* Push info-top below logo, anchor from top, move with poster */
 .preview-frame[data-type="synchro"] .pv-info-top {
   bottom: auto;
-  top: calc(17cqi + var(--vertical-y, 0px));
+  top: calc(20cqi + var(--vertical-y, 0px));
   max-height: none;
   justify-content: flex-start;
 }
 .preview-frame[data-type="synchro"][data-format="9:16"] .pv-info-top {
   bottom: auto;
-  top: calc(34cqi + var(--vertical-y, 0px));
+  top: calc(37cqi + var(--vertical-y, 0px));
   max-height: none;
 }
 
@@ -948,20 +948,20 @@ nav {
   aspect-ratio: 4/5;
   width: 56cqi;
   height: auto;
-  top: calc(38cqi + var(--vertical-y, 0px));
+  top: calc(34cqi + var(--vertical-y, 0px));
   transform: translateX(-50%);
 }
 .preview-frame[data-type="synchro"][data-format="9:16"] .pv-artwork-wrap {
   width: 58cqi;
   height: auto;
-  top: calc(52cqi + var(--vertical-y, 0px));
+  top: calc(50cqi + var(--vertical-y, 0px));
   transform: translateX(-50%);
 }
 
 /* Bottom block: below poster, left-aligned, moves with poster */
 .pv-synchro-bottom {
   position: absolute;
-  top: calc(110cqi + var(--vertical-y, 0px));
+  top: calc(106cqi + var(--vertical-y, 0px));
   left: 22%;
   right: 5cqi;
   z-index: 3;
@@ -971,7 +971,7 @@ nav {
   pointer-events: none;
 }
 .preview-frame[data-format="9:16"] .pv-synchro-bottom {
-  top: calc(126cqi + var(--vertical-y, 0px));
+  top: calc(124cqi + var(--vertical-y, 0px));
   left: 21%;
 }
 
@@ -992,9 +992,10 @@ nav {
   text-shadow: 0 0.2cqi 1cqi rgba(0,0,0,0.55);
 }
 .pv-synchro-credits-line {
-  font-family: 'Manrope', sans-serif;
-  font-size: 2.2cqi;
-  line-height: 1.3;
+  font-family: 'Syne', sans-serif;
+  font-size: 3.0cqi;
+  font-weight: 700;
+  line-height: 1.25;
   text-shadow: 0 0.2cqi 1cqi rgba(0,0,0,0.5);
 }
 .pv-synchro-credits-line:empty { display: none; }
