@@ -911,48 +911,88 @@ nav {
 .pv-credits-label:empty, .pv-credits-names:empty { display: none; }
 
 /* ═══════════════════════════════════════════════════════════════════
-   SYNCHRO TEMPLATE — like Sortie but with track info below artwork
+   SYNCHRO TEMPLATE
    ═══════════════════════════════════════════════════════════════════ */
-.preview-frame:not([data-type="synchro"]) .pv-synchro-track { display: none; }
+.preview-frame:not([data-type="synchro"]) .pv-synchro-bottom { display: none; }
 .preview-frame[data-type="synchro"] .pv-cert-medallion { display: none !important; }
 
-/* In synchro mode, shift credits down to make room for track info */
-.preview-frame[data-type="synchro"] .pv-credits-block { top: 90%; }
-.preview-frame[data-type="synchro"][data-format="9:16"] .pv-credits-block { top: 73%; }
-/* Allow mixed case for type + comment line */
+/* Hide the shared credits block in synchro (credits are in synchro-bottom) */
+.preview-frame[data-type="synchro"] .pv-credits-block { display: none; }
+
+/* Content title: one line, no wrap */
+.preview-frame[data-type="synchro"] .pv-info-artist {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: normal;
+}
+/* Type line: mixed case allowed */
 .preview-frame[data-type="synchro"] .pv-info-title { text-transform: none; }
 
-/* Track info block: sits between artwork and credits */
-.pv-synchro-track {
+/* Poster: rectangular (not square), adjustable via --synchro-poster-y */
+.preview-frame[data-type="synchro"] .pv-artwork-wrap {
+  aspect-ratio: auto;
+  width: 56cqi;
+  height: 36cqi;
+  top: calc(52% + var(--synchro-poster-y, 0px));
+}
+.preview-frame[data-type="synchro"][data-format="9:16"] .pv-artwork-wrap {
+  width: 58cqi;
+  height: 38cqi;
+  top: calc(44% + var(--synchro-poster-y, 0px));
+}
+
+/* Bottom block: below poster, left-aligned */
+.pv-synchro-bottom {
   position: absolute;
-  top: 84%;
-  left: 5cqi;
+  top: 76%;
+  left: 22%;
   right: 5cqi;
   z-index: 3;
-  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8cqi;
   pointer-events: none;
 }
-.preview-frame[data-format="9:16"] .pv-synchro-track { top: 69%; }
+.preview-frame[data-format="9:16"] .pv-synchro-bottom { top: 68%; left: 21%; }
 
-.pv-synchro-artist {
-  font-family: 'Syne', sans-serif;
-  font-size: 3.0cqi;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #fff;
-  line-height: 1.2;
-  text-shadow: 0 0.2cqi 1cqi rgba(0,0,0,0.55);
-}
-.pv-synchro-title {
+.pv-synchro-comment {
   font-family: 'Syne Mono', monospace;
-  font-size: 2.2cqi;
-  font-weight: 400;
-  letter-spacing: 0.04em;
-  color: rgba(255,255,255,0.8);
+  font-size: 1.8cqi;
+  color: rgba(255,255,255,0.7);
   line-height: 1.3;
   text-shadow: 0 0.2cqi 1cqi rgba(0,0,0,0.55);
 }
+.pv-synchro-comment:empty { display: none; }
+.pv-synchro-trackline {
+  font-family: 'Syne', sans-serif;
+  font-size: 2.6cqi;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.25;
+  text-shadow: 0 0.2cqi 1cqi rgba(0,0,0,0.55);
+}
+.pv-synchro-credits-label {
+  font-family: 'Manrope', sans-serif;
+  font-size: 1.6cqi;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.7);
+  line-height: 1;
+  text-shadow: 0 0.2cqi 1cqi rgba(0,0,0,0.55);
+}
+.pv-synchro-credits-label:empty { display: none; }
+.pv-synchro-credits-names {
+  font-family: 'Manrope', sans-serif;
+  font-size: 2.4cqi;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.25;
+  color: var(--accent-color, #FF2D3A);
+  text-shadow: 0 0.2cqi 1cqi rgba(0,0,0,0.5);
+}
+.pv-synchro-credits-names:empty { display: none; }
 
 /* ═══════════════════════════════════════════════════════════════════
    ACTU TEMPLATE — single centered text block, vertically positionable
@@ -1300,26 +1340,33 @@ nav {
             <label class="form-label">Titre du contenu (film, série, pub…)</label>
             <input type="text" class="form-input" id="f_synchro_title" placeholder="Ex : Emily in Paris, FIFA 26…" autocomplete="off" />
           </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">Type de synchro</label>
-              <select class="form-select" id="f_synchro_type">
-                <option value="Film">Film</option>
-                <option value="Série">Série</option>
-                <option value="Court métrage">Court métrage</option>
-                <option value="Publicité">Publicité</option>
-                <option value="Jeu vidéo">Jeu vidéo</option>
-                <option value="Documentaire">Documentaire</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Commentaire (optionnel)</label>
-              <input type="text" class="form-input" id="f_synchro_comment" placeholder="Ex : Réalisé par X, produit par Y" autocomplete="off" />
-            </div>
+          <div class="form-group">
+            <label class="form-label">Type de synchro</label>
+            <select class="form-select" id="f_synchro_type">
+              <option value="Film">Film</option>
+              <option value="Série">Série</option>
+              <option value="Court métrage">Court métrage</option>
+              <option value="Publicité">Publicité</option>
+              <option value="Jeu vidéo">Jeu vidéo</option>
+              <option value="Documentaire">Documentaire</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Commentaire (optionnel, sous l'affiche)</label>
+            <input type="text" class="form-input" id="f_synchro_comment" placeholder="Ex : Réalisé par X, produit par Y" autocomplete="off" />
           </div>
           <div class="form-group">
             <label class="form-label">Titre du track</label>
             <input type="text" class="form-input" id="f_synchro_track" placeholder="Titre du morceau" autocomplete="off" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Position verticale de l'affiche</label>
+            <div class="slider-row">
+              <button class="size-btn" type="button" id="f_synchro_poster_minus">↑</button>
+              <input type="range" id="f_synchro_poster_y" class="zoom-slider" min="-20" max="20" step="1" value="0" />
+              <button class="size-btn" type="button" id="f_synchro_poster_plus">↓</button>
+              <span class="zoom-value" id="f_synchro_poster_val">0</span>
+            </div>
           </div>
         </div>
 
@@ -1373,7 +1420,7 @@ nav {
           <label class="form-label">Tailles de typo</label>
           <div class="size-controls">
             <div class="size-row">
-              <span class="size-row-label">Nom de l'artiste</span>
+              <span class="size-row-label" id="sizeArtistLabel">Nom de l'artiste</span>
               <div class="size-row-buttons">
                 <button class="size-btn" type="button" data-size="artist" data-dir="-1">−</button>
                 <span class="size-row-value" id="sizeArtistVal">100%</span>
@@ -1474,10 +1521,12 @@ nav {
             <div class="pv-credits-names" id="pvCreditsNames"></div>
           </div>
 
-          <!-- ===== SYNCHRO track info (between artwork and credits) ===== -->
-          <div class="pv-synchro-track">
-            <div class="pv-synchro-artist" id="pvSynchroArtist"></div>
-            <div class="pv-synchro-title" id="pvSynchroTitle"></div>
+          <!-- ===== SYNCHRO bottom block (below poster) ===== -->
+          <div class="pv-synchro-bottom">
+            <div class="pv-synchro-comment" id="pvSynchroComment"></div>
+            <div class="pv-synchro-trackline" id="pvSynchroTrackline"></div>
+            <div class="pv-synchro-credits-label" id="pvSynchroCreditsLabel"></div>
+            <div class="pv-synchro-credits-names" id="pvSynchroCreditsNames"></div>
           </div>
 
           <!-- ===== CERTIF medallion (overlapping bottom-left of artwork) ===== -->
@@ -1556,6 +1605,7 @@ const S = {
   synchroType: 'Film',
   synchroComment: '',
   synchroTrack: '',
+  synchroPosterY: 0,
   ecrit: true,
   compose: true,
   realise: false,
@@ -1589,6 +1639,7 @@ function applyStyleVars(el) {
   el.style.setProperty('--art-zoom', S.artZoom);
   el.style.setProperty('--accent-color', S.accentColor);
   el.style.setProperty('--actu-y', S.actuY + 'cqi');
+  el.style.setProperty('--synchro-poster-y', (S.synchroPosterY * w / 100) + 'px');
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1631,23 +1682,28 @@ function applyTypeUI() {
     if (artLabel) artLabel.textContent = S.type === 'synchro' ? 'Affiche / Poster' : 'Artwork de la sortie';
   }
 
+  // Label dynamique du contrôle de taille "Artist" (in synchro = content title)
+  const artistLabel = document.getElementById('sizeArtistLabel');
+  if (artistLabel) artistLabel.textContent =
+    S.type === 'synchro' ? 'Titre du contenu' :
+                           "Nom de l'artiste";
+
   // Label dynamique du contrôle de taille "Titre"
   const titleLabel = document.getElementById('sizeTitleLabel');
   if (titleLabel) titleLabel.textContent =
     S.type === 'actu'    ? "Titre de l'actu" :
     S.type === 'certif'  ? 'Titre du track / projet' :
-    S.type === 'synchro' ? 'Titre du contenu' :
+    S.type === 'synchro' ? 'Type de synchro' :
                            'Titre de la sortie';
 
   // Ligne de contrôle de taille "Description" : visible seulement en Actu
   const descRow = document.getElementById('sizeDescRow');
   if (descRow) descRow.style.display = S.type === 'actu' ? '' : 'none';
 
-  // Artist field label: in synchro mode it's the main artist, not the project name
-  const artistInput = document.getElementById('f_artist');
-  if (artistInput) {
-    artistInput.placeholder = S.type === 'synchro' ? 'NOM ARTISTE' : 'NOM ARTISTE';
-  }
+  // Artist field label: in synchro it's the artist of the track
+  const artistFieldLabel = document.querySelector('#f_artist').closest('.form-group').querySelector('.form-label');
+  if (artistFieldLabel) artistFieldLabel.textContent =
+    S.type === 'synchro' ? "Nom de l'artiste (sous l'affiche)" : "Nom de l'artiste";
 }
 
 document.querySelectorAll('.type-tile').forEach(tile => {
@@ -1747,6 +1803,19 @@ bind('f_synchro_title', 'synchroTitle');
 bind('f_synchro_type', 'synchroType', 'change');
 bind('f_synchro_comment', 'synchroComment');
 bind('f_synchro_track', 'synchroTrack');
+
+// Poster vertical position slider
+const posterYSlider = document.getElementById('f_synchro_poster_y');
+const posterYVal = document.getElementById('f_synchro_poster_val');
+function updatePosterY(val) {
+  S.synchroPosterY = parseInt(val);
+  posterYSlider.value = val;
+  posterYVal.textContent = val > 0 ? '+' + val : val;
+  updatePreview();
+}
+posterYSlider.addEventListener('input', () => updatePosterY(posterYSlider.value));
+document.getElementById('f_synchro_poster_minus').addEventListener('click', () => updatePosterY(Math.max(-20, S.synchroPosterY - 2)));
+document.getElementById('f_synchro_poster_plus').addEventListener('click', () => updatePosterY(Math.min(20, S.synchroPosterY + 2)));
 
 // ─── Actu bindings ─────────────────────────────────────────────────
 bind('f_actu_title', 'actuTitle');
@@ -2239,38 +2308,35 @@ function updatePreview() {
 }
 
 function updatePreviewSynchro() {
-  // Top block: "NOUVELLE SYNCHRO" + project title + synchro type + comment
+  // Top block: "NOUVELLE SYNCHRO" + content title (one line) + type
   pvType.textContent = 'NOUVELLE SYNCHRO';
   pvArtist.textContent = (S.synchroTitle || 'TITRE DU CONTENU').toUpperCase();
-  // Type + comment on same line
-  let typeLine = (S.synchroType || 'FILM').toUpperCase();
-  if (S.synchroComment) typeLine += ' — ' + S.synchroComment;
-  pvTitle.textContent = typeLine;
+  pvTitle.textContent = (S.synchroType || 'FILM').toUpperCase();
 
-  // Track info below artwork
-  const pvSynchroArtist = document.getElementById('pvSynchroArtist');
-  const pvSynchroTitle = document.getElementById('pvSynchroTitle');
-  pvSynchroArtist.textContent = (S.artist || 'Artiste').toUpperCase();
-  pvSynchroTitle.textContent = S.synchroTrack ? '"' + S.synchroTrack + '"' : '';
+  // Bottom block: comment + artist + track + credits (left-aligned)
+  document.getElementById('pvSynchroComment').textContent = S.synchroComment || '';
+  const artistName = S.artist || '';
+  const trackName = S.synchroTrack || '';
+  let trackline = '';
+  if (artistName && trackName) trackline = artistName.toUpperCase() + ' — "' + trackName + '"';
+  else if (artistName) trackline = artistName.toUpperCase();
+  else if (trackName) trackline = '"' + trackName + '"';
+  document.getElementById('pvSynchroTrackline').textContent = trackline;
 
-  // Credits
+  // Credits in synchro bottom block
   const c = getCreditsLines();
-  pvCreditsLabel.textContent = c.label;
-  pvCreditsNames.textContent = c.names;
+  document.getElementById('pvSynchroCreditsLabel').textContent = c.label;
+  document.getElementById('pvSynchroCreditsNames').textContent = c.names;
 
-  // Auto-fit
+  // Auto-fit: content title (must fit one line) and track info
   const mult = (k) => 1 + S.sizes[k] * SIZE_STEP_PCT;
   const artistMax  = 7.2 * mult('artist');
   const titleMax   = 3.36 * mult('title');
-  const creditsMax = 3.8 * mult('credits');
 
   requestAnimationFrame(() => {
     autoFitBlock(pvArtist.parentElement, [
       { el: pvArtist, max: artistMax, min: 3.0 },
       { el: pvTitle,  max: titleMax,  min: 1.5 }
-    ]);
-    autoFitBlock(pvCreditsNames.parentElement, [
-      { el: pvCreditsNames, max: creditsMax, min: 1.5 }
     ]);
   });
 }
@@ -2540,14 +2606,14 @@ function cleanupCloneForType(clone) {
   };
 
   if (type === 'actu') {
-    // Retire le template Sortie complet + le médaillon + synchro track
+    // Retire le template Sortie complet + le médaillon + synchro bottom
     removeAll('.pv-info-top');
     removeAll('.pv-artwork-wrap');
     removeAll('.pv-artwork');
     removeAll('.pv-artwork-placeholder');
     removeAll('.pv-credits-block');
     removeAll('.pv-cert-medallion');
-    removeAll('.pv-synchro-track');
+    removeAll('.pv-synchro-bottom');
     // Aussi par ID pour être sûr
     removeAll('#pvArt');
     removeAll('#artPlaceholder');
@@ -2557,23 +2623,28 @@ function cleanupCloneForType(clone) {
     removeAll('#pvCreditsLabel');
     removeAll('#pvCreditsNames');
     removeAll('#pvCertMedallion');
-    removeAll('#pvSynchroArtist');
-    removeAll('#pvSynchroTitle');
+    removeAll('#pvSynchroComment');
+    removeAll('#pvSynchroTrackline');
+    removeAll('#pvSynchroCreditsLabel');
+    removeAll('#pvSynchroCreditsNames');
   } else if (type === 'certif') {
-    // Garde tous les éléments Sortie + le médaillon, retire Actu + Synchro track
+    // Garde tous les éléments Sortie + le médaillon, retire Actu + Synchro bottom
     removeAll('.pv-actu-wrap');
-    removeAll('.pv-synchro-track');
+    removeAll('.pv-synchro-bottom');
     removeAll('#pvActuArtist');
     removeAll('#pvActuTitle');
     removeAll('#pvActuDesc');
     removeAll('#pvActuCreditsLabel');
     removeAll('#pvActuCreditsNames');
-    removeAll('#pvSynchroArtist');
-    removeAll('#pvSynchroTitle');
+    removeAll('#pvSynchroComment');
+    removeAll('#pvSynchroTrackline');
+    removeAll('#pvSynchroCreditsLabel');
+    removeAll('#pvSynchroCreditsNames');
   } else if (type === 'synchro') {
-    // Garde info-top + artwork + synchro-track + credits, retire Actu + médaillon
+    // Garde info-top + artwork + synchro-bottom, retire Actu + médaillon + shared credits
     removeAll('.pv-actu-wrap');
     removeAll('.pv-cert-medallion');
+    removeAll('.pv-credits-block');
     removeAll('#pvActuArtist');
     removeAll('#pvActuTitle');
     removeAll('#pvActuDesc');
@@ -2581,18 +2652,20 @@ function cleanupCloneForType(clone) {
     removeAll('#pvActuCreditsNames');
     removeAll('#pvCertMedallion');
   } else {
-    // sortie : retire Actu + médaillon + synchro track
+    // sortie : retire Actu + médaillon + synchro bottom
     removeAll('.pv-actu-wrap');
     removeAll('.pv-cert-medallion');
-    removeAll('.pv-synchro-track');
+    removeAll('.pv-synchro-bottom');
     removeAll('#pvActuArtist');
     removeAll('#pvActuTitle');
     removeAll('#pvActuDesc');
     removeAll('#pvActuCreditsLabel');
     removeAll('#pvActuCreditsNames');
     removeAll('#pvCertMedallion');
-    removeAll('#pvSynchroArtist');
-    removeAll('#pvSynchroTitle');
+    removeAll('#pvSynchroComment');
+    removeAll('#pvSynchroTrackline');
+    removeAll('#pvSynchroCreditsLabel');
+    removeAll('#pvSynchroCreditsNames');
   }
   // Safety : supprime TOUT <img> sans src valide restant
   clone.querySelectorAll('img').forEach(img => {
