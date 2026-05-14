@@ -1446,7 +1446,7 @@ function _waitAuth() {
 const SONGWRITERS = [
   '2B', 'AKATCHE', 'BRÖ', 'CHERI', 'DANI TERREUR', 'EMY JO',
   'GABRIEL MABILAT', 'HADRIEN MABILAT', 'HUGO LARDENET', 'IVY', 'KEV 117',
-  'LAGOS IN PARIS', 'LAURINA MALAKA', 'LEANDRE', 'LEITH', 'LONIR', 'MAB', 'MALAKA', 'MATSHIMOTO', 'NINO VELLA',
+  'LAGOS IN PARIS', 'LAURINA MALAKA', 'LEANDRE', 'LEITH', 'LIONNEL BUZAC', 'LONIR', 'MAB', 'MALAKA', 'MATSHIMOTO', 'NINO VELLA',
   'NOLAN', 'OZZY', 'PABLO', 'PALMAE', 'PIERRE-LAURENT FAURE', 'RITUAL X', 'ROI LUIS',
   'SACHA MALAKA', 'SEBASTIEN ROUSSELET', 'VINCHA', 'VJ', 'YANNICK SERI'
 ];
@@ -2068,7 +2068,7 @@ const pvActuCreditsNames = document.getElementById('pvActuCreditsNames');
 // Title-case un nom de songwriter en respectant les alias courts (2B, VJ, X…)
 // et les séparateurs (espace, trait d'union).
 // Noms toujours en majuscules (aliases/duos courts)
-const UPPERCASE_NAMES = new Set(['MAB', 'BRÖ', 'IVY', 'VJ', 'OZZY']);
+const UPPERCASE_NAMES = new Set(['MAB', 'BRÖ', 'CHERI', 'IVY', 'VJ', 'OZZY']);
 function titleCaseName(name) {
   if (UPPERCASE_NAMES.has(name.toUpperCase())) return name.toUpperCase();
   const LOWERCASE_WORDS = new Set(['in', 'of', 'the', 'a', 'an', 'de', 'du', 'et', 'le', 'la', 'les', 'des', 'au', 'aux', 'en']);
