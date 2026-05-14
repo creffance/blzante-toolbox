@@ -919,9 +919,18 @@ nav {
 /* Hide the shared credits block in synchro (credits are in synchro-bottom) */
 .preview-frame[data-type="synchro"] .pv-credits-block { display: none; }
 
-/* Push info-top higher to sit above the taller 4:5 poster */
-.preview-frame[data-type="synchro"] .pv-info-top { bottom: 78%; max-height: 22cqi; }
-.preview-frame[data-type="synchro"][data-format="9:16"] .pv-info-top { bottom: 77%; max-height: 36cqi; }
+/* Push info-top below logo, anchor from top, move with poster */
+.preview-frame[data-type="synchro"] .pv-info-top {
+  bottom: auto;
+  top: calc(17cqi + var(--synchro-poster-y, 0px));
+  max-height: none;
+  justify-content: flex-start;
+}
+.preview-frame[data-type="synchro"][data-format="9:16"] .pv-info-top {
+  bottom: auto;
+  top: calc(34cqi + var(--synchro-poster-y, 0px));
+  max-height: none;
+}
 
 /* Content title: one line, no wrap */
 .preview-frame[data-type="synchro"] .pv-info-artist {
@@ -933,32 +942,37 @@ nav {
 /* Type line: mixed case allowed */
 .preview-frame[data-type="synchro"] .pv-info-title { text-transform: none; }
 
-/* Poster: 4:5 portrait ratio, same width as artwork, adjustable via --synchro-poster-y */
+/* Poster: 4:5 portrait ratio, same width as artwork, anchored below text block */
 .preview-frame[data-type="synchro"] .pv-artwork-wrap {
   aspect-ratio: 4/5;
   width: 56cqi;
   height: auto;
-  top: calc(52% + var(--synchro-poster-y, 0px));
+  top: calc(38cqi + var(--synchro-poster-y, 0px));
+  transform: translateX(-50%);
 }
 .preview-frame[data-type="synchro"][data-format="9:16"] .pv-artwork-wrap {
   width: 58cqi;
   height: auto;
-  top: calc(44% + var(--synchro-poster-y, 0px));
+  top: calc(52cqi + var(--synchro-poster-y, 0px));
+  transform: translateX(-50%);
 }
 
-/* Bottom block: below poster, left-aligned */
+/* Bottom block: below poster, left-aligned, moves with poster */
 .pv-synchro-bottom {
   position: absolute;
-  top: 86%;
+  top: calc(110cqi + var(--synchro-poster-y, 0px));
   left: 22%;
   right: 5cqi;
   z-index: 3;
   display: flex;
   flex-direction: column;
-  gap: 0.6cqi;
+  gap: 0.4cqi;
   pointer-events: none;
 }
-.preview-frame[data-format="9:16"] .pv-synchro-bottom { top: 72%; left: 21%; }
+.preview-frame[data-format="9:16"] .pv-synchro-bottom {
+  top: calc(126cqi + var(--synchro-poster-y, 0px));
+  left: 21%;
+}
 
 .pv-synchro-comment {
   font-family: 'Syne Mono', monospace;
@@ -1356,7 +1370,7 @@ nav {
             </select>
           </div>
           <div class="form-group">
-            <label class="form-label">Commentaire (optionnel, sous l'affiche)</label>
+            <label class="form-label">Commentaire (optionnel, après le type)</label>
             <input type="text" class="form-input" id="f_synchro_comment" placeholder="Ex : Réalisé par X, produit par Y" autocomplete="off" />
           </div>
           <div class="form-group">
@@ -2312,18 +2326,21 @@ function updatePreview() {
 }
 
 function updatePreviewSynchro() {
-  // Top block: "NOUVELLE SYNCHRO" + content title (one line) + type
+  // Top block: "NOUVELLE SYNCHRO" + content title (one line) + type + comment
   pvType.textContent = 'NOUVELLE SYNCHRO';
   pvArtist.textContent = (S.synchroTitle || 'TITRE DU CONTENU').toUpperCase();
-  pvTitle.textContent = (S.synchroType || 'FILM').toUpperCase();
+  // Type + comment on same line
+  let typeLine = (S.synchroType || 'FILM').toUpperCase();
+  if (S.synchroComment) typeLine += ' — ' + S.synchroComment;
+  pvTitle.textContent = typeLine;
 
-  // Bottom block: comment + artist + track + credits (left-aligned)
-  document.getElementById('pvSynchroComment').textContent = S.synchroComment || '';
+  // Bottom block: artist + track + credits (left-aligned)
+  document.getElementById('pvSynchroComment').textContent = '';
   const artistName = S.artist || '';
   const trackName = S.synchroTrack || '';
   let trackline = '';
-  if (artistName && trackName) trackline = artistName.toUpperCase() + ' — "' + trackName + '"';
-  else if (artistName) trackline = artistName.toUpperCase();
+  if (artistName && trackName) trackline = artistName + ' — "' + trackName + '"';
+  else if (artistName) trackline = artistName;
   else if (trackName) trackline = '"' + trackName + '"';
   document.getElementById('pvSynchroTrackline').textContent = trackline;
 
