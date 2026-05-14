@@ -922,13 +922,13 @@ nav {
 /* Push info-top below logo, anchor from top, move with poster */
 .preview-frame[data-type="synchro"] .pv-info-top {
   bottom: auto;
-  top: calc(20cqi + var(--vertical-y, 0px));
+  top: calc(22cqi + var(--vertical-y, 0px));
   max-height: none;
   justify-content: flex-start;
 }
 .preview-frame[data-type="synchro"][data-format="9:16"] .pv-info-top {
   bottom: auto;
-  top: calc(37cqi + var(--vertical-y, 0px));
+  top: calc(39cqi + var(--vertical-y, 0px));
   max-height: none;
 }
 
@@ -948,20 +948,20 @@ nav {
   aspect-ratio: 4/5;
   width: 56cqi;
   height: auto;
-  top: calc(34cqi + var(--vertical-y, 0px));
+  top: calc(37cqi + var(--vertical-y, 0px));
   transform: translateX(-50%);
 }
 .preview-frame[data-type="synchro"][data-format="9:16"] .pv-artwork-wrap {
   width: 58cqi;
   height: auto;
-  top: calc(50cqi + var(--vertical-y, 0px));
+  top: calc(54cqi + var(--vertical-y, 0px));
   transform: translateX(-50%);
 }
 
 /* Bottom block: below poster, left-aligned, moves with poster */
 .pv-synchro-bottom {
   position: absolute;
-  top: calc(106cqi + var(--vertical-y, 0px));
+  top: calc(109cqi + var(--vertical-y, 0px));
   left: 22%;
   right: 5cqi;
   z-index: 3;
@@ -971,7 +971,7 @@ nav {
   pointer-events: none;
 }
 .preview-frame[data-format="9:16"] .pv-synchro-bottom {
-  top: calc(124cqi + var(--vertical-y, 0px));
+  top: calc(128cqi + var(--vertical-y, 0px));
   left: 21%;
 }
 
@@ -1002,11 +1002,13 @@ nav {
 .pv-synchro-credits-label {
   font-weight: 400;
   color: rgba(255,255,255,0.8);
+  vertical-align: baseline;
 }
 .pv-synchro-credits-label:empty { display: none; }
 .pv-synchro-credits-names {
   font-weight: 700;
   color: var(--accent-color, #FF2D3A);
+  vertical-align: baseline;
 }
 .pv-synchro-credits-names:empty { display: none; }
 
