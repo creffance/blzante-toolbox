@@ -943,28 +943,42 @@ nav {
 /* Type line: mixed case allowed, smaller */
 .preview-frame[data-type="synchro"] .pv-info-title { text-transform: none; font-size: 2.6cqi; }
 
-/* Poster: same height as sortie artwork (square container), full image visible */
+/* Poster: same width as sortie artwork, height adapts to image */
 .preview-frame[data-type="synchro"] .pv-artwork-wrap {
-  aspect-ratio: 1;
+  aspect-ratio: auto;
   width: 56cqi;
   height: auto;
+  min-height: 56cqi; /* fallback when no image (placeholder visible) */
   top: calc(37cqi + var(--vertical-y, 0px));
   transform: translateX(-50%);
 }
 .preview-frame[data-type="synchro"] .pv-artwork {
-  object-fit: contain;
+  width: 100%;
+  height: auto;
+  object-fit: initial;
+}
+/* When artwork is loaded, remove min-height so it adapts to image */
+.preview-frame[data-type="synchro"].has-art .pv-artwork-wrap {
+  min-height: 0;
+}
+.preview-frame[data-type="synchro"] .pv-artwork-placeholder {
+  aspect-ratio: 1;
 }
 .preview-frame[data-type="synchro"][data-format="9:16"] .pv-artwork-wrap {
   width: 58cqi;
   height: auto;
+  min-height: 58cqi;
   top: calc(54cqi + var(--vertical-y, 0px));
   transform: translateX(-50%);
 }
+.preview-frame[data-type="synchro"][data-format="9:16"].has-art .pv-artwork-wrap {
+  min-height: 0;
+}
 
-/* Bottom block: below poster, left-aligned, moves with poster */
+/* Bottom block: positioned via JS variable --synchro-bottom-top */
 .pv-synchro-bottom {
   position: absolute;
-  top: calc(96cqi + var(--vertical-y, 0px));
+  top: var(--synchro-bottom-top, calc(96cqi + var(--vertical-y, 0px)));
   left: 22%;
   right: 5cqi;
   z-index: 3;
@@ -974,7 +988,7 @@ nav {
   pointer-events: none;
 }
 .preview-frame[data-format="9:16"] .pv-synchro-bottom {
-  top: calc(115cqi + var(--vertical-y, 0px));
+  top: var(--synchro-bottom-top, calc(115cqi + var(--vertical-y, 0px)));
   left: 21%;
 }
 
@@ -2039,6 +2053,7 @@ document.getElementById('artUpload').addEventListener('change', async (e) => {
   const img = document.getElementById('pvArt');
   img.src = dataUrl;
   img.style.display = 'block';
+  img.onload = () => { if (S.type === 'synchro') requestAnimationFrame(repositionSynchroBottom); };
   document.getElementById('artPlaceholder').style.display = 'none';
   document.getElementById('artUploadLabel').classList.add('has-file');
   document.getElementById('artUploadText').textContent = '✓ ' + file.name;
@@ -2331,7 +2346,24 @@ function updatePreviewSynchro() {
       { el: pvArtist, max: artistMax, min: 3.0 },
       { el: pvTitle,  max: titleMax,  min: 1.5 }
     ]);
+    // Position bottom block just below the artwork
+    repositionSynchroBottom();
   });
+}
+
+// Dynamically position the synchro bottom block below artwork
+function repositionSynchroBottom() {
+  if (S.type !== 'synchro') return;
+  const artWrap = previewFrame.querySelector('.pv-artwork-wrap');
+  const bottom = previewFrame.querySelector('.pv-synchro-bottom');
+  if (!artWrap || !bottom) return;
+  const frameW = previewFrame.offsetWidth;
+  if (!frameW) return;
+  const artRect = artWrap.getBoundingClientRect();
+  const frameRect = previewFrame.getBoundingClientRect();
+  const artBottomPx = artRect.bottom - frameRect.top;
+  const gap = frameW * 0.02; // 2cqi gap
+  previewFrame.style.setProperty('--synchro-bottom-top', (artBottomPx + gap) + 'px');
 }
 
 // Convertit "Double platine" → "double_platine" pour matcher le nom de fichier
