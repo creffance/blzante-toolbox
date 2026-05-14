@@ -991,24 +991,23 @@ nav {
   line-height: 1.25;
   text-shadow: 0 0.2cqi 1cqi rgba(0,0,0,0.55);
 }
-.pv-synchro-credits-line {
+.pv-synchro-credits-label {
+  font-family: 'Syne', sans-serif;
+  font-size: 2.0cqi;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  color: rgba(255,255,255,0.6);
+  line-height: 1.2;
+  text-shadow: 0 0.2cqi 1cqi rgba(0,0,0,0.55);
+}
+.pv-synchro-credits-label:empty { display: none; }
+.pv-synchro-credits-names {
   font-family: 'Syne', sans-serif;
   font-size: 3.0cqi;
   font-weight: 700;
   line-height: 1.25;
-  text-shadow: 0 0.2cqi 1cqi rgba(0,0,0,0.5);
-}
-.pv-synchro-credits-line:empty { display: none; }
-.pv-synchro-credits-label {
-  font-weight: 400;
-  color: rgba(255,255,255,0.8);
-  vertical-align: baseline;
-}
-.pv-synchro-credits-label:empty { display: none; }
-.pv-synchro-credits-names {
-  font-weight: 700;
   color: var(--accent-color, #FF2D3A);
-  vertical-align: baseline;
+  text-shadow: 0 0.2cqi 1cqi rgba(0,0,0,0.5);
 }
 .pv-synchro-credits-names:empty { display: none; }
 
@@ -1540,10 +1539,8 @@ nav {
           <div class="pv-synchro-bottom">
             <div class="pv-synchro-comment" id="pvSynchroComment"></div>
             <div class="pv-synchro-trackline" id="pvSynchroTrackline"></div>
-            <div class="pv-synchro-credits-line">
-              <span class="pv-synchro-credits-label" id="pvSynchroCreditsLabel"></span>
-              <span class="pv-synchro-credits-names" id="pvSynchroCreditsNames"></span>
-            </div>
+            <div class="pv-synchro-credits-label" id="pvSynchroCreditsLabel"></div>
+            <div class="pv-synchro-credits-names" id="pvSynchroCreditsNames"></div>
           </div>
 
           <!-- ===== CERTIF medallion (overlapping bottom-left of artwork) ===== -->
@@ -2314,7 +2311,7 @@ function updatePreviewSynchro() {
 
   // Credits in synchro bottom block (same line: label + names)
   const c = getCreditsLines();
-  document.getElementById('pvSynchroCreditsLabel').textContent = c.label ? c.label + ' ' : '';
+  document.getElementById('pvSynchroCreditsLabel').textContent = c.label;
   document.getElementById('pvSynchroCreditsNames').textContent = c.names;
 
   // Auto-fit: content title (smaller base) and type line
