@@ -769,7 +769,7 @@ nav {
 /* Artwork container — below the title/artist block */
 .pv-artwork-wrap {
   position: absolute;
-  top: 58%;
+  top: calc(58% + var(--vertical-y, 0px));
   left: 50%;
   transform: translate(-50%, -50%);
   width: 56cqi;
@@ -780,7 +780,7 @@ nav {
 }
 .preview-frame[data-format="9:16"] .pv-artwork-wrap {
   width: 58cqi;
-  top: 50%;
+  top: calc(50% + var(--vertical-y, 0px));
 }
 .pv-artwork {
   width: 100%;
@@ -814,7 +814,7 @@ nav {
   position: absolute;
   left: 5cqi;
   right: 5cqi;
-  bottom: 68%;
+  bottom: calc(68% - var(--vertical-y, 0px));
   max-height: 26cqi;
   z-index: 3;
   display: flex;
@@ -826,7 +826,7 @@ nav {
   overflow: hidden;
 }
 .preview-frame[data-format="9:16"] .pv-info-top {
-  bottom: 69%;
+  bottom: calc(69% - var(--vertical-y, 0px));
   max-height: 41cqi;
 }
 
@@ -871,7 +871,7 @@ nav {
    by the preview-frame's overflow: hidden. */
 .pv-credits-block {
   position: absolute;
-  top: 84%;
+  top: calc(84% + var(--vertical-y, 0px));
   left: 5cqi;
   right: 5cqi;
   z-index: 3;
@@ -884,7 +884,7 @@ nav {
   color: #fff;
 }
 .preview-frame[data-format="9:16"] .pv-credits-block {
-  top: 69%;
+  top: calc(69% + var(--vertical-y, 0px));
 }
 .pv-credits-label {
   font-family: 'Manrope', sans-serif;
@@ -922,45 +922,46 @@ nav {
 /* Push info-top below logo, anchor from top, move with poster */
 .preview-frame[data-type="synchro"] .pv-info-top {
   bottom: auto;
-  top: calc(17cqi + var(--synchro-poster-y, 0px));
+  top: calc(17cqi + var(--vertical-y, 0px));
   max-height: none;
   justify-content: flex-start;
 }
 .preview-frame[data-type="synchro"][data-format="9:16"] .pv-info-top {
   bottom: auto;
-  top: calc(34cqi + var(--synchro-poster-y, 0px));
+  top: calc(34cqi + var(--vertical-y, 0px));
   max-height: none;
 }
 
-/* Content title: one line, no wrap */
+/* Content title: one line, no wrap, smaller */
 .preview-frame[data-type="synchro"] .pv-info-artist {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   word-break: normal;
+  font-size: 5.5cqi;
 }
-/* Type line: mixed case allowed */
-.preview-frame[data-type="synchro"] .pv-info-title { text-transform: none; }
+/* Type line: mixed case allowed, smaller */
+.preview-frame[data-type="synchro"] .pv-info-title { text-transform: none; font-size: 2.6cqi; }
 
 /* Poster: 4:5 portrait ratio, same width as artwork, anchored below text block */
 .preview-frame[data-type="synchro"] .pv-artwork-wrap {
   aspect-ratio: 4/5;
   width: 56cqi;
   height: auto;
-  top: calc(38cqi + var(--synchro-poster-y, 0px));
+  top: calc(38cqi + var(--vertical-y, 0px));
   transform: translateX(-50%);
 }
 .preview-frame[data-type="synchro"][data-format="9:16"] .pv-artwork-wrap {
   width: 58cqi;
   height: auto;
-  top: calc(52cqi + var(--synchro-poster-y, 0px));
+  top: calc(52cqi + var(--vertical-y, 0px));
   transform: translateX(-50%);
 }
 
 /* Bottom block: below poster, left-aligned, moves with poster */
 .pv-synchro-bottom {
   position: absolute;
-  top: calc(110cqi + var(--synchro-poster-y, 0px));
+  top: calc(110cqi + var(--vertical-y, 0px));
   left: 22%;
   right: 5cqi;
   z-index: 3;
@@ -970,13 +971,13 @@ nav {
   pointer-events: none;
 }
 .preview-frame[data-format="9:16"] .pv-synchro-bottom {
-  top: calc(126cqi + var(--synchro-poster-y, 0px));
+  top: calc(126cqi + var(--vertical-y, 0px));
   left: 21%;
 }
 
 .pv-synchro-comment {
   font-family: 'Syne Mono', monospace;
-  font-size: 1.8cqi;
+  font-size: 2.0cqi;
   color: rgba(255,255,255,0.7);
   line-height: 1.3;
   text-shadow: 0 0.2cqi 1cqi rgba(0,0,0,0.55);
@@ -984,31 +985,27 @@ nav {
 .pv-synchro-comment:empty { display: none; }
 .pv-synchro-trackline {
   font-family: 'Syne', sans-serif;
-  font-size: 2.6cqi;
+  font-size: 3.0cqi;
   font-weight: 700;
   color: #fff;
   line-height: 1.25;
   text-shadow: 0 0.2cqi 1cqi rgba(0,0,0,0.55);
 }
-.pv-synchro-credits-label {
+.pv-synchro-credits-line {
   font-family: 'Manrope', sans-serif;
-  font-size: 1.6cqi;
-  font-weight: 600;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: rgba(255,255,255,0.7);
-  line-height: 1;
-  text-shadow: 0 0.2cqi 1cqi rgba(0,0,0,0.55);
+  font-size: 2.2cqi;
+  line-height: 1.3;
+  text-shadow: 0 0.2cqi 1cqi rgba(0,0,0,0.5);
+}
+.pv-synchro-credits-line:empty { display: none; }
+.pv-synchro-credits-label {
+  font-weight: 400;
+  color: rgba(255,255,255,0.8);
 }
 .pv-synchro-credits-label:empty { display: none; }
 .pv-synchro-credits-names {
-  font-family: 'Manrope', sans-serif;
-  font-size: 2.4cqi;
   font-weight: 700;
-  letter-spacing: 0.04em;
-  line-height: 1.25;
   color: var(--accent-color, #FF2D3A);
-  text-shadow: 0 0.2cqi 1cqi rgba(0,0,0,0.5);
 }
 .pv-synchro-credits-names:empty { display: none; }
 
@@ -1020,7 +1017,7 @@ nav {
   position: absolute;
   left: 5cqi;
   right: 5cqi;
-  top: calc(50% + var(--actu-y, 0cqi));
+  top: calc(50% + var(--vertical-y, 0px));
   transform: translateY(-50%);
   z-index: 3;
   display: flex;
@@ -1314,15 +1311,6 @@ nav {
             </div>
             <div class="rich-textarea" id="f_actu_desc" contenteditable="true" data-placeholder="Courte description (1 à 3 lignes)…"></div>
           </div>
-          <div class="form-group">
-            <label class="form-label">Position verticale du bloc de texte</label>
-            <div class="slider-row">
-              <button class="size-btn" type="button" id="f_actu_y_minus">↑</button>
-              <input type="range" id="f_actu_y" class="zoom-slider" min="-40" max="60" step="1" value="35" />
-              <button class="size-btn" type="button" id="f_actu_y_plus">↓</button>
-              <span class="zoom-value" id="f_actu_y_val">Bas +35</span>
-            </div>
-          </div>
         </div>
 
         <!-- ===== Certif-specific fields ===== -->
@@ -1374,17 +1362,23 @@ nav {
             <input type="text" class="form-input" id="f_synchro_comment" placeholder="Ex : Réalisé par X, produit par Y" autocomplete="off" />
           </div>
           <div class="form-group">
+            <label class="form-label">Nom de l'artiste</label>
+            <input type="text" class="form-input" id="f_synchro_artist" placeholder="Nom de l'artiste" autocomplete="off" />
+          </div>
+          <div class="form-group">
             <label class="form-label">Titre du track</label>
             <input type="text" class="form-input" id="f_synchro_track" placeholder="Titre du morceau" autocomplete="off" />
           </div>
-          <div class="form-group">
-            <label class="form-label">Position verticale de l'affiche</label>
-            <div class="slider-row">
-              <button class="size-btn" type="button" id="f_synchro_poster_minus">↑</button>
-              <input type="range" id="f_synchro_poster_y" class="zoom-slider" min="-20" max="20" step="1" value="0" />
-              <button class="size-btn" type="button" id="f_synchro_poster_plus">↓</button>
-              <span class="zoom-value" id="f_synchro_poster_val">0</span>
-            </div>
+        </div>
+
+        <!-- ===== Shared vertical position slider ===== -->
+        <div class="form-group" id="verticalPosGroup">
+          <label class="form-label">Position verticale des éléments</label>
+          <div class="slider-row">
+            <button class="size-btn" type="button" id="f_vpos_minus">↑</button>
+            <input type="range" id="f_vpos" class="zoom-slider" min="-20" max="20" step="1" value="0" />
+            <button class="size-btn" type="button" id="f_vpos_plus">↓</button>
+            <span class="zoom-value" id="f_vpos_val">0</span>
           </div>
         </div>
 
@@ -1543,8 +1537,10 @@ nav {
           <div class="pv-synchro-bottom">
             <div class="pv-synchro-comment" id="pvSynchroComment"></div>
             <div class="pv-synchro-trackline" id="pvSynchroTrackline"></div>
-            <div class="pv-synchro-credits-label" id="pvSynchroCreditsLabel"></div>
-            <div class="pv-synchro-credits-names" id="pvSynchroCreditsNames"></div>
+            <div class="pv-synchro-credits-line">
+              <span class="pv-synchro-credits-label" id="pvSynchroCreditsLabel"></span>
+              <span class="pv-synchro-credits-names" id="pvSynchroCreditsNames"></span>
+            </div>
           </div>
 
           <!-- ===== CERTIF medallion (overlapping bottom-left of artwork) ===== -->
@@ -1613,7 +1609,6 @@ const S = {
   // Actu-specific
   actuTitle: '',
   actuDesc: '',
-  actuY: 35,         // vertical offset in cqi, -40..+60 (default: bottom-positioned)
   // Certif-specific
   certType: 'Single',
   certLevel: 'Or',
@@ -1623,7 +1618,7 @@ const S = {
   synchroType: 'Film',
   synchroComment: '',
   synchroTrack: '',
-  synchroPosterY: 0,
+  verticalY: 0,
   ecrit: true,
   compose: true,
   realise: false,
@@ -1656,8 +1651,7 @@ function applyStyleVars(el) {
   el.style.setProperty('--art-y', (S.artY * w / 100) + 'px');
   el.style.setProperty('--art-zoom', S.artZoom);
   el.style.setProperty('--accent-color', S.accentColor);
-  el.style.setProperty('--actu-y', S.actuY + 'cqi');
-  el.style.setProperty('--synchro-poster-y', (S.synchroPosterY * w / 100) + 'px');
+  el.style.setProperty('--vertical-y', (S.verticalY * w / 100) + 'px');
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1700,6 +1694,10 @@ function applyTypeUI() {
     if (artLabel) artLabel.textContent = S.type === 'synchro' ? 'Affiche / Poster (format 4:5)' : 'Artwork de la sortie';
   }
 
+  // Hide shared artist field in synchro (has its own inside synchro section)
+  const artistGroup = document.getElementById('f_artist').closest('.form-group');
+  if (artistGroup) artistGroup.style.display = S.type === 'synchro' ? 'none' : '';
+
   // Label dynamique du contrôle de taille "Artist" (in synchro = content title)
   const artistLabel = document.getElementById('sizeArtistLabel');
   if (artistLabel) artistLabel.textContent =
@@ -1717,11 +1715,6 @@ function applyTypeUI() {
   // Ligne de contrôle de taille "Description" : visible seulement en Actu
   const descRow = document.getElementById('sizeDescRow');
   if (descRow) descRow.style.display = S.type === 'actu' ? '' : 'none';
-
-  // Artist field label: in synchro it's the artist of the track
-  const artistFieldLabel = document.querySelector('#f_artist').closest('.form-group').querySelector('.form-label');
-  if (artistFieldLabel) artistFieldLabel.textContent =
-    S.type === 'synchro' ? "Nom de l'artiste (sous l'affiche)" : "Nom de l'artiste";
 }
 
 document.querySelectorAll('.type-tile').forEach(tile => {
@@ -1820,20 +1813,21 @@ bind('f_cert_title', 'certTitle');
 bind('f_synchro_title', 'synchroTitle');
 bind('f_synchro_type', 'synchroType', 'change');
 bind('f_synchro_comment', 'synchroComment');
+bind('f_synchro_artist', 'artist');
 bind('f_synchro_track', 'synchroTrack');
 
-// Poster vertical position slider
-const posterYSlider = document.getElementById('f_synchro_poster_y');
-const posterYVal = document.getElementById('f_synchro_poster_val');
-function updatePosterY(val) {
-  S.synchroPosterY = parseInt(val);
-  posterYSlider.value = val;
-  posterYVal.textContent = val > 0 ? '+' + val : val;
+// Shared vertical position slider (all templates)
+const vposSlider = document.getElementById('f_vpos');
+const vposVal = document.getElementById('f_vpos_val');
+function updateVerticalY(val) {
+  S.verticalY = parseInt(val);
+  vposSlider.value = val;
+  vposVal.textContent = val > 0 ? '+' + val : String(val);
   updatePreview();
 }
-posterYSlider.addEventListener('input', () => updatePosterY(posterYSlider.value));
-document.getElementById('f_synchro_poster_minus').addEventListener('click', () => updatePosterY(Math.max(-20, S.synchroPosterY - 2)));
-document.getElementById('f_synchro_poster_plus').addEventListener('click', () => updatePosterY(Math.min(20, S.synchroPosterY + 2)));
+vposSlider.addEventListener('input', () => updateVerticalY(vposSlider.value));
+document.getElementById('f_vpos_minus').addEventListener('click', () => updateVerticalY(Math.max(-20, S.verticalY - 2)));
+document.getElementById('f_vpos_plus').addEventListener('click', () => updateVerticalY(Math.min(20, S.verticalY + 2)));
 
 // ─── Actu bindings ─────────────────────────────────────────────────
 bind('f_actu_title', 'actuTitle');
@@ -1970,35 +1964,6 @@ function refreshRedSwatch() {
   if (sw) sw.style.background = S.accentColor;
 }
 
-// Slider de position verticale du bloc Actu
-const actuYInput = document.getElementById('f_actu_y');
-const actuYVal = document.getElementById('f_actu_y_val');
-
-function updateActuYLabel() {
-  const v = S.actuY;
-  if (v === 0) actuYVal.textContent = 'Centre';
-  else if (v < 0) actuYVal.textContent = 'Haut ' + v;
-  else actuYVal.textContent = 'Bas +' + v;
-}
-
-actuYInput.addEventListener('input', (e) => {
-  S.actuY = parseInt(e.target.value, 10) || 0;
-  updateActuYLabel();
-  applyStyleVars(previewFrame);
-});
-
-document.getElementById('f_actu_y_minus').addEventListener('click', () => {
-  S.actuY = Math.max(-40, S.actuY - 5);
-  actuYInput.value = S.actuY;
-  updateActuYLabel();
-  applyStyleVars(previewFrame);
-});
-document.getElementById('f_actu_y_plus').addEventListener('click', () => {
-  S.actuY = Math.min(60, S.actuY + 5);
-  actuYInput.value = S.actuY;
-  updateActuYLabel();
-  applyStyleVars(previewFrame);
-});
 document.getElementById('f_avec').addEventListener('change', () => { S.relation = 'avec'; updatePreview(); });
 document.getElementById('f_par').addEventListener('change', () => { S.relation = 'par'; updatePreview(); });
 
@@ -2344,15 +2309,15 @@ function updatePreviewSynchro() {
   else if (trackName) trackline = '"' + trackName + '"';
   document.getElementById('pvSynchroTrackline').textContent = trackline;
 
-  // Credits in synchro bottom block
+  // Credits in synchro bottom block (same line: label + names)
   const c = getCreditsLines();
-  document.getElementById('pvSynchroCreditsLabel').textContent = c.label;
+  document.getElementById('pvSynchroCreditsLabel').textContent = c.label ? c.label + ' ' : '';
   document.getElementById('pvSynchroCreditsNames').textContent = c.names;
 
-  // Auto-fit: content title (must fit one line) and track info
+  // Auto-fit: content title (smaller base) and type line
   const mult = (k) => 1 + S.sizes[k] * SIZE_STEP_PCT;
-  const artistMax  = 7.2 * mult('artist');
-  const titleMax   = 3.36 * mult('title');
+  const artistMax  = 5.5 * mult('artist');
+  const titleMax   = 2.6 * mult('title');
 
   requestAnimationFrame(() => {
     autoFitBlock(pvArtist.parentElement, [
@@ -2760,6 +2725,11 @@ async function buildOverlayLayer(targetW, targetH) {
     autoFitBlock(clone.querySelector('.pv-actu-wrap'), [
       { el: clone.querySelector('.pv-actu-credits-names'), max: 3.2 * _m('credits'), min: 1.5 }
     ]);
+  } else if (S.type === 'synchro') {
+    autoFitBlock(clone.querySelector('.pv-info-top'), [
+      { el: clone.querySelector('.pv-info-artist'), max: 5.5 * _m('artist'), min: 2.5 },
+      { el: clone.querySelector('.pv-info-title'),  max: 2.6 * _m('title'),  min: 1.2 }
+    ]);
   } else {
     autoFitBlock(clone.querySelector('.pv-info-top'), [
       { el: clone.querySelector('.pv-info-artist'), max: 7.2  * _m('artist'), min: 3.0 },
@@ -2943,6 +2913,11 @@ async function exportPNG(forceFormat) {
       ]);
       autoFitBlock(clone.querySelector('.pv-actu-wrap'), [
         { el: clone.querySelector('.pv-actu-credits-names'), max: 3.2 * _m2('credits'), min: 1.5 }
+      ]);
+    } else if (S.type === 'synchro') {
+      autoFitBlock(clone.querySelector('.pv-info-top'), [
+        { el: clone.querySelector('.pv-info-artist'), max: 5.5 * _m2('artist'), min: 2.5 },
+        { el: clone.querySelector('.pv-info-title'),  max: 2.6 * _m2('title'),  min: 1.2 }
       ]);
     } else {
       autoFitBlock(clone.querySelector('.pv-info-top'), [
