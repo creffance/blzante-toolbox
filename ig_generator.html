@@ -2606,15 +2606,19 @@ function exportFilterNode(node) {
           cls.contains('pv-artwork') ||
           cls.contains('pv-artwork-placeholder') ||
           cls.contains('pv-credits-block') ||
-          cls.contains('pv-cert-medallion')) {
+          cls.contains('pv-cert-medallion') ||
+          cls.contains('pv-synchro-bottom')) {
         return false;
       }
     } else if (S.type === 'certif') {
-      if (cls.contains('pv-actu-wrap')) return false;
+      if (cls.contains('pv-actu-wrap') || cls.contains('pv-synchro-bottom')) return false;
       // Médaillon GARDÉ (visible uniquement pour certif)
+    } else if (S.type === 'synchro') {
+      if (cls.contains('pv-actu-wrap') || cls.contains('pv-cert-medallion') || cls.contains('pv-credits-block')) return false;
+      // synchro-bottom GARDÉ
     } else {
       // sortie
-      if (cls.contains('pv-actu-wrap') || cls.contains('pv-cert-medallion')) return false;
+      if (cls.contains('pv-actu-wrap') || cls.contains('pv-cert-medallion') || cls.contains('pv-synchro-bottom')) return false;
     }
   }
 
@@ -2771,6 +2775,18 @@ async function buildOverlayLayer(targetW, targetH) {
     ]);
     const synCredits = clone.querySelector('.pv-synchro-credits-names');
     if (synCredits) synCredits.style.fontSize = (3.0 * _m('credits') * targetW / 100) + 'px';
+
+    // Reposition synchro bottom block on the clone (same logic as preview)
+    await new Promise(r => requestAnimationFrame(r));
+    const cloneArtWrap = clone.querySelector('.pv-artwork-wrap');
+    const cloneBottom = clone.querySelector('.pv-synchro-bottom');
+    if (cloneArtWrap && cloneBottom) {
+      const cloneRect = clone.getBoundingClientRect();
+      const artRect = cloneArtWrap.getBoundingClientRect();
+      const artBottomPx = artRect.bottom - cloneRect.top;
+      const gap = targetW * 0.02;
+      clone.style.setProperty('--synchro-bottom-top', (artBottomPx + gap) + 'px');
+    }
   } else {
     autoFitBlock(clone.querySelector('.pv-info-top'), [
       { el: clone.querySelector('.pv-info-artist'), max: 7.2  * _m('artist'), min: 3.0 },
@@ -2962,6 +2978,18 @@ async function exportPNG(forceFormat) {
       ]);
       const synCredits2 = clone.querySelector('.pv-synchro-credits-names');
       if (synCredits2) synCredits2.style.fontSize = (3.0 * _m2('credits') * targetW / 100) + 'px';
+
+      // Reposition synchro bottom block on the clone
+      await new Promise(r => requestAnimationFrame(r));
+      const cloneArtWrap2 = clone.querySelector('.pv-artwork-wrap');
+      const cloneBottom2 = clone.querySelector('.pv-synchro-bottom');
+      if (cloneArtWrap2 && cloneBottom2) {
+        const cloneRect2 = clone.getBoundingClientRect();
+        const artRect2 = cloneArtWrap2.getBoundingClientRect();
+        const artBottomPx2 = artRect2.bottom - cloneRect2.top;
+        const gap2 = targetW * 0.02;
+        clone.style.setProperty('--synchro-bottom-top', (artBottomPx2 + gap2) + 'px');
+      }
     } else {
       autoFitBlock(clone.querySelector('.pv-info-top'), [
         { el: clone.querySelector('.pv-info-artist'), max: 7.2  * _m2('artist'), min: 3.0 },
