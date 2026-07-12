@@ -729,13 +729,113 @@ nav {
         </button>
       </div>
       <div class="sw-body">
-        <div class="sw-field"><span class="sw-label">Dénomination</span><span class="sw-value">Parlons Peu Rec</span></div><div class="sw-field"><span class="sw-label">Forme juridique</span><span class="sw-value">SAS au capital de 1 000€</span></div><div class="sw-field"><span class="sw-label">Siège social</span><span class="sw-value">335 rue Vaugirard, 75015 Paris</span></div><div class="sw-field"><span class="sw-label">RCS</span><span class="sw-value">Paris</span></div><div class="sw-field"><span class="sw-label">SIREN</span><span class="sw-value">917 942 286</span></div><div class="sw-field"><span class="sw-label">Représentant</span><span class="sw-value">Pierre Laurent FAURE — Président</span></div><div class="sw-field"><span class="sw-label">Email</span><span class="sw-value"><a href="mailto:pierrelaurent.faure@parlonspeurec.com">pierrelaurent.faure@parlonspeurec.com</a></span></div><div class="sw-field"><span class="sw-label">IPI</span><span class="sw-value">En cours d'inscription</span></div><div class="sw-field"><span class="sw-label">COAD</span><span class="sw-value">En cours d'inscription</span></div><div class="sw-field"><span class="sw-label">Contact relecture</span><span class="sw-value"><a href="mailto:patricianeau.faure@gmail.com">patricianeau.faure@gmail.com</a> / <a href="mailto:ec.composer@gmail.com">ec.composer@gmail.com</a> / <a href="mailto:creff.pierre@gmail.com">creff.pierre@gmail.com</a></span></div>
+        <div class="sw-field"><span class="sw-label">Dénomination</span><span class="sw-value">Parlons Peu Rec</span></div><div class="sw-field"><span class="sw-label">Forme juridique</span><span class="sw-value">SAS au capital de 1 000€</span></div><div class="sw-field"><span class="sw-label">Siège social</span><span class="sw-value">335 rue Vaugirard, 75015 Paris</span></div><div class="sw-field"><span class="sw-label">RCS</span><span class="sw-value">Paris</span></div><div class="sw-field"><span class="sw-label">SIREN</span><span class="sw-value">917 942 286</span></div><div class="sw-field"><span class="sw-label">Représentant</span><span class="sw-value">Pierre Laurent FAURE — Président</span></div><div class="sw-field"><span class="sw-label">Email</span><span class="sw-value"><a  href="mailto:pierrelaurent.faure@parlonspeurec.com">pierrelaurent.faure@parlonspeurec.com</a></span></div><div class="sw-field"><span class="sw-label">IPI</span><span class="sw-value">En cours d'inscription</span></div><div class="sw-field"><span class="sw-label">COAD</span><span class="sw-value">En cours d'inscription</span></div>
       </div>
     </div>
-  </div>
 
+  </div>
 </div>
 
+<script>
+// Toggle card open/close
+document.querySelectorAll('.sw-header').forEach(header => {
+  header.addEventListener('click', e => {
+    if (e.target.closest('.copy-btn') || e.target.closest('.coeditor-link')) return;
+    const card = header.closest('.sw-card');
+    if (card) card.classList.toggle('open');
+  });
+});
+
+// Helper: robust copy to clipboard
+function robustCopy(text, btn) {
+  function onSuccess() {
+    btn.classList.add('copied');
+    setTimeout(() => btn.classList.remove('copied'), 2000);
+  }
+  function fallbackCopy() {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try { document.execCommand('copy'); onSuccess(); }
+    catch(e) { alert('Copie échouée'); }
+    document.body.removeChild(ta);
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(onSuccess).catch(fallbackCopy);
+  } else {
+    fallbackCopy();
+  }
+}
+
+// Copy card info
+document.querySelectorAll('.sw-card .copy-btn').forEach(btn => {
+  btn.addEventListener('click', e => {
+    e.stopPropagation();
+    const card = btn.closest('.sw-card');
+    const body = card ? card.querySelector('.sw-body') : null;
+    if (!body) return;
+    const name = card.querySelector('.sw-display-name');
+    const fields = body.querySelectorAll('.sw-field');
+    let text = name ? name.textContent.trim() + '\n' : '';
+    fields.forEach(f => {
+      const label = f.querySelector('.sw-label');
+      const value = f.querySelector('.sw-value');
+      if (label && value) {
+        const valClone = value.cloneNode(true);
+        valClone.querySelectorAll('a').forEach(a => a.replaceWith(a.textContent));
+        text += label.textContent.trim() + ' : ' + valClone.textContent.trim() + '\n';
+      }
+    });
+    robustCopy(text.trim(), btn);
+  });
+});
+
+// Coeditor link buttons
+document.querySelectorAll('.coeditor-link').forEach(btn => {
+  btn.addEventListener('click', e => {
+    e.stopPropagation();
+    const name = btn.dataset.coeditor;
+    if (!name) return;
+    const target = Array.from(document.querySelectorAll('.sw-card')).find(c => {
+      const dn = c.querySelector('.sw-display-name');
+      return dn && dn.textContent.trim().toUpperCase() === name.toUpperCase();
+    });
+    if (target) {
+      const copyBtn = target.querySelector('.copy-btn');
+      if (copyBtn) copyBtn.click();
+    }
+  });
+});
+
+// Search filter
+const searchInput = document.getElementById('searchInput');
+if (searchInput) {
+  searchInput.addEventListener('input', () => {
+    const q = searchInput.value.toLowerCase().trim();
+    document.querySelectorAll('.sw-card').forEach(card => {
+      const search = (card.dataset.search || '').toLowerCase();
+      const name = (card.querySelector('.sw-display-name') || {}).textContent || '';
+      card.style.display = (!q || search.includes(q) || name.toLowerCase().includes(q)) ? '' : 'none';
+    });
+  });
+}
+
+// Category filters
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const cat = btn.dataset.filter;
+    document.querySelectorAll('.sw-card').forEach(card => {
+      if (cat === 'all') { card.style.display = ''; return; }
+      card.style.display = card.dataset.category === cat ? '' : 'none';
+    });
+  });
+});
+</script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script>

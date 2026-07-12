@@ -312,6 +312,43 @@ Mail : <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="
 
 </div>
 
+<script>
+function copyInfo(id, btn) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const clone = el.cloneNode(true);
+  clone.querySelectorAll('a').forEach(a => a.replaceWith(a.textContent));
+  const text = clone.innerText.trim();
+
+  function onSuccess() {
+    btn.classList.add('copied');
+    const txt = btn.querySelector('.btn-text');
+    if (txt) { txt.dataset.orig = txt.textContent; txt.textContent = 'Copié ✓'; }
+    setTimeout(() => {
+      btn.classList.remove('copied');
+      if (txt && txt.dataset.orig) txt.textContent = txt.dataset.orig;
+    }, 2000);
+  }
+
+  function fallbackCopy() {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try { document.execCommand('copy'); onSuccess(); }
+    catch(e) { alert('Copie échouée, copie manuelle :\n\n' + text); }
+    document.body.removeChild(ta);
+  }
+
+  if (navigator.clipboard && navigator.clipboard.writeText && window.isSecureContext) {
+    navigator.clipboard.writeText(text).then(onSuccess).catch(fallbackCopy);
+  } else {
+    fallbackCopy();
+  }
+}
+</script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script>
