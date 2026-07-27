@@ -161,6 +161,14 @@ function _waitAuth(){return new Promise((res,rej)=>{firebase.auth().onAuthStateC
 
 const MONTHS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 
+// Songwriter rename mapping: old name → new name
+const SW_RENAME = {
+  'LEANDRE': 'LEANDRE PICK',
+  'YANNICK SERI': 'LE SERI',
+  'BRO': 'BRÖ'
+};
+function mapSwName(name) { return SW_RENAME[name] || name; }
+
 let activeFilter = 'all';
 let activeSw = 'all';
 let cachedReleases = [];
@@ -171,6 +179,13 @@ async function fetchReleases() {
     const data = await res.json();
     if (!data) { cachedReleases = []; return; }
     cachedReleases = Object.values(data).sort((a, b) => (a.dateSortable || '').localeCompare(b.dateSortable || ''));
+    // Apply songwriter renames to cached data
+    cachedReleases.forEach(r => {
+      if (r.songwriters) {
+        const sw = Array.isArray(r.songwriters) ? r.songwriters : [r.songwriters];
+        r.songwriters = sw.map(mapSwName);
+      }
+    });
   } catch (err) {
     document.getElementById('stats').textContent = '⚠ Erreur de connexion';
   }
