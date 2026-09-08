@@ -78,6 +78,15 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 }
 .playlist-btn:hover { background: rgba(255,0,0,0.18); }
 .playlist-btn svg { flex-shrink: 0; }
+.playlist-btn-spotify {
+  display: inline-flex; align-items: center; gap: 6px; margin-top: 8px;
+  padding: 6px 14px; border: 1px solid rgba(29,185,84,0.4); background: rgba(29,185,84,0.08);
+  color: #ccc; font-family: 'Syne Mono', monospace; font-size: 0.6rem;
+  letter-spacing: 0.06em; text-decoration: none; transition: all 0.15s;
+}
+.playlist-btn-spotify:hover { background: rgba(29,185,84,0.22); }
+.playlist-btn-spotify svg { flex-shrink: 0; }
+.playlist-row { display: flex; gap: 8px; flex-wrap: wrap; }
 
 /* Bio frame */
 .card-bio {
@@ -155,6 +164,8 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .pdf-types { font-size: 0.75rem; color: #888; margin-top: 4px; }
 .pdf-skills { font-size: 0.68rem; color: #666; margin-top: 3px; }
 .pdf-playlist { display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; padding: 8px 16px; border: 1px solid rgba(255,0,0,0.35); background: rgba(255,0,0,0.06); color: #ccc; font-size: 0.68rem; font-family: 'Syne Mono', monospace; text-decoration: none; }
+.pdf-playlist-spotify { display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; padding: 8px 16px; border: 1px solid rgba(29,185,84,0.4); background: rgba(29,185,84,0.08); color: #ccc; font-size: 0.68rem; font-family: 'Syne Mono', monospace; text-decoration: none; }
+.pdf-playlist-row { display: flex; gap: 8px; flex-wrap: wrap; }
 .pdf-bio { font-size: 0.76rem; color: #d0d0d0; line-height: 1.7; font-family: 'Syne Mono', monospace; text-align: center; margin: 16px 0; padding: 16px 22px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); }
 .pdf-context { font-size: 0.82rem; color: #fff; line-height: 1.6; font-family: 'Syne', Arial, sans-serif; font-weight: 600; text-align: center; margin: 12px 0; padding: 18px 24px; background: rgba(232,197,71,0.08); border: 1px solid rgba(232,197,71,0.3); letter-spacing: 0.02em; }
 .pdf-section-label { font-size: 0.7rem; color: #bbb; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700; margin: 18px 0 8px; padding-top: 14px; padding-bottom: 5px; border-top: 1px solid rgba(255,255,255,0.06); border-bottom: 1px solid rgba(255,255,255,0.06); }
@@ -195,6 +206,7 @@ if(!firebase.apps.length)firebase.initializeApp(FIREBASE_CONFIG);
 window._fbToken='';
 function dbFetch(path,opts){const sep=path.includes('?')?'&':'?';return fetch(DB+path+sep+'auth='+window._fbToken,opts);}
 function _waitAuth(){return new Promise((res,rej)=>{firebase.auth().onAuthStateChanged(async u=>{if(!u){window.location.href='login.html';rej();}else{window._fbToken=await u.getIdToken();document.body.style.visibility='visible';res(u);}});});}
+
 const DEFAULT_BG = 'roster_bg.png';
 
 const SOCIAL_ICONS = {
@@ -203,6 +215,7 @@ const SOCIAL_ICONS = {
   spotify: `<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>`,
   ytChannel: `<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>`,
   youtube: `<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>`,
+  genius: `<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M11.997 0C5.373 0 0 5.373 0 11.997 0 18.627 5.373 24 11.997 24 18.627 24 24 18.627 24 11.997 24 5.373 18.627 0 11.997 0zm4.258 16.428c-.063.188-.2.318-.388.38-.125.044-.263.063-.4.063-.388 0-.758-.194-1.07-.513-.257-.262-.47-.58-.645-.867a7.374 7.374 0 01-.338-.612c-.575.83-1.407 1.487-2.507 1.926a6.06 6.06 0 01-2.17.425c-1.476.05-2.782-.45-3.72-1.35-.97-.93-1.533-2.238-1.583-3.638-.05-1.4.418-2.75 1.313-3.788.925-1.075 2.237-1.762 3.687-1.937 1.076-.125 2.107.012 3.063.425.956.412 1.725 1.05 2.325 1.9.025.037.05.075.063.112.062.15.025.313-.088.413-.112.1-.275.1-.388.013-.025-.02-.05-.038-.075-.063-.5-.712-1.15-1.237-1.962-1.587-.813-.35-1.688-.475-2.613-.363-1.213.15-2.3.725-3.075 1.625-.775.9-1.175 2.05-1.138 3.225.038 1.175.5 2.275 1.313 3.05.788.762 1.863 1.175 3.063 1.138.925-.025 1.775-.288 2.5-.788.725-.5 1.225-1.162 1.475-1.95.013-.037.025-.087.025-.125-.013-.075-.063-.137-.138-.162-.075-.025-.15 0-.2.063l-.025.025c-.263.35-.563.65-.9.887-.338.238-.713.413-1.113.5a2.955 2.955 0 01-1.175.013c-.388-.075-.737-.238-1.038-.475-.3-.238-.537-.538-.7-.888a2.48 2.48 0 01-.2-1.075c.013-.525.175-1.012.475-1.425.313-.425.738-.737 1.225-.913.488-.175 1.013-.2 1.513-.075.5.125.938.4 1.275.788.025.025.05.062.075.1.063.1.038.225-.05.3-.088.075-.213.075-.288-.013-.013-.012-.025-.037-.05-.05-.262-.3-.588-.525-.962-.625-.375-.1-.775-.075-1.138.063-.363.137-.675.375-.913.688-.225.313-.35.688-.363 1.075-.012.3.05.6.175.863.125.262.313.488.55.65.237.163.512.275.813.325.3.05.613.025.9-.063.288-.087.55-.225.775-.412.225-.188.413-.413.55-.675.05-.1.15-.162.263-.15.112.012.2.088.237.2.063.15.138.35.238.575.15.338.338.675.563.962.225.288.488.488.775.588.05.012.1.012.138 0 .05-.025.075-.063.088-.113z"/></svg>`,
 };
 
 
@@ -214,14 +227,15 @@ const I18N = {
   songwriters: { fr: 'Songwriters', en: 'Songwriters' },
   // Card sections
   discographie: { fr: 'Discographie', en: 'Discography' },
-  artistes_places: { fr: 'Artistes placés', en: 'Placed Artists' },
-  placements_majeurs: { fr: 'Placements majeurs', en: 'Major Placements' },
+  artistes_places: { fr: 'Artistes placés', en: 'Plugged Artists' },
+  placements_majeurs: { fr: 'Placements majeurs', en: 'Main Plugged Tracks / Projects' },
   cert_singles: { fr: 'Certifications Singles', en: 'Singles Certifications' },
   cert_albums: { fr: 'Certifications Albums', en: 'Albums Certifications' },
   cert_autres: { fr: 'Autres certifications', en: 'Other Certifications' },
   infos_speciales: { fr: 'Informations spéciales', en: 'Special Information' },
   // Actions
   ecouter_playlist: { fr: 'Écouter la playlist', en: 'Listen to playlist' },
+  ecouter_playlist_of: { fr: "Écouter la playlist de", en: "Listen to" },
   ecouter: { fr: 'écouter', en: 'listen' },
   // UI
   chargement: { fr: 'Chargement...', en: 'Loading...' },
@@ -231,7 +245,7 @@ const I18N = {
   telecharger_pdf: { fr: 'Télécharger PDF', en: 'Download PDF' },
   export_perso: { fr: 'Export personnalisé', en: 'Custom export' },
   // Types (data stored in FR, display translated)
-  'Auteur': { fr: 'Auteur', en: 'Author' },
+  'Auteur': { fr: 'Auteur', en: 'Lyricist' },
   'Compositeur': { fr: 'Compositeur', en: 'Composer' },
   'Topliner': { fr: 'Topliner', en: 'Topliner' },
   'Artiste Interprète': { fr: 'Artiste Interprète', en: 'Performing Artist' },
@@ -246,6 +260,8 @@ const I18N = {
   // Cert levels
   'Or': { fr: 'Or', en: 'Gold' },
   'Platine': { fr: 'Platine', en: 'Platinum' },
+  'Double platine': { fr: 'Double platine', en: 'Double Platinum' },
+  'Triple platine': { fr: 'Triple platine', en: 'Triple Platinum' },
   'Diamant': { fr: 'Diamant', en: 'Diamond' },
   // Special export
   se_types: { fr: "Types d'artiste", en: 'Artist Types' },
@@ -295,6 +311,18 @@ function buildCertLabel(c, lang) {
   return [c.artist, c.project, c.type, tCertLevel(c.level, l)].filter(Boolean).join(' — ');
 }
 
+function playlistText(artistName, lang) {
+  const l = lang || currentLang;
+  if (l === 'en') return `Listen to ${artistName}'s playlist`;
+  return 'Écouter la playlist';
+}
+
+function spotifyPlaylistText(artistName, lang) {
+  const l = lang || currentLang;
+  if (l === 'en') return `Listen on Spotify`;
+  return 'Écouter sur Spotify';
+}
+
 function rerenderRoster() {
   if (!window._renderRoster) return;
   window._renderRoster();
@@ -307,6 +335,7 @@ function rerenderRoster() {
 
 (async () => {
   try { await _waitAuth(); } catch(e) { return; }
+
   try {
     const res = await dbFetch('/roster.json');
     const data = await res.json();
@@ -349,7 +378,7 @@ function rerenderRoster() {
       const discography = a.discography ? (Array.isArray(a.discography) ? a.discography : Object.values(a.discography)) : [];
       const certs = a.certs ? (Array.isArray(a.certs) ? a.certs : Object.values(a.certs)) : [];
       const initial = (a.name || '?')[0];
-      const socials = ['instagram','tiktok','spotify','ytChannel'].filter(k => a[k]);
+      const socials = ['instagram','tiktok','spotify','ytChannel','genius'].filter(k => a[k]);
 
       let h = `<div class="roster-entry" data-id="${a.id}">`;
       h += `<div class="entry-header"><span class="entry-chevron">›</span>`;
@@ -382,10 +411,18 @@ function rerenderRoster() {
       if (trSkills.length) h += `<div class="card-skills">${trSkills.join(' · ')}</div>`;
       h += `</div></div>`;
 
-      if (a.youtube) {
-        h += `<a class="playlist-btn" href="${a.youtube}" target="_blank">`;
-        h += `<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`;
-        h += `${t('ecouter_playlist')} ${SOCIAL_ICONS.youtube}</a>`;
+      if (a.youtube || a.spotifyPlaylist) {
+        h += '<div class="playlist-row">';
+        if (a.youtube) {
+          h += `<a class="playlist-btn" href="${a.youtube}" target="_blank">`;
+          h += `<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`;
+          h += `${playlistText(a.name)} ${SOCIAL_ICONS.youtube}</a>`;
+        }
+        if (a.spotifyPlaylist) {
+          h += `<a class="playlist-btn-spotify" href="${a.spotifyPlaylist}" target="_blank">`;
+          h += `${spotifyPlaylistText(a.name)} ${SOCIAL_ICONS.spotify}</a>`;
+        }
+        h += '</div>';
       }
 
       const displayBio = (currentLang === 'en' && a.bioEn) ? a.bioEn : a.bio;
@@ -409,7 +446,7 @@ function rerenderRoster() {
       }
 
       if (placements.length) {
-        const sorted = [...placements].map(p => typeof p === 'string' ? p : p.name || '').filter(Boolean).sort();
+        const sorted = [...placements].map(p => typeof p === 'string' ? p : p.name || '').filter(Boolean).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
         h += `<div class="card-section-title">${t('artistes_places')}</div><div class="card-placements">`;
         sorted.forEach(n => { h += `<span class="pl-tag">${n}</span>`; });
         h += `</div>`;
@@ -428,8 +465,8 @@ function rerenderRoster() {
       }
 
       if (certs.length) {
-        const CERT_EMOJI = { 'Or': '🥇', 'Platine': '🥈', 'Diamant': '💎' };
-        const CERT_ORDER = { 'Diamant': 0, 'Platine': 1, 'Or': 2 };
+        const CERT_EMOJI = { 'Or': '🥇', 'Platine': '🥈', 'Double platine': '🥈🥈', 'Triple platine': '🥈🥈🥈', 'Diamant': '💎' };
+        const CERT_ORDER = { 'Diamant': 0, 'Triple platine': 1, 'Double platine': 2, 'Platine': 3, 'Or': 4 };
         const sortedCerts = [...certs].sort((a, b) => (CERT_ORDER[a.level] ?? 9) - (CERT_ORDER[b.level] ?? 9));
         const singles = sortedCerts.filter(c => c.type === 'Single');
         const albums = sortedCerts.filter(c => c.type === 'Album');
@@ -605,10 +642,10 @@ function openSpecialExport(a) {
   // --- Certifications (individual checkboxes) ---
   mh += `<div class="se-section">Certifications</div>`;
   if (certs.length) {
-    const CERT_EMOJI_SE = { 'Or': '🥇', 'Platine': '🥈', 'Diamant': '💎' };
+    const CERT_EMOJI_SE = { 'Or': '🥇', 'Platine': '🥈', 'Double platine': '🥈🥈', 'Triple platine': '🥈🥈🥈', 'Diamant': '💎' };
     certs.forEach((c, i) => {
       const emoji = CERT_EMOJI_SE[c.level] || '';
-      const label = buildCertLabel(c, pdfLang);
+      const label = buildCertLabel(c);
       mh += `<label class="se-check"><input type="checkbox" data-se="cert" value="${i}" checked /> ${emoji ? emoji + ' ' : ''}${label}</label>`;
     });
   } else {
@@ -695,7 +732,8 @@ function openSpecialExport(a) {
 
 // ─── Render one artist page into a jsPDF instance ───
 // ─── Build artist card HTML (reused by single PDF and team PDF) ───
-function buildArtistCardHTML(a, pdfLang) {
+function buildArtistCardHTML(a, pdfLang, opts) {
+  const options = opts || {};
   const types = a.types ? (Array.isArray(a.types) ? a.types : [a.types]) : [];
   const skills = a.skills ? (Array.isArray(a.skills) ? a.skills : [a.skills]) : [];
   const { types: trTypes, skills: trSkills } = translateLabels(types, skills, pdfLang);
@@ -709,14 +747,14 @@ function buildArtistCardHTML(a, pdfLang) {
   const discography = a.discography ? (Array.isArray(a.discography) ? a.discography : Object.values(a.discography)) : [];
   const certs = a.certs ? (Array.isArray(a.certs) ? a.certs : Object.values(a.certs)) : [];
   const initial = (a.name || '?')[0];
-  const CERT_EMOJI = { 'Or': '🥇', 'Platine': '🥈', 'Diamant': '💎' };
+  const CERT_EMOJI = { 'Or': '🥇', 'Platine': '🥈', 'Double platine': '🥈🥈', 'Triple platine': '🥈🥈🥈', 'Diamant': '💎' };
   const PLAY_SVG = '<svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
   const YT_SVG = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>';
 
   let h = '';
   if (bgSrc) h += `<div class="pdf-bg" style="background-image:url('${bgSrc}')"></div>`;
   h += '<div class="pdf-content">';
-  const socials = ['instagram','tiktok','spotify','ytChannel'].filter(k => a[k]);
+  const socials = ['instagram','tiktok','spotify','ytChannel','genius'].filter(k => a[k]);
   if (socials.length) {
     h += '<div class="pdf-socials">';
     socials.forEach(k => { h += `<a href="${a[k]}" target="_blank">${SOCIAL_ICONS[k]}</a>`; });
@@ -730,8 +768,16 @@ function buildArtistCardHTML(a, pdfLang) {
   if (trTypes.length) h += `<div class="pdf-types">${trTypes.join(' · ')}</div>`;
   if (trSkills.length) h += `<div class="pdf-skills">${trSkills.join(' · ')}</div>`;
   h += '</div></div>';
-  if (a.youtube) {
-    h += `<a class="pdf-playlist" href="${a.youtube}" target="_blank">${PLAY_SVG} ${t('ecouter_playlist', pdfLang)} ${YT_SVG}</a>`;
+  if (a.youtube || a.spotifyPlaylist) {
+    const SPOT_SVG = '<svg viewBox="0 0 24 24" width="14" height="14" fill="#1DB954"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>';
+    h += '<div class="pdf-playlist-row">';
+    if (a.youtube) {
+      h += `<a class="pdf-playlist" href="${a.youtube}" target="_blank">${PLAY_SVG} ${playlistText(a.name, pdfLang)} ${YT_SVG}</a>`;
+    }
+    if (a.spotifyPlaylist) {
+      h += `<a class="pdf-playlist-spotify" href="${a.spotifyPlaylist}" target="_blank">${spotifyPlaylistText(a.name, pdfLang)} ${SPOT_SVG}</a>`;
+    }
+    h += '</div>';
   }
   const displayBio = (pdfLang === 'en' && a.bioEn) ? a.bioEn : a.bio;
   if (displayBio) h += `<div class="pdf-bio">${displayBio}</div>`;
@@ -753,7 +799,7 @@ function buildArtistCardHTML(a, pdfLang) {
     h += '</div>';
   }
   if (placements.length) {
-    const sorted = [...placements].map(p => typeof p === 'string' ? p : p.name || '').filter(Boolean).sort();
+    const sorted = [...placements].map(p => typeof p === 'string' ? p : p.name || '').filter(Boolean).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
     h += `<div class="pdf-section-label">${t('artistes_places', pdfLang).toUpperCase()}</div><div class="pdf-tags">`;
     sorted.forEach(n => { h += `<span class="pdf-tag">${n}</span>`; });
     h += '</div>';
@@ -770,7 +816,7 @@ function buildArtistCardHTML(a, pdfLang) {
     h += '</div>';
   }
   if (certs.length) {
-    const CERT_ORDER = { 'Diamant': 0, 'Platine': 1, 'Or': 2 };
+    const CERT_ORDER = { 'Diamant': 0, 'Triple platine': 1, 'Double platine': 2, 'Platine': 3, 'Or': 4 };
     const sortedCerts = [...certs].sort((x, y) => (CERT_ORDER[x.level] ?? 9) - (CERT_ORDER[y.level] ?? 9));
     const singles = sortedCerts.filter(c => c.type === 'Single');
     const albums = sortedCerts.filter(c => c.type === 'Album');
@@ -799,6 +845,9 @@ function buildArtistCardHTML(a, pdfLang) {
     h += `<div class="pdf-section-label">${t('infos_speciales', pdfLang).toUpperCase()}</div>`;
     displaySpecials.forEach(s => { if (s) h += `<div style="font-size:0.62rem;color:#ccc;padding:2px 0">⭐ ${s}</div>`; });
   }
+  if (!options.noFooter) {
+    h += '<div class="pdf-footer"><img src="data:image/png;base64,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" crossorigin="anonymous" /></div>';
+  }
   h += '</div>'; // close pdf-content
   return h;
 }
@@ -807,8 +856,6 @@ function buildArtistCardHTML(a, pdfLang) {
 async function renderArtistToPDF(a, pdf, render, lang) {
   const pdfLang = lang || 'fr';
   let h = buildArtistCardHTML(a, pdfLang);
-  // Add footer for single artist PDF
-  h += '<div class="pdf-footer"><img src="data:image/png;base64,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" crossorigin="anonymous" /></div>';
 
   render.innerHTML = h;
 
@@ -843,16 +890,18 @@ async function renderArtistToPDF(a, pdf, render, lang) {
   render.innerHTML = '';
 }
 
-// ─── PDF output: save on mobile, open in new tab on desktop ───
-function isMobile() {
-  return /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && window.innerWidth < 1024);
-}
+// ─── PDF output: download with correct filename ───
 function outputPDF(pdf, filename) {
-  if (isMobile()) {
-    pdf.save(filename || 'export.pdf');
-  } else {
-    window.open(pdf.output('bloburl'), '_blank');
-  }
+  const blob = pdf.output('blob');
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename || 'export.pdf';
+  a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
 
 // ─── Generate single artist PDF ───
@@ -863,8 +912,7 @@ async function generatePDF(a, lang) {
   await renderArtistToPDF(a, pdf, render, lang || 'fr');
   const now = new Date();
   const yyyymmdd = now.getFullYear() + String(now.getMonth()+1).padStart(2,'0') + String(now.getDate()).padStart(2,'0');
-  const safeName = (a.name || 'artiste').replace(/[^a-zA-Z0-9]/g, '_');
-  outputPDF(pdf, `${yyyymmdd}_${safeName}_fiche_${lang || 'fr'}.pdf`);
+  outputPDF(pdf, `${yyyymmdd}_${a.name || 'artiste'}_${(lang || 'fr').toUpperCase()}.pdf`);
 }
 
 // ─── Generate team PDF with multiple artists (opens in new tab) ───
@@ -896,24 +944,23 @@ async function generateTeamPDF(artists, lang, teamName) {
   const scFactor = Math.min(cellW / 794, cellH / 1123);
 
   let h = '';
-  // Background
-  h += `<div style="position:absolute;inset:0;background:url('${DEFAULT_BG}') center/cover;opacity:0.12;z-index:0"></div>`;
+  // Background: dark grid pattern (matches BLZante design, no logo)
+  h += `<div style="position:absolute;inset:0;background-color:#0a0a0a;background-image:linear-gradient(rgba(38,38,38,0.5) 1px,transparent 1px),linear-gradient(90deg,rgba(38,38,38,0.5) 1px,transparent 1px);background-size:60px 60px;z-index:0"></div>`;
   h += `<div style="position:relative;z-index:1;width:100%;height:100%;display:flex;flex-direction:column;overflow:hidden">`;
 
   // Header
-  h += `<div style="display:flex;align-items:center;justify-content:space-between;padding:12px ${padX}px;flex-shrink:0;height:${headerH}px">`;
+  const NAV_LOGO = 'data:image/png;base64,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';
+  h += `<div style="display:flex;align-items:center;padding:12px ${padX}px;flex-shrink:0;height:${headerH}px;gap:12px">`;
+  h += `<img src="${NAV_LOGO}" style="height:32px;width:auto" crossorigin="anonymous" />`;
   h += `<div style="font-family:Syne,sans-serif;font-size:1.3rem;font-weight:800;color:#fff;letter-spacing:0.04em">${tName}</div>`;
-  h += `<div style="display:flex;align-items:center;gap:10px">`;
-  h += `<span style="font-family:Syne Mono,monospace;font-size:0.55rem;color:#666;letter-spacing:0.14em;text-transform:uppercase">${pdfLang === 'fr' ? 'Édition musicale' : 'Music Publishing'}</span>`;
-  h += `<span style="font-family:Syne,sans-serif;font-size:0.9rem;font-weight:800;color:#888;letter-spacing:0.08em">BLZante</span>`;
-  h += `</div></div>`;
+  h += `</div>`;
   h += `<div style="height:1px;background:linear-gradient(90deg,rgba(232,197,71,0.4),rgba(255,255,255,0.08) 50%,transparent);margin:0 ${padX}px;flex-shrink:0"></div>`;
 
   // Grid of scaled artist cards
   h += `<div style="display:grid;grid-template-columns:repeat(${cols},${cellW}px);gap:${gapY}px ${gapX}px;padding:${padY}px ${padX}px;flex:1;align-content:center;">`;
 
   for (const a of artists) {
-    const cardHTML = buildArtistCardHTML(a, pdfLang);
+    const cardHTML = buildArtistCardHTML(a, pdfLang, { noFooter: true });
     // Each cell: a clipped container with the full card scaled down
     h += `<div style="width:${cellW}px;height:${cellH}px;overflow:hidden;position:relative;border:1px solid rgba(255,255,255,0.08)">`;
     // Inner: full portrait A4 card, scaled
@@ -966,8 +1013,7 @@ async function generateTeamPDF(artists, lang, teamName) {
 
   const now = new Date();
   const yyyymmdd = now.getFullYear() + String(now.getMonth()+1).padStart(2,'0') + String(now.getDate()).padStart(2,'0');
-  const safeTeam = tName.replace(/[^a-zA-Z0-9]/g, '_');
-  outputPDF(pdf, `${yyyymmdd}_${safeTeam}_${pdfLang}.pdf`);
+  outputPDF(pdf, `${yyyymmdd}_${tName}_${pdfLang.toUpperCase()}.pdf`);
 }
 
 // ─── Team export modal ───
