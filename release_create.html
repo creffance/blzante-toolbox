@@ -171,7 +171,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
     </div>
   </div>
 
-  <div class="form-group conditional" id="countryGroup" style="display:none">
+  <div class="form-group conditional" id="countryGroup">
     <label class="form-label">Pays</label>
     <select class="form-select" id="releaseCountry">
       <option value="FR">🇫🇷 France</option>
@@ -197,7 +197,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
     </select>
   </div>
 
-  <div class="form-group conditional" id="actuGroup" style="display:none">
+  <div class="form-group conditional" id="actuGroup">
     <label class="form-label">Description de l'actualité</label>
     <textarea class="form-input" id="actuDesc" rows="3" placeholder="Décrivez l'actualité..." style="resize:vertical;min-height:60px"></textarea>
   </div>
@@ -394,8 +394,8 @@ function updateConditionals() {
   trackGroup.classList.toggle('visible', t === 'Single' || t === 'Certification');
   liveGroup.classList.toggle('visible', t === 'Live');
   certGroup.classList.toggle('visible', t === 'Certification');
-  countryGroup.style.display = ['Single','EP','Album'].includes(t) ? '' : 'none';
-  actuGroup.style.display = t === 'Actu' ? '' : 'none';
+  countryGroup.classList.toggle('visible', ['Single','EP','Album'].includes(t));
+  actuGroup.classList.toggle('visible', t === 'Actu');
 }
 typeSelect.addEventListener('change', updateConditionals);
 
