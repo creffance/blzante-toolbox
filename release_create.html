@@ -269,8 +269,11 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
     <label class="form-label">Lien (Spotify, YouTube, Instagram…)</label>
     <input type="text" class="form-input" id="releaseLink" placeholder="Coller un lien pour récupérer l'artwork automatiquement" autocomplete="off" />
     <div id="artworkPreview" style="margin-top:8px;display:none">
-      <img id="artworkImg" style="max-width:120px;max-height:120px;border:1px solid #2a2a2a;display:block" />
-      <button type="button" onclick="clearArtwork()" style="margin-top:4px;background:none;border:1px solid #333;color:#888;font-family:'Syne Mono',monospace;font-size:0.55rem;padding:3px 8px;cursor:pointer">✕ Supprimer l'artwork</button>
+      <img id="artworkImg" style="max-width:120px;max-height:120px;border:1px solid #2a2a2a;display:block" crossorigin="anonymous" />
+      <div style="display:flex;gap:6px;margin-top:4px">
+        <button type="button" onclick="downloadArtwork()" style="background:none;border:1px solid #333;color:#e8c547;font-family:'Syne Mono',monospace;font-size:0.55rem;padding:3px 8px;cursor:pointer">⬇ Télécharger</button>
+        <button type="button" onclick="clearArtwork()" style="background:none;border:1px solid #333;color:#888;font-family:'Syne Mono',monospace;font-size:0.55rem;padding:3px 8px;cursor:pointer">✕ Supprimer</button>
+      </div>
     </div>
   </div>
 
@@ -414,6 +417,34 @@ function clearArtwork() {
   extractedArtwork = '';
   document.getElementById('artworkPreview').style.display = 'none';
   document.getElementById('artworkImg').src = '';
+}
+
+function downloadArtwork() {
+  if (!extractedArtwork) return;
+  // Draw to canvas to bypass CORS, then download
+  const img = document.getElementById('artworkImg');
+  const canvas = document.createElement('canvas');
+  canvas.width = img.naturalWidth;
+  canvas.height = img.naturalHeight;
+  const ctx = canvas.getContext('2d');
+  try {
+    ctx.drawImage(img, 0, 0);
+    canvas.toBlob(blob => {
+      if (!blob) { window.open(extractedArtwork, '_blank'); return; }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const artist = document.getElementById('artistName').value.trim() || 'artwork';
+      a.download = artist.replace(/[^a-zA-Z0-9]/g, '_') + '_artwork.jpg';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+    }, 'image/jpeg', 0.95);
+  } catch(e) {
+    // CORS fallback: open in new tab
+    window.open(extractedArtwork, '_blank');
+  }
 }
 
 function extractYouTubeId(url) {
