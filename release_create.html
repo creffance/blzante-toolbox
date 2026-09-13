@@ -560,7 +560,11 @@ function resetForm() {
   trackGroup.classList.remove('visible');
   liveGroup.classList.remove('visible');
   certGroup.classList.remove('visible');
+  countryGroup.classList.remove('visible');
+  actuGroup.classList.remove('visible');
   epTracksGroup.classList.remove('visible');
+  document.getElementById('releaseCountry').value = 'FR';
+  document.getElementById('actuDesc').value = '';
   document.getElementById('releaseLink').value = '';
   clearArtwork();
   selectedSw = [];
