@@ -131,9 +131,11 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 
   <div class="filters" id="filters">
     <button class="filter-btn active" data-filter="all">Tout</button>
+    <button class="filter-btn" data-filter="Sorties">Sorties</button>
     <button class="filter-btn" data-filter="Live">Live</button>
     <button class="filter-btn" data-filter="Certification">Certification</button>
     <button class="filter-btn" data-filter="Synchro">Synchro</button>
+    <button class="filter-btn" data-filter="Actu">Actu</button>
     <button class="filter-btn" data-filter="Single">Single</button>
     <button class="filter-btn" data-filter="EP">EP</button>
     <button class="filter-btn" data-filter="Album">Album</button>
@@ -206,7 +208,7 @@ function buildSwFilters() {
 }
 
 function render() {
-  let filtered = activeFilter === 'all' ? cachedReleases : cachedReleases.filter(r => r.type === activeFilter);
+  let filtered = activeFilter === 'all' ? cachedReleases : activeFilter === 'Sorties' ? cachedReleases.filter(r => ['Single','EP','Album'].includes(r.type)) : cachedReleases.filter(r => r.type === activeFilter);
   if (activeSw !== 'all') {
     filtered = filtered.filter(r => {
       if (!r.songwriters) return false;
@@ -253,11 +255,15 @@ function render() {
       const st = r.status || 'Confirmé';
       const stClass = st === 'TBC' ? 'tbc' : st === 'Annulé' ? 'annule' : 'confirme';
 
+      const COUNTRY_FLAGS = {FR:'🇫🇷',US:'🇺🇸',GB:'🇬🇧',DE:'🇩🇪',ES:'🇪🇸',IT:'🇮🇹',BE:'🇧🇪',CH:'🇨🇭',CA:'🇨🇦',JP:'🇯🇵',KR:'🇰🇷',BR:'🇧🇷',MX:'🇲🇽',CI:'🇨🇮',SN:'🇸🇳',MA:'🇲🇦',DZ:'🇩🇿',CM:'🇨🇲',CD:'🇨🇩',INTL:'🌍'};
+      const flag = r.country && COUNTRY_FLAGS[r.country] ? COUNTRY_FLAGS[r.country] : '';
+
       html += `<div class="release-item${isToday ? ' today-marker' : ''}${isAnnule ? ' annule' : ''}" data-id="${r.id}" style="${isPast && !isAnnule ? 'opacity:0.5' : ''}">`;
       html += `<div class="rel-meta">`;
       html += `<span class="rel-date">${r.date}</span>`;
       html += `<span class="rel-type">${r.type}</span>`;
       html += `<span class="rel-status ${stClass}">${st}</span>`;
+      if (flag) html += `<span class="rel-flag">${flag}</span>`;
       html += `</div>`;
       html += `<div class="rel-info">`;
       html += `<span class="rel-artist">${r.artist}</span>`;
@@ -314,7 +320,7 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
 
   try {
     // Get filtered data (same as what's displayed)
-    let filtered = activeFilter === 'all' ? cachedReleases : cachedReleases.filter(r => r.type === activeFilter);
+    let filtered = activeFilter === 'all' ? cachedReleases : activeFilter === 'Sorties' ? cachedReleases.filter(r => ['Single','EP','Album'].includes(r.type)) : cachedReleases.filter(r => r.type === activeFilter);
     if (activeSw !== 'all') {
       filtered = filtered.filter(r => {
         if (!r.songwriters) return false;

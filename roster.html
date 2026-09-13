@@ -43,6 +43,8 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .entry-chevron { font-size: 1.1rem; color: var(--muted); transition: transform 0.2s; width: 14px; text-align: center; flex-shrink: 0; }
 .roster-entry.open .entry-chevron { transform: rotate(90deg); color: #fff; }
 .entry-name { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 800; color: #fff; flex: 1; }
+.entry-photo { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border); flex-shrink: 0; }
+.entry-photo-ph { width: 36px; height: 36px; border-radius: 50%; background: #222; border: 2px solid var(--border); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 0.8rem; color: #555; }
 .entry-types { font-size: 0.55rem; color: var(--muted); letter-spacing: 0.04em; }
 .entry-btns { display: flex; gap: 6px; flex-shrink: 0; }
 .entry-btn { font-family: 'Syne Mono', monospace; font-size: 0.58rem; letter-spacing: 0.06em; text-transform: uppercase; padding: 5px 10px; background: transparent; border: 1px solid var(--border); color: var(--muted); cursor: pointer; text-decoration: none; transition: all 0.15s; }
@@ -382,6 +384,8 @@ function rerenderRoster() {
 
       let h = `<div class="roster-entry" data-id="${a.id}">`;
       h += `<div class="entry-header"><span class="entry-chevron">›</span>`;
+      if (primary) h += `<img class="entry-photo" src="${primary.src}" />`;
+      else h += `<div class="entry-photo-ph">${initial}</div>`;
       h += `<div style="flex:1;min-width:0"><div class="entry-name">${a.name}</div>`;
       if (allLabels) h += `<div class="entry-types">${allLabels}</div>`;
       h += `</div><div class="entry-btns">`;
@@ -508,18 +512,10 @@ function rerenderRoster() {
       content.querySelectorAll('.roster-entry.open').forEach(el => openIds.add(el.dataset.id));
 
       let html = '';
-      if (artistesInterpretes.length) {
-        html += `<div class="roster-section-header">${t('artistes')}</div>`;
-        html += '<div class="roster-list">';
-        artistesInterpretes.forEach(a => { html += renderEntry(a); });
-        html += '</div>';
-      }
-      if (songwriters.length) {
-        html += `<div class="roster-section-header">${t('songwriters')}</div>`;
-        html += '<div class="roster-list">';
-        songwriters.forEach(a => { html += renderEntry(a); });
-        html += '</div>';
-      }
+      html += '<div class="roster-section-header">Artists</div>';
+      html += '<div class="roster-list">';
+      allArtists.forEach(a => { html += renderEntry(a); });
+      html += '</div>';
       content.innerHTML = html;
 
       // Restore open states

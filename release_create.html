@@ -155,6 +155,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
         <option value="Live">Live</option>
         <option value="Certification">Certification</option>
         <option value="Synchro">Synchro</option>
+        <option value="Actu">Actu</option>
         <option value="Single">Single</option>
         <option value="EP">EP</option>
         <option value="Album">Album</option>
@@ -168,6 +169,32 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
         <option value="Annulé" class="status-annule" id="optAnnule" style="display:none">Annulé</option>
       </select>
     </div>
+  </div>
+
+  <div class="form-group conditional" id="countryGroup" style="display:none">
+    <label class="form-label">Pays</label>
+    <select class="form-select" id="releaseCountry">
+      <option value="FR">🇫🇷 France</option>
+      <option value="US">🇺🇸 États-Unis</option>
+      <option value="GB">🇬🇧 Royaume-Uni</option>
+      <option value="DE">🇩🇪 Allemagne</option>
+      <option value="ES">🇪🇸 Espagne</option>
+      <option value="IT">🇮🇹 Italie</option>
+      <option value="BE">🇧🇪 Belgique</option>
+      <option value="CH">🇨🇭 Suisse</option>
+      <option value="CA">🇨🇦 Canada</option>
+      <option value="JP">🇯🇵 Japon</option>
+      <option value="KR">🇰🇷 Corée du Sud</option>
+      <option value="BR">🇧🇷 Brésil</option>
+      <option value="MX">🇲🇽 Mexique</option>
+      <option value="CI">🇨🇮 Côte d'Ivoire</option>
+      <option value="SN">🇸🇳 Sénégal</option>
+      <option value="MA">🇲🇦 Maroc</option>
+      <option value="DZ">🇩🇿 Algérie</option>
+      <option value="CM">🇨🇲 Cameroun</option>
+      <option value="CD">🇨🇩 RD Congo</option>
+      <option value="INTL">🌍 International</option>
+    </select>
   </div>
 
   <div class="form-group conditional" id="certGroup">
@@ -324,6 +351,7 @@ const projectGroup = document.getElementById('projectGroup');
 const trackGroup = document.getElementById('trackGroup');
 const liveGroup = document.getElementById('liveGroup');
 const certGroup = document.getElementById('certGroup');
+const countryGroup = document.getElementById('countryGroup');
 const epTracksGroup = document.getElementById('epTracksGroup');
 const swSearch = document.getElementById('swSearch');
 const swDropdown = document.getElementById('swDropdown');
@@ -351,6 +379,7 @@ function updateConditionals() {
   trackGroup.classList.toggle('visible', t === 'Single' || t === 'Certification');
   liveGroup.classList.toggle('visible', t === 'Live');
   certGroup.classList.toggle('visible', t === 'Certification');
+  countryGroup.style.display = ['Single','EP','Album'].includes(t) ? '' : 'none';
 }
 typeSelect.addEventListener('change', updateConditionals);
 
@@ -414,6 +443,7 @@ function enterEditMode(release) {
   document.getElementById('liveVille').value = release.ville || '';
   document.getElementById('certType').value = release.certType || '';
   document.getElementById('certLevel').value = release.certLevel || '';
+  document.getElementById('releaseCountry').value = release.country || 'FR';
   document.getElementById('epTrackCount').value = release.epTrackCount || '';
   document.getElementById('epTrackNames').value = release.epTrackNames || '';
   selectedSw = release.songwriters ? (Array.isArray(release.songwriters) ? [...release.songwriters] : release.songwriters.split(',')) : [];
@@ -524,6 +554,7 @@ submitBtn.addEventListener('click', async () => {
       type, status: releaseStatus, artist, title,
       project, track, lieu, ville, certType, certLevel,
       epTrackCount, epTrackNames,
+      country: ['Single','EP','Album'].includes(type) ? document.getElementById('releaseCountry').value : '',
       songwriters: [...selectedSw], createdAt: editId ? undefined : new Date().toISOString(),
     };
 
