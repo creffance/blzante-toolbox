@@ -197,6 +197,11 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
     </select>
   </div>
 
+  <div class="form-group conditional" id="actuGroup" style="display:none">
+    <label class="form-label">Description de l'actualité</label>
+    <textarea class="form-input" id="actuDesc" rows="3" placeholder="Décrivez l'actualité..." style="resize:vertical;min-height:60px"></textarea>
+  </div>
+
   <div class="form-group conditional" id="certGroup">
     <div class="form-row">
       <div class="form-group" style="margin-bottom:0">
@@ -257,6 +262,15 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
         <label class="form-label">Ville</label>
         <input type="text" class="form-input" id="liveVille" placeholder="Ville" autocomplete="off" />
       </div>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label class="form-label">Lien (Spotify, YouTube, Instagram…)</label>
+    <input type="text" class="form-input" id="releaseLink" placeholder="Coller un lien pour récupérer l'artwork automatiquement" autocomplete="off" />
+    <div id="artworkPreview" style="margin-top:8px;display:none">
+      <img id="artworkImg" style="max-width:120px;max-height:120px;border:1px solid #2a2a2a;display:block" />
+      <button type="button" onclick="clearArtwork()" style="margin-top:4px;background:none;border:1px solid #333;color:#888;font-family:'Syne Mono',monospace;font-size:0.55rem;padding:3px 8px;cursor:pointer">✕ Supprimer l'artwork</button>
     </div>
   </div>
 
@@ -352,6 +366,7 @@ const trackGroup = document.getElementById('trackGroup');
 const liveGroup = document.getElementById('liveGroup');
 const certGroup = document.getElementById('certGroup');
 const countryGroup = document.getElementById('countryGroup');
+const actuGroup = document.getElementById('actuGroup');
 const epTracksGroup = document.getElementById('epTracksGroup');
 const swSearch = document.getElementById('swSearch');
 const swDropdown = document.getElementById('swDropdown');
@@ -380,8 +395,70 @@ function updateConditionals() {
   liveGroup.classList.toggle('visible', t === 'Live');
   certGroup.classList.toggle('visible', t === 'Certification');
   countryGroup.style.display = ['Single','EP','Album'].includes(t) ? '' : 'none';
+  actuGroup.style.display = t === 'Actu' ? '' : 'none';
 }
 typeSelect.addEventListener('change', updateConditionals);
+
+// ─── Artwork extraction from links ───
+let extractedArtwork = '';
+
+function showArtwork(url) {
+  extractedArtwork = url;
+  const img = document.getElementById('artworkImg');
+  const preview = document.getElementById('artworkPreview');
+  img.src = url;
+  img.onerror = () => { preview.style.display = 'none'; extractedArtwork = ''; };
+  preview.style.display = '';
+}
+function clearArtwork() {
+  extractedArtwork = '';
+  document.getElementById('artworkPreview').style.display = 'none';
+  document.getElementById('artworkImg').src = '';
+}
+
+function extractYouTubeId(url) {
+  const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([a-zA-Z0-9_-]{11})/);
+  return m ? m[1] : null;
+}
+
+async function tryExtractArtwork(url) {
+  if (!url) return;
+
+  // YouTube → thumbnail direct
+  const ytId = extractYouTubeId(url);
+  if (ytId) {
+    showArtwork(`https://img.youtube.com/vi/${ytId}/hqdefault.jpg`);
+    return;
+  }
+
+  // Spotify → oembed endpoint
+  if (url.includes('open.spotify.com')) {
+    try {
+      const res = await fetch(`https://open.spotify.com/oembed?url=${encodeURIComponent(url)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.thumbnail_url) { showArtwork(data.thumbnail_url); return; }
+      }
+    } catch(e) { console.warn('Spotify oembed failed:', e); }
+  }
+
+  // Instagram → try oembed (may not work without auth)
+  if (url.includes('instagram.com')) {
+    try {
+      const res = await fetch(`https://api.instagram.com/oembed/?url=${encodeURIComponent(url)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.thumbnail_url) { showArtwork(data.thumbnail_url); return; }
+      }
+    } catch(e) { console.warn('Instagram oembed failed:', e); }
+  }
+}
+
+document.getElementById('releaseLink').addEventListener('input', function() {
+  const url = this.value.trim();
+  if (url.startsWith('http')) tryExtractArtwork(url);
+  else clearArtwork();
+});
 
 // ─── Songwriter picker ───
 swSearch.addEventListener('focus', () => swDropdown.classList.add('open'));
@@ -444,6 +521,9 @@ function enterEditMode(release) {
   document.getElementById('certType').value = release.certType || '';
   document.getElementById('certLevel').value = release.certLevel || '';
   document.getElementById('releaseCountry').value = release.country || 'FR';
+  document.getElementById('actuDesc').value = release.actuDesc || '';
+  document.getElementById('releaseLink').value = release.link || '';
+  if (release.artwork) showArtwork(release.artwork);
   document.getElementById('epTrackCount').value = release.epTrackCount || '';
   document.getElementById('epTrackNames').value = release.epTrackNames || '';
   selectedSw = release.songwriters ? (Array.isArray(release.songwriters) ? [...release.songwriters] : release.songwriters.split(',')) : [];
@@ -481,6 +561,8 @@ function resetForm() {
   liveGroup.classList.remove('visible');
   certGroup.classList.remove('visible');
   epTracksGroup.classList.remove('visible');
+  document.getElementById('releaseLink').value = '';
+  clearArtwork();
   selectedSw = [];
   swOptions.forEach(o => o.classList.remove('selected'));
   renderTags();
@@ -555,6 +637,9 @@ submitBtn.addEventListener('click', async () => {
       project, track, lieu, ville, certType, certLevel,
       epTrackCount, epTrackNames,
       country: ['Single','EP','Album'].includes(type) ? document.getElementById('releaseCountry').value : '',
+      actuDesc: type === 'Actu' ? document.getElementById('actuDesc').value.trim() : '',
+      link: document.getElementById('releaseLink').value.trim(),
+      artwork: extractedArtwork,
       songwriters: [...selectedSw], createdAt: editId ? undefined : new Date().toISOString(),
     };
 

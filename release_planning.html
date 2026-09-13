@@ -42,6 +42,14 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 
 /* Stats */
 .stats { font-size: 0.62rem; color: var(--muted); letter-spacing: 0.1em; margin-bottom: 16px; }
+.dashboard-recap { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1px; background: var(--border); border: 1px solid var(--border); margin-bottom: 24px; }
+.dashboard-recap:empty { display: none; }
+.dash-card { background: var(--bg); padding: 16px; display: flex; flex-direction: column; gap: 4px; }
+.dash-num { font-family: 'Syne', sans-serif; font-size: 1.6rem; font-weight: 800; color: #fff; line-height: 1; }
+.dash-num.accent { color: var(--accent); }
+.dash-num.green { color: #4ade80; }
+.dash-num.red { color: #FF2D3A; }
+.dash-label { font-family: 'Syne Mono', monospace; font-size: 0.52rem; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; line-height: 1.3; }
 
 /* Month groups */
 .month-group { margin-bottom: 24px; }
@@ -68,6 +76,8 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
   text-decoration: none; transition: color 0.15s; text-transform: uppercase;
 }
 .rel-edit:hover { color: var(--text); }
+.rel-flag { font-size: 0.8rem; flex-shrink: 0; }
+.rel-artwork { width: 44px; height: 44px; object-fit: cover; border: 1px solid var(--border); flex-shrink: 0; }
 
 .rel-date { color: #bbb; font-size: 0.7rem; }
 .rel-type {
@@ -131,6 +141,8 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 
   <div class="filters" id="filters">
     <button class="filter-btn active" data-filter="all">Tout</button>
+    <button class="filter-btn" data-filter="Passé">Passé</button>
+    <button class="filter-btn" data-filter="À venir">À venir</button>
     <button class="filter-btn" data-filter="Sorties">Sorties</button>
     <button class="filter-btn" data-filter="Live">Live</button>
     <button class="filter-btn" data-filter="Certification">Certification</button>
@@ -146,6 +158,10 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
   </div>
 
   <div class="stats" id="stats"></div>
+
+  <!-- Dashboard recap 6 derniers mois -->
+  <div id="dashboardRecap" class="dashboard-recap"></div>
+
   <div id="planningContent"></div>
 </div>
 
@@ -207,8 +223,47 @@ function buildSwFilters() {
     sorted.map(sw => `<button class="filter-btn" data-sw="${sw}">${sw}</button>`).join('');
 }
 
+// ─── Dashboard recap (6 derniers mois) ───
+function buildDashboard() {
+  const dash = document.getElementById('dashboardRecap');
+  if (!cachedReleases.length) { dash.innerHTML = ''; return; }
+
+  const now = new Date();
+  const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 6, 1);
+  const cutoff = sixMonthsAgo.toISOString().slice(0, 10);
+
+  const recent = cachedReleases.filter(r => r.dateSortable >= cutoff && r.status !== 'Annulé');
+
+  const sorties = recent.filter(r => ['Single','EP','Album'].includes(r.type));
+  const sortiesFR = sorties.filter(r => !r.country || r.country === 'FR');
+  const sortiesINTL = sorties.filter(r => r.country && r.country !== 'FR');
+  const certsSingle = recent.filter(r => r.type === 'Certification' && r.certType === 'Single');
+  const certsAlbum = recent.filter(r => r.type === 'Certification' && r.certType === 'Album');
+  const synchros = recent.filter(r => r.type === 'Synchro');
+  const lives = recent.filter(r => r.type === 'Live');
+
+  let h = '';
+  h += `<div class="dash-card"><div class="dash-num">${sorties.length}</div><div class="dash-label">Sorties (6 mois)</div></div>`;
+  h += `<div class="dash-card"><div class="dash-num">${sortiesFR.length}</div><div class="dash-label">🇫🇷 France</div></div>`;
+  h += `<div class="dash-card"><div class="dash-num${sortiesINTL.length ? ' green' : ''}">${sortiesINTL.length}</div><div class="dash-label">🌍 International</div></div>`;
+  h += `<div class="dash-card"><div class="dash-num${certsSingle.length ? ' accent' : ''}">${certsSingle.length}</div><div class="dash-label">Certifs Singles</div></div>`;
+  h += `<div class="dash-card"><div class="dash-num${certsAlbum.length ? ' accent' : ''}">${certsAlbum.length}</div><div class="dash-label">Certifs Albums</div></div>`;
+  h += `<div class="dash-card"><div class="dash-num">${synchros.length}</div><div class="dash-label">Synchros</div></div>`;
+  h += `<div class="dash-card"><div class="dash-num">${lives.length}</div><div class="dash-label">Lives</div></div>`;
+  dash.innerHTML = h;
+}
+
+function applyTypeFilter(releases) {
+  const today = new Date().toISOString().slice(0, 10);
+  if (activeFilter === 'all') return releases;
+  if (activeFilter === 'Passé') return releases.filter(r => r.dateSortable <= today);
+  if (activeFilter === 'À venir') return releases.filter(r => r.dateSortable > today);
+  if (activeFilter === 'Sorties') return releases.filter(r => ['Single','EP','Album'].includes(r.type));
+  return releases.filter(r => r.type === activeFilter);
+}
+
 function render() {
-  let filtered = activeFilter === 'all' ? cachedReleases : activeFilter === 'Sorties' ? cachedReleases.filter(r => ['Single','EP','Album'].includes(r.type)) : cachedReleases.filter(r => r.type === activeFilter);
+  let filtered = applyTypeFilter(cachedReleases);
   if (activeSw !== 'all') {
     filtered = filtered.filter(r => {
       if (!r.songwriters) return false;
@@ -259,6 +314,7 @@ function render() {
       const flag = r.country && COUNTRY_FLAGS[r.country] ? COUNTRY_FLAGS[r.country] : '';
 
       html += `<div class="release-item${isToday ? ' today-marker' : ''}${isAnnule ? ' annule' : ''}" data-id="${r.id}" style="${isPast && !isAnnule ? 'opacity:0.5' : ''}">`;
+      if (r.artwork) html += `<img class="rel-artwork" src="${r.artwork}" />`;
       html += `<div class="rel-meta">`;
       html += `<span class="rel-date">${r.date}</span>`;
       html += `<span class="rel-type">${r.type}</span>`;
@@ -307,6 +363,7 @@ document.getElementById('swFilters').addEventListener('click', (e) => {
   document.getElementById('stats').textContent = 'Chargement...';
   await fetchReleases();
   buildSwFilters();
+  buildDashboard();
   render();
 })();
 
@@ -320,7 +377,7 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
 
   try {
     // Get filtered data (same as what's displayed)
-    let filtered = activeFilter === 'all' ? cachedReleases : activeFilter === 'Sorties' ? cachedReleases.filter(r => ['Single','EP','Album'].includes(r.type)) : cachedReleases.filter(r => r.type === activeFilter);
+    let filtered = applyTypeFilter(cachedReleases);
     if (activeSw !== 'all') {
       filtered = filtered.filter(r => {
         if (!r.songwriters) return false;

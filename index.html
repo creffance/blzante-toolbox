@@ -111,6 +111,64 @@ main {
   border: 1px solid var(--border);
 }
 
+/* Main tools: 3 big equal cards */
+.main-grid {
+  grid-template-columns: repeat(3, 1fr);
+}
+.hero-card {
+  padding: 28px 26px;
+  min-height: 160px;
+  justify-content: space-between;
+}
+.hero-card .tool-name {
+  font-size: 1.2rem;
+  line-height: 1.3;
+}
+
+/* Admin tools: 5 compact cards in one row */
+.admin-grid {
+  grid-template-columns: repeat(5, 1fr);
+}
+.admin-grid .tool-card {
+  padding: 14px 16px;
+}
+.admin-grid .tool-name {
+  font-size: 0.78rem;
+}
+
+/* Info links: subtle row at the bottom */
+.infos-row {
+  display: flex;
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  margin-top: 0;
+}
+.info-link {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  background: var(--bg);
+  text-decoration: none;
+  color: var(--muted);
+  font-family: 'Syne Mono', monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  transition: background 0.2s, color 0.2s;
+}
+.info-link:hover { background: #111; color: var(--text); }
+.info-link:hover .info-arrow { color: var(--accent); }
+.info-icon { font-size: 0.9rem; }
+.info-arrow { margin-left: auto; color: var(--border); transition: color 0.2s; font-size: 0.8rem; }
+
+@media (max-width: 900px) {
+  .main-grid { grid-template-columns: 1fr; }
+  .admin-grid { grid-template-columns: repeat(2, 1fr); }
+  .infos-row { flex-direction: column; }
+}
+
 .tool-card {
   background: var(--bg);
   padding: 20px 22px;
@@ -238,7 +296,8 @@ nav { animation: fadeUp 0.4s ease both; }
 @media (max-width: 600px) {
   nav, main, footer { padding-left: 24px; padding-right: 24px; }
   main { padding-top: 48px; }
-  .tools-grid { grid-template-columns: 1fr; }
+  .main-grid, .admin-grid { grid-template-columns: 1fr; }
+  .infos-row { flex-direction: column; }
 }
 </style>
 </head>
@@ -253,81 +312,67 @@ nav { animation: fadeUp 0.4s ease both; }
 
   <main>
     <div class="section-label">Main Tools</div>
-    <div class="tools-grid">
-      <a class="tool-card" href="roster.html">
+    <div class="tools-grid main-grid">
+      <a class="tool-card hero-card" href="roster.html">
         <div class="card-top">
           <span class="tool-arrow">↗</span>
         </div>
         <div class="tool-name">Roster<br><span class="tool-sub">Artists</span></div>
+        <div class="tool-tags"><span class="tag hi">Fiches</span><span class="tag hi">PDF</span><span class="tag hi">Équipe</span></div>
       </a>
 
-      <a class="tool-card" href="release_planning.html">
+      <a class="tool-card hero-card" href="release_planning.html">
         <div class="card-top">
           <span class="tool-arrow">↗</span>
         </div>
         <div class="tool-name">Planning<br><span class="tool-sub">Sorties / Certifs / Synchros / Actus</span></div>
+        <div class="tool-tags"><span class="tag hi">Dashboard</span><span class="tag hi">Export</span></div>
       </a>
 
-      <a class="tool-card" href="ig_generator.html">
+      <a class="tool-card hero-card" href="ig_generator.html">
         <div class="card-top">
           <span class="tool-arrow">↗</span>
         </div>
-        <div class="tool-name">IG Content Generator</div>
-      </a>
-    </div>
-
-    <div class="section-label">Infos</div>
-    <div class="tools-grid">
-      <a class="tool-card" href="infos_facturation.html">
-        <div class="card-top">
-          <span class="tool-arrow">↗</span>
-        </div>
-        <div class="tool-name">Infos Facturation<br>Sociétés</div>
-      </a>
-
-      <a class="tool-card" href="infos_sacem.html">
-        <div class="card-top">
-          <span class="tool-arrow">↗</span>
-        </div>
-        <div class="tool-name">Infos SACEM<br>Songwriters &amp; Éditeurs</div>
+        <div class="tool-name">IG Content<br>Generator<br><span class="tool-sub">Posts · Reels · Stories</span></div>
+        <div class="tool-tags"><span class="tag hi">Sortie</span><span class="tag hi">Certif</span><span class="tag hi">Actu</span><span class="tag hi">Synchro</span></div>
       </a>
     </div>
 
     <div class="section-label">Admin Tools</div>
-    <div class="tools-grid">
+    <div class="tools-grid admin-grid">
       <a class="tool-card" href="notes.html">
-        <div class="card-top">
-          <span class="tool-arrow">↗</span>
-        </div>
-        <div class="tool-name">Notes NDA / NDD<br><span class="tool-sub">Droits d'auteur &amp; débit · Cessions SACEM</span></div>
+        <div class="card-top"><span class="tool-arrow">↗</span></div>
+        <div class="tool-name">Notes NDA / NDD</div>
       </a>
-
       <a class="tool-card" href="sacem_depot.html">
-        <div class="card-top">
-          <span class="tool-arrow">↗</span>
-        </div>
-        <div class="tool-name">SACEM Dépôt<br>to ZIP Filezilla</div>
+        <div class="card-top"><span class="tool-arrow">↗</span></div>
+        <div class="tool-name">SACEM Dépôt</div>
       </a>
-
       <a class="tool-card" href="onid_blzante.html">
-        <div class="card-top">
-          <span class="tool-arrow">↗</span>
-        </div>
-        <div class="tool-name">ONID BLZante<br><span class="tool-sub">Oeuvres Non Identifiées</span></div>
+        <div class="card-top"><span class="tool-arrow">↗</span></div>
+        <div class="tool-name">ONID BLZante</div>
       </a>
-
       <a class="tool-card" href="roster_create.html">
-        <div class="card-top">
-          <span class="tool-arrow">↗</span>
-        </div>
-        <div class="tool-name">Créer une fiche artiste<br><span class="tool-sub">Ajouter un artiste</span></div>
+        <div class="card-top"><span class="tool-arrow">↗</span></div>
+        <div class="tool-name">+ Fiche artiste</div>
       </a>
-
       <a class="tool-card" href="release_create.html">
-        <div class="card-top">
-          <span class="tool-arrow">↗</span>
-        </div>
-        <div class="tool-name">Ajouter au planning<br><span class="tool-sub">Sorties / Certifs / Synchros / Actus</span></div>
+        <div class="card-top"><span class="tool-arrow">↗</span></div>
+        <div class="tool-name">+ Event planning</div>
+      </a>
+    </div>
+
+    <div class="section-label">Infos</div>
+    <div class="infos-row">
+      <a class="info-link" href="infos_facturation.html">
+        <span class="info-icon">📄</span>
+        <span>Infos Facturation Sociétés</span>
+        <span class="info-arrow">→</span>
+      </a>
+      <a class="info-link" href="infos_sacem.html">
+        <span class="info-icon">🎵</span>
+        <span>Infos SACEM · Songwriters &amp; Éditeurs</span>
+        <span class="info-arrow">→</span>
       </a>
     </div>
 

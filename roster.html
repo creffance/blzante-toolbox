@@ -67,6 +67,16 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .card-top { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 8px; }
 .card-photo { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border); flex-shrink: 0; }
 .card-photo-ph { width: 72px; height: 72px; border-radius: 50%; background: #222; border: 2px solid var(--border); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.4rem; color: #555; }
+.recap-block { margin-top: 14px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.08); }
+.recap-grid { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 6px; }
+.recap-stat { display: flex; align-items: baseline; gap: 5px; }
+.recap-num { font-family: 'Syne', sans-serif; font-size: 1.2rem; font-weight: 800; color: #fff; }
+.recap-num.accent { color: var(--accent); }
+.recap-label { font-family: 'Syne Mono', monospace; font-size: 0.56rem; color: var(--muted); letter-spacing: 0.06em; }
+.recap-upcoming { margin-top: 4px; display: flex; flex-direction: column; gap: 3px; }
+.recap-event { font-family: 'Syne Mono', monospace; font-size: 0.6rem; color: #bbb; }
+.recap-event-type { color: var(--accent); font-weight: 700; }
+.recap-event-date { color: var(--muted); }
 .card-name { font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 800; color: #fff; }
 .card-types { font-size: 0.58rem; color: var(--muted); margin-top: 2px; }
 .card-skills { font-size: 0.54rem; color: #666; margin-top: 2px; }
@@ -357,6 +367,79 @@ function rerenderRoster() {
     window._rosterArtists = {};
     allArtists.forEach(a => { window._rosterArtists[a.id] = a; });
 
+    // Fetch planning data for artist recap
+    let planningData = [];
+    try {
+      const planRes = await dbFetch('/releases.json');
+      const planJson = await planRes.json();
+      if (planJson) planningData = Object.values(planJson);
+    } catch(e) { console.warn('Could not load planning data for recap'); }
+
+    // SW_RENAME for matching
+    const SW_RENAME_INV = {};
+    const SW_RENAME = { 'LEANDRE': 'LEANDRE PICK', 'YANNICK SERI': 'LE SERI', 'BRO': 'BRÖ' };
+    Object.entries(SW_RENAME).forEach(([old, nw]) => { SW_RENAME_INV[nw] = old; });
+
+    function buildArtistRecap(artistName) {
+      const now = new Date();
+      const twelveMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 12, 1).toISOString().slice(0,10);
+      const today = now.toISOString().slice(0,10);
+
+      // Match by songwriter name (handle renames)
+      const nameUpper = artistName.toUpperCase();
+      const altName = SW_RENAME_INV[nameUpper] || SW_RENAME[nameUpper] || '';
+
+      const matchesSw = (r) => {
+        const sw = r.songwriters ? (Array.isArray(r.songwriters) ? r.songwriters : [r.songwriters]) : [];
+        return sw.some(s => s.toUpperCase() === nameUpper || s.toUpperCase() === altName);
+      };
+      // Also match by artist name
+      const matchesArtist = (r) => (r.artist || '').toUpperCase() === nameUpper;
+      const matches = (r) => matchesSw(r) || matchesArtist(r);
+
+      const past = planningData.filter(r => r.dateSortable >= twelveMonthsAgo && r.dateSortable <= today && r.status !== 'Annulé' && matches(r));
+      const upcoming = planningData.filter(r => r.dateSortable > today && r.status !== 'Annulé' && matches(r));
+
+      const pastSorties = past.filter(r => ['Single','EP','Album'].includes(r.type));
+      const pastCerts = past.filter(r => r.type === 'Certification');
+      const pastSynchros = past.filter(r => r.type === 'Synchro');
+      const pastLives = past.filter(r => r.type === 'Live');
+
+      // Collect unique placed artists from the roster data
+      const countries = new Set();
+      pastSorties.forEach(r => { if (r.country && r.country !== 'FR') countries.add(r.country); });
+
+      const upcomingSorties = upcoming.filter(r => ['Single','EP','Album'].includes(r.type));
+      const upcomingSynchros = upcoming.filter(r => r.type === 'Synchro');
+      const upcomingLives = upcoming.filter(r => r.type === 'Live');
+
+      if (!past.length && !upcoming.length) return '';
+
+      const FLAGS = {US:'🇺🇸',GB:'🇬🇧',DE:'🇩🇪',ES:'🇪🇸',IT:'🇮🇹',BE:'🇧🇪',CH:'🇨🇭',CA:'🇨🇦',JP:'🇯🇵',KR:'🇰🇷',BR:'🇧🇷',MX:'🇲🇽',CI:'🇨🇮',SN:'🇸🇳',MA:'🇲🇦',DZ:'🇩🇿',CM:'🇨🇲',CD:'🇨🇩',INTL:'🌍'};
+
+      let rh = '<div class="recap-block">';
+      rh += '<div class="card-section-title">📊 Recap (12 mois)</div>';
+      rh += '<div class="recap-grid">';
+      if (pastSorties.length) rh += `<div class="recap-stat"><span class="recap-num">${pastSorties.length}</span><span class="recap-label">Sorties</span></div>`;
+      if (countries.size) rh += `<div class="recap-stat"><span class="recap-num">${countries.size}</span><span class="recap-label">Pays INTL ${[...countries].map(c => FLAGS[c] || c).join(' ')}</span></div>`;
+      if (pastCerts.length) rh += `<div class="recap-stat"><span class="recap-num accent">${pastCerts.length}</span><span class="recap-label">Certifications</span></div>`;
+      if (pastSynchros.length) rh += `<div class="recap-stat"><span class="recap-num">${pastSynchros.length}</span><span class="recap-label">Synchros</span></div>`;
+      if (pastLives.length) rh += `<div class="recap-stat"><span class="recap-num">${pastLives.length}</span><span class="recap-label">Lives</span></div>`;
+      rh += '</div>';
+
+      if (upcoming.length) {
+        rh += '<div class="card-section-title" style="margin-top:8px">📅 À venir</div>';
+        rh += '<div class="recap-upcoming">';
+        upcoming.sort((a,b) => (a.dateSortable||'').localeCompare(b.dateSortable||'')).forEach(r => {
+          const flag = r.country && FLAGS[r.country] ? FLAGS[r.country] + ' ' : '';
+          rh += `<div class="recap-event">${flag}<span class="recap-event-type">${r.type}</span> ${r.artist} — ${r.title} <span class="recap-event-date">${r.date}</span></div>`;
+        });
+        rh += '</div>';
+      }
+      rh += '</div>';
+      return rh;
+    }
+
     function getBgSrc(a) {
       const bgs = a.bgImages ? (Array.isArray(a.bgImages) ? a.bgImages : Object.values(a.bgImages)) : [];
       const primaryBg = bgs.find(i => i.primary) || bgs[0];
@@ -501,6 +584,9 @@ function rerenderRoster() {
         displaySpecials.forEach(s => { if (s) h += `<div class="special-item">⭐ ${s}</div>`; });
         h += `</div>`;
       }
+
+      // Planning recap
+      h += buildArtistRecap(a.name);
 
       h += `</div></div></div></div>`;
       return h;
