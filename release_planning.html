@@ -586,13 +586,23 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
     // Header
     h += '<div style="display:flex;align-items:center;gap:14px;margin-bottom:6px">';
     h += `<img src="${NAV_LOGO}" style="height:34px;width:auto" crossorigin="anonymous" />`;
-    h += '<div style="font-size:1.4rem;font-weight:800;letter-spacing:0.04em;color:#fff">Planning BLZante</div>';
+    const pdfTitle = activeSw !== 'all' ? `Sorties ${activeSw}` : 'Planning BLZante';
+    h += `<div style="font-size:1.4rem;font-weight:800;letter-spacing:0.04em;color:#fff">${pdfTitle}</div>`;
     h += '</div>';
+
+    // Period info
+    let periodInfo = '';
+    if (dateFrom || dateTo) {
+      periodInfo = (dateFrom ? dateFrom.split('-').reverse().join('/') : '...') + ' → ' + (dateTo ? dateTo.split('-').reverse().join('/') : '...');
+    } else if (dashPeriod === 6) periodInfo = '6 derniers mois';
+    else if (dashPeriod === 12) periodInfo = '12 derniers mois';
+    else if (dashPeriod === 'all') periodInfo = 'All Time';
+    else if (dashPeriod === 'upcoming') periodInfo = 'À venir';
 
     // Subtitle with filter info
     let subtitle = '';
     if (activeFilter !== 'all') subtitle += activeFilter;
-    if (activeSw !== 'all') subtitle += (subtitle ? ' · ' : '') + activeSw;
+    if (periodInfo) subtitle += (subtitle ? ' · ' : '') + periodInfo;
     if (!subtitle) subtitle = 'Toutes les sorties';
     const today = new Date();
     const dateStr = today.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
