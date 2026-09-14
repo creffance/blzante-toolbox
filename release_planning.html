@@ -553,7 +553,32 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
   try {
     // Get filtered data (same as what's displayed)
     let filtered = applyTypeFilter(cachedReleases);
+    if (activeSw !== 'all') {
+      filtered = filtered.filter(r => {
+        if (!r.songwriters) return false;
+        const sw = Array.isArray(r.songwriters) ? r.songwriters : [r.songwriters];
+        return sw.includes(activeSw);
+      });
+    }
+    if (!filtered.length) { alert('Aucun event à exporter'); btn.textContent = '⚡ Export PDF'; btn.disabled = false; return; }
 
+    // Group by month
+    const groups = {};
+    filtered.forEach(r => {
+      const parts = (r.dateSortable || '').split('-');
+      const key = parts[0] + '-' + parts[1];
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(r);
+    });
+    const sortedKeys = Object.keys(groups).sort().reverse();
+
+    // Build PDF HTML
+    const render = document.getElementById('pdfRender');
+    render.style.width = '794px';
+    render.style.minHeight = '1123px';
+    render.style.height = 'auto';
+
+    let h = '';
     // Background grid
     h += '<div style="position:absolute;inset:0;background-color:#0a0a0a;background-image:linear-gradient(rgba(38,38,38,0.4) 1px,transparent 1px),linear-gradient(90deg,rgba(38,38,38,0.4) 1px,transparent 1px);background-size:60px 60px;z-index:0"></div>';
     h += '<div style="position:relative;z-index:1;padding:36px 40px 30px;font-family:Syne,Arial,sans-serif;color:#e8e8e8">';

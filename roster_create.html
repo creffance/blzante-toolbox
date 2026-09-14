@@ -519,6 +519,7 @@ function gatherData() {
   return {
     name, types: selectedTypes, skills: selectedSkills, bio, bioEn, images, bgImages,
     placements, majors, discography, certs, specialInfo, specialInfoEn,
+    showDisco: document.getElementById('showDisco').checked,
     instagram: document.getElementById('linkInsta').value.trim(),
     tiktok: document.getElementById('linkTiktok').value.trim(),
     spotify: document.getElementById('linkSpotify').value.trim(),
@@ -563,8 +564,37 @@ async function loadForEdit(id) {
     if (!bgImages.length && d.bg) bgImages.push({src: d.bg, primary: true});
     renderBgImages();
     toggleDiscoSection();
+    // Load showDisco state
+    if (d.showDisco !== undefined) {
+      document.getElementById('showDisco').checked = d.showDisco;
+      toggleDiscoSection();
+    }
     const pl = Array.isArray(d.placements) ? d.placements : d.placements ? Object.values(d.placements) : [];
-    pl.forEach(p => addPlacement(typeof p === 'string' ? p : p.name || ''));
+    // Also import artistes placés from planning
+    const existingNames = new Set(pl.map(p => typeof p === 'string' ? p : p.name || '').filter(Boolean));
+    try {
+      const planRes = await dbFetch('/releases.json');
+      const planJson = await planRes.json();
+      if (planJson) {
+        const SW_R = { 'LEANDRE': 'LEANDRE PICK', 'YANNICK SERI': 'LE SERI', 'BRO': 'BRÖ' };
+        const nameUp = (d.name || '').toUpperCase();
+        const SW_INV = {}; Object.entries(SW_R).forEach(([o,n]) => { SW_INV[n] = o; });
+        const altN = SW_INV[nameUp] || '';
+        Object.values(planJson).forEach(r => {
+          if (!['Single','EP','Album'].includes(r.type) || r.status === 'Annulé') return;
+          const sw = r.songwriters ? (Array.isArray(r.songwriters) ? r.songwriters : [r.songwriters]) : [];
+          const swMapped = sw.map(s => SW_R[s] || s);
+          if (!swMapped.some(s => s.toUpperCase() === nameUp || (altN && s.toUpperCase() === altN))) return;
+          if (r.artist && !existingNames.has(r.artist)) {
+            existingNames.add(r.artist);
+            pl.push(r.artist);
+          }
+        });
+      }
+    } catch(e) { console.warn('Could not merge planning artistes'); }
+    // Sort alphabetically
+    const sortedPl = [...new Set(pl.map(p => typeof p === 'string' ? p : p.name || '').filter(Boolean))].sort((a,b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+    sortedPl.forEach(p => addPlacement(p));
     const mj = Array.isArray(d.majors) ? d.majors : d.majors ? Object.values(d.majors) : [];
     mj.forEach(m => addMajor(m.artist, m.title, m.artwork, m.link));
     const dc = Array.isArray(d.discography) ? d.discography : d.discography ? Object.values(d.discography) : [];

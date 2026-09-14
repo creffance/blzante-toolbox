@@ -486,7 +486,7 @@ function rerenderRoster() {
       if (sorties.length < 10) {
         sorties = allSorties.filter(r => r.dateSortable >= twelveAgo);
       }
-      sorties = sorties.slice(0, 10);
+      sorties = sorties.slice(0, 9);
 
       if (!sorties.length) return '';
 
@@ -591,7 +591,7 @@ function rerenderRoster() {
       // Recent placements from planning
       h += buildRecentPlacements(a.name);
 
-      if (discography.length) {
+      if (discography.length && a.showDisco !== false) {
         const sortedDisco = [...discography].sort((a, b) => {
           const [am, ay] = (a.date || '00/0000').split('/'); const [bm, by] = (b.date || '00/0000').split('/');
           return (by + bm).localeCompare(ay + am);
@@ -610,7 +610,7 @@ function rerenderRoster() {
 
       if (majors.length) {
         h += `<div class="card-section-title">${t('placements_majeurs')}</div><div class="card-majors">`;
-        majors.forEach(m => {
+        majors.slice(0, 9).forEach(m => {
           h += `<div class="major-block">`;
           if (m.artwork) h += `<img class="major-art" src="${m.artwork}" />`;
           h += `<div class="major-info"><strong>${m.artist || ''}</strong><br>${m.title || ''}`;
@@ -619,8 +619,22 @@ function rerenderRoster() {
         });
 
 
-      if (placements.length) {
-        const sorted = [...placements].map(p => typeof p === 'string' ? p : p.name || '').filter(Boolean).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+      // Merge artistes placés: manual + from planning
+      const manualPlacements = placements.map(p => typeof p === 'string' ? p : p.name || '').filter(Boolean);
+      const planningPlacements = new Set(manualPlacements);
+      if (planningData.length) {
+        const _nu3 = a.name.toUpperCase();
+        const _alt3 = SW_RENAME_INV[_nu3] || '';
+        const _mSw3 = (r) => {
+          const sw = r.songwriters ? (Array.isArray(r.songwriters) ? r.songwriters : [r.songwriters]) : [];
+          return sw.some(s => s.toUpperCase() === _nu3 || (_alt3 && s.toUpperCase() === _alt3));
+        };
+        planningData.filter(r => ['Single','EP','Album'].includes(r.type) && r.status !== 'Annulé' && _mSw3(r))
+          .forEach(r => { if (r.artist) planningPlacements.add(r.artist); });
+      }
+      const allPlacements = [...planningPlacements];
+      if (allPlacements.length) {
+        const sorted = allPlacements.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
         h += `<div class="card-section-title">${t('artistes_places')}</div><div class="card-placements">`;
         sorted.forEach(n => { h += `<span class="pl-tag">${n}</span>`; });
         h += `</div>`;
@@ -718,7 +732,13 @@ function rerenderRoster() {
     content.addEventListener('click', e => {
       const header = e.target.closest('.entry-header');
       if (header && !e.target.closest('.entry-btn')) {
-        header.closest('.roster-entry').classList.toggle('open');
+        const entry = header.closest('.roster-entry');
+        const wasOpen = entry.classList.contains('open');
+        // Close all others
+        content.querySelectorAll('.roster-entry.open').forEach(el => {
+          if (el !== entry) el.classList.remove('open');
+        });
+        entry.classList.toggle('open', !wasOpen);
       }
       const pdfBtn = e.target.closest('.entry-btn.pdf');
       if (pdfBtn) {
@@ -1023,7 +1043,7 @@ function buildArtistCardHTML(a, pdfLang, opts) {
         .filter(r => ['Single','EP','Album'].includes(r.type) && r.status !== 'Annulé' && _matchSw(r) && r.dateSortable >= _twelveAgo2 && r.dateSortable <= _today2)
         .sort((a,b) => (b.dateSortable||'').localeCompare(a.dateSortable||''));
     }
-    _placements = _placements.slice(0, 10);
+    _placements = _placements.slice(0, 9);
     if (_placements.length) {
       h += `<div class="pdf-section-label">${pdfLang==='en'?'RECENT PLACEMENTS':'DERNIERS PLACEMENTS'}</div>`;
       h += '<div class="pdf-rp">';
