@@ -78,7 +78,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .ad-label { font-family: 'Syne Mono', monospace; font-size: 0.5rem; color: var(--muted); letter-spacing: 0.06em; }
 
 /* Recent placements - same style as placements majeurs */
-.recent-placements { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; margin-bottom: 8px; max-height: 112px; overflow: hidden; }
+.recent-placements { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; margin-bottom: 8px; }
 .rp-item { display: flex; gap: 6px; align-items: center; border: 1px solid var(--border); padding: 4px 8px; width: calc(33.33% - 4px); min-width: 180px; box-sizing: border-box; }
 .rp-artwork { width: 36px; height: 36px; object-fit: cover; flex-shrink: 0; }
 .rp-info { font-size: 0.58rem; color: #aaa; line-height: 1.3; min-width: 0; overflow: hidden; }
@@ -127,7 +127,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .card-placements { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 8px; }
 .pl-tag { font-size: 0.58rem; color: var(--text); padding: 3px 8px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.04); }
 
-.card-majors { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; max-height: 112px; overflow: hidden; }
+.card-majors { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
 .major-block { display: flex; gap: 6px; align-items: center; border: 1px solid var(--border); padding: 4px 8px; width: calc(33.33% - 4px); min-width: 180px; box-sizing: border-box; }
 .major-art { width: 36px; height: 36px; object-fit: cover; }
 .major-info { font-size: 0.58rem; color: #aaa; line-height: 1.3; }
@@ -496,7 +496,7 @@ function rerenderRoster() {
       let h = '<div class="card-section-title">Derniers placements</div>';
       h += '<div class="recent-placements">';
       sorties.forEach(r => {
-        const flag = r.country ? r.country.split(',').map(c => c === 'INTL' ? '🌍' : '<img src="https://flagcdn.com/20x15/' + c.toLowerCase() + '.png" style="vertical-align:middle" />').join(' ') + ' ' : '';
+        const flag = r.country ? r.country.split(',').map(c => c === 'INTL' ? '🌍' : '<img src="https://flagcdn.com/16x12/' + c.toLowerCase() + '.png" style="vertical-align:middle" />').join(' ') + ' ' : '';
         h += '<div class="rp-item">';
         if (r.artwork) h += `<img class="rp-artwork" src="${r.artwork}" />`;
         h += '<div class="rp-info">';
@@ -602,16 +602,9 @@ function rerenderRoster() {
           if (d.artwork) h += `<img class="major-art" src="${d.artwork}" />`;
           h += `<div class="major-info"><strong>${d.artist || ''}</strong><br>${d.title || ''}`;
           if (d.date) h += `<br><span style="color:#666;font-size:0.52rem">${d.date}</span>`;
-          if (d.link) h += `<br><a class="listen-link" href="${d.link}" target="_blank">▶ ${t('ecouter')}</a>`;
+          if (d.link) h += `<br><a class="listen-link" target="_blank" href="${d.link}" target="_blank">▶ ${t('ecouter')}</a>`;
           h += `</div></div>`;
         });
-        h += `</div>`;
-      }
-
-      if (placements.length) {
-        const sorted = [...placements].map(p => typeof p === 'string' ? p : p.name || '').filter(Boolean).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
-        h += `<div class="card-section-title">${t('artistes_places')}</div><div class="card-placements">`;
-        sorted.forEach(n => { h += `<span class="pl-tag">${n}</span>`; });
         h += `</div>`;
       }
 
@@ -621,9 +614,18 @@ function rerenderRoster() {
           h += `<div class="major-block">`;
           if (m.artwork) h += `<img class="major-art" src="${m.artwork}" />`;
           h += `<div class="major-info"><strong>${m.artist || ''}</strong><br>${m.title || ''}`;
-          if (m.link) h += `<br><a class="listen-link" href="${m.link}" target="_blank">▶ ${t('ecouter')}</a>`;
+          if (m.link) h += `<br><a class="listen-link" target="_blank" href="${m.link}" target="_blank">▶ ${t('ecouter')}</a>`;
           h += `</div></div>`;
         });
+
+
+      if (placements.length) {
+        const sorted = [...placements].map(p => typeof p === 'string' ? p : p.name || '').filter(Boolean).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+        h += `<div class="card-section-title">${t('artistes_places')}</div><div class="card-placements">`;
+        sorted.forEach(n => { h += `<span class="pl-tag">${n}</span>`; });
+        h += `</div>`;
+      }
+
         h += `</div>`;
       }
 
@@ -653,7 +655,7 @@ function rerenderRoster() {
       if (allCerts.length) {
         const CERT_EMOJI = { 'Or': '🥇', 'Platine': '🥈', 'Double platine': '🥈🥈', 'Triple platine': '🥈🥈🥈', 'Diamant': '💎' };
         const CERT_ORDER = { 'Diamant': 0, 'Triple platine': 1, 'Double platine': 2, 'Platine': 3, 'Or': 4 };
-        const sortedCerts = [...allCerts].sort((a, b) => (CERT_ORDER[a.level] ?? 9) - (CERT_ORDER[b.level] ?? 9));
+        const sortedCerts = [...allCerts].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
         const singles = sortedCerts.filter(c => c.type === 'Single');
         const albums = sortedCerts.filter(c => c.type === 'Album');
         const other = sortedCerts.filter(c => c.type !== 'Single' && c.type !== 'Album');
@@ -1026,7 +1028,7 @@ function buildArtistCardHTML(a, pdfLang, opts) {
       h += `<div class="pdf-section-label">${pdfLang==='en'?'RECENT PLACEMENTS':'DERNIERS PLACEMENTS'}</div>`;
       h += '<div class="pdf-rp">';
       _placements.forEach(r => {
-        const fl = r.country ? r.country.split(',').map(c => c === 'INTL' ? '🌍' : '<img src="https://flagcdn.com/16x12/' + c.toLowerCase() + '.png" crossorigin="anonymous" style="vertical-align:middle" />').join(' ') + ' ' : '';
+        const fl = r.country ? r.country.split(',').map(c => c === 'INTL' ? '🌍' : '<img src="https://flagcdn.com/12x9/' + c.toLowerCase() + '.png" crossorigin="anonymous" style="vertical-align:middle" />').join(' ') + ' ' : '';
         h += '<div class="pdf-rp-item">';
         if (r.artwork) h += `<img class="pdf-rp-art" src="${r.artwork}" crossorigin="anonymous" />`;
         h += '<div class="pdf-rp-info">';
@@ -1091,7 +1093,7 @@ function buildArtistCardHTML(a, pdfLang, opts) {
   }
   if (allPdfCerts.length) {
     const CERT_ORDER = { 'Diamant': 0, 'Triple platine': 1, 'Double platine': 2, 'Platine': 3, 'Or': 4 };
-    const sortedCerts = [...allPdfCerts].sort((x, y) => (CERT_ORDER[x.level] ?? 9) - (CERT_ORDER[y.level] ?? 9));
+    const sortedCerts = [...allPdfCerts].sort((x, y) => (y.date || '').localeCompare(x.date || ''));
     const singles = sortedCerts.filter(c => c.type === 'Single');
     const albums = sortedCerts.filter(c => c.type === 'Album');
     const other = sortedCerts.filter(c => c.type !== 'Single' && c.type !== 'Album');

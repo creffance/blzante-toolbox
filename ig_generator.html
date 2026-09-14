@@ -1504,8 +1504,12 @@ nav {
 
         <div class="form-group" id="artworkFormGroup">
           <label class="form-label">Artwork de la sortie</label>
+          <div style="display:flex;gap:6px;margin-bottom:6px">
+            <input type="text" class="form-input" id="artLinkInput" placeholder="Coller un lien Spotify / YouTube pour extraire l'artwork" style="flex:1;font-size:0.68rem" />
+            <button type="button" class="form-btn" id="artLinkBtn" style="font-size:0.65rem;padding:4px 10px;background:#1a1a1a;border:1px solid var(--border-hi);color:var(--accent);cursor:pointer;white-space:nowrap">Extraire</button>
+          </div>
           <label class="file-upload" id="artUploadLabel">
-            <span id="artUploadText">🎨 &nbsp;Uploader la cover (format carré)</span>
+            <span id="artUploadText">🎨 &nbsp;Ou uploader la cover (format carré)</span>
             <input type="file" id="artUpload" accept="image/*" />
           </label>
           <div class="media-controls" id="artControls">
@@ -2042,6 +2046,61 @@ document.getElementById('bgUpload').addEventListener('change', async (e) => {
   previewFrame.classList.add('has-bg');
   applyStyleVars(previewFrame);
   updateExportButtonLabel();
+});
+
+// ─── Artwork extraction from link ─────────────────────────────────
+function igExtractYouTubeId(url) {
+  const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/);
+  return m ? m[1] : null;
+}
+async function igExtractArtwork(url) {
+  const ytId = igExtractYouTubeId(url);
+  if (ytId) {
+    for (const size of ['maxresdefault', 'sddefault', 'hqdefault']) {
+      const thumbUrl = `https://img.youtube.com/vi/${ytId}/${size}.jpg`;
+      try {
+        const img = new Image();
+        const loaded = await new Promise(r => { img.onload = () => r(img); img.onerror = () => r(null); img.src = thumbUrl; });
+        if (loaded && loaded.naturalWidth > 200) return thumbUrl;
+      } catch(e) {}
+    }
+    return `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
+  }
+  if (url.includes('open.spotify.com')) {
+    try {
+      const res = await fetch(`https://open.spotify.com/oembed?url=${encodeURIComponent(url)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.thumbnail_url) return data.thumbnail_url.replace('ab67616d00001e02', 'ab67616d0000b273');
+      }
+    } catch(e) {}
+  }
+  return null;
+}
+document.getElementById('artLinkBtn').addEventListener('click', async () => {
+  const url = document.getElementById('artLinkInput').value.trim();
+  if (!url) return;
+  document.getElementById('artLinkBtn').textContent = '⏳';
+  const artUrl = await igExtractArtwork(url);
+  document.getElementById('artLinkBtn').textContent = 'Extraire';
+  if (artUrl) {
+    S.artworkSrc = artUrl;
+    S.artX = 0; S.artY = 0; S.artZoom = 1;
+    const img = document.getElementById('pvArt');
+    img.src = artUrl;
+    img.style.display = 'block';
+    img.onload = () => { if (S.type === 'synchro') requestAnimationFrame(repositionSynchroBottom); };
+    document.getElementById('artPlaceholder').style.display = 'none';
+    document.getElementById('artUploadLabel').classList.add('has-file');
+    document.getElementById('artUploadText').textContent = '✓ Artwork extrait';
+    document.getElementById('artControls').classList.add('visible');
+    document.getElementById('artZoom').value = 1;
+    document.getElementById('artZoomVal').textContent = '100%';
+    previewFrame.classList.add('has-art');
+    applyStyleVars(previewFrame);
+  } else {
+    alert('Impossible d\'extraire l\'artwork depuis ce lien');
+  }
 });
 
 document.getElementById('artUpload').addEventListener('change', async (e) => {

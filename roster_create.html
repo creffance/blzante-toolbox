@@ -162,6 +162,12 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
     </div>
   </div>
 
+  <div class="form-group" style="margin-top:12px">
+    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-family:'Syne Mono',monospace;font-size:0.7rem;color:#888">
+      <input type="checkbox" id="showDisco" /> Afficher la discographie
+    </label>
+  </div>
+
   <div class="form-section" id="discoSection" style="display:none">Discographie artiste</div>
   <div class="dynamic-list" id="discoList" style="display:none"></div>
   <button class="add-btn-dyn" id="addDisco" style="display:none">+ Ajouter une sortie</button>
@@ -238,11 +244,12 @@ document.getElementById('skillOptions').addEventListener('click', e => {
 });
 
 function toggleDiscoSection() {
-  const show = selectedTypes.includes('Artiste Interprète');
+  const show = document.getElementById('showDisco').checked;
   document.getElementById('discoSection').style.display = show ? '' : 'none';
   document.getElementById('discoList').style.display = show ? '' : 'none';
   document.getElementById('addDisco').style.display = show ? '' : 'none';
 }
+document.getElementById('showDisco').addEventListener('change', toggleDiscoSection);
 
 // ─── Generic gallery handler ───
 function makeGallery(arr, galId, addBtnId, fileInputId, urlInputId) {
@@ -304,12 +311,64 @@ document.getElementById('addPlacement').addEventListener('click', () => addPlace
 
 // ─── Major placements ───
 let majorCount = 0;
+// ─── Artwork extraction from links ───
+function extractYouTubeId(url) {
+  const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/);
+  return m ? m[1] : null;
+}
+async function tryExtractArtworkForDiv(url, div) {
+  if (!url) return;
+  const ytId = extractYouTubeId(url);
+  if (ytId) {
+    const sizes = ['maxresdefault', 'sddefault', 'hqdefault'];
+    for (const size of sizes) {
+      const thumbUrl = `https://img.youtube.com/vi/${ytId}/${size}.jpg`;
+      try {
+        const img = new Image();
+        const loaded = await new Promise(resolve => {
+          img.onload = () => resolve(img);
+          img.onerror = () => resolve(null);
+          img.src = thumbUrl;
+        });
+        if (loaded && loaded.naturalWidth > 200) {
+          setArtworkOnDiv(div, thumbUrl);
+          return;
+        }
+      } catch(e) {}
+    }
+    setArtworkOnDiv(div, `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`);
+    return;
+  }
+  if (url.includes('open.spotify.com')) {
+    try {
+      const res = await fetch(`https://open.spotify.com/oembed?url=${encodeURIComponent(url)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.thumbnail_url) {
+          setArtworkOnDiv(div, data.thumbnail_url.replace('ab67616d00001e02', 'ab67616d0000b273'));
+          return;
+        }
+      }
+    } catch(e) {}
+  }
+}
+function setArtworkOnDiv(div, src) {
+  let img = div.querySelector('[data-f=artworkSrc]');
+  if (!img) {
+    img = document.createElement('img');
+    img.className = div.classList.contains('major-item') ? 'major-artwork' : div.classList.contains('cert-item') ? 'cert-artwork' : 'major-artwork';
+    img.dataset.f = 'artworkSrc';
+    div.insertBefore(img, div.querySelector('.remove-btn'));
+  }
+  img.src = src;
+}
+
 function addMajor(artist, title, artwork, link) {
   majorCount++;
   const div = document.createElement('div'); div.className = 'major-item'; div.dataset.mid = majorCount;
   div.innerHTML = `<input type="text" class="form-input" placeholder="Artiste" value="${artist||''}" data-f="artist" />` +
     `<input type="text" class="form-input" placeholder="Projet" value="${title||''}" data-f="title" />` +
-    `<input type="text" class="form-input" placeholder="Lien écoute (optionnel)" value="${link||''}" data-f="link" style="font-size:0.68rem" />` +
+    `<input type="text" class="form-input" placeholder="Lien écoute / artwork" value="${link||''}" data-f="link" style="font-size:0.68rem" />` +
     `<input type="file" accept="image/*" style="display:none" data-f="file" />` +
     `<button type="button" class="major-upload" data-f="upload">img</button>` +
     `<button class="remove-btn" onclick="this.parentElement.remove()">×</button>`;
@@ -328,6 +387,12 @@ function addMajor(artist, title, artwork, link) {
     ev.target.value = '';
   });
   div.querySelector('[data-f=upload]').addEventListener('click', e => { e.preventDefault(); fileInput.click(); });
+  // Auto-extract artwork from link
+  const linkInput = div.querySelector('[data-f=link]');
+  linkInput.addEventListener('blur', () => {
+    if (linkInput.value && !div.querySelector('[data-f=artworkSrc]')) tryExtractArtworkForDiv(linkInput.value, div);
+  });
+  if (link && !artwork) tryExtractArtworkForDiv(link, div);
   document.getElementById('majorList').appendChild(div);
 }
 document.getElementById('addMajor').addEventListener('click', () => addMajor());

@@ -128,9 +128,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .rel-status.annule { color: #ff6b6b; border: 1px solid #4a1a1a; }
 .rel-flag { font-size: 0.65rem; flex-shrink: 0; white-space: nowrap; color: #999; }
 .rel-flag img { vertical-align: middle; margin-right: 2px; }
-@media (max-width: 560px) {
-  .rel-flag img { display: none; }
-}
+
 
 .rel-info { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 .rel-artist { color: #fff; font-weight: 700; font-size: 0.74rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -482,11 +480,9 @@ function render() {
       const countryCodes = r.country ? r.country.split(',').filter(Boolean) : [];
       const flagParts = countryCodes.map(c => {
         const code = c === 'INTL' ? '' : c.toLowerCase();
-        const n = COUNTRY_NAMES[c] || c;
-        const img = code ? '<img src="https://flagcdn.com/20x15/' + code + '.png" style="vertical-align:middle;margin-right:2px" />' : '🌍';
-        return img + n;
+        return code ? '<img src="https://flagcdn.com/20x15/' + code + '.png" style="vertical-align:middle" />' : '🌍';
       });
-      const flagDisplay = flagParts.join(' · ');
+      const flagDisplay = flagParts.join(' ');
 
       html += `<div class="release-item${isToday ? ' today-marker' : ''}${isAnnule ? ' annule' : ''}${r.artwork ? ' has-art' : ''}" data-id="${r.id}" style="${isPast && !isAnnule ? 'opacity:0.5' : ''}">`;
       if (r.artwork) html += `<img class="rel-artwork" src="${r.artwork}" />`;
