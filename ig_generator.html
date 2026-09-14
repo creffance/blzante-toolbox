@@ -1290,6 +1290,17 @@ nav {
       <div id="formSortie">
         <div class="section-label">Informations</div>
 
+        <!-- Import from planning -->
+        <div class="form-group">
+          <label class="form-label">Importer un event du planning</label>
+          <div style="display:flex;gap:6px">
+            <select class="form-input" id="igImportEvent" style="flex:1;font-size:0.68rem">
+              <option value="">— Sélectionner un event —</option>
+            </select>
+            <button type="button" id="igImportBtn" style="font-size:0.65rem;padding:4px 10px;background:#1a1a1a;border:1px solid var(--border-hi);color:var(--accent);cursor:pointer;white-space:nowrap">Importer</button>
+          </div>
+        </div>
+
         <div class="form-group">
           <label class="form-label">Nom de l'artiste</label>
           <input type="text" class="form-input" id="f_artist" placeholder="NOM ARTISTE" autocomplete="off" />
@@ -2077,6 +2088,53 @@ async function igExtractArtwork(url) {
   }
   return null;
 }
+// ─── Import from planning ─────────────────────────────────
+(async function loadPlanningForIG() {
+  try {
+    const tok = window._fbToken || '';
+    const res = await fetch('https://blzante-toolbox-default-rtdb.europe-west1.firebasedatabase.app/releases.json?auth=' + tok);
+    const data = await res.json();
+    if (!data) return;
+    const events = Object.entries(data).sort((a,b) => (b[1].dateSortable||'').localeCompare(a[1].dateSortable||''));
+    const sel = document.getElementById('igImportEvent');
+    events.forEach(([id, r]) => {
+      const opt = document.createElement('option');
+      opt.value = id;
+      opt.textContent = `${r.date||''} — ${r.type||''} — ${r.artist||''} — ${r.title||''}`;
+      opt.dataset.json = JSON.stringify(r);
+      sel.appendChild(opt);
+    });
+  } catch(e) { console.warn('Could not load planning for IG'); }
+})();
+
+document.getElementById('igImportBtn').addEventListener('click', () => {
+  const sel = document.getElementById('igImportEvent');
+  const opt = sel.options[sel.selectedIndex];
+  if (!opt || !opt.dataset.json) return;
+  const r = JSON.parse(opt.dataset.json);
+  // Fill artist
+  const ai = document.getElementById('f_artist');
+  if (ai && r.artist) { ai.value = r.artist; ai.dispatchEvent(new Event('input')); }
+  // Fill title
+  const ti = document.getElementById('f_title');
+  if (ti && r.title) { ti.value = r.title; ti.dispatchEvent(new Event('input')); }
+  // Fill artwork
+  if (r.artwork) {
+    S.artworkSrc = r.artwork; S.artX = 0; S.artY = 0; S.artZoom = 1;
+    const img = document.getElementById('pvArt');
+    if (img) { img.src = r.artwork; img.style.display = 'block'; }
+    const ph = document.getElementById('artPlaceholder'); if (ph) ph.style.display = 'none';
+    const lbl = document.getElementById('artUploadLabel'); if (lbl) lbl.classList.add('has-file');
+    const txt = document.getElementById('artUploadText'); if (txt) txt.textContent = '✓ Artwork importé';
+    const ctrl = document.getElementById('artControls'); if (ctrl) ctrl.classList.add('visible');
+    previewFrame.classList.add('has-art');
+    applyStyleVars(previewFrame);
+  } else if (r.link) {
+    document.getElementById('artLinkInput').value = r.link;
+    document.getElementById('artLinkBtn').click();
+  }
+});
+
 document.getElementById('artLinkBtn').addEventListener('click', async () => {
   const url = document.getElementById('artLinkInput').value.trim();
   if (!url) return;

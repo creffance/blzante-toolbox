@@ -60,7 +60,10 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .add-btn-dyn:hover { border-color: #555; color: var(--text); }
 
 /* Major placement row */
-.major-item { display: grid; grid-template-columns: 1fr 1fr auto auto; gap: 6px; align-items: center; }
+.major-item { display: grid; grid-template-columns: auto 1fr 1fr auto auto; gap: 6px; align-items: center; }
+.major-item .drag-handle { cursor: grab; color: #555; font-size: 1rem; user-select: none; }
+.major-item .drag-handle:hover { color: #aaa; }
+.major-item.dragging { opacity: 0.3; }
 .major-item .form-input { padding: 10px 12px; font-size: 0.78rem; }
 .major-artwork { width: 40px; height: 40px; object-fit: cover; border: 1px solid var(--border); }
 .major-upload { font-family: 'Syne Mono', monospace; font-size: 0.58rem; padding: 6px 8px; background: var(--surface); border: 1px solid var(--border); color: var(--muted); cursor: pointer; white-space: nowrap; }
@@ -297,10 +300,10 @@ const renderBgImages = makeGallery(bgImages, 'bgGallery', 'bgAddBtn', 'bgFileInp
 
 // ─── Placements (simple artist names) ───
 const deletedPlacements = new Set();
-function addPlacement(val, fromPlanning) {
+function addPlacement(val, fromPlanning, country) {
   const div = document.createElement('div'); div.className = 'dynamic-item';
   if (fromPlanning) div.dataset.fromPlanning = '1';
-  div.innerHTML = `<input type="text" class="form-input" placeholder="Nom de l'artiste" value="${val||''}" /><button class="remove-btn" title="Supprimer">×</button>`;
+  div.innerHTML = `<input type="text" class="form-input" placeholder="Nom de l'artiste" value="${val||''}" style="flex:1" /><input type="text" class="form-input" placeholder="Pays" value="${country||'FR'}" data-f="country" style="max-width:60px;font-size:0.65rem" /><button class="remove-btn" title="Supprimer">×</button>`;
   div.querySelector('.remove-btn').addEventListener('click', () => {
     const name = div.querySelector('input').value.trim();
     if (name && div.dataset.fromPlanning) deletedPlacements.add(name);
@@ -373,7 +376,8 @@ function setArtworkOnDiv(div, src) {
 function addMajor(artist, title, artwork, link, country) {
   majorCount++;
   const div = document.createElement('div'); div.className = 'major-item'; div.dataset.mid = majorCount;
-  div.innerHTML = `<input type="text" class="form-input" placeholder="Artiste" value="${artist||''}" data-f="artist" />` +
+  div.setAttribute('draggable', 'true');
+  div.innerHTML = `<span class="drag-handle">☰</span><input type="text" class="form-input" placeholder="Artiste" value="${artist||''}" data-f="artist" />` +
     `<input type="text" class="form-input" placeholder="Projet" value="${title||''}" data-f="title" />` +
     `<input type="text" class="form-input" placeholder="Pays (ex: FR,NG)" value="${country||''}" data-f="country" style="max-width:80px;font-size:0.65rem" />` +
     `<input type="text" class="form-input" placeholder="Lien écoute / artwork" value="${link||''}" data-f="link" style="font-size:0.68rem" />` +
@@ -404,6 +408,23 @@ function addMajor(artist, title, artwork, link, country) {
   document.getElementById('majorList').appendChild(div);
 }
 document.getElementById('addMajor').addEventListener('click', () => addMajor());
+// Drag & drop reorder majors
+const majorListEl = document.getElementById('majorList');
+let dragEl = null;
+majorListEl.addEventListener('dragstart', e => { dragEl = e.target.closest('.major-item'); if (dragEl) dragEl.classList.add('dragging'); });
+majorListEl.addEventListener('dragend', () => { if (dragEl) dragEl.classList.remove('dragging'); dragEl = null; });
+majorListEl.addEventListener('dragover', e => {
+  e.preventDefault();
+  const d = majorListEl.querySelector('.dragging'); if (!d) return;
+  const siblings = [...majorListEl.querySelectorAll('.major-item:not(.dragging)')];
+  const next = siblings.reduce((closest, child) => {
+    const box = child.getBoundingClientRect();
+    const offset = e.clientY - box.top - box.height / 2;
+    if (offset < 0 && offset > closest.offset) return { offset, element: child };
+    return closest;
+  }, { offset: Number.NEGATIVE_INFINITY }).element;
+  if (next) majorListEl.insertBefore(d, next); else majorListEl.appendChild(d);
+});
 
 // ─── Discographie artiste ───
 let discoCount = 0;
@@ -500,7 +521,13 @@ function gatherData() {
   const name = document.getElementById('artistName').value.trim();
   const bio = document.getElementById('artistBio').value.trim();
   const bioEn = document.getElementById('artistBioEn').value.trim();
-  const placements = []; document.querySelectorAll('#placementsList .dynamic-item .form-input').forEach(i => { const v = i.value.trim(); if (v) placements.push(v); });
+  const placements = []; document.querySelectorAll('#placementsList .dynamic-item').forEach(div => {
+    const nameInput = div.querySelector('.form-input');
+    const countryInput = div.querySelector('[data-f=country]');
+    const v = nameInput ? nameInput.value.trim() : '';
+    const c = countryInput ? countryInput.value.trim() : 'FR';
+    if (v) placements.push({ name: v, country: c });
+  });
   const majors = []; document.querySelectorAll('#majorList .major-item').forEach(div => {
     const artist = div.querySelector('[data-f=artist]').value.trim();
     const title = div.querySelector('[data-f=title]').value.trim();
@@ -591,6 +618,13 @@ async function loadForEdit(id) {
     // Also import artistes placés from planning
     const manualNames = new Set(pl.map(p => typeof p === 'string' ? p : p.name || '').filter(Boolean));
     const existingNames = new Set(manualNames);
+    // Build placement map with country
+    const placementMap = new Map();
+    pl.forEach(p => {
+      const name = typeof p === 'string' ? p : p.name || '';
+      const country = typeof p === 'object' ? (p.country || 'FR') : 'FR';
+      if (name) placementMap.set(name, { name, country });
+    });
     try {
       const planRes = await dbFetch('/releases.json');
       const planJson = await planRes.json();
@@ -606,21 +640,22 @@ async function loadForEdit(id) {
           if (!swMapped.some(s => s.toUpperCase() === nameUp || (altN && s.toUpperCase() === altN))) return;
           if (r.artist && !existingNames.has(r.artist)) {
             existingNames.add(r.artist);
-            pl.push(r.artist);
+            const ctry = r.country || 'FR';
+            placementMap.set(r.artist, { name: r.artist, country: ctry });
           }
         });
       }
     } catch(e) { console.warn('Could not merge planning artistes'); }
     // Sort alphabetically
-    const sortedPl = [...new Set(pl.map(p => typeof p === 'string' ? p : p.name || '').filter(Boolean))].sort((a,b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+    const sortedPl = [...placementMap.values()].sort((a,b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
     // Load deleted placements list
     const dp = Array.isArray(d.deletedPlacements) ? d.deletedPlacements : [];
     dp.forEach(n => deletedPlacements.add(n));
     // Filter out deleted ones from planning imports
     sortedPl.forEach(p => {
-      if (!deletedPlacements.has(p)) {
-        const isFromPlanning = !manualNames.has(p);
-        addPlacement(p, isFromPlanning);
+      if (!deletedPlacements.has(p.name)) {
+        const isFromPlanning = !manualNames.has(p.name);
+        addPlacement(p.name, isFromPlanning, p.country);
       }
     });
     const mj = Array.isArray(d.majors) ? d.majors : d.majors ? Object.values(d.majors) : [];

@@ -475,7 +475,7 @@ function render() {
       const st = r.status || 'Confirmé';
       const stClass = st === 'TBC' ? 'tbc' : st === 'Annulé' ? 'annule' : 'confirme';
 
-      const COUNTRY_FLAGS = {FR:'🇫🇷',US:'🇺🇸',GB:'🇬🇧',DE:'🇩🇪',ES:'🇪🇸',IT:'🇮🇹',BE:'🇧🇪',CH:'🇨🇭',CA:'🇨🇦',JP:'🇯🇵',KR:'🇰🇷',BR:'🇧🇷',AR:'🇦🇷',MX:'🇲🇽',NG:'🇳🇬',CI:'🇨🇮',SN:'🇸🇳',MA:'🇲🇦',DZ:'🇩🇿',CM:'🇨🇲',GN:'🇬🇳',ML:'🇲🇱',CD:'🇨🇩',INTL:'🌍'};
+      const COUNTRY_FLAGS = {FR:'🇫🇷',US:'🇺🇸',GB:'🇬🇧',DE:'🇩🇪',ES:'🇪🇸',IT:'🇮🇹',BE:'🇧🇪',CH:'🇨🇭',CA:'🇨🇦',JP:'🇯🇵',KR:'🇰🇷',BR:'🇧🇷',AR:'🇦🇷',MX:'🇲🇽',NG:'🇳🇬',CI:'🇨🇮',SN:'🇸🇳',MA:'🇲🇦',DZ:'🇩🇿',CM:'🇨🇲',GN:'🇬🇳',ML:'🇲🇱',CV:'🇨🇻',CD:'🇨🇩',INTL:'🌍'};
       const COUNTRY_NAMES = {FR:'France',US:'USA',GB:'UK',DE:'Allemagne',ES:'Espagne',IT:'Italie',BE:'Belgique',CH:'Suisse',CA:'Canada',JP:'Japon',KR:'Corée du Sud',BR:'Brésil',AR:'Argentine',MX:'Mexique',NG:'Nigeria',CI:"Côte d'Ivoire",SN:'Sénégal',MA:'Maroc',DZ:'Algérie',CM:'Cameroun',GN:'Guinée',ML:'Mali',CD:'RD Congo',INTL:'International'};
       const countryCodes = r.country ? r.country.split(',').filter(Boolean) : [];
       const flagParts = countryCodes.map(c => {
@@ -661,7 +661,7 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
       h += '<div style="height:1px;background:rgba(255,255,255,0.06);margin-bottom:12px"></div>';
     }
 
-    const PDF_FLAGS = {FR:'🇫🇷',US:'🇺🇸',GB:'🇬🇧',DE:'🇩🇪',ES:'🇪🇸',IT:'🇮🇹',BE:'🇧🇪',CH:'🇨🇭',CA:'🇨🇦',JP:'🇯🇵',KR:'🇰🇷',BR:'🇧🇷',AR:'🇦🇷',MX:'🇲🇽',NG:'🇳🇬',CI:'🇨🇮',SN:'🇸🇳',MA:'🇲🇦',DZ:'🇩🇿',CM:'🇨🇲',GN:'🇬🇳',ML:'🇲🇱',CD:'🇨🇩',INTL:'🌍'};
+    const PDF_FLAGS = {FR:'🇫🇷',US:'🇺🇸',GB:'🇬🇧',DE:'🇩🇪',ES:'🇪🇸',IT:'🇮🇹',BE:'🇧🇪',CH:'🇨🇭',CA:'🇨🇦',JP:'🇯🇵',KR:'🇰🇷',BR:'🇧🇷',AR:'🇦🇷',MX:'🇲🇽',NG:'🇳🇬',CI:'🇨🇮',SN:'🇸🇳',MA:'🇲🇦',DZ:'🇩🇿',CM:'🇨🇲',GN:'🇬🇳',ML:'🇲🇱',CV:'🇨🇻',CD:'🇨🇩',INTL:'🌍'};
     const PDF_NAMES = {FR:'France',US:'USA',GB:'UK',DE:'Allemagne',ES:'Espagne',IT:'Italie',BE:'Belgique',CH:'Suisse',CA:'Canada',JP:'Japon',KR:'Corée du Sud',BR:'Brésil',AR:'Argentine',MX:'Mexique',NG:'Nigeria',CI:"Côte d'Ivoire",SN:'Sénégal',MA:'Maroc',DZ:'Algérie',CM:'Cameroun',GN:'Guinée',ML:'Mali',CD:'RD Congo',INTL:'International'};
 
     // Months
