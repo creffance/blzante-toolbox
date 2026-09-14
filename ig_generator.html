@@ -2090,17 +2090,13 @@ async function igExtractArtwork(url) {
 }
 // ─── Import from planning ─────────────────────────────────
 async function loadPlanningForIG() {
-  // Wait for auth token
-  let token = window._fbToken || '';
-  if (!token) {
-    await new Promise(r => {
-      const check = setInterval(() => {
-        if (window._fbToken) { token = window._fbToken; clearInterval(check); r(); }
-      }, 200);
-      setTimeout(() => { clearInterval(check); r(); }, 5000);
-    });
-  }
+  // Wait for auth and get token
   try {
+    const user = await new Promise((res, rej) => {
+      firebase.auth().onAuthStateChanged(u => { if (u) res(u); });
+      setTimeout(() => rej('timeout'), 5000);
+    });
+    const token = await user.getIdToken();
     const res = await fetch('https://blzante-toolbox-default-rtdb.europe-west1.firebasedatabase.app/releases.json?auth=' + token);
     const data = await res.json();
     if (!data) return;

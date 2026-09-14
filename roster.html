@@ -62,7 +62,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 }
 .card-bg { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0.2; z-index: 0; }
 .card-content { position: relative; z-index: 1; padding: 24px; display: block; overflow: hidden; }
-.card-section-wrap { display: block; clear: both; width: 100%; overflow: hidden; margin-bottom: 4px; }
+.card-section-wrap { display: block !important; clear: both !important; width: 100% !important; float: none !important; margin-bottom: 4px; }
 .card-socials-top { position: absolute; top: 12px; right: 12px; display: flex; gap: 6px; z-index: 2; }
 .card-socials-top .social-link { width: 30px; height: 30px; }
 .card-top { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 8px; }
@@ -491,11 +491,11 @@ function rerenderRoster() {
 
       if (!sorties.length) return '';
 
-      const FLAGS = {FR:'🇫🇷',US:'🇺🇸',GB:'🇬🇧',DE:'🇩🇪',ES:'🇪🇸',IT:'🇮🇹',BE:'🇧🇪',CH:'🇨🇭',CA:'🇨🇦',JP:'🇯🇵',KR:'🇰🇷',BR:'🇧🇷',AR:'🇦🇷',MX:'🇲🇽',NG:'🇳🇬',CI:'🇨🇮',SN:'🇸🇳',MA:'🇲🇦',DZ:'🇩🇿',CM:'🇨🇲',GN:'🇬🇳',ML:'🇲🇱',CV:'🇨🇻',CD:'🇨🇩',INTL:'🌍'};
+      const FLAGS = {FR:'🇫🇷',US:'🇺🇸',GB:'🇬🇧',DE:'🇩🇪',ES:'🇪🇸',IT:'🇮🇹',BE:'🇧🇪',CH:'🇨🇭',CA:'🇨🇦',JP:'🇯🇵',KR:'🇰🇷',BR:'🇧🇷',AR:'🇦🇷',MX:'🇲🇽',NG:'🇳🇬',CI:'🇨🇮',SN:'🇸🇳',MA:'🇲🇦',DZ:'🇩🇿',CM:'🇨🇲',GN:'🇬🇳',ML:'🇲🇱',CV:'🇨🇻',NL:'🇳🇱',GA:'🇬🇦',BJ:'🇧🇯',CD:'🇨🇩',INTL:'🌍'};
       const FSHORT = {FR:'FR',US:'US',GB:'UK',DE:'DE',ES:'ES',IT:'IT',BE:'BE',CH:'CH',CA:'CA',JP:'JP',KR:'KR',BR:'BR',AR:'AR',MX:'MX',NG:'NG',CI:'CI',SN:'SN',MA:'MA',DZ:'DZ',CM:'CM',GN:'GN',ML:'ML',CD:'CD',INTL:'INTL'};
 
       let h = '<div class="card-section-title">Derniers placements</div>';
-      h += '<div class="recent-placements">';
+      h += '<div class="recent-placements" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;width:100%">';
       sorties.forEach(r => {
         const flag = r.country ? r.country.split(',').map(c => c === 'INTL' ? '🌍' : '<img src="https://flagcdn.com/16x12/' + c.toLowerCase() + '.png" style="vertical-align:middle" />').join(' ') + ' ' : '';
         h += '<div class="rp-item">';
@@ -504,7 +504,7 @@ function rerenderRoster() {
         h += `<span class="rp-artist">${flag}${r.artist || ''}</span>`;
         h += `<br><span class="rp-title">${r.title || ''}</span>`;
         h += `<br><span class="rp-date">${r.date || ''}</span>`;
-        if (r.link) h += ` <a class="rp-link" href="${r.link}" target="_blank">▶ écouter</a>`;
+        if (r.link) h += ` <a class="rp-link" href="${r.link}" target="_blank" title="Écouter">▶</a>`;
         h += '</div></div>';
       });
       h += '</div>';
@@ -611,7 +611,7 @@ function rerenderRoster() {
 
       if (majors.length) {
         h += '<div class="card-section-wrap">';
-        h += `<div class="card-section-title">${t('placements_majeurs')}</div><div class="card-majors">`;
+        h += `<div class="card-section-title" style="display:block;width:100%;clear:both">${t('placements_majeurs')}</div><div class="card-majors" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;width:100%">`;
         majors.slice(0, 9).forEach(m => {
           h += `<div class="major-block">`;
           if (m.artwork) h += `<img class="major-art" src="${m.artwork}" />`;
@@ -651,7 +651,7 @@ function rerenderRoster() {
         h += '<div class="card-section-wrap">';
         const sorted = allPlacements.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
         const hasIntl = sorted.some(p => [...p.countries].some(c => c !== 'FR'));
-        h += `<div class="card-section-title">${t('artistes_places')}</div><div class="card-placements">`;
+        h += `<div class="card-section-title" style="display:block;width:100%;clear:both">${t('artistes_places')}</div><div class="card-placements" style="display:flex;flex-wrap:wrap;gap:5px;width:100%">`;
         sorted.forEach(p => {
           const intlCodes = [...p.countries].filter(c => c && c !== 'FR');
           let flagHtml = '';
@@ -709,7 +709,7 @@ function rerenderRoster() {
             else if (emoji) out += `<span style="font-size:1rem">${emoji}</span>`;
             out += buildCertLabel(c);
             if (c.date) out += ` <span style="color:#555;font-size:0.5rem">${c.date}</span>`;
-            if (c.link) out += ` <a href="${c.link}" target="_blank" style="color:var(--accent);font-size:0.55rem;text-decoration:none">▶ écouter</a>`;
+            if (c.link) out += ` <a href="${c.link}" target="_blank" style="color:var(--accent);font-size:0.55rem;text-decoration:none" title="Écouter">▶</a>`;
             out += `</span>`;
           });
           return out + '</div>';
@@ -961,8 +961,8 @@ function openSpecialExport(a) {
 // ─── Render one artist page into a jsPDF instance ───
 // ─── Build artist card HTML (reused by single PDF and team PDF) ───
 function buildArtistCardHTML(a, pdfLang, opts) {
-  const PDF_FLAGS = {FR:'🇫🇷',US:'🇺🇸',GB:'🇬🇧',DE:'🇩🇪',ES:'🇪🇸',IT:'🇮🇹',BE:'🇧🇪',CH:'🇨🇭',CA:'🇨🇦',JP:'🇯🇵',KR:'🇰🇷',BR:'🇧🇷',AR:'🇦🇷',MX:'🇲🇽',NG:'🇳🇬',CI:'🇨🇮',SN:'🇸🇳',MA:'🇲🇦',DZ:'🇩🇿',CM:'🇨🇲',GN:'🇬🇳',ML:'🇲🇱',CV:'🇨🇻',CD:'🇨🇩',INTL:'🌍'};
-  const PDF_FNAMES = {FR:'FR',US:'US',GB:'UK',DE:'DE',ES:'ES',IT:'IT',BE:'BE',CH:'CH',CA:'CA',JP:'JP',KR:'KR',BR:'BR',AR:'AR',MX:'MX',NG:'NG',CI:'CI',SN:'SN',MA:'MA',DZ:'DZ',CM:'CM',GN:'GN',ML:'ML',CV:'CV',CD:'CD',INTL:'INTL'};
+  const PDF_FLAGS = {FR:'🇫🇷',US:'🇺🇸',GB:'🇬🇧',DE:'🇩🇪',ES:'🇪🇸',IT:'🇮🇹',BE:'🇧🇪',CH:'🇨🇭',CA:'🇨🇦',JP:'🇯🇵',KR:'🇰🇷',BR:'🇧🇷',AR:'🇦🇷',MX:'🇲🇽',NG:'🇳🇬',CI:'🇨🇮',SN:'🇸🇳',MA:'🇲🇦',DZ:'🇩🇿',CM:'🇨🇲',GN:'🇬🇳',ML:'🇲🇱',CV:'🇨🇻',NL:'🇳🇱',GA:'🇬🇦',BJ:'🇧🇯',CD:'🇨🇩',INTL:'🌍'};
+  const PDF_FNAMES = {FR:'FR',US:'US',GB:'UK',DE:'DE',ES:'ES',IT:'IT',BE:'BE',CH:'CH',CA:'CA',JP:'JP',KR:'KR',BR:'BR',AR:'AR',MX:'MX',NG:'NG',CI:'CI',SN:'SN',MA:'MA',DZ:'DZ',CM:'CM',GN:'GN',ML:'ML',CV:'CV',NL:'NL',GA:'GA',BJ:'BJ',CD:'CD',INTL:'INTL'};
   const options = opts || {};
   const types = a.types ? (Array.isArray(a.types) ? a.types : [a.types]) : [];
   const skills = a.skills ? (Array.isArray(a.skills) ? a.skills : [a.skills]) : [];
@@ -1027,15 +1027,11 @@ function buildArtistCardHTML(a, pdfLang, opts) {
     const _now = new Date();
     const _sixAgo = new Date(_now.getFullYear(), _now.getMonth() - 6, 1).toISOString().slice(0,10);
     const _recent = _pd.filter(r => r.dateSortable >= _sixAgo && r.status !== 'Annulé' && _matchSw(r));
-    const _FLAGS = {FR:'🇫🇷',US:'🇺🇸',GB:'🇬🇧',DE:'🇩🇪',ES:'🇪🇸',IT:'🇮🇹',BE:'🇧🇪',CH:'🇨🇭',CA:'🇨🇦',JP:'🇯🇵',KR:'🇰🇷',BR:'🇧🇷',AR:'🇦🇷',MX:'🇲🇽',NG:'🇳🇬',CI:'🇨🇮',SN:'🇸🇳',MA:'🇲🇦',DZ:'🇩🇿',CM:'🇨🇲',GN:'🇬🇳',ML:'🇲🇱',CV:'🇨🇻',CD:'🇨🇩',INTL:'🌍'};
+    const _FLAGS = {FR:'🇫🇷',US:'🇺🇸',GB:'🇬🇧',DE:'🇩🇪',ES:'🇪🇸',IT:'🇮🇹',BE:'🇧🇪',CH:'🇨🇭',CA:'🇨🇦',JP:'🇯🇵',KR:'🇰🇷',BR:'🇧🇷',AR:'🇦🇷',MX:'🇲🇽',NG:'🇳🇬',CI:'🇨🇮',SN:'🇸🇳',MA:'🇲🇦',DZ:'🇩🇿',CM:'🇨🇲',GN:'🇬🇳',ML:'🇲🇱',CV:'🇨🇻',NL:'🇳🇱',GA:'🇬🇦',BJ:'🇧🇯',CD:'🇨🇩',INTL:'🌍'};
     const _FNAMES = {FR:'FR',US:'US',GB:'UK',DE:'DE',ES:'ES',IT:'IT',BE:'BE',CH:'CH',CA:'CA',JP:'JP',KR:'KR',BR:'BR',AR:'AR',MX:'MX',NG:'NG',CI:'CI',SN:'SN',MA:'MA',DZ:'DZ',CM:'CM',GN:'GN',ML:'ML',CD:'CD',INTL:'INTL'};
     const _flagLabel = (country) => {
       if (!country) return '';
-      return country.split(',').map(c => {
-        const f = PDF_FLAGS[c] || '';
-        const n = PDF_FNAMES[c] || c;
-        return f + n;
-      }).filter(Boolean).join(' ') + ' ';
+      return country.split(',').map(c => PDF_FLAGS[c] || '').filter(Boolean).join('') + ' ';
     };
 
     // Mini dashboard with title
@@ -1133,7 +1129,8 @@ function buildArtistCardHTML(a, pdfLang, opts) {
     h += `<div class="pdf-section-label">${t('artistes_places', pdfLang).toUpperCase()}</div><div class="pdf-tags">`;
     sortedPl.forEach(p => {
       const isIntl = p.country && p.country.split(',').some(c => c && c !== 'FR');
-      const flagTxt = isIntl ? (PDF_FLAGS[p.country] || '🌍') + ' ' : '';
+      const codes = p.country ? p.country.split(',').filter(cc => cc && cc !== 'FR') : [];
+      const flagTxt = codes.length ? codes.map(cc => PDF_FLAGS[cc] || '🌍').join('') + ' ' : '';
       h += `<span class="pdf-tag">${flagTxt}${p.name}</span>`;
     });
     h += '</div>';
