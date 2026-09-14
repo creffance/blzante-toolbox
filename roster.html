@@ -963,6 +963,10 @@ function openSpecialExport(a) {
 function buildArtistCardHTML(a, pdfLang, opts) {
   const PDF_FLAGS = {FR:'🇫🇷',US:'🇺🇸',GB:'🇬🇧',DE:'🇩🇪',ES:'🇪🇸',IT:'🇮🇹',BE:'🇧🇪',CH:'🇨🇭',CA:'🇨🇦',JP:'🇯🇵',KR:'🇰🇷',BR:'🇧🇷',AR:'🇦🇷',MX:'🇲🇽',NG:'🇳🇬',CI:'🇨🇮',SN:'🇸🇳',MA:'🇲🇦',DZ:'🇩🇿',CM:'🇨🇲',GN:'🇬🇳',ML:'🇲🇱',CV:'🇨🇻',NL:'🇳🇱',GA:'🇬🇦',BJ:'🇧🇯',CD:'🇨🇩',INTL:'🌍'};
   const PDF_FNAMES = {FR:'FR',US:'US',GB:'UK',DE:'DE',ES:'ES',IT:'IT',BE:'BE',CH:'CH',CA:'CA',JP:'JP',KR:'KR',BR:'BR',AR:'AR',MX:'MX',NG:'NG',CI:'CI',SN:'SN',MA:'MA',DZ:'DZ',CM:'CM',GN:'GN',ML:'ML',CV:'CV',NL:'NL',GA:'GA',BJ:'BJ',CD:'CD',INTL:'INTL'};
+  const _flagLabel = (country) => {
+    if (!country) return '';
+    return country.split(',').map(c => PDF_FLAGS[c] || '').filter(Boolean).join('') + ' ';
+  };
   const options = opts || {};
   const types = a.types ? (Array.isArray(a.types) ? a.types : [a.types]) : [];
   const skills = a.skills ? (Array.isArray(a.skills) ? a.skills : [a.skills]) : [];
@@ -1028,11 +1032,6 @@ function buildArtistCardHTML(a, pdfLang, opts) {
     const _sixAgo = new Date(_now.getFullYear(), _now.getMonth() - 6, 1).toISOString().slice(0,10);
     const _recent = _pd.filter(r => r.dateSortable >= _sixAgo && r.status !== 'Annulé' && _matchSw(r));
     const _FLAGS = {FR:'🇫🇷',US:'🇺🇸',GB:'🇬🇧',DE:'🇩🇪',ES:'🇪🇸',IT:'🇮🇹',BE:'🇧🇪',CH:'🇨🇭',CA:'🇨🇦',JP:'🇯🇵',KR:'🇰🇷',BR:'🇧🇷',AR:'🇦🇷',MX:'🇲🇽',NG:'🇳🇬',CI:'🇨🇮',SN:'🇸🇳',MA:'🇲🇦',DZ:'🇩🇿',CM:'🇨🇲',GN:'🇬🇳',ML:'🇲🇱',CV:'🇨🇻',NL:'🇳🇱',GA:'🇬🇦',BJ:'🇧🇯',CD:'🇨🇩',INTL:'🌍'};
-    const _FNAMES = {FR:'FR',US:'US',GB:'UK',DE:'DE',ES:'ES',IT:'IT',BE:'BE',CH:'CH',CA:'CA',JP:'JP',KR:'KR',BR:'BR',AR:'AR',MX:'MX',NG:'NG',CI:'CI',SN:'SN',MA:'MA',DZ:'DZ',CM:'CM',GN:'GN',ML:'ML',CD:'CD',INTL:'INTL'};
-    const _flagLabel = (country) => {
-      if (!country) return '';
-      return country.split(',').map(c => PDF_FLAGS[c] || '').filter(Boolean).join('') + ' ';
-    };
 
     // Mini dashboard with title
     if (_recent.length) {
