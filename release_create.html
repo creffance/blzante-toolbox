@@ -45,6 +45,19 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 /* Conditional fields */
 .conditional { display: none; }
 .conditional.visible { display: block; }
+.country-picker { position: relative; }
+.country-dropdown {
+  display: none; position: absolute; top: 100%; left: 0; right: 0; z-index: 20;
+  background: var(--surface); border: 1px solid var(--border); max-height: 220px;
+  overflow-y: auto; margin-top: 2px;
+}
+.country-dropdown.open { display: block; }
+.country-opt {
+  padding: 7px 12px; cursor: pointer; font-size: 0.78rem; color: var(--text);
+  font-family: 'Syne Mono', monospace; transition: background 0.1s;
+}
+.country-opt:hover { background: rgba(232,197,71,0.08); }
+.country-opt.selected { background: rgba(232,197,71,0.12); color: var(--accent); }
 
 /* Songwriter multi-select */
 .sw-picker { position: relative; }
@@ -173,28 +186,11 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 
   <div class="form-group conditional" id="countryGroup">
     <label class="form-label">Pays</label>
-    <select class="form-select" id="releaseCountry">
-      <option value="FR">🇫🇷 France</option>
-      <option value="US">🇺🇸 États-Unis</option>
-      <option value="GB">🇬🇧 Royaume-Uni</option>
-      <option value="DE">🇩🇪 Allemagne</option>
-      <option value="ES">🇪🇸 Espagne</option>
-      <option value="IT">🇮🇹 Italie</option>
-      <option value="BE">🇧🇪 Belgique</option>
-      <option value="CH">🇨🇭 Suisse</option>
-      <option value="CA">🇨🇦 Canada</option>
-      <option value="JP">🇯🇵 Japon</option>
-      <option value="KR">🇰🇷 Corée du Sud</option>
-      <option value="BR">🇧🇷 Brésil</option>
-      <option value="MX">🇲🇽 Mexique</option>
-      <option value="CI">🇨🇮 Côte d'Ivoire</option>
-      <option value="SN">🇸🇳 Sénégal</option>
-      <option value="MA">🇲🇦 Maroc</option>
-      <option value="DZ">🇩🇿 Algérie</option>
-      <option value="CM">🇨🇲 Cameroun</option>
-      <option value="CD">🇨🇩 RD Congo</option>
-      <option value="INTL">🌍 International</option>
-    </select>
+    <div class="country-picker" id="countryPicker">
+      <input type="text" class="form-input" id="countrySearch" placeholder="🇫🇷 France" autocomplete="off" />
+      <input type="hidden" id="releaseCountry" value="FR" />
+      <div class="country-dropdown" id="countryDropdown"></div>
+    </div>
   </div>
 
   <div class="form-group conditional" id="actuGroup">
@@ -238,12 +234,20 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 
   <div class="form-group conditional" id="epTracksGroup">
     <div class="form-group">
-      <label class="form-label">Nombre de titres (optionnel)</label>
-      <input type="number" class="form-input" id="epTrackCount" placeholder="Ex: 5" min="1" max="30" autocomplete="off" />
+      <label class="form-label">Nombre de titres total (optionnel)</label>
+      <input type="number" class="form-input" id="epTrackCount" placeholder="Ex: 12" min="1" max="30" autocomplete="off" />
     </div>
     <div class="form-group">
       <label class="form-label">Noms des tracks (optionnel — un par ligne)</label>
       <textarea class="form-input form-textarea" id="epTrackNames" placeholder="Track 1&#10;Track 2&#10;Track 3" rows="4"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nombre de titres BLZante</label>
+      <input type="number" class="form-input" id="blzTrackCount" placeholder="Ex: 3" min="0" max="30" autocomplete="off" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Titres BLZante (un par ligne)</label>
+      <textarea class="form-input form-textarea" id="blzTrackNames" placeholder="Titre BLZ 1&#10;Titre BLZ 2" rows="3"></textarea>
     </div>
   </div>
 
@@ -266,7 +270,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
   </div>
 
   <div class="form-group">
-    <label class="form-label">Lien (Spotify, YouTube, Instagram…)</label>
+    <label class="form-label">Lien pour image (Spotify, YouTube, Instagram…)</label>
     <input type="text" class="form-input" id="releaseLink" placeholder="Coller un lien pour récupérer l'artwork automatiquement" autocomplete="off" />
     <div id="artworkPreview" style="margin-top:8px;display:none">
       <img id="artworkImg" style="max-width:120px;max-height:120px;border:1px solid #2a2a2a;display:block" crossorigin="anonymous" />
@@ -393,7 +397,7 @@ dateInput.addEventListener('input', (e) => {
 function updateConditionals() {
   const t = typeSelect.value;
   projectGroup.classList.toggle('visible', t === 'EP' || t === 'Album');
-  epTracksGroup.classList.toggle('visible', t === 'EP');
+  epTracksGroup.classList.toggle('visible', t === 'EP' || t === 'Album');
   trackGroup.classList.toggle('visible', t === 'Single' || t === 'Certification');
   liveGroup.classList.toggle('visible', t === 'Live');
   certGroup.classList.toggle('visible', t === 'Certification');
@@ -421,30 +425,27 @@ function clearArtwork() {
 
 function downloadArtwork() {
   if (!extractedArtwork) return;
-  // Draw to canvas to bypass CORS, then download
-  const img = document.getElementById('artworkImg');
-  const canvas = document.createElement('canvas');
-  canvas.width = img.naturalWidth;
-  canvas.height = img.naturalHeight;
-  const ctx = canvas.getContext('2d');
-  try {
-    ctx.drawImage(img, 0, 0);
-    canvas.toBlob(blob => {
-      if (!blob) { window.open(extractedArtwork, '_blank'); return; }
+  const artist = document.getElementById('artistName').value.trim() || 'artwork';
+  const filename = artist.replace(/[^a-zA-Z0-9]/g, '_') + '_artwork';
+
+  // Fetch the original image file directly (no resize)
+  fetch(extractedArtwork)
+    .then(res => res.blob())
+    .then(blob => {
+      const ext = blob.type === 'image/png' ? '.png' : blob.type === 'image/webp' ? '.webp' : '.jpg';
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      const artist = document.getElementById('artistName').value.trim() || 'artwork';
-      a.download = artist.replace(/[^a-zA-Z0-9]/g, '_') + '_artwork.jpg';
+      a.download = filename + ext;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(url), 2000);
-    }, 'image/jpeg', 0.95);
-  } catch(e) {
-    // CORS fallback: open in new tab
-    window.open(extractedArtwork, '_blank');
-  }
+    })
+    .catch(() => {
+      // CORS fallback: open in new tab
+      window.open(extractedArtwork, '_blank');
+    });
 }
 
 function extractYouTubeId(url) {
@@ -490,6 +491,68 @@ document.getElementById('releaseLink').addEventListener('input', function() {
   if (url.startsWith('http')) tryExtractArtwork(url);
   else clearArtwork();
 });
+
+// ─── Country searchable picker ───
+const COUNTRIES = [
+  { code: 'FR', label: '🇫🇷 France' },
+  { code: 'US', label: '🇺🇸 États-Unis' },
+  { code: 'GB', label: '🇬🇧 Royaume-Uni' },
+  { code: 'DE', label: '🇩🇪 Allemagne' },
+  { code: 'ES', label: '🇪🇸 Espagne' },
+  { code: 'IT', label: '🇮🇹 Italie' },
+  { code: 'BE', label: '🇧🇪 Belgique' },
+  { code: 'CH', label: '🇨🇭 Suisse' },
+  { code: 'CA', label: '🇨🇦 Canada' },
+  { code: 'JP', label: '🇯🇵 Japon' },
+  { code: 'KR', label: '🇰🇷 Corée du Sud' },
+  { code: 'BR', label: '🇧🇷 Brésil' },
+  { code: 'AR', label: '🇦🇷 Argentine' },
+  { code: 'MX', label: '🇲🇽 Mexique' },
+  { code: 'NG', label: '🇳🇬 Nigeria' },
+  { code: 'CI', label: "🇨🇮 Côte d'Ivoire" },
+  { code: 'SN', label: '🇸🇳 Sénégal' },
+  { code: 'MA', label: '🇲🇦 Maroc' },
+  { code: 'DZ', label: '🇩🇿 Algérie' },
+  { code: 'CM', label: '🇨🇲 Cameroun' },
+  { code: 'CD', label: '🇨🇩 RD Congo' },
+  { code: 'INTL', label: '🌍 International' },
+];
+
+const countrySearch = document.getElementById('countrySearch');
+const countryHidden = document.getElementById('releaseCountry');
+const countryDropdown = document.getElementById('countryDropdown');
+
+function getCountryLabel(code) {
+  const c = COUNTRIES.find(c => c.code === code);
+  return c ? c.label : code;
+}
+
+function setCountry(code) {
+  countryHidden.value = code;
+  countrySearch.value = getCountryLabel(code);
+  countryDropdown.classList.remove('open');
+}
+
+function renderCountryDropdown(query) {
+  const q = (query || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const filtered = q ? COUNTRIES.filter(c => c.label.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(q) || c.code.toLowerCase().includes(q)) : COUNTRIES;
+  countryDropdown.innerHTML = filtered.map(c =>
+    `<div class="country-opt${c.code === countryHidden.value ? ' selected' : ''}" data-code="${c.code}">${c.label}</div>`
+  ).join('');
+  countryDropdown.classList.toggle('open', filtered.length > 0);
+}
+
+countrySearch.addEventListener('focus', () => renderCountryDropdown(countrySearch.value === getCountryLabel(countryHidden.value) ? '' : countrySearch.value));
+countrySearch.addEventListener('input', () => renderCountryDropdown(countrySearch.value));
+countryDropdown.addEventListener('click', (e) => {
+  const opt = e.target.closest('.country-opt');
+  if (opt) setCountry(opt.dataset.code);
+});
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.country-picker')) countryDropdown.classList.remove('open');
+});
+// Init default display
+setCountry('FR');
 
 // ─── Songwriter picker ───
 swSearch.addEventListener('focus', () => swDropdown.classList.add('open'));
@@ -552,11 +615,14 @@ function enterEditMode(release) {
   document.getElementById('certType').value = release.certType || '';
   document.getElementById('certLevel').value = release.certLevel || '';
   document.getElementById('releaseCountry').value = release.country || 'FR';
+  setCountry(release.country || 'FR');
   document.getElementById('actuDesc').value = release.actuDesc || '';
   document.getElementById('releaseLink').value = release.link || '';
   if (release.artwork) showArtwork(release.artwork);
   document.getElementById('epTrackCount').value = release.epTrackCount || '';
   document.getElementById('epTrackNames').value = release.epTrackNames || '';
+  document.getElementById('blzTrackCount').value = release.blzTrackCount || '';
+  document.getElementById('blzTrackNames').value = release.blzTrackNames || '';
   selectedSw = release.songwriters ? (Array.isArray(release.songwriters) ? [...release.songwriters] : release.songwriters.split(',')) : [];
   swOptions.forEach(opt => { opt.classList.toggle('selected', selectedSw.includes(opt.dataset.name)); });
   renderTags();
@@ -587,6 +653,8 @@ function resetForm() {
   document.getElementById('certLevel').value = '';
   document.getElementById('epTrackCount').value = '';
   document.getElementById('epTrackNames').value = '';
+  document.getElementById('blzTrackCount').value = '';
+  document.getElementById('blzTrackNames').value = '';
   projectGroup.classList.remove('visible');
   trackGroup.classList.remove('visible');
   liveGroup.classList.remove('visible');
@@ -595,6 +663,7 @@ function resetForm() {
   actuGroup.classList.remove('visible');
   epTracksGroup.classList.remove('visible');
   document.getElementById('releaseCountry').value = 'FR';
+  setCountry('FR');
   document.getElementById('actuDesc').value = '';
   document.getElementById('releaseLink').value = '';
   clearArtwork();
@@ -640,6 +709,8 @@ submitBtn.addEventListener('click', async () => {
   const certLevel = document.getElementById('certLevel').value;
   const epTrackCount = document.getElementById('epTrackCount').value.trim();
   const epTrackNames = document.getElementById('epTrackNames').value.trim();
+  const blzTrackCount = document.getElementById('blzTrackCount').value.trim();
+  const blzTrackNames = document.getElementById('blzTrackNames').value.trim();
   const statusMsg = document.getElementById('statusMsg');
 
   if (!date || !/^\d{2}\/\d{2}\/\d{4}$/.test(date)) {
@@ -654,6 +725,7 @@ submitBtn.addEventListener('click', async () => {
   if (type === 'EP' || type === 'Album') {
     title = project || artist;
     if (type === 'EP' && epTrackCount) title += ' (' + epTrackCount + ' titres)';
+    if (type === 'Album' && epTrackCount) title += ' (' + epTrackCount + ' titres)';
   } else if (type === 'Live') {
     title = lieu + (ville ? ' — ' + ville : '');
   } else if (type === 'Certification') {
@@ -670,7 +742,7 @@ submitBtn.addEventListener('click', async () => {
       id: editId || Date.now(), date, dateSortable: date.split('/').reverse().join('-'),
       type, status: releaseStatus, artist, title,
       project, track, lieu, ville, certType, certLevel,
-      epTrackCount, epTrackNames,
+      epTrackCount, epTrackNames, blzTrackCount, blzTrackNames,
       country: ['Single','EP','Album'].includes(type) ? document.getElementById('releaseCountry').value : '',
       actuDesc: type === 'Actu' ? document.getElementById('actuDesc').value.trim() : '',
       link: document.getElementById('releaseLink').value.trim(),

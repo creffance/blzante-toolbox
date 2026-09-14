@@ -67,6 +67,28 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .card-top { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 8px; }
 .card-photo { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border); flex-shrink: 0; }
 .card-photo-ph { width: 72px; height: 72px; border-radius: 50%; background: #222; border: 2px solid var(--border); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.4rem; color: #555; }
+
+/* Artist mini dashboard */
+.artist-dash { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; margin-bottom: 4px; }
+.ad-stat { display: flex; align-items: baseline; gap: 4px; }
+.ad-num { font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 800; color: #fff; }
+.ad-num.accent { color: var(--accent); }
+.ad-num.orange { color: #f59e0b; }
+.ad-num.green { color: #4ade80; }
+.ad-label { font-family: 'Syne Mono', monospace; font-size: 0.5rem; color: var(--muted); letter-spacing: 0.06em; }
+
+/* Recent placements */
+.recent-placements { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
+.rp-item { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+.rp-item:last-child { border-bottom: none; }
+.rp-artwork { width: 40px; height: 40px; object-fit: cover; border: 1px solid var(--border); border-radius: 2px; flex-shrink: 0; }
+.rp-artwork-ph { width: 40px; height: 40px; background: #1a1a1a; border: 1px solid var(--border); border-radius: 2px; flex-shrink: 0; }
+.rp-info { flex: 1; min-width: 0; }
+.rp-artist { font-size: 0.7rem; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rp-title { font-size: 0.62rem; color: #999; font-family: 'Syne Mono', monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rp-date { font-size: 0.52rem; color: #555; font-family: 'Syne Mono', monospace; }
+.rp-link { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border: 1px solid var(--border); color: var(--accent); font-size: 0.7rem; text-decoration: none; flex-shrink: 0; transition: all 0.15s; }
+.rp-link:hover { background: rgba(232,197,71,0.1); border-color: var(--accent); }
 .card-name { font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 800; color: #fff; }
 .card-types { font-size: 0.58rem; color: var(--muted); margin-top: 2px; }
 .card-skills { font-size: 0.54rem; color: #666; margin-top: 2px; }
@@ -357,6 +379,110 @@ function rerenderRoster() {
     window._rosterArtists = {};
     allArtists.forEach(a => { window._rosterArtists[a.id] = a; });
 
+    // Fetch planning data for recent placements
+    let planningData = [];
+    const SW_RENAME = { 'LEANDRE': 'LEANDRE PICK', 'YANNICK SERI': 'LE SERI', 'BRO': 'BRÖ' };
+    const SW_RENAME_INV = {};
+    Object.entries(SW_RENAME).forEach(([old, nw]) => { SW_RENAME_INV[nw] = old; });
+    try {
+      const planRes = await dbFetch('/releases.json');
+      const planJson = await planRes.json();
+      if (planJson) {
+        planningData = Object.values(planJson);
+        planningData.forEach(r => {
+          if (r.songwriters) {
+            const sw = Array.isArray(r.songwriters) ? r.songwriters : [r.songwriters];
+            r.songwriters = sw.map(s => SW_RENAME[s] || s);
+          }
+        });
+      }
+    } catch(e) { console.warn('Could not load planning data'); }
+
+    function buildArtistDashboard(artistName) {
+      if (!planningData.length) return '';
+      const nameUpper = artistName.toUpperCase();
+      const altName = SW_RENAME_INV[nameUpper] || '';
+      const now = new Date();
+      const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 6, 1).toISOString().slice(0, 10);
+
+      const matchesSw = (r) => {
+        const sw = r.songwriters ? (Array.isArray(r.songwriters) ? r.songwriters : [r.songwriters]) : [];
+        return sw.some(s => s.toUpperCase() === nameUpper || (altName && s.toUpperCase() === altName));
+      };
+
+      const recent = planningData.filter(r => r.dateSortable >= sixMonthsAgo && r.status !== 'Annulé' && matchesSw(r));
+      if (!recent.length) return '';
+
+      const sorties = recent.filter(r => ['Single','EP','Album'].includes(r.type));
+      const sortiesFR = sorties.filter(r => !r.country || r.country === 'FR');
+      const sortiesINTL = sorties.filter(r => r.country && r.country !== 'FR');
+      const certsSingle = recent.filter(r => r.type === 'Certification' && r.certType === 'Single');
+      const certsAlbum = recent.filter(r => r.type === 'Certification' && r.certType === 'Album');
+      const synchros = recent.filter(r => r.type === 'Synchro');
+
+      // Count tracks: EP/Album with blzTrackCount count as N, Single as 1
+      const countTracks = (list) => list.reduce((sum, r) => {
+        if ((r.type === 'EP' || r.type === 'Album') && r.blzTrackCount && parseInt(r.blzTrackCount) > 0) return sum + parseInt(r.blzTrackCount);
+        return sum + 1;
+      }, 0);
+
+      const stats = [];
+      if (sorties.length) stats.push({ num: countTracks(sorties), label: 'Placements', cls: '' });
+      if (sortiesFR.length) stats.push({ num: countTracks(sortiesFR), label: '🇫🇷 France', cls: '' });
+      if (sortiesINTL.length) stats.push({ num: countTracks(sortiesINTL), label: '🌍 Intl', cls: 'green' });
+      if (certsSingle.length) stats.push({ num: certsSingle.length, label: 'Certifs Singles', cls: 'accent' });
+      if (certsAlbum.length) stats.push({ num: certsAlbum.length, label: 'Certifs Albums', cls: 'orange' });
+      if (synchros.length) stats.push({ num: synchros.length, label: 'Synchros', cls: '' });
+
+      if (!stats.length) return '';
+
+      let h = '<div class="card-section-title">6 derniers mois</div>';
+      h += '<div class="artist-dash">';
+      stats.forEach(s => {
+        h += `<div class="ad-stat"><span class="ad-num${s.cls ? ' ' + s.cls : ''}">${s.num}</span><span class="ad-label">${s.label}</span></div>`;
+      });
+      h += '</div>';
+      return h;
+    }
+
+    function buildRecentPlacements(artistName) {
+      if (!planningData.length) return '';
+      const nameUpper = artistName.toUpperCase();
+      const altName = SW_RENAME_INV[nameUpper] || '';
+
+      const matchesSw = (r) => {
+        const sw = r.songwriters ? (Array.isArray(r.songwriters) ? r.songwriters : [r.songwriters]) : [];
+        return sw.some(s => s.toUpperCase() === nameUpper || (altName && s.toUpperCase() === altName));
+      };
+
+      const sorties = planningData
+        .filter(r => ['Single','EP','Album'].includes(r.type) && r.status !== 'Annulé' && matchesSw(r))
+        .sort((a, b) => (b.dateSortable || '').localeCompare(a.dateSortable || ''))
+        .slice(0, 5);
+
+      if (!sorties.length) return '';
+
+      const FLAGS = {FR:'🇫🇷',US:'🇺🇸',GB:'🇬🇧',DE:'🇩🇪',ES:'🇪🇸',IT:'🇮🇹',BE:'🇧🇪',CH:'🇨🇭',CA:'🇨🇦',JP:'🇯🇵',KR:'🇰🇷',BR:'🇧🇷',AR:'🇦🇷',MX:'🇲🇽',NG:'🇳🇬',CI:'🇨🇮',SN:'🇸🇳',MA:'🇲🇦',DZ:'🇩🇿',CM:'🇨🇲',CD:'🇨🇩',INTL:'🌍'};
+
+      let h = '<div class="card-section-title">Derniers placements</div>';
+      h += '<div class="recent-placements">';
+      sorties.forEach(r => {
+        const flag = r.country && FLAGS[r.country] ? FLAGS[r.country] + ' ' : '';
+        h += '<div class="rp-item">';
+        if (r.artwork) h += `<img class="rp-artwork" src="${r.artwork}" />`;
+        else h += '<div class="rp-artwork-ph"></div>';
+        h += '<div class="rp-info">';
+        h += `<div class="rp-artist">${flag}${r.artist || ''}</div>`;
+        h += `<div class="rp-title">${r.title || ''}</div>`;
+        h += `<div class="rp-date">${r.date || ''} · ${r.type}</div>`;
+        h += '</div>';
+        if (r.link) h += `<a class="rp-link" href="${r.link}" target="_blank">▶</a>`;
+        h += '</div>';
+      });
+      h += '</div>';
+      return h;
+    }
+
     function getBgSrc(a) {
       const bgs = a.bgImages ? (Array.isArray(a.bgImages) ? a.bgImages : Object.values(a.bgImages)) : [];
       const primaryBg = bgs.find(i => i.primary) || bgs[0];
@@ -501,6 +627,12 @@ function rerenderRoster() {
         displaySpecials.forEach(s => { if (s) h += `<div class="special-item">⭐ ${s}</div>`; });
         h += `</div>`;
       }
+
+      // Artist mini dashboard (6 months)
+      h += buildArtistDashboard(a.name);
+
+      // Recent placements from planning
+      h += buildRecentPlacements(a.name);
 
       h += `</div></div></div></div>`;
       return h;
