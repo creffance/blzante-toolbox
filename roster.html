@@ -78,13 +78,12 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .ad-label { font-family: 'Syne Mono', monospace; font-size: 0.5rem; color: var(--muted); letter-spacing: 0.06em; }
 
 /* Recent placements - same style as placements majeurs */
-.recent-placements { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; margin-bottom: 8px; }
-.rp-item { display: flex; gap: 6px; align-items: center; border: 1px solid var(--border); padding: 4px 8px; }
+.recent-placements { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; margin-bottom: 8px; max-height: 112px; overflow: hidden; }
+.rp-item { display: flex; gap: 6px; align-items: center; border: 1px solid var(--border); padding: 4px 8px; width: calc(33.33% - 4px); min-width: 180px; box-sizing: border-box; }
 .rp-artwork { width: 36px; height: 36px; object-fit: cover; flex-shrink: 0; }
-.rp-artwork-ph { width: 36px; height: 36px; background: #1a1a1a; border: 1px solid var(--border); flex-shrink: 0; }
-.rp-info { font-size: 0.58rem; color: #aaa; line-height: 1.3; min-width: 0; }
-.rp-info .rp-artist { color: #fff; font-weight: 600; font-size: 0.58rem; }
-.rp-info .rp-title { color: #aaa; font-size: 0.54rem; }
+.rp-info { font-size: 0.58rem; color: #aaa; line-height: 1.3; min-width: 0; overflow: hidden; }
+.rp-info .rp-artist { color: #fff; font-weight: 600; font-size: 0.58rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rp-info .rp-title { color: #aaa; font-size: 0.54rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .rp-info .rp-date { color: #555; font-size: 0.48rem; }
 .rp-link { color: var(--accent); font-size: 0.6rem; text-decoration: none; flex-shrink: 0; }
 .card-name { font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 800; color: #fff; }
@@ -128,8 +127,8 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .card-placements { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 8px; }
 .pl-tag { font-size: 0.58rem; color: var(--text); padding: 3px 8px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.04); }
 
-.card-majors { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
-.major-block { display: flex; gap: 6px; align-items: center; border: 1px solid var(--border); padding: 4px 8px; }
+.card-majors { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; max-height: 112px; overflow: hidden; }
+.major-block { display: flex; gap: 6px; align-items: center; border: 1px solid var(--border); padding: 4px 8px; width: calc(33.33% - 4px); min-width: 180px; box-sizing: border-box; }
 .major-art { width: 36px; height: 36px; object-fit: cover; }
 .major-info { font-size: 0.58rem; color: #aaa; line-height: 1.3; }
 .major-info strong { color: #fff; }
@@ -197,29 +196,31 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .pdf-dash-num.orange { color: #f59e0b; }
 .pdf-dash-num.green { color: #4ade80; }
 .pdf-dash-label { font-family: 'Syne Mono', monospace; font-size: 0.44rem; color: #888; letter-spacing: 0.06em; }
-.pdf-rp { display: flex; gap: 6px; flex-wrap: wrap; margin: 6px 0 10px; }
-.pdf-rp-item { display: flex; gap: 6px; align-items: center; border: 1px solid rgba(255,255,255,0.08); padding: 4px 8px; }
-.pdf-rp-art { width: 32px; height: 32px; object-fit: cover; flex-shrink: 0; }
+.pdf-rp { display: flex; gap: 4px; flex-wrap: wrap; margin: 2px 0 4px; }
+.pdf-rp-item { display: flex; gap: 4px; align-items: center; border: 1px solid rgba(255,255,255,0.08); padding: 3px 6px; }
+.pdf-rp-art { width: 24px; height: 24px; object-fit: cover; flex-shrink: 0; }
 .pdf-rp-info { font-size: 0.5rem; color: #aaa; line-height: 1.3; min-width: 0; }
 .pdf-rp-artist { color: #fff; font-weight: 600; font-size: 0.5rem; }
 .pdf-rp-title { color: #aaa; font-size: 0.46rem; }
 .pdf-rp-date { color: #555; font-size: 0.4rem; }
 .pdf-rp-link { color: #e8c547; font-size: 0.42rem; text-decoration: none; }
-.pdf-section-label { font-size: 0.7rem; color: #bbb; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700; margin: 18px 0 8px; padding-top: 14px; padding-bottom: 5px; border-top: 1px solid rgba(255,255,255,0.06); border-bottom: 1px solid rgba(255,255,255,0.06); }
-.pdf-tags { display: flex; gap: 6px; flex-wrap: wrap; }
-.pdf-tag { font-size: 0.66rem; color: #ddd; padding: 4px 10px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.05); font-family: 'Syne Mono', monospace; }
-.pdf-majors { display: flex; gap: 8px; flex-wrap: wrap; }
-.pdf-major { display: flex; gap: 8px; align-items: center; border: 1px solid #333; padding: 6px 10px; }
-.pdf-major img { width: 44px; height: 44px; object-fit: cover; }
-.pdf-major-info { font-size: 0.66rem; color: #aaa; line-height: 1.3; }
+.pdf-section-label { font-size: 0.6rem; color: #bbb; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700; margin: 10px 0 4px; padding-top: 8px; padding-bottom: 3px; border-top: 1px solid rgba(255,255,255,0.06); border-bottom: 1px solid rgba(255,255,255,0.06); }
+.pdf-tags { display: flex; gap: 3px; flex-wrap: wrap; margin-bottom: 2px; }
+.pdf-tag { font-size: 0.5rem; color: #ddd; padding: 2px 6px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.05); font-family: 'Syne Mono', monospace; }
+.pdf-majors { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 2px; }
+.pdf-major { display: flex; gap: 5px; align-items: center; border: 1px solid #333; padding: 3px 6px; }
+.pdf-major img { width: 28px; height: 28px; object-fit: cover; }
+.pdf-major-info { font-size: 0.52rem; color: #aaa; line-height: 1.2; }
 .pdf-major-info strong { color: #fff; }
 .pdf-certs { display: flex; flex-direction: column; gap: 4px; }
-.pdf-cert { display: flex; align-items: center; gap: 8px; font-size: 0.64rem; color: #e8c547; padding: 4px 10px; border: 1px solid #4a3e10; font-family: 'Syne Mono', monospace; }
-.pdf-cert img { width: 30px; height: 30px; object-fit: cover; }
-.pdf-cert-emoji { font-size: 1rem; }
-.pdf-socials { position: absolute; top: 40px; right: 40px; display: flex; gap: 12px; z-index: 2; }
+.pdf-cert { display: inline-flex; align-items: center; gap: 5px; font-size: 0.54rem; color: #e8c547; padding: 3px 8px; border: 1px solid #4a3e10; font-family: 'Syne Mono', monospace; margin: 0 3px 3px 0; }
+.pdf-cert img { width: 22px; height: 22px; object-fit: cover; }
+.pdf-cert-emoji { font-size: 0.8rem; }
+.pdf-certs { display: flex; flex-wrap: wrap; gap: 0; margin-bottom: 4px; }
+.pdf-socials { position: absolute; top: 40px; right: 40px; display: flex; flex-wrap: wrap; gap: 10px; z-index: 2; max-width: 260px; justify-content: flex-end; }
 .pdf-socials a { color: #ddd; }
-.pdf-socials svg { width: 30px; height: 30px; }
+.pdf-socials svg { width: 28px; height: 28px; }
+.pdf-socials .pdf-playlist-row { width: 100%; display: flex; gap: 6px; justify-content: flex-end; }
 .pdf-footer { display: flex; justify-content: center; margin-top: auto; padding-top: 16px; }
 .pdf-footer img { height: 70px; width: auto; opacity: 0.6; }
 
@@ -465,16 +466,25 @@ function rerenderRoster() {
       if (!planningData.length) return '';
       const nameUpper = artistName.toUpperCase();
       const altName = SW_RENAME_INV[nameUpper] || '';
+      const now = new Date();
+      const sixAgo = new Date(now.getFullYear(), now.getMonth() - 6, 1).toISOString().slice(0,10);
+      const twelveAgo = new Date(now.getFullYear(), now.getMonth() - 12, 1).toISOString().slice(0,10);
 
       const matchesSw = (r) => {
         const sw = r.songwriters ? (Array.isArray(r.songwriters) ? r.songwriters : [r.songwriters]) : [];
         return sw.some(s => s.toUpperCase() === nameUpper || (altName && s.toUpperCase() === altName));
       };
 
-      const sorties = planningData
-        .filter(r => ['Single','EP','Album'].includes(r.type) && r.status !== 'Annulé' && matchesSw(r))
-        .sort((a, b) => (b.dateSortable || '').localeCompare(a.dateSortable || ''))
-        .slice(0, 5);
+      const allSorties = planningData
+        .filter(r => ['Single','EP','Album'].includes(r.type) && r.status !== 'Annulé' && matchesSw(r) && r.dateSortable <= now.toISOString().slice(0,10))
+        .sort((a, b) => (b.dateSortable || '').localeCompare(a.dateSortable || ''));
+
+      // Try last 6 months first, expand to 12 if < 10
+      let sorties = allSorties.filter(r => r.dateSortable >= sixAgo);
+      if (sorties.length < 10) {
+        sorties = allSorties.filter(r => r.dateSortable >= twelveAgo);
+      }
+      sorties = sorties.slice(0, 10);
 
       if (!sorties.length) return '';
 
@@ -614,10 +624,33 @@ function rerenderRoster() {
         h += `</div>`;
       }
 
-      if (certs.length) {
+      // Merge manual certs with planning certification events
+      const allCerts = [...certs];
+      // Add certs from planning data
+      if (planningData.length) {
+        const _nu = a.name.toUpperCase();
+        const _alt = SW_RENAME_INV[_nu] || '';
+        const _mSw = (r) => {
+          const sw = r.songwriters ? (Array.isArray(r.songwriters) ? r.songwriters : [r.songwriters]) : [];
+          return sw.some(s => s.toUpperCase() === _nu || (_alt && s.toUpperCase() === _alt));
+        };
+        planningData.filter(r => r.type === 'Certification' && r.status !== 'Annulé' && _mSw(r)).forEach(r => {
+          allCerts.push({
+            type: r.certType || 'Single',
+            level: r.certLevel || '',
+            artist: r.artist || '',
+            project: r.title || r.track || '',
+            artwork: r.artwork || '',
+            date: r.date || '',
+            fromPlanning: true
+          });
+        });
+      }
+
+      if (allCerts.length) {
         const CERT_EMOJI = { 'Or': '🥇', 'Platine': '🥈', 'Double platine': '🥈🥈', 'Triple platine': '🥈🥈🥈', 'Diamant': '💎' };
         const CERT_ORDER = { 'Diamant': 0, 'Triple platine': 1, 'Double platine': 2, 'Platine': 3, 'Or': 4 };
-        const sortedCerts = [...certs].sort((a, b) => (CERT_ORDER[a.level] ?? 9) - (CERT_ORDER[b.level] ?? 9));
+        const sortedCerts = [...allCerts].sort((a, b) => (CERT_ORDER[a.level] ?? 9) - (CERT_ORDER[b.level] ?? 9));
         const singles = sortedCerts.filter(c => c.type === 'Single');
         const albums = sortedCerts.filter(c => c.type === 'Album');
         const other = sortedCerts.filter(c => c.type !== 'Single' && c.type !== 'Album');
@@ -629,7 +662,9 @@ function rerenderRoster() {
             out += `<span class="cert-tag">`;
             if (c.artwork) out += `<img class="cert-art" src="${c.artwork}" />`;
             else if (emoji) out += `<span style="font-size:1rem">${emoji}</span>`;
-            out += buildCertLabel(c) + `</span>`;
+            out += buildCertLabel(c);
+            if (c.date) out += ` <span style="color:#555;font-size:0.5rem">${c.date}</span>`;
+            out += `</span>`;
           });
           return out + '</div>';
         };
@@ -897,9 +932,20 @@ function buildArtistCardHTML(a, pdfLang, opts) {
   if (bgSrc) h += `<div class="pdf-bg" style="background-image:url('${bgSrc}')"></div>`;
   h += '<div class="pdf-content">';
   const socials = ['instagram','tiktok','spotify','ytChannel','genius'].filter(k => a[k]);
-  if (socials.length) {
+  const SPOT_SVG = '<svg viewBox="0 0 24 24" width="14" height="14" fill="#1DB954"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>';
+  if (socials.length || a.youtube || a.spotifyPlaylist) {
     h += '<div class="pdf-socials">';
     socials.forEach(k => { h += `<a href="${a[k]}" target="_blank">${SOCIAL_ICONS[k]}</a>`; });
+    if (a.youtube || a.spotifyPlaylist) {
+      h += '<div class="pdf-playlist-row" style="margin-top:6px">';
+      if (a.youtube) {
+        h += `<a class="pdf-playlist" href="${a.youtube}" target="_blank">${PLAY_SVG} ${playlistText(a.name, pdfLang)} ${YT_SVG}</a>`;
+      }
+      if (a.spotifyPlaylist) {
+        h += `<a class="pdf-playlist-spotify" href="${a.spotifyPlaylist}" target="_blank">${spotifyPlaylistText(a.name, pdfLang)} ${SPOT_SVG}</a>`;
+      }
+      h += '</div>';
+    }
     h += '</div>';
   }
   h += '<div class="pdf-top">';
@@ -910,17 +956,6 @@ function buildArtistCardHTML(a, pdfLang, opts) {
   if (trTypes.length) h += `<div class="pdf-types">${trTypes.join(' · ')}</div>`;
   if (trSkills.length) h += `<div class="pdf-skills">${trSkills.join(' · ')}</div>`;
   h += '</div></div>';
-  if (a.youtube || a.spotifyPlaylist) {
-    const SPOT_SVG = '<svg viewBox="0 0 24 24" width="14" height="14" fill="#1DB954"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>';
-    h += '<div class="pdf-playlist-row">';
-    if (a.youtube) {
-      h += `<a class="pdf-playlist" href="${a.youtube}" target="_blank">${PLAY_SVG} ${playlistText(a.name, pdfLang)} ${YT_SVG}</a>`;
-    }
-    if (a.spotifyPlaylist) {
-      h += `<a class="pdf-playlist-spotify" href="${a.spotifyPlaylist}" target="_blank">${spotifyPlaylistText(a.name, pdfLang)} ${SPOT_SVG}</a>`;
-    }
-    h += '</div>';
-  }
   const displayBio = (pdfLang === 'en' && a.bioEn) ? a.bioEn : a.bio;
   if (displayBio) h += `<div class="pdf-bio">${displayBio}</div>`;
   if (a.context) h += `<div class="pdf-context">${a.context}</div>`;
@@ -940,8 +975,13 @@ function buildArtistCardHTML(a, pdfLang, opts) {
     const _sixAgo = new Date(_now.getFullYear(), _now.getMonth() - 6, 1).toISOString().slice(0,10);
     const _recent = _pd.filter(r => r.dateSortable >= _sixAgo && r.status !== 'Annulé' && _matchSw(r));
     const _FLAGS = {FR:'🇫🇷',US:'🇺🇸',GB:'🇬🇧',DE:'🇩🇪',ES:'🇪🇸',IT:'🇮🇹',BE:'🇧🇪',CH:'🇨🇭',CA:'🇨🇦',JP:'🇯🇵',KR:'🇰🇷',BR:'🇧🇷',AR:'🇦🇷',MX:'🇲🇽',NG:'🇳🇬',CI:'🇨🇮',SN:'🇸🇳',MA:'🇲🇦',DZ:'🇩🇿',CM:'🇨🇲',GN:'🇬🇳',ML:'🇲🇱',CD:'🇨🇩',INTL:'🌍'};
+    const _FNAMES = {FR:'FR',US:'US',GB:'UK',DE:'DE',ES:'ES',IT:'IT',BE:'BE',CH:'CH',CA:'CA',JP:'JP',KR:'KR',BR:'BR',AR:'AR',MX:'MX',NG:'NG',CI:'CI',SN:'SN',MA:'MA',DZ:'DZ',CM:'CM',GN:'GN',ML:'ML',CD:'CD',INTL:'INTL'};
+    const _flagLabel = (country) => {
+      if (!country) return '';
+      return country.split(',').map(c => (_FLAGS[c] || '') + (_FNAMES[c] || c)).filter(Boolean).join(' ') + ' ';
+    };
 
-    // Mini dashboard
+    // Mini dashboard with title
     if (_recent.length) {
       const _sorties = _recent.filter(r => ['Single','EP','Album'].includes(r.type));
       const _cntTr = (list) => list.reduce((s,r) => s + ((r.type==='EP'||r.type==='Album') && r.blzTrackCount && parseInt(r.blzTrackCount)>0 ? parseInt(r.blzTrackCount) : 1), 0);
@@ -959,22 +999,31 @@ function buildArtistCardHTML(a, pdfLang, opts) {
       if (_certA.length) _stats.push({ n: _certA.length, l: 'CERTIFS ALBUMS', c: 'orange' });
       if (_syn.length) _stats.push({ n: _syn.length, l: 'SYNCHROS', c: '' });
       if (_stats.length) {
+        h += `<div class="pdf-section-label">${pdfLang==='en'?'LAST 6 MONTHS':'6 DERNIERS MOIS'}</div>`;
         h += '<div class="pdf-dash">';
         _stats.forEach(s => { h += `<div class="pdf-dash-stat"><span class="pdf-dash-num${s.c?' '+s.c:''}">${s.n}</span><span class="pdf-dash-label">${s.l}</span></div>`; });
         h += '</div>';
       }
     }
 
-    // Recent placements (last 5)
-    const _placements = _pd
-      .filter(r => ['Single','EP','Album'].includes(r.type) && r.status !== 'Annulé' && _matchSw(r))
-      .sort((a,b) => (b.dateSortable||'').localeCompare(a.dateSortable||''))
-      .slice(0, 5);
+    // Recent placements (last 10)
+    const _today2 = _now.toISOString().slice(0,10);
+    const _sixAgo2 = new Date(_now.getFullYear(), _now.getMonth() - 6, 1).toISOString().slice(0,10);
+    const _twelveAgo2 = new Date(_now.getFullYear(), _now.getMonth() - 12, 1).toISOString().slice(0,10);
+    let _placements = _pd
+      .filter(r => ['Single','EP','Album'].includes(r.type) && r.status !== 'Annulé' && _matchSw(r) && r.dateSortable >= _sixAgo2 && r.dateSortable <= _today2)
+      .sort((a,b) => (b.dateSortable||'').localeCompare(a.dateSortable||''));
+    if (_placements.length < 10) {
+      _placements = _pd
+        .filter(r => ['Single','EP','Album'].includes(r.type) && r.status !== 'Annulé' && _matchSw(r) && r.dateSortable >= _twelveAgo2 && r.dateSortable <= _today2)
+        .sort((a,b) => (b.dateSortable||'').localeCompare(a.dateSortable||''));
+    }
+    _placements = _placements.slice(0, 10);
     if (_placements.length) {
       h += `<div class="pdf-section-label">${pdfLang==='en'?'RECENT PLACEMENTS':'DERNIERS PLACEMENTS'}</div>`;
       h += '<div class="pdf-rp">';
       _placements.forEach(r => {
-        const fl = r.country ? r.country.split(',').map(c => _FLAGS[c]||'').filter(Boolean).join(' ')+' ' : '';
+        const fl = _flagLabel(r.country);
         h += '<div class="pdf-rp-item">';
         if (r.artwork) h += `<img class="pdf-rp-art" src="${r.artwork}" crossorigin="anonymous" />`;
         h += '<div class="pdf-rp-info">';
@@ -986,6 +1035,19 @@ function buildArtistCardHTML(a, pdfLang, opts) {
       });
       h += '</div>';
     }
+  }
+
+  // Placements majeurs — right after recent placements
+  if (majors.length) {
+    h += `<div class="pdf-section-label">${t('placements_majeurs', pdfLang).toUpperCase()}</div><div class="pdf-majors">`;
+    majors.forEach(m => {
+      h += '<div class="pdf-major">';
+      if (m.artwork) h += `<img src="${m.artwork}" crossorigin="anonymous" />`;
+      h += `<div class="pdf-major-info"><strong>${m.artist || ''}</strong><br>${m.title || ''}`;
+      if (m.link) h += `<br><a href="${m.link}" target="_blank" style="color:#e8c547;font-size:0.5rem;text-decoration:none">▶ ${t("ecouter", pdfLang)}</a>`;
+      h += `</div></div>`;
+    });
+    h += '</div>';
   }
 
   if (discography.length) {
@@ -1010,20 +1072,23 @@ function buildArtistCardHTML(a, pdfLang, opts) {
     sorted.forEach(n => { h += `<span class="pdf-tag">${n}</span>`; });
     h += '</div>';
   }
-  if (majors.length) {
-    h += `<div class="pdf-section-label">${t('placements_majeurs', pdfLang).toUpperCase()}</div><div class="pdf-majors">`;
-    majors.forEach(m => {
-      h += '<div class="pdf-major">';
-      if (m.artwork) h += `<img src="${m.artwork}" crossorigin="anonymous" />`;
-      h += `<div class="pdf-major-info"><strong>${m.artist || ''}</strong><br>${m.title || ''}`;
-      if (m.link) h += `<br><a href="${m.link}" target="_blank" style="color:#e8c547;font-size:0.5rem;text-decoration:none">▶ ${t("ecouter", pdfLang)}</a>`;
-      h += `</div></div>`;
+  // Merge manual certs with planning certs for PDF
+  const allPdfCerts = [...certs];
+  const _pd2 = window._planningData || [];
+  if (_pd2.length) {
+    const _nu2 = a.name.toUpperCase();
+    const _alt2 = ({'LEANDRE PICK':'LEANDRE','LE SERI':'YANNICK SERI','BRÖ':'BRO'})[_nu2] || '';
+    const _mSw2 = (r) => {
+      const sw = r.songwriters ? (Array.isArray(r.songwriters) ? r.songwriters : [r.songwriters]) : [];
+      return sw.some(s => s.toUpperCase() === _nu2 || (_alt2 && s.toUpperCase() === _alt2));
+    };
+    _pd2.filter(r => r.type === 'Certification' && r.status !== 'Annulé' && _mSw2(r)).forEach(r => {
+      allPdfCerts.push({ type: r.certType||'Single', level: r.certLevel||'', artist: r.artist||'', project: r.title||'', artwork: r.artwork||'', date: r.date||'' });
     });
-    h += '</div>';
   }
-  if (certs.length) {
+  if (allPdfCerts.length) {
     const CERT_ORDER = { 'Diamant': 0, 'Triple platine': 1, 'Double platine': 2, 'Platine': 3, 'Or': 4 };
-    const sortedCerts = [...certs].sort((x, y) => (CERT_ORDER[x.level] ?? 9) - (CERT_ORDER[y.level] ?? 9));
+    const sortedCerts = [...allPdfCerts].sort((x, y) => (CERT_ORDER[x.level] ?? 9) - (CERT_ORDER[y.level] ?? 9));
     const singles = sortedCerts.filter(c => c.type === 'Single');
     const albums = sortedCerts.filter(c => c.type === 'Album');
     const other = sortedCerts.filter(c => c.type !== 'Single' && c.type !== 'Album');
@@ -1036,7 +1101,9 @@ function buildArtistCardHTML(a, pdfLang, opts) {
         out += '<span class="pdf-cert">';
         if (c.artwork) out += `<img src="${c.artwork}" crossorigin="anonymous" />`;
         else if (emoji) out += `<span class="pdf-cert-emoji">${emoji}</span>`;
-        out += label + '</span>';
+        out += label;
+        if (c.date) out += ` <span style="color:#555;font-size:0.4rem">${c.date}</span>`;
+        out += '</span>';
       });
       return out + '</div>';
     };

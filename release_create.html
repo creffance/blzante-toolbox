@@ -466,20 +466,47 @@ function extractYouTubeId(url) {
 async function tryExtractArtwork(url) {
   if (!url) return;
 
-  // YouTube → thumbnail direct
+  // YouTube → try highest resolution first, fallback to lower
   const ytId = extractYouTubeId(url);
   if (ytId) {
+    const sizes = ['maxresdefault', 'sddefault', 'hqdefault'];
+    for (const size of sizes) {
+      const thumbUrl = `https://img.youtube.com/vi/${ytId}/${size}.jpg`;
+      try {
+        const res = await fetch(thumbUrl, { method: 'HEAD' });
+        if (res.ok) {
+          // maxresdefault returns a placeholder (120x90) if not available, check via loading
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          const loaded = await new Promise(resolve => {
+            img.onload = () => resolve(img);
+            img.onerror = () => resolve(null);
+            img.src = thumbUrl;
+          });
+          if (loaded && loaded.naturalWidth > 200) {
+            showArtwork(thumbUrl);
+            return;
+          }
+        }
+      } catch(e) {}
+    }
+    // Ultimate fallback
     showArtwork(`https://img.youtube.com/vi/${ytId}/hqdefault.jpg`);
     return;
   }
 
-  // Spotify → oembed endpoint
+  // Spotify → oembed endpoint, request max size
   if (url.includes('open.spotify.com')) {
     try {
       const res = await fetch(`https://open.spotify.com/oembed?url=${encodeURIComponent(url)}`);
       if (res.ok) {
         const data = await res.json();
-        if (data.thumbnail_url) { showArtwork(data.thumbnail_url); return; }
+        if (data.thumbnail_url) {
+          // Spotify oembed returns 300px, replace with 640px for higher quality
+          const hiRes = data.thumbnail_url.replace(/\/\d+$/, '').replace('i.scdn.co/image/', 'i.scdn.co/image/');
+          showArtwork(data.thumbnail_url.includes('i.scdn.co') ? hiRes : data.thumbnail_url);
+          return;
+        }
       }
     } catch(e) { console.warn('Spotify oembed failed:', e); }
   }

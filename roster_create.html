@@ -177,7 +177,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
   <div class="dynamic-list" id="majorList"></div>
   <button class="add-btn-dyn" id="addMajor">+ Ajouter un placement majeur</button>
 
-  <div class="form-section">Certifications</div>
+  <div class="form-section">Certifications (avant 2026)</div>
   <div class="dynamic-list" id="certsList"></div>
   <button class="add-btn-dyn" id="addCert">+ Ajouter une certification</button>
 
@@ -371,13 +371,14 @@ document.getElementById('addDisco').addEventListener('click', () => addDisco());
 
 // ─── Certifications ───
 let certCount = 0;
-function addCert(type, level, artist, project, artwork) {
+function addCert(type, level, artist, project, artwork, date) {
   certCount++;
   const div = document.createElement('div'); div.className = 'cert-item'; div.dataset.cid = certCount;
   div.innerHTML = `<select class="form-select" data-f="type"><option value="">Type</option><option value="Single" ${type==='Single'?'selected':''}>Single</option><option value="Album" ${type==='Album'?'selected':''}>Album</option></select>` +
     `<select class="form-select" data-f="level"><option value="">Certif</option><option value="Or" ${level==='Or'?'selected':''}>Or</option><option value="Platine" ${level==='Platine'?'selected':''}>Platine</option><option value="Double platine" ${level==='Double platine'?'selected':''}>Double platine</option><option value="Triple platine" ${level==='Triple platine'?'selected':''}>Triple platine</option><option value="Diamant" ${level==='Diamant'?'selected':''}>Diamant</option></select>` +
     `<input type="text" class="form-input" placeholder="Artiste" value="${artist||''}" data-f="artist" />` +
     `<input type="text" class="form-input" placeholder="Projet" value="${project||''}" data-f="project" />` +
+    `<input type="text" class="form-input" placeholder="Date (ex: 06/2024)" value="${date||''}" data-f="date" style="max-width:100px" />` +
     `<input type="file" accept="image/*" style="display:none" data-f="file" />` +
     `<button type="button" class="major-upload" data-f="upload">img</button>` +
     `<button class="remove-btn" onclick="this.parentElement.remove()">×</button>`;
@@ -440,8 +441,9 @@ function gatherData() {
     const level = div.querySelector('[data-f=level]').value;
     const artist = div.querySelector('[data-f=artist]').value.trim();
     const project = div.querySelector('[data-f=project]').value.trim();
+    const date = div.querySelector('[data-f=date]') ? div.querySelector('[data-f=date]').value.trim() : '';
     const artImg = div.querySelector('.cert-artwork');
-    if (type || level || artist) certs.push({ type, level, artist, project, artwork: artImg ? artImg.src : '' });
+    if (type || level || artist) certs.push({ type, level, artist, project, date, artwork: artImg ? artImg.src : '' });
   });
   const specialInfo = []; const specialInfoEn = [];
   document.querySelectorAll('#specialList .dynamic-item').forEach(div => {
@@ -503,7 +505,7 @@ async function loadForEdit(id) {
     const dc = Array.isArray(d.discography) ? d.discography : d.discography ? Object.values(d.discography) : [];
     dc.forEach(x => addDisco(x.artist, x.title, x.artwork, x.date, x.link));
     const cr = Array.isArray(d.certs) ? d.certs : d.certs ? Object.values(d.certs) : [];
-    cr.forEach(c => addCert(c.type, c.level, c.artist, c.project, c.artwork));
+    cr.forEach(c => addCert(c.type, c.level, c.artist, c.project, c.artwork, c.date));
     const sp = Array.isArray(d.specialInfo) ? d.specialInfo : d.specialInfo ? Object.values(d.specialInfo) : [];
     const spEn = Array.isArray(d.specialInfoEn) ? d.specialInfoEn : d.specialInfoEn ? Object.values(d.specialInfoEn) : [];
     sp.forEach((s, i) => addSpecial(typeof s === 'string' ? s : '', typeof spEn[i] === 'string' ? spEn[i] : ''));
