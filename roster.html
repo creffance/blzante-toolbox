@@ -58,10 +58,11 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 
 .card-inner {
   position: relative; border: 1px solid var(--border);
-  width: 100%; display: flex; flex-direction: column;
+  width: 100%; overflow: hidden;
 }
 .card-bg { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0.2; z-index: 0; }
-.card-content { position: relative; z-index: 1; padding: 24px; }
+.card-content { position: relative; z-index: 1; padding: 24px; display: block; overflow: hidden; }
+.card-section-wrap { display: block; clear: both; width: 100%; overflow: hidden; margin-bottom: 4px; }
 .card-socials-top { position: absolute; top: 12px; right: 12px; display: flex; gap: 6px; z-index: 2; }
 .card-socials-top .social-link { width: 30px; height: 30px; }
 .card-top { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 8px; }
@@ -586,10 +587,10 @@ function rerenderRoster() {
       if (displayBio) h += `<div class="card-bio">${displayBio}</div>`;
 
       // Artist mini dashboard (6 months) — between bio and artistes placés
-      h += buildArtistDashboard(a.name);
+      h += '<div class="card-section-wrap">' + buildArtistDashboard(a.name) + '</div>';
 
       // Recent placements from planning
-      h += buildRecentPlacements(a.name);
+      h += '<div class="card-section-wrap">' + buildRecentPlacements(a.name) + '</div>';
 
       if (discography.length && a.showDisco !== false) {
         const sortedDisco = [...discography].sort((a, b) => {
@@ -609,6 +610,7 @@ function rerenderRoster() {
       }
 
       if (majors.length) {
+        h += '<div class="card-section-wrap">';
         h += `<div class="card-section-title">${t('placements_majeurs')}</div><div class="card-majors">`;
         majors.slice(0, 9).forEach(m => {
           h += `<div class="major-block">`;
@@ -646,6 +648,7 @@ function rerenderRoster() {
       }
       const allPlacements = [...placementMap.values()];
       if (allPlacements.length) {
+        h += '<div class="card-section-wrap">';
         const sorted = allPlacements.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
         const hasIntl = sorted.some(p => [...p.countries].some(c => c !== 'FR'));
         h += `<div class="card-section-title">${t('artistes_places')}</div><div class="card-placements">`;
@@ -663,7 +666,7 @@ function rerenderRoster() {
         h += `</div>`;
       }
 
-        h += `</div>`;
+        h += `</div></div>`;
       }
 
       // Merge manual certs with planning certification events
@@ -711,9 +714,8 @@ function rerenderRoster() {
           });
           return out + '</div>';
         };
-        h += renderCertGroup(t('cert_singles'), singles);
-        h += renderCertGroup(t('cert_albums'), albums);
-        h += renderCertGroup(t('cert_autres'), other);
+        h += '<div class="card-section-wrap">' + renderCertGroup(t('cert_singles'), singles) + renderCertGroup(t('cert_albums'), albums) + renderCertGroup(t('cert_autres'), other) + '</div>';
+        // (included in wrap above)
       }
 
       const specials = a.specialInfo ? (Array.isArray(a.specialInfo) ? a.specialInfo : Object.values(a.specialInfo)) : [];
@@ -959,6 +961,8 @@ function openSpecialExport(a) {
 // ─── Render one artist page into a jsPDF instance ───
 // ─── Build artist card HTML (reused by single PDF and team PDF) ───
 function buildArtistCardHTML(a, pdfLang, opts) {
+  const PDF_FLAGS = {FR:'🇫🇷',US:'🇺🇸',GB:'🇬🇧',DE:'🇩🇪',ES:'🇪🇸',IT:'🇮🇹',BE:'🇧🇪',CH:'🇨🇭',CA:'🇨🇦',JP:'🇯🇵',KR:'🇰🇷',BR:'🇧🇷',AR:'🇦🇷',MX:'🇲🇽',NG:'🇳🇬',CI:'🇨🇮',SN:'🇸🇳',MA:'🇲🇦',DZ:'🇩🇿',CM:'🇨🇲',GN:'🇬🇳',ML:'🇲🇱',CV:'🇨🇻',CD:'🇨🇩',INTL:'🌍'};
+  const PDF_FNAMES = {FR:'FR',US:'US',GB:'UK',DE:'DE',ES:'ES',IT:'IT',BE:'BE',CH:'CH',CA:'CA',JP:'JP',KR:'KR',BR:'BR',AR:'AR',MX:'MX',NG:'NG',CI:'CI',SN:'SN',MA:'MA',DZ:'DZ',CM:'CM',GN:'GN',ML:'ML',CV:'CV',CD:'CD',INTL:'INTL'};
   const options = opts || {};
   const types = a.types ? (Array.isArray(a.types) ? a.types : [a.types]) : [];
   const skills = a.skills ? (Array.isArray(a.skills) ? a.skills : [a.skills]) : [];
@@ -1028,8 +1032,8 @@ function buildArtistCardHTML(a, pdfLang, opts) {
     const _flagLabel = (country) => {
       if (!country) return '';
       return country.split(',').map(c => {
-        const f = _FLAGS[c] || '';
-        const n = _FNAMES[c] || c;
+        const f = PDF_FLAGS[c] || '';
+        const n = PDF_FNAMES[c] || c;
         return f + n;
       }).filter(Boolean).join(' ') + ' ';
     };
@@ -1129,7 +1133,7 @@ function buildArtistCardHTML(a, pdfLang, opts) {
     h += `<div class="pdf-section-label">${t('artistes_places', pdfLang).toUpperCase()}</div><div class="pdf-tags">`;
     sortedPl.forEach(p => {
       const isIntl = p.country && p.country.split(',').some(c => c && c !== 'FR');
-      const flagTxt = isIntl ? (_FLAGS[p.country] || '🌍') + ' ' : '';
+      const flagTxt = isIntl ? (PDF_FLAGS[p.country] || '🌍') + ' ' : '';
       h += `<span class="pdf-tag">${flagTxt}${p.name}</span>`;
     });
     h += '</div>';
