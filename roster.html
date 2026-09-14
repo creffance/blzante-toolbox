@@ -61,7 +61,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
   width: 100%; display: flex; flex-direction: column;
 }
 .card-bg { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0.2; z-index: 0; }
-.card-content { position: relative; z-index: 1; padding: 24px; flex: 1; display: flex; flex-direction: column; }
+.card-content { position: relative; z-index: 1; padding: 24px; }
 .card-socials-top { position: absolute; top: 12px; right: 12px; display: flex; gap: 6px; z-index: 2; }
 .card-socials-top .social-link { width: 30px; height: 30px; }
 .card-top { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 8px; }
@@ -78,7 +78,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .ad-label { font-family: 'Syne Mono', monospace; font-size: 0.5rem; color: var(--muted); letter-spacing: 0.06em; }
 
 /* Recent placements - same style as placements majeurs */
-.recent-placements { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 6px; margin-bottom: 8px; width: 100%; }
+.recent-placements { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 6px; margin-bottom: 16px; }
 .rp-item { display: flex; gap: 6px; align-items: center; border: 1px solid var(--border); padding: 4px 8px; overflow: hidden; }
 .rp-artwork { width: 36px; height: 36px; object-fit: cover; flex-shrink: 0; }
 .rp-info { font-size: 0.58rem; color: #aaa; line-height: 1.3; min-width: 0; overflow: hidden; }
@@ -124,10 +124,10 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
   border-top: 1px solid rgba(255,255,255,0.06); border-bottom: 1px solid rgba(255,255,255,0.06);
 }
 
-.card-placements { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 8px; width: 100%; align-self: stretch; }
+.card-placements { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 16px; }
 .pl-tag { font-size: 0.58rem; color: var(--text); padding: 3px 8px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.04); }
 
-.card-majors { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 8px; width: 100%; }
+.card-majors { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 16px; }
 .major-block { display: flex; gap: 6px; align-items: center; border: 1px solid var(--border); padding: 4px 8px; overflow: hidden; }
 .major-art { width: 36px; height: 36px; object-fit: cover; }
 .major-info { font-size: 0.58rem; color: #aaa; line-height: 1.3; }
@@ -155,7 +155,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .se-btn-cancel { background: transparent; border: 1px solid var(--border); color: var(--muted); }
 .se-btn-cancel:hover { border-color: #555; color: var(--text); }
 
-.card-certs { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+.card-certs { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 16px; }
 .cert-tag { display: flex; align-items: center; gap: 6px; font-size: 0.58rem; color: var(--accent); padding: 3px 8px; border: 1px solid #4a3e10; }
 .cert-art { width: 24px; height: 24px; object-fit: cover; }
 
@@ -706,6 +706,7 @@ function rerenderRoster() {
             else if (emoji) out += `<span style="font-size:1rem">${emoji}</span>`;
             out += buildCertLabel(c);
             if (c.date) out += ` <span style="color:#555;font-size:0.5rem">${c.date}</span>`;
+            if (c.link) out += ` <a href="${c.link}" target="_blank" style="color:var(--accent);font-size:0.55rem;text-decoration:none">▶ écouter</a>`;
             out += `</span>`;
           });
           return out + '</div>';
@@ -1026,7 +1027,11 @@ function buildArtistCardHTML(a, pdfLang, opts) {
     const _FNAMES = {FR:'FR',US:'US',GB:'UK',DE:'DE',ES:'ES',IT:'IT',BE:'BE',CH:'CH',CA:'CA',JP:'JP',KR:'KR',BR:'BR',AR:'AR',MX:'MX',NG:'NG',CI:'CI',SN:'SN',MA:'MA',DZ:'DZ',CM:'CM',GN:'GN',ML:'ML',CD:'CD',INTL:'INTL'};
     const _flagLabel = (country) => {
       if (!country) return '';
-      return country.split(',').map(c => (_FLAGS[c] || '') + (_FNAMES[c] || c)).filter(Boolean).join(' ') + ' ';
+      return country.split(',').map(c => {
+        const f = _FLAGS[c] || '';
+        const n = _FNAMES[c] || c;
+        return f + n;
+      }).filter(Boolean).join(' ') + ' ';
     };
 
     // Mini dashboard with title
@@ -1071,7 +1076,7 @@ function buildArtistCardHTML(a, pdfLang, opts) {
       h += `<div class="pdf-section-label">${pdfLang==='en'?'RECENT PLACEMENTS':'DERNIERS PLACEMENTS'}</div>`;
       h += '<div class="pdf-rp">';
       _placements.forEach(r => {
-        const fl = r.country ? r.country.split(',').map(c => c === 'INTL' ? '🌍' : '<img src="https://flagcdn.com/12x9/' + c.toLowerCase() + '.png" crossorigin="anonymous" style="vertical-align:middle" />').join(' ') + ' ' : '';
+        const fl = _flagLabel(r.country);
         h += '<div class="pdf-rp-item">';
         if (r.artwork) h += `<img class="pdf-rp-art" src="${r.artwork}" crossorigin="anonymous" />`;
         h += '<div class="pdf-rp-info">';
@@ -1089,9 +1094,10 @@ function buildArtistCardHTML(a, pdfLang, opts) {
   if (majors.length) {
     h += `<div class="pdf-section-label">${t('placements_majeurs', pdfLang).toUpperCase()}</div><div class="pdf-majors">`;
     majors.forEach(m => {
+      const mFlag = m.country ? _flagLabel(m.country) : '';
       h += '<div class="pdf-major">';
       if (m.artwork) h += `<img src="${m.artwork}" crossorigin="anonymous" />`;
-      h += `<div class="pdf-major-info"><strong>${m.artist || ''}</strong><br>${m.title || ''}`;
+      h += `<div class="pdf-major-info"><strong>${mFlag}${m.artist || ''}</strong><br>${m.title || ''}`;
       if (m.link) h += `<br><a href="${m.link}" target="_blank" style="color:#e8c547;font-size:0.5rem;text-decoration:none">▶ ${t("ecouter", pdfLang)}</a>`;
       h += `</div></div>`;
     });
@@ -1115,9 +1121,17 @@ function buildArtistCardHTML(a, pdfLang, opts) {
     h += '</div>';
   }
   if (placements.length) {
-    const sorted = [...placements].map(p => typeof p === 'string' ? p : p.name || '').filter(Boolean).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+    const pdfPlData = placements.map(p => {
+      if (typeof p === 'string') return { name: p, country: 'FR' };
+      return { name: p.name || '', country: p.country || 'FR' };
+    }).filter(p => p.name);
+    const sortedPl = pdfPlData.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
     h += `<div class="pdf-section-label">${t('artistes_places', pdfLang).toUpperCase()}</div><div class="pdf-tags">`;
-    sorted.forEach(n => { h += `<span class="pdf-tag">${n}</span>`; });
+    sortedPl.forEach(p => {
+      const isIntl = p.country && p.country.split(',').some(c => c && c !== 'FR');
+      const flagTxt = isIntl ? (_FLAGS[p.country] || '🌍') + ' ' : '';
+      h += `<span class="pdf-tag">${flagTxt}${p.name}</span>`;
+    });
     h += '</div>';
   }
   // Merge manual certs with planning certs for PDF
@@ -1153,6 +1167,7 @@ function buildArtistCardHTML(a, pdfLang, opts) {
         else if (emoji) out += `<span class="pdf-cert-emoji">${emoji}</span>`;
         out += label;
         if (c.date) out += ` <span style="color:#555;font-size:0.4rem">${c.date}</span>`;
+        if (c.link) out += ` <a href="${c.link}" target="_blank" style="color:#e8c547;font-size:0.38rem;text-decoration:none">▶</a>`;
         out += '</span>';
       });
       return out + '</div>';

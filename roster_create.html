@@ -303,7 +303,7 @@ const deletedPlacements = new Set();
 function addPlacement(val, fromPlanning, country) {
   const div = document.createElement('div'); div.className = 'dynamic-item';
   if (fromPlanning) div.dataset.fromPlanning = '1';
-  div.innerHTML = `<input type="text" class="form-input" placeholder="Nom de l'artiste" value="${val||''}" style="flex:1" /><input type="text" class="form-input" placeholder="Pays" value="${country||'FR'}" data-f="country" style="max-width:60px;font-size:0.65rem" /><button class="remove-btn" title="Supprimer">×</button>`;
+  div.innerHTML = `<input type="text" class="form-input" placeholder="Nom de l'artiste" value="${val||''}" style="flex:1" /><select class="form-select" data-f="country" style="max-width:90px;font-size:0.62rem;padding:6px 4px"><option value="FR">🇫🇷 FR</option><option value="US">🇺🇸 US</option><option value="GB">🇬🇧 UK</option><option value="DE">🇩🇪 DE</option><option value="ES">🇪🇸 ES</option><option value="IT">🇮🇹 IT</option><option value="BE">🇧🇪 BE</option><option value="CH">🇨🇭 CH</option><option value="CA">🇨🇦 CA</option><option value="JP">🇯🇵 JP</option><option value="KR">🇰🇷 KR</option><option value="BR">🇧🇷 BR</option><option value="AR">🇦🇷 AR</option><option value="MX">🇲🇽 MX</option><option value="NG">🇳🇬 NG</option><option value="CI">🇨🇮 CI</option><option value="SN">🇸🇳 SN</option><option value="MA">🇲🇦 MA</option><option value="DZ">🇩🇿 DZ</option><option value="CM">🇨🇲 CM</option><option value="GN">🇬🇳 GN</option><option value="ML">🇲🇱 ML</option><option value="CV">🇨🇻 CV</option><option value="CD">🇨🇩 CD</option><option value="INTL">🌍 INTL</option></select><button class="remove-btn" title="Supprimer">×</button>`;
   div.querySelector('.remove-btn').addEventListener('click', () => {
     const name = div.querySelector('input').value.trim();
     if (name && div.dataset.fromPlanning) deletedPlacements.add(name);
@@ -314,6 +314,9 @@ function addPlacement(val, fromPlanning, country) {
     if (e.key !== 'Enter') return; e.preventDefault();
     if (input.value.trim()) { addPlacement(); }
   });
+  // Set country select value
+  const countrySelect = div.querySelector('[data-f=country]');
+  if (countrySelect && country) countrySelect.value = country;
   document.getElementById('placementsList').appendChild(div);
   if (!val) input.focus();
 }
@@ -379,7 +382,7 @@ function addMajor(artist, title, artwork, link, country) {
   div.setAttribute('draggable', 'true');
   div.innerHTML = `<span class="drag-handle">☰</span><input type="text" class="form-input" placeholder="Artiste" value="${artist||''}" data-f="artist" />` +
     `<input type="text" class="form-input" placeholder="Projet" value="${title||''}" data-f="title" />` +
-    `<input type="text" class="form-input" placeholder="Pays (ex: FR,NG)" value="${country||''}" data-f="country" style="max-width:80px;font-size:0.65rem" />` +
+    `<select class="form-select" data-f="country" style="max-width:90px;font-size:0.62rem;padding:6px 4px"><option value="FR">🇫🇷 FR</option><option value="US">🇺🇸 US</option><option value="GB">🇬🇧 UK</option><option value="DE">🇩🇪 DE</option><option value="ES">🇪🇸 ES</option><option value="IT">🇮🇹 IT</option><option value="BE">🇧🇪 BE</option><option value="CH">🇨🇭 CH</option><option value="CA">🇨🇦 CA</option><option value="JP">🇯🇵 JP</option><option value="KR">🇰🇷 KR</option><option value="BR">🇧🇷 BR</option><option value="AR">🇦🇷 AR</option><option value="MX">🇲🇽 MX</option><option value="NG">🇳🇬 NG</option><option value="CI">🇨🇮 CI</option><option value="SN">🇸🇳 SN</option><option value="MA">🇲🇦 MA</option><option value="DZ">🇩🇿 DZ</option><option value="CM">🇨🇲 CM</option><option value="GN">🇬🇳 GN</option><option value="ML">🇲🇱 ML</option><option value="CV">🇨🇻 CV</option><option value="CD">🇨🇩 CD</option><option value="INTL">🌍 INTL</option></select>` +
     `<input type="text" class="form-input" placeholder="Lien écoute / artwork" value="${link||''}" data-f="link" style="font-size:0.68rem" />` +
     `<input type="file" accept="image/*" style="display:none" data-f="file" />` +
     `<button type="button" class="major-upload" data-f="upload">img</button>` +
@@ -405,6 +408,9 @@ function addMajor(artist, title, artwork, link, country) {
     if (linkInput.value && !div.querySelector('[data-f=artworkSrc]')) tryExtractArtworkForDiv(linkInput.value, div);
   });
   if (link && !artwork) tryExtractArtworkForDiv(link, div);
+  // Set country select value
+  const countrySelM = div.querySelector('[data-f=country]');
+  if (countrySelM && country) countrySelM.value = country;
   document.getElementById('majorList').appendChild(div);
 }
 document.getElementById('addMajor').addEventListener('click', () => addMajor());

@@ -1255,6 +1255,17 @@ nav {
   <div class="main-grid">
     <!-- ========== LEFT : FORM ========== -->
     <div>
+      <!-- Import from planning -->
+      <div class="form-group" style="margin-bottom:16px">
+        <label class="form-label" style="font-family:'Syne',sans-serif;font-size:0.7rem;letter-spacing:0.08em;text-transform:uppercase;color:#888">Importer un event du planning</label>
+        <div style="display:flex;gap:6px">
+          <select class="form-input" id="igImportEvent" style="flex:1;font-size:0.68rem">
+            <option value="">— Sélectionner un event —</option>
+          </select>
+          <button type="button" id="igImportBtn" style="font-size:0.65rem;padding:4px 10px;background:#1a1a1a;border:1px solid var(--border-hi);color:var(--accent);cursor:pointer;white-space:nowrap">Importer</button>
+        </div>
+      </div>
+
       <div class="section-label">Type de post</div>
       <div class="type-grid">
         <button class="type-tile active" data-type="sortie">
@@ -1289,17 +1300,6 @@ nav {
       <!-- ===== FORM SORTIE ===== -->
       <div id="formSortie">
         <div class="section-label">Informations</div>
-
-        <!-- Import from planning -->
-        <div class="form-group">
-          <label class="form-label">Importer un event du planning</label>
-          <div style="display:flex;gap:6px">
-            <select class="form-input" id="igImportEvent" style="flex:1;font-size:0.68rem">
-              <option value="">— Sélectionner un event —</option>
-            </select>
-            <button type="button" id="igImportBtn" style="font-size:0.65rem;padding:4px 10px;background:#1a1a1a;border:1px solid var(--border-hi);color:var(--accent);cursor:pointer;white-space:nowrap">Importer</button>
-          </div>
-        </div>
 
         <div class="form-group">
           <label class="form-label">Nom de l'artiste</label>
@@ -2089,23 +2089,38 @@ async function igExtractArtwork(url) {
   return null;
 }
 // ─── Import from planning ─────────────────────────────────
-(async function loadPlanningForIG() {
+async function loadPlanningForIG() {
+  // Wait for auth token
+  let token = window._fbToken || '';
+  if (!token) {
+    await new Promise(r => {
+      const check = setInterval(() => {
+        if (window._fbToken) { token = window._fbToken; clearInterval(check); r(); }
+      }, 200);
+      setTimeout(() => { clearInterval(check); r(); }, 5000);
+    });
+  }
   try {
-    const tok = window._fbToken || '';
-    const res = await fetch('https://blzante-toolbox-default-rtdb.europe-west1.firebasedatabase.app/releases.json?auth=' + tok);
+    const res = await fetch('https://blzante-toolbox-default-rtdb.europe-west1.firebasedatabase.app/releases.json?auth=' + token);
     const data = await res.json();
     if (!data) return;
-    const events = Object.entries(data).sort((a,b) => (b[1].dateSortable||'').localeCompare(a[1].dateSortable||''));
+    const today = new Date().toISOString().slice(0, 10);
+    const events = Object.entries(data)
+      .filter(([id, r]) => r.dateSortable && r.dateSortable <= today)
+      .sort((a,b) => (b[1].dateSortable||'').localeCompare(a[1].dateSortable||''))
+      .slice(0, 20);
     const sel = document.getElementById('igImportEvent');
     events.forEach(([id, r]) => {
       const opt = document.createElement('option');
       opt.value = id;
-      opt.textContent = `${r.date||''} — ${r.type||''} — ${r.artist||''} — ${r.title||''}`;
+      opt.textContent = `${r.date||''} · ${r.type||''} · ${r.artist||''} · ${r.title||''}`;
       opt.dataset.json = JSON.stringify(r);
       sel.appendChild(opt);
     });
-  } catch(e) { console.warn('Could not load planning for IG'); }
-})();
+    console.log(`Loaded ${events.length} planning events for IG import`);
+  } catch(e) { console.warn('Could not load planning for IG:', e); }
+}
+loadPlanningForIG();
 
 document.getElementById('igImportBtn').addEventListener('click', () => {
   const sel = document.getElementById('igImportEvent');
