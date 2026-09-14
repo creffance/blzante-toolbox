@@ -2105,9 +2105,10 @@ async function loadPlanningForIG() {
     const events = Object.entries(data)
       .filter(([id, r]) => r.dateSortable && r.dateSortable <= today)
       .sort((a,b) => (b[1].dateSortable||'').localeCompare(a[1].dateSortable||''))
-      .slice(0, 20);
+;
+    window._igAllEvents = events;
     const sel = document.getElementById('igImportEvent');
-    events.forEach(([id, r]) => {
+    events.slice(0, 20).forEach(([id, r]) => {
       const opt = document.createElement('option');
       opt.value = id;
       opt.textContent = `${r.date||''} · ${r.type||''} · ${r.artist||''} · ${r.title||''}`;
@@ -2141,26 +2142,43 @@ document.getElementById('igImportBtn').addEventListener('click', () => {
   const opt = sel.options[sel.selectedIndex];
   if (!opt || !opt.dataset.json) return;
   const r = JSON.parse(opt.dataset.json);
+  
+  // Auto-detect template type
+  const typeMap = { 'Single': 'sortie', 'EP': 'sortie', 'Album': 'sortie', 'Certification': 'certif', 'Synchro': 'synchro', 'Actu': 'actu', 'Live': 'sortie' };
+  const detectedType = typeMap[r.type] || 'sortie';
+  document.querySelectorAll('.template-btn').forEach(btn => {
+    if (btn.dataset.type === detectedType) btn.click();
+  });
+
   // Fill artist
   const ai = document.getElementById('f_artist');
   if (ai && r.artist) { ai.value = r.artist; ai.dispatchEvent(new Event('input')); }
   // Fill title
   const ti = document.getElementById('f_title');
   if (ti && r.title) { ti.value = r.title; ti.dispatchEvent(new Event('input')); }
-  // Fill songwriter
+  // Fill songwriter(s)
   if (r.songwriters) {
     const sw = Array.isArray(r.songwriters) ? r.songwriters : [r.songwriters];
     const swSel = document.getElementById('f_sw');
     if (swSel && sw[0]) { swSel.value = sw[0]; swSel.dispatchEvent(new Event('change')); }
   }
+  // Fill sortie type
+  if (['Single','EP','Album'].includes(r.type)) {
+    const tsel = document.getElementById('f_type');
+    if (tsel) { tsel.value = r.type.toLowerCase(); tsel.dispatchEvent(new Event('change')); }
+  }
   // Fill cert fields
   if (r.type === 'Certification') {
-    const certTypeEl = document.getElementById('f_certType');
-    if (certTypeEl && r.certType) { certTypeEl.value = r.certType; }
-    const certLevelEl = document.getElementById('f_certLevel');
-    if (certLevelEl && r.certLevel) { certLevelEl.value = r.certLevel; }
-    const certTrackEl = document.getElementById('f_certTrack');
-    if (certTrackEl && r.title) { certTrackEl.value = r.title; certTrackEl.dispatchEvent(new Event('input')); }
+    setTimeout(() => {
+      const certTypeEl = document.getElementById('f_certType');
+      if (certTypeEl && r.certType) certTypeEl.value = r.certType;
+      const certLevelEl = document.getElementById('f_certLevel');
+      if (certLevelEl && r.certLevel) certLevelEl.value = r.certLevel;
+      const certTrackEl = document.getElementById('f_certTrack');
+      if (certTrackEl && r.title) { certTrackEl.value = r.title; certTrackEl.dispatchEvent(new Event('input')); }
+      const certArtistEl = document.getElementById('f_certArtist');
+      if (certArtistEl && r.artist) { certArtistEl.value = r.artist; certArtistEl.dispatchEvent(new Event('input')); }
+    }, 100);
   }
   // Fill artwork
   if (r.artwork) {

@@ -41,7 +41,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 
 .entry-header { display: flex; align-items: center; padding: 14px 16px; gap: 12px; cursor: pointer; user-select: none; }
 .entry-chevron { font-size: 1.1rem; color: var(--muted); transition: transform 0.2s; width: 14px; text-align: center; flex-shrink: 0; }
-.roster-entry.open .entry-chevron { transform: rotate(90deg); color: #fff; }
+.roster-entry.open > .entry-header > .entry-chevron { transform: rotate(90deg); color: #fff; }
 .entry-name { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 800; color: #fff; flex: 1; }
 .entry-photo { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border); flex-shrink: 0; }
 .entry-photo-ph { width: 36px; height: 36px; border-radius: 50%; background: #222; border: 2px solid var(--border); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-family: 'Syne', sans-serif; font-weight: 800; font-size: 0.8rem; color: #555; }
@@ -54,7 +54,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 
 /* Expanded card */
 .entry-card { display: none; padding: 0 16px 20px 16px; }
-.roster-entry.open .entry-card { display: block; }
+.roster-entry.open > .entry-card { display: block; }
 
 .card-inner {
   position: relative; border: 1px solid var(--border);
@@ -1245,13 +1245,21 @@ function outputPDF(pdf, filename) {
 
 // ─── Generate single artist PDF ───
 async function generatePDF(a, lang) {
-  const render = document.getElementById('pdfRender');
-  const { jsPDF } = window.jspdf;
-  const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-  await renderArtistToPDF(a, pdf, render, lang || 'fr');
-  const now = new Date();
-  const yyyymmdd = now.getFullYear() + String(now.getMonth()+1).padStart(2,'0') + String(now.getDate()).padStart(2,'0');
-  outputPDF(pdf, `${yyyymmdd}_${a.name || 'artiste'}_${(lang || 'fr').toUpperCase()}.pdf`);
+  try {
+    const render = document.getElementById('pdfRender');
+    render.style.width = '794px';
+    render.style.minHeight = '1123px';
+    render.style.height = 'auto';
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    await renderArtistToPDF(a, pdf, render, lang || 'fr');
+    const now = new Date();
+    const yyyymmdd = now.getFullYear() + String(now.getMonth()+1).padStart(2,'0') + String(now.getDate()).padStart(2,'0');
+    outputPDF(pdf, `${yyyymmdd}_${a.name || 'artiste'}_${(lang || 'fr').toUpperCase()}.pdf`);
+  } catch(err) {
+    console.error('PDF generation error:', err);
+    alert('Erreur export PDF: ' + err.message);
+  }
 }
 
 // ─── Generate team PDF with multiple artists (opens in new tab) ───
