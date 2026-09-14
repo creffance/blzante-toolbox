@@ -65,6 +65,8 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .dash-num.green { color: #4ade80; }
 .dash-num.red { color: #FF2D3A; }
 .dash-label { font-family: 'Syne Mono', monospace; font-size: 0.48rem; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; line-height: 1.3; }
+.intl-short { display: none; }
+.intl-full { display: inline; }
 
 /* Month groups */
 .month-group { margin-bottom: 20px; }
@@ -111,7 +113,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .rel-title { color: #999; font-size: 0.62rem; font-family: 'Syne Mono', monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .rel-sw { color: #444; font-size: 0.55rem; font-family: 'Syne Mono', monospace; }
 .rel-desc { color: #888; font-size: 0.58rem; font-style: italic; }
-.rel-blz { color: var(--accent); font-size: 0.55rem; font-family: 'Syne Mono', monospace; font-weight: 600; }
+.rel-blz { color: #bbb; font-size: 0.55rem; font-family: 'Syne Mono', monospace; font-weight: 600; }
 
 .rel-edit {
   cursor: pointer; color: #333; font-size: 0.55rem; letter-spacing: 0.06em;
@@ -131,16 +133,21 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
   .container { padding: 28px 20px 40px; }
   .dashboard-header { flex-direction: column; align-items: flex-start; gap: 8px; }
   .dashboard-recap { grid-template-columns: repeat(3, 1fr); }
+  .intl-full { display: none; }
+  .intl-short { display: inline; }
   .release-item {
-    grid-template-columns: 1fr auto;
+    grid-template-columns: auto 1fr auto;
     grid-template-rows: auto auto;
     gap: 4px 8px;
     padding: 10px 12px;
   }
-  .rel-artwork { width: 36px; height: 36px; }
-  .rel-meta { grid-column: 1; grid-row: 1; gap: 4px; flex-wrap: wrap; }
-  .rel-info { grid-column: 1 / -1; grid-row: 2; }
-  .rel-edit { grid-column: 2; grid-row: 1; align-self: center; }
+  .release-item.has-art {
+    grid-template-columns: auto auto 1fr auto;
+  }
+  .rel-artwork { width: 36px; height: 36px; grid-row: 1 / 3; align-self: center; }
+  .rel-meta { gap: 4px; flex-wrap: wrap; }
+  .rel-info { grid-column: 2 / -1; }
+  .rel-edit { align-self: center; }
   .rel-date { font-size: 0.58rem; }
   .rel-type, .rel-status { font-size: 0.46rem; padding: 1px 4px; }
 }
@@ -286,8 +293,11 @@ function buildDashboard() {
   }
 
   const sorties = recent.filter(r => ['Single','EP','Album'].includes(r.type));
-  const sortiesFR = sorties.filter(r => !r.country || r.country === 'FR');
-  const sortiesINTL = sorties.filter(r => r.country && r.country !== 'FR');
+  const hasNonFR = (r) => r.country && r.country.split(',').some(c => c && c !== 'FR');
+  const isFR = (r) => !hasNonFR(r);
+  const isINTL = (r) => hasNonFR(r);
+  const sortiesFR = sorties.filter(r => isFR(r));
+  const sortiesINTL = sorties.filter(r => isINTL(r));
   const certsSingle = recent.filter(r => r.type === 'Certification' && r.certType === 'Single');
   const certsAlbum = recent.filter(r => r.type === 'Certification' && r.certType === 'Album');
   const synchros = recent.filter(r => r.type === 'Synchro');
@@ -311,7 +321,7 @@ function buildDashboard() {
   let h = '';
   h += `<div class="dash-card"><div class="dash-num">${totalTracks}</div><div class="dash-label">Placements</div></div>`;
   h += `<div class="dash-card"><div class="dash-num">${tracksFR}</div><div class="dash-label">🇫🇷 France</div></div>`;
-  h += `<div class="dash-card"><div class="dash-num${tracksINTL ? ' green' : ''}">${tracksINTL}</div><div class="dash-label">🌍 International</div></div>`;
+  h += `<div class="dash-card"><div class="dash-num${tracksINTL ? ' green' : ''}">${tracksINTL}</div><div class="dash-label">🌍 <span class="intl-full">International</span><span class="intl-short">Inter</span></div></div>`;
   h += `<div class="dash-card"><div class="dash-num${certsSingle.length ? ' accent' : ''}">${certsSingle.length}</div><div class="dash-label">Certifs Singles</div></div>`;
   h += `<div class="dash-card"><div class="dash-num${certsAlbum.length ? ' orange' : ''}">${certsAlbum.length}</div><div class="dash-label">Certifs Albums</div></div>`;
   h += `<div class="dash-card"><div class="dash-num">${synchros.length}</div><div class="dash-label">Synchros</div></div>`;
@@ -385,8 +395,11 @@ function render() {
       const st = r.status || 'Confirmé';
       const stClass = st === 'TBC' ? 'tbc' : st === 'Annulé' ? 'annule' : 'confirme';
 
-      const COUNTRY_FLAGS = {FR:'🇫🇷',US:'🇺🇸',GB:'🇬🇧',DE:'🇩🇪',ES:'🇪🇸',IT:'🇮🇹',BE:'🇧🇪',CH:'🇨🇭',CA:'🇨🇦',JP:'🇯🇵',KR:'🇰🇷',BR:'🇧🇷',AR:'🇦🇷',MX:'🇲🇽',NG:'🇳🇬',CI:'🇨🇮',SN:'🇸🇳',MA:'🇲🇦',DZ:'🇩🇿',CM:'🇨🇲',CD:'🇨🇩',INTL:'🌍'};
-      const flag = r.country && COUNTRY_FLAGS[r.country] ? COUNTRY_FLAGS[r.country] : '';
+      const COUNTRY_FLAGS = {FR:'🇫🇷',US:'🇺🇸',GB:'🇬🇧',DE:'🇩🇪',ES:'🇪🇸',IT:'🇮🇹',BE:'🇧🇪',CH:'🇨🇭',CA:'🇨🇦',JP:'🇯🇵',KR:'🇰🇷',BR:'🇧🇷',AR:'🇦🇷',MX:'🇲🇽',NG:'🇳🇬',CI:'🇨🇮',SN:'🇸🇳',MA:'🇲🇦',DZ:'🇩🇿',CM:'🇨🇲',GN:'🇬🇳',ML:'🇲🇱',CD:'🇨🇩',INTL:'🌍'};
+      const COUNTRY_NAMES = {FR:'France',US:'USA',GB:'UK',DE:'Allemagne',ES:'Espagne',IT:'Italie',BE:'Belgique',CH:'Suisse',CA:'Canada',JP:'Japon',KR:'Corée du Sud',BR:'Brésil',AR:'Argentine',MX:'Mexique',NG:'Nigeria',CI:"Côte d'Ivoire",SN:'Sénégal',MA:'Maroc',DZ:'Algérie',CM:'Cameroun',GN:'Guinée',ML:'Mali',CD:'RD Congo',INTL:'International'};
+      const countryCodes = r.country ? r.country.split(',').filter(Boolean) : [];
+      const flag = countryCodes.map(c => COUNTRY_FLAGS[c] || '').filter(Boolean).join(' ');
+      const countryName = countryCodes.map(c => COUNTRY_NAMES[c] || c).join(' / ');
 
       html += `<div class="release-item${isToday ? ' today-marker' : ''}${isAnnule ? ' annule' : ''}${r.artwork ? ' has-art' : ''}" data-id="${r.id}" style="${isPast && !isAnnule ? 'opacity:0.5' : ''}">`;
       if (r.artwork) html += `<img class="rel-artwork" src="${r.artwork}" />`;
@@ -501,7 +514,39 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
     const today = new Date();
     const dateStr = today.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
     h += `<div style="font-family:Syne Mono,monospace;font-size:0.58rem;color:#666;letter-spacing:0.1em;margin-bottom:4px">${subtitle} — ${filtered.length} event${filtered.length > 1 ? 's' : ''} — ${dateStr}</div>`;
-    h += '<div style="height:1px;background:linear-gradient(90deg,rgba(232,197,71,0.4),rgba(255,255,255,0.08) 50%,transparent);margin-bottom:20px"></div>';
+    h += '<div style="height:1px;background:linear-gradient(90deg,rgba(232,197,71,0.4),rgba(255,255,255,0.08) 50%,transparent);margin-bottom:12px"></div>';
+
+    // Dashboard recap in PDF (when filtered by songwriter or always)
+    const pdfSorties = filtered.filter(r => ['Single','EP','Album'].includes(r.type) && r.status !== 'Annulé');
+    const pdfCountTracks = (list) => list.reduce((sum, r) => {
+      if ((r.type === 'EP' || r.type === 'Album') && r.blzTrackCount && parseInt(r.blzTrackCount) > 0) return sum + parseInt(r.blzTrackCount);
+      return sum + 1;
+    }, 0);
+    const pdfHasNonFR = (r) => r.country && r.country.split(',').some(c => c && c !== 'FR');
+    const pdfSortiesFR = pdfSorties.filter(r => !pdfHasNonFR(r));
+    const pdfSortiesINTL = pdfSorties.filter(r => pdfHasNonFR(r));
+    const pdfCertsSingle = filtered.filter(r => r.type === 'Certification' && r.certType === 'Single' && r.status !== 'Annulé');
+    const pdfCertsAlbum = filtered.filter(r => r.type === 'Certification' && r.certType === 'Album' && r.status !== 'Annulé');
+    const pdfSynchros = filtered.filter(r => r.type === 'Synchro' && r.status !== 'Annulé');
+
+    const totalTr = pdfCountTracks(pdfSorties);
+    const trFR = pdfCountTracks(pdfSortiesFR);
+    const trINTL = pdfCountTracks(pdfSortiesINTL);
+
+    if (totalTr || pdfCertsSingle.length || pdfCertsAlbum.length || pdfSynchros.length) {
+      h += '<div style="display:flex;gap:16px;margin-bottom:14px;flex-wrap:wrap">';
+      if (totalTr) h += `<div style="display:flex;align-items:baseline;gap:4px"><span style="font-size:1.3rem;font-weight:800;color:#fff">${totalTr}</span><span style="font-family:Syne Mono,monospace;font-size:0.48rem;color:#888;letter-spacing:0.06em">PLACEMENTS</span></div>`;
+      if (trFR) h += `<div style="display:flex;align-items:baseline;gap:4px"><span style="font-size:1.3rem;font-weight:800;color:#fff">${trFR}</span><span style="font-family:Syne Mono,monospace;font-size:0.48rem;color:#888;letter-spacing:0.06em">🇫🇷 FRANCE</span></div>`;
+      if (trINTL) h += `<div style="display:flex;align-items:baseline;gap:4px"><span style="font-size:1.3rem;font-weight:800;color:#4ade80">${trINTL}</span><span style="font-family:Syne Mono,monospace;font-size:0.48rem;color:#888;letter-spacing:0.06em">🌍 INTERNATIONAL</span></div>`;
+      if (pdfCertsSingle.length) h += `<div style="display:flex;align-items:baseline;gap:4px"><span style="font-size:1.3rem;font-weight:800;color:#e8c547">${pdfCertsSingle.length}</span><span style="font-family:Syne Mono,monospace;font-size:0.48rem;color:#888;letter-spacing:0.06em">CERTIFS SINGLES</span></div>`;
+      if (pdfCertsAlbum.length) h += `<div style="display:flex;align-items:baseline;gap:4px"><span style="font-size:1.3rem;font-weight:800;color:#f59e0b">${pdfCertsAlbum.length}</span><span style="font-family:Syne Mono,monospace;font-size:0.48rem;color:#888;letter-spacing:0.06em">CERTIFS ALBUMS</span></div>`;
+      if (pdfSynchros.length) h += `<div style="display:flex;align-items:baseline;gap:4px"><span style="font-size:1.3rem;font-weight:800;color:#fff">${pdfSynchros.length}</span><span style="font-family:Syne Mono,monospace;font-size:0.48rem;color:#888;letter-spacing:0.06em">SYNCHROS</span></div>`;
+      h += '</div>';
+      h += '<div style="height:1px;background:rgba(255,255,255,0.06);margin-bottom:12px"></div>';
+    }
+
+    const PDF_FLAGS = {FR:'🇫🇷',US:'🇺🇸',GB:'🇬🇧',DE:'🇩🇪',ES:'🇪🇸',IT:'🇮🇹',BE:'🇧🇪',CH:'🇨🇭',CA:'🇨🇦',JP:'🇯🇵',KR:'🇰🇷',BR:'🇧🇷',AR:'🇦🇷',MX:'🇲🇽',NG:'🇳🇬',CI:'🇨🇮',SN:'🇸🇳',MA:'🇲🇦',DZ:'🇩🇿',CM:'🇨🇲',GN:'🇬🇳',ML:'🇲🇱',CD:'🇨🇩',INTL:'🌍'};
+    const PDF_NAMES = {FR:'France',US:'USA',GB:'UK',DE:'Allemagne',ES:'Espagne',IT:'Italie',BE:'Belgique',CH:'Suisse',CA:'Canada',JP:'Japon',KR:'Corée du Sud',BR:'Brésil',AR:'Argentine',MX:'Mexique',NG:'Nigeria',CI:"Côte d'Ivoire",SN:'Sénégal',MA:'Maroc',DZ:'Algérie',CM:'Cameroun',GN:'Guinée',ML:'Mali',CD:'RD Congo',INTL:'International'};
 
     // Months
     sortedKeys.forEach(key => {
@@ -515,8 +560,13 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
         const stBorder = st === 'TBC' ? '#4a3e10' : st === 'Annulé' ? '#4a1a1a' : '#1a3a1a';
         const isAnnule = st === 'Annulé';
         const swArr = r.songwriters ? (Array.isArray(r.songwriters) ? r.songwriters : [r.songwriters]) : [];
+        const pdfCodes = r.country ? r.country.split(',').filter(Boolean) : [];
+        const pdfFlag = pdfCodes.map(c => (PDF_FLAGS[c]||'') + ' ' + (PDF_NAMES[c]||'')).filter(s => s.trim()).join(' / ');
 
         h += `<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);margin-bottom:3px;${isAnnule ? 'opacity:0.3;text-decoration:line-through;' : ''}">`;
+
+        // Artwork
+        if (r.artwork) h += `<img src="${r.artwork}" style="width:38px;height:38px;object-fit:cover;border:1px solid rgba(255,255,255,0.1);flex-shrink:0" crossorigin="anonymous" />`;
 
         // Date
         h += `<div style="font-family:Syne Mono,monospace;font-size:0.65rem;color:#bbb;min-width:70px;flex-shrink:0">${r.date}</div>`;
@@ -527,11 +577,17 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
         // Status badge
         h += `<div style="font-family:Syne Mono,monospace;font-size:0.52rem;letter-spacing:0.06em;text-transform:uppercase;padding:2px 7px;border:1px solid ${stBorder};color:${stColor};min-width:48px;text-align:center;flex-shrink:0">${st}</div>`;
 
+        // Flag
+        if (pdfFlag) h += `<div style="font-size:0.58rem;color:#999;flex-shrink:0">${pdfFlag}</div>`;
+
         // Info
         h += '<div style="flex:1;min-width:0">';
         h += `<div style="font-weight:700;color:#fff;font-size:0.72rem">${r.artist}</div>`;
         h += `<div style="color:#aaa;font-size:0.62rem;font-family:Syne Mono,monospace">${r.title}</div>`;
-        if (r.epTrackNames) h += `<div style="color:#555;font-size:0.54rem;font-family:Syne Mono,monospace;margin-top:1px">${r.epTrackNames.replace(/\n/g, ' · ')}</div>`;
+        if (r.actuDesc) h += `<div style="color:#888;font-size:0.54rem;font-style:italic;margin-top:1px">${r.actuDesc}</div>`;
+        if (r.blzTrackCount) h += `<div style="color:#e8c547;font-size:0.54rem;font-family:Syne Mono,monospace;margin-top:1px">${r.blzTrackCount} titre${r.blzTrackCount > 1 ? 's' : ''} BLZante</div>`;
+        if (r.blzTrackNames) h += `<div style="color:#555;font-size:0.54rem;font-family:Syne Mono,monospace;margin-top:1px">${r.blzTrackNames.replace(/\n/g, ' · ')}</div>`;
+        else if (r.epTrackNames) h += `<div style="color:#555;font-size:0.54rem;font-family:Syne Mono,monospace;margin-top:1px">${r.epTrackNames.replace(/\n/g, ' · ')}</div>`;
         if (swArr.length) h += `<div style="color:#555;font-size:0.54rem;font-family:Syne Mono,monospace;margin-top:1px">✍ ${swArr.join(', ')}</div>`;
         h += '</div>';
 

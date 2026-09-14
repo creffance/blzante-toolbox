@@ -46,6 +46,15 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .conditional { display: none; }
 .conditional.visible { display: block; }
 .country-picker { position: relative; }
+.country-selected { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 4px; }
+.country-selected:empty { display: none; }
+.country-tag {
+  display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px;
+  background: rgba(232,197,71,0.1); border: 1px solid rgba(232,197,71,0.3);
+  font-family: 'Syne Mono', monospace; font-size: 0.6rem; color: var(--accent); cursor: pointer;
+}
+.country-tag:hover { background: rgba(232,197,71,0.2); }
+.country-tag .ct-x { color: #888; font-size: 0.7rem; }
 .country-dropdown {
   display: none; position: absolute; top: 100%; left: 0; right: 0; z-index: 20;
   background: var(--surface); border: 1px solid var(--border); max-height: 220px;
@@ -185,9 +194,10 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
   </div>
 
   <div class="form-group conditional" id="countryGroup">
-    <label class="form-label">Pays</label>
+    <label class="form-label">Pays (2 max)</label>
     <div class="country-picker" id="countryPicker">
-      <input type="text" class="form-input" id="countrySearch" placeholder="🇫🇷 France" autocomplete="off" />
+      <div class="country-selected" id="countrySelected"></div>
+      <input type="text" class="form-input" id="countrySearch" placeholder="Rechercher un pays…" autocomplete="off" />
       <input type="hidden" id="releaseCountry" value="FR" />
       <div class="country-dropdown" id="countryDropdown"></div>
     </div>
@@ -233,11 +243,11 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
   </div>
 
   <div class="form-group conditional" id="epTracksGroup">
-    <div class="form-group">
+    <div class="form-group" style="display:none">
       <label class="form-label">Nombre de titres total (optionnel)</label>
       <input type="number" class="form-input" id="epTrackCount" placeholder="Ex: 12" min="1" max="30" autocomplete="off" />
     </div>
-    <div class="form-group">
+    <div class="form-group" style="display:none">
       <label class="form-label">Noms des tracks (optionnel — un par ligne)</label>
       <textarea class="form-input form-textarea" id="epTrackNames" placeholder="Track 1&#10;Track 2&#10;Track 3" rows="4"></textarea>
     </div>
@@ -514,6 +524,8 @@ const COUNTRIES = [
   { code: 'MA', label: '🇲🇦 Maroc' },
   { code: 'DZ', label: '🇩🇿 Algérie' },
   { code: 'CM', label: '🇨🇲 Cameroun' },
+  { code: 'GN', label: '🇬🇳 Guinée (Conakry)' },
+  { code: 'ML', label: '🇲🇱 Mali' },
   { code: 'CD', label: '🇨🇩 RD Congo' },
   { code: 'INTL', label: '🌍 International' },
 ];
@@ -521,38 +533,73 @@ const COUNTRIES = [
 const countrySearch = document.getElementById('countrySearch');
 const countryHidden = document.getElementById('releaseCountry');
 const countryDropdown = document.getElementById('countryDropdown');
+const countrySelectedDiv = document.getElementById('countrySelected');
+let selectedCountries = ['FR'];
 
 function getCountryLabel(code) {
   const c = COUNTRIES.find(c => c.code === code);
   return c ? c.label : code;
 }
 
-function setCountry(code) {
-  countryHidden.value = code;
-  countrySearch.value = getCountryLabel(code);
+function syncCountryHidden() {
+  countryHidden.value = selectedCountries.join(',');
+}
+
+function renderSelectedCountries() {
+  countrySelectedDiv.innerHTML = selectedCountries.map(code =>
+    `<span class="country-tag" data-code="${code}">${getCountryLabel(code)} <span class="ct-x">✕</span></span>`
+  ).join('');
+  syncCountryHidden();
+}
+
+function addCountry(code) {
+  if (selectedCountries.includes(code)) return;
+  if (selectedCountries.length >= 2) selectedCountries.shift();
+  selectedCountries.push(code);
+  renderSelectedCountries();
+  countrySearch.value = '';
   countryDropdown.classList.remove('open');
+}
+
+function removeCountry(code) {
+  selectedCountries = selectedCountries.filter(c => c !== code);
+  renderSelectedCountries();
+}
+
+function setCountry(codeOrCodes) {
+  if (typeof codeOrCodes === 'string' && codeOrCodes.includes(',')) {
+    selectedCountries = codeOrCodes.split(',').filter(Boolean);
+  } else if (typeof codeOrCodes === 'string') {
+    selectedCountries = codeOrCodes ? [codeOrCodes] : ['FR'];
+  } else {
+    selectedCountries = ['FR'];
+  }
+  renderSelectedCountries();
 }
 
 function renderCountryDropdown(query) {
   const q = (query || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   const filtered = q ? COUNTRIES.filter(c => c.label.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(q) || c.code.toLowerCase().includes(q)) : COUNTRIES;
   countryDropdown.innerHTML = filtered.map(c =>
-    `<div class="country-opt${c.code === countryHidden.value ? ' selected' : ''}" data-code="${c.code}">${c.label}</div>`
+    `<div class="country-opt${selectedCountries.includes(c.code) ? ' selected' : ''}" data-code="${c.code}">${c.label}</div>`
   ).join('');
   countryDropdown.classList.toggle('open', filtered.length > 0);
 }
 
-countrySearch.addEventListener('focus', () => renderCountryDropdown(countrySearch.value === getCountryLabel(countryHidden.value) ? '' : countrySearch.value));
+countrySearch.addEventListener('focus', () => renderCountryDropdown(''));
 countrySearch.addEventListener('input', () => renderCountryDropdown(countrySearch.value));
 countryDropdown.addEventListener('click', (e) => {
   const opt = e.target.closest('.country-opt');
-  if (opt) setCountry(opt.dataset.code);
+  if (opt) addCountry(opt.dataset.code);
+});
+countrySelectedDiv.addEventListener('click', (e) => {
+  const tag = e.target.closest('.country-tag');
+  if (tag) removeCountry(tag.dataset.code);
 });
 document.addEventListener('click', (e) => {
   if (!e.target.closest('.country-picker')) countryDropdown.classList.remove('open');
 });
-// Init default display
-setCountry('FR');
+renderSelectedCountries();
 
 // ─── Songwriter picker ───
 swSearch.addEventListener('focus', () => swDropdown.classList.add('open'));
