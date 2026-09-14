@@ -296,9 +296,16 @@ const renderImages = makeGallery(images, 'imgGallery', 'imgAddBtn', 'imgFileInpu
 const renderBgImages = makeGallery(bgImages, 'bgGallery', 'bgAddBtn', 'bgFileInput', 'bgUrlInput');
 
 // ─── Placements (simple artist names) ───
-function addPlacement(val) {
+const deletedPlacements = new Set();
+function addPlacement(val, fromPlanning) {
   const div = document.createElement('div'); div.className = 'dynamic-item';
-  div.innerHTML = `<input type="text" class="form-input" placeholder="Nom de l'artiste" value="${val||''}" /><button class="remove-btn" onclick="this.parentElement.remove()">×</button>`;
+  if (fromPlanning) div.dataset.fromPlanning = '1';
+  div.innerHTML = `<input type="text" class="form-input" placeholder="Nom de l'artiste" value="${val||''}" /><button class="remove-btn" title="Supprimer">×</button>`;
+  div.querySelector('.remove-btn').addEventListener('click', () => {
+    const name = div.querySelector('input').value.trim();
+    if (name && div.dataset.fromPlanning) deletedPlacements.add(name);
+    div.remove();
+  });
   const input = div.querySelector('input');
   input.addEventListener('keydown', e => {
     if (e.key !== 'Enter') return; e.preventDefault();
@@ -530,6 +537,7 @@ function gatherData() {
     name, types: selectedTypes, skills: selectedSkills, bio, bioEn, images, bgImages,
     placements, majors, discography, certs, specialInfo, specialInfoEn,
     showDisco: document.getElementById('showDisco').checked,
+    deletedPlacements: [...deletedPlacements],
     instagram: document.getElementById('linkInsta').value.trim(),
     tiktok: document.getElementById('linkTiktok').value.trim(),
     spotify: document.getElementById('linkSpotify').value.trim(),
@@ -581,7 +589,8 @@ async function loadForEdit(id) {
     }
     const pl = Array.isArray(d.placements) ? d.placements : d.placements ? Object.values(d.placements) : [];
     // Also import artistes placés from planning
-    const existingNames = new Set(pl.map(p => typeof p === 'string' ? p : p.name || '').filter(Boolean));
+    const manualNames = new Set(pl.map(p => typeof p === 'string' ? p : p.name || '').filter(Boolean));
+    const existingNames = new Set(manualNames);
     try {
       const planRes = await dbFetch('/releases.json');
       const planJson = await planRes.json();
@@ -604,7 +613,16 @@ async function loadForEdit(id) {
     } catch(e) { console.warn('Could not merge planning artistes'); }
     // Sort alphabetically
     const sortedPl = [...new Set(pl.map(p => typeof p === 'string' ? p : p.name || '').filter(Boolean))].sort((a,b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
-    sortedPl.forEach(p => addPlacement(p));
+    // Load deleted placements list
+    const dp = Array.isArray(d.deletedPlacements) ? d.deletedPlacements : [];
+    dp.forEach(n => deletedPlacements.add(n));
+    // Filter out deleted ones from planning imports
+    sortedPl.forEach(p => {
+      if (!deletedPlacements.has(p)) {
+        const isFromPlanning = !manualNames.has(p);
+        addPlacement(p, isFromPlanning);
+      }
+    });
     const mj = Array.isArray(d.majors) ? d.majors : d.majors ? Object.values(d.majors) : [];
     mj.forEach(m => addMajor(m.artist, m.title, m.artwork, m.link, m.country));
     const dc = Array.isArray(d.discography) ? d.discography : d.discography ? Object.values(d.discography) : [];

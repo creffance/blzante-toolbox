@@ -538,6 +538,19 @@ document.getElementById('swFilters').addEventListener('click', (e) => {
   document.getElementById('stats').textContent = 'Chargement...';
   await fetchReleases();
   buildSwFilters();
+  // Fetch roster for artist photos in export
+  try {
+    const rosterRes = await dbFetch('/roster.json');
+    const rosterJson = await rosterRes.json();
+    if (rosterJson) {
+      window._rosterForPlanning = {};
+      Object.values(rosterJson).forEach(a => {
+        const imgs = a.images ? (Array.isArray(a.images) ? a.images : Object.values(a.images)) : [];
+        const primary = imgs.find(i => i.primary) || imgs[0];
+        window._rosterForPlanning[a.name] = { photoSrc: primary ? primary.src : '' };
+      });
+    }
+  } catch(e) {}
   buildDashboard();
   render();
 })();
@@ -589,6 +602,16 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
     const pdfTitle = activeSw !== 'all' ? `Sorties ${activeSw}` : 'Planning BLZante';
     h += `<div style="font-size:1.4rem;font-weight:800;letter-spacing:0.04em;color:#fff">${pdfTitle}</div>`;
     h += '</div>';
+    // Add artist photo if filtered by songwriter
+    if (activeSw !== 'all' && window._rosterForPlanning) {
+      const artistData = window._rosterForPlanning[activeSw];
+      if (artistData && artistData.photoSrc) {
+        h += `<div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">`;
+        h += `<img src="${artistData.photoSrc}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,0.15)" crossorigin="anonymous" />`;
+        h += `<div style="font-size:0.7rem;color:#aaa;font-family:Syne Mono,monospace">${activeSw}</div>`;
+        h += `</div>`;
+      }
+    }
 
     // Period info
     let periodInfo = '';
@@ -606,7 +629,7 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
     if (!subtitle) subtitle = 'Toutes les sorties';
     const today = new Date();
     const dateStr = today.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
-    h += `<div style="font-family:Syne Mono,monospace;font-size:0.58rem;color:#666;letter-spacing:0.1em;margin-bottom:4px">${subtitle} — ${filtered.length} event${filtered.length > 1 ? 's' : ''} — ${dateStr}</div>`;
+    h += `<div style="font-family:Syne Mono,monospace;font-size:0.58rem;color:#666;letter-spacing:0.1em;margin-bottom:4px">${subtitle} — ${dateStr}</div>`;
     h += '<div style="height:1px;background:linear-gradient(90deg,rgba(232,197,71,0.4),rgba(255,255,255,0.08) 50%,transparent);margin-bottom:12px"></div>';
 
     // Dashboard recap in PDF (when filtered by songwriter or always)
@@ -654,7 +677,7 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
         const isAnnule = st === 'Annulé';
         const swArr = r.songwriters ? (Array.isArray(r.songwriters) ? r.songwriters : [r.songwriters]) : [];
         const pdfCodes = r.country ? r.country.split(',').filter(Boolean) : [];
-        const pdfFlag = pdfCodes.map(c => (PDF_FLAGS[c]||'') + ' ' + (PDF_NAMES[c]||'')).filter(s => s.trim()).join(' / ');
+        const pdfFlag = pdfCodes.map(c => c === 'INTL' ? '🌍' : '<img src="https://flagcdn.com/16x12/' + c.toLowerCase() + '.png" crossorigin="anonymous" style="vertical-align:middle" />').join(' ');
 
         h += `<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);margin-bottom:3px;${isAnnule ? 'opacity:0.3;text-decoration:line-through;' : ''}">`;
 
@@ -681,7 +704,7 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
         if (r.blzTrackCount) h += `<div style="color:#e8c547;font-size:0.54rem;font-family:Syne Mono,monospace;margin-top:1px">${r.blzTrackCount} titre${r.blzTrackCount > 1 ? 's' : ''} BLZante</div>`;
         if (r.blzTrackNames) h += `<div style="color:#555;font-size:0.54rem;font-family:Syne Mono,monospace;margin-top:1px">${r.blzTrackNames.replace(/\n/g, ' · ')}</div>`;
         else if (r.epTrackNames) h += `<div style="color:#555;font-size:0.54rem;font-family:Syne Mono,monospace;margin-top:1px">${r.epTrackNames.replace(/\n/g, ' · ')}</div>`;
-        if (swArr.length) h += `<div style="color:#555;font-size:0.54rem;font-family:Syne Mono,monospace;margin-top:1px">✍ ${swArr.join(', ')}</div>`;
+        if (swArr.length) h += `<div style="color:#555;font-size:0.54rem;font-family:Syne Mono,monospace;margin-top:1px">${swArr.join(', ')}</div>`;
         h += '</div>';
 
         h += '</div>';
