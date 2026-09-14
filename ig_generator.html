@@ -1258,6 +1258,7 @@ nav {
       <!-- Import from planning -->
       <div class="form-group" style="margin-bottom:16px">
         <label class="form-label" style="font-family:'Syne',sans-serif;font-size:0.7rem;letter-spacing:0.08em;text-transform:uppercase;color:#888">Importer un event du planning</label>
+        <input type="text" class="form-input" id="igImportSearch" placeholder="Rechercher un event (artiste, titre...)" style="font-size:0.68rem;margin-bottom:4px" />
         <div style="display:flex;gap:6px">
           <select class="form-input" id="igImportEvent" style="flex:1;font-size:0.68rem">
             <option value="">— Sélectionner un event —</option>
@@ -2114,6 +2115,23 @@ async function loadPlanningForIG() {
       sel.appendChild(opt);
     });
     console.log(`Loaded ${events.length} planning events for IG import`);
+    // Search filter
+    window._igAllEvents = events;
+    document.getElementById('igImportSearch').addEventListener('input', (e) => {
+      const q = e.target.value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const sel = document.getElementById('igImportEvent');
+      sel.innerHTML = '<option value="">— Sélectionner un event —</option>';
+      const filtered = q ? window._igAllEvents.filter(([id, r]) => 
+        ((r.artist||'')+(r.title||'')+(r.type||'')).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(q)
+      ) : window._igAllEvents;
+      filtered.slice(0, 20).forEach(([id, r]) => {
+        const opt = document.createElement('option');
+        opt.value = id;
+        opt.textContent = `${r.date||''} · ${r.type||''} · ${r.artist||''} · ${r.title||''}`;
+        opt.dataset.json = JSON.stringify(r);
+        sel.appendChild(opt);
+      });
+    });
   } catch(e) { console.warn('Could not load planning for IG:', e); }
 }
 loadPlanningForIG();
@@ -2129,6 +2147,21 @@ document.getElementById('igImportBtn').addEventListener('click', () => {
   // Fill title
   const ti = document.getElementById('f_title');
   if (ti && r.title) { ti.value = r.title; ti.dispatchEvent(new Event('input')); }
+  // Fill songwriter
+  if (r.songwriters) {
+    const sw = Array.isArray(r.songwriters) ? r.songwriters : [r.songwriters];
+    const swSel = document.getElementById('f_sw');
+    if (swSel && sw[0]) { swSel.value = sw[0]; swSel.dispatchEvent(new Event('change')); }
+  }
+  // Fill cert fields
+  if (r.type === 'Certification') {
+    const certTypeEl = document.getElementById('f_certType');
+    if (certTypeEl && r.certType) { certTypeEl.value = r.certType; }
+    const certLevelEl = document.getElementById('f_certLevel');
+    if (certLevelEl && r.certLevel) { certLevelEl.value = r.certLevel; }
+    const certTrackEl = document.getElementById('f_certTrack');
+    if (certTrackEl && r.title) { certTrackEl.value = r.title; certTrackEl.dispatchEvent(new Event('input')); }
+  }
   // Fill artwork
   if (r.artwork) {
     S.artworkSrc = r.artwork; S.artX = 0; S.artY = 0; S.artZoom = 1;

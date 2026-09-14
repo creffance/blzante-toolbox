@@ -621,6 +621,9 @@ function rerenderRoster() {
         });
 
 
+        h += `</div></div>`;
+      }
+
       // Merge artistes placés: manual + from planning (with country)
       const placementMap = new Map(); // name -> { name, countries: Set }
       placements.forEach(p => {
@@ -663,9 +666,6 @@ function rerenderRoster() {
           }
           h += '<span class="pl-tag">' + flagHtml + p.name + '</span>';
         });
-        h += `</div>`;
-      }
-
         h += `</div></div>`;
       }
 
