@@ -502,9 +502,9 @@ async function tryExtractArtwork(url) {
       if (res.ok) {
         const data = await res.json();
         if (data.thumbnail_url) {
-          // Spotify oembed returns 300px, replace with 640px for higher quality
-          const hiRes = data.thumbnail_url.replace(/\/\d+$/, '').replace('i.scdn.co/image/', 'i.scdn.co/image/');
-          showArtwork(data.thumbnail_url.includes('i.scdn.co') ? hiRes : data.thumbnail_url);
+          // Spotify oembed returns 300px (ab67616d00001e02), replace with 640px (ab67616d0000b273)
+          const hiRes = data.thumbnail_url.replace('ab67616d00001e02', 'ab67616d0000b273');
+          showArtwork(hiRes);
           return;
         }
       }

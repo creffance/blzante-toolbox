@@ -42,6 +42,26 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 
 /* Stats */
 .stats { font-size: 0.62rem; color: var(--muted); letter-spacing: 0.1em; margin-bottom: 16px; }
+.date-range-row {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 14px;
+}
+.date-label {
+  font-family: 'Syne Mono', monospace; font-size: 0.6rem; color: var(--muted);
+  letter-spacing: 0.06em; text-transform: uppercase;
+}
+.date-input {
+  background: var(--bg); border: 1px solid var(--border); color: var(--text);
+  font-family: 'Syne Mono', monospace; font-size: 0.65rem; padding: 5px 8px;
+  outline: none; transition: border-color 0.15s;
+}
+.date-input:focus { border-color: var(--accent); }
+.date-clear {
+  background: none; border: 1px solid var(--border); color: var(--muted);
+  font-size: 0.7rem; padding: 4px 8px; cursor: pointer; transition: all 0.15s;
+  font-family: 'Syne Mono', monospace; display: none;
+}
+.date-clear.visible { display: inline-block; }
+.date-clear:hover { color: var(--text); border-color: var(--text); }
 
 /* Dashboard */
 .dashboard-wrap { margin-bottom: 28px; }
@@ -178,6 +198,8 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
     <button class="filter-btn" data-filter="Passé">Passé</button>
     <button class="filter-btn" data-filter="À venir">À venir</button>
     <button class="filter-btn" data-filter="Sorties">Sorties</button>
+    <button class="filter-btn" data-filter="France">France</button>
+    <button class="filter-btn" data-filter="International">International</button>
     <button class="filter-btn" data-filter="Live">Live</button>
     <button class="filter-btn" data-filter="Certification">Certification</button>
     <button class="filter-btn" data-filter="Synchro">Synchro</button>
@@ -185,6 +207,14 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
     <button class="filter-btn" data-filter="Single">Single</button>
     <button class="filter-btn" data-filter="EP">EP</button>
     <button class="filter-btn" data-filter="Album">Album</button>
+  </div>
+
+  <div class="date-range-row">
+    <label class="date-label">Du</label>
+    <input type="date" class="date-input" id="dateFrom" />
+    <label class="date-label">au</label>
+    <input type="date" class="date-input" id="dateTo" />
+    <button class="date-clear" id="dateClear" title="Effacer les dates">✕</button>
   </div>
 
   <div class="filters sw-filters" id="swFilters">
@@ -201,6 +231,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
         <button class="period-btn active" data-period="6">6 mois</button>
         <button class="period-btn" data-period="12">12 mois</button>
         <button class="period-btn" data-period="all">All Time</button>
+        <button class="period-btn" data-period="upcoming">À venir</button>
       </div>
     </div>
     <div id="dashboardRecap" class="dashboard-recap"></div>
@@ -233,7 +264,18 @@ function mapSwName(name) { return SW_RENAME[name] || name; }
 
 let activeFilter = 'all';
 let activeSw = 'all';
+let dateFrom = '';
+let dateTo = '';
 let cachedReleases = [];
+
+function applyDateFilter(releases) {
+  if (!dateFrom && !dateTo) return releases;
+  return releases.filter(r => {
+    if (dateFrom && r.dateSortable < dateFrom) return false;
+    if (dateTo && r.dateSortable > dateTo) return false;
+    return true;
+  });
+}
 
 async function fetchReleases() {
   try {
@@ -268,7 +310,7 @@ function buildSwFilters() {
 }
 
 // ─── Dashboard recap ───
-let dashPeriod = 6; // months, or 'all'
+let dashPeriod = 6; // 6, 12, 'all', or 'upcoming'
 
 function buildDashboard() {
   const dash = document.getElementById('dashboardRecap');
@@ -276,13 +318,23 @@ function buildDashboard() {
 
   const now = new Date();
   const today = now.toISOString().slice(0, 10);
-  let cutoff = '0000-00-00';
-  if (dashPeriod !== 'all') {
+
+  let recent;
+  if (dashPeriod === 'upcoming') {
+    // Only future events
+    recent = cachedReleases.filter(r => r.dateSortable > today && r.status !== 'Annulé');
+  } else if (dashPeriod === 'all') {
+    // All past events (up to today)
+    recent = cachedReleases.filter(r => r.dateSortable <= today && r.status !== 'Annulé');
+  } else {
+    // Last N months, past only (cutoff to today)
     const ago = new Date(now.getFullYear(), now.getMonth() - dashPeriod, 1);
-    cutoff = ago.toISOString().slice(0, 10);
+    const cutoff = ago.toISOString().slice(0, 10);
+    recent = cachedReleases.filter(r => r.dateSortable >= cutoff && r.dateSortable <= today && r.status !== 'Annulé');
   }
 
-  let recent = cachedReleases.filter(r => r.dateSortable >= cutoff && r.status !== 'Annulé');
+  // Apply date range filter to dashboard
+  recent = applyDateFilter(recent);
 
   // Apply songwriter filter to dashboard
   if (activeSw !== 'all') {
@@ -316,7 +368,8 @@ function buildDashboard() {
   const label = document.getElementById('dashPeriodLabel');
   if (label) {
     const swLabel = activeSw !== 'all' ? ` · ${activeSw}` : '';
-    label.textContent = dashPeriod === 'all' ? 'All Time' + swLabel : `Last ${dashPeriod} Months` + swLabel;
+    const periodText = dashPeriod === 'upcoming' ? 'À venir' : dashPeriod === 'all' ? 'All Time' : `Last ${dashPeriod} Months`;
+    label.textContent = periodText + swLabel;
   }
 
   let h = '';
@@ -335,17 +388,41 @@ document.querySelector('.period-btns').addEventListener('click', (e) => {
   if (!btn) return;
   document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  dashPeriod = btn.dataset.period === 'all' ? 'all' : parseInt(btn.dataset.period);
+  dashPeriod = btn.dataset.period === 'all' ? 'all' : btn.dataset.period === 'upcoming' ? 'upcoming' : parseInt(btn.dataset.period);
   buildDashboard();
+});
+
+// Date range filter
+const dateFromEl = document.getElementById('dateFrom');
+const dateToEl = document.getElementById('dateTo');
+const dateClearEl = document.getElementById('dateClear');
+
+function updateDateFilter() {
+  dateFrom = dateFromEl.value || '';
+  dateTo = dateToEl.value || '';
+  dateClearEl.classList.toggle('visible', !!(dateFrom || dateTo));
+  buildDashboard();
+  render();
+}
+dateFromEl.addEventListener('change', updateDateFilter);
+dateToEl.addEventListener('change', updateDateFilter);
+dateClearEl.addEventListener('click', () => {
+  dateFromEl.value = '';
+  dateToEl.value = '';
+  updateDateFilter();
 });
 
 function applyTypeFilter(releases) {
   const today = new Date().toISOString().slice(0, 10);
-  if (activeFilter === 'all') return releases;
-  if (activeFilter === 'Passé') return releases.filter(r => r.dateSortable <= today);
-  if (activeFilter === 'À venir') return releases.filter(r => r.dateSortable > today);
-  if (activeFilter === 'Sorties') return releases.filter(r => ['Single','EP','Album'].includes(r.type));
-  return releases.filter(r => r.type === activeFilter);
+  let result;
+  if (activeFilter === 'all') result = releases;
+  else if (activeFilter === 'Passé') result = releases.filter(r => r.dateSortable <= today);
+  else if (activeFilter === 'À venir') result = releases.filter(r => r.dateSortable > today);
+  else if (activeFilter === 'Sorties') result = releases.filter(r => ['Single','EP','Album'].includes(r.type));
+  else if (activeFilter === 'France') result = releases.filter(r => ['Single','EP','Album'].includes(r.type) && (!r.country || !r.country.split(',').some(c => c && c !== 'FR')));
+  else if (activeFilter === 'International') result = releases.filter(r => ['Single','EP','Album'].includes(r.type) && r.country && r.country.split(',').some(c => c && c !== 'FR'));
+  else result = releases.filter(r => r.type === activeFilter);
+  return applyDateFilter(result);
 }
 
 function render() {
@@ -399,8 +476,12 @@ function render() {
       const COUNTRY_FLAGS = {FR:'🇫🇷',US:'🇺🇸',GB:'🇬🇧',DE:'🇩🇪',ES:'🇪🇸',IT:'🇮🇹',BE:'🇧🇪',CH:'🇨🇭',CA:'🇨🇦',JP:'🇯🇵',KR:'🇰🇷',BR:'🇧🇷',AR:'🇦🇷',MX:'🇲🇽',NG:'🇳🇬',CI:'🇨🇮',SN:'🇸🇳',MA:'🇲🇦',DZ:'🇩🇿',CM:'🇨🇲',GN:'🇬🇳',ML:'🇲🇱',CD:'🇨🇩',INTL:'🌍'};
       const COUNTRY_NAMES = {FR:'France',US:'USA',GB:'UK',DE:'Allemagne',ES:'Espagne',IT:'Italie',BE:'Belgique',CH:'Suisse',CA:'Canada',JP:'Japon',KR:'Corée du Sud',BR:'Brésil',AR:'Argentine',MX:'Mexique',NG:'Nigeria',CI:"Côte d'Ivoire",SN:'Sénégal',MA:'Maroc',DZ:'Algérie',CM:'Cameroun',GN:'Guinée',ML:'Mali',CD:'RD Congo',INTL:'International'};
       const countryCodes = r.country ? r.country.split(',').filter(Boolean) : [];
-      const flag = countryCodes.map(c => COUNTRY_FLAGS[c] || '').filter(Boolean).join(' ');
-      const countryName = countryCodes.map(c => COUNTRY_NAMES[c] || c).join(' / ');
+      const flagParts = countryCodes.map(c => {
+        const f = COUNTRY_FLAGS[c] || '';
+        const n = COUNTRY_NAMES[c] || c;
+        return f ? f + '\u00A0' + n : n;
+      });
+      const flagDisplay = flagParts.join(' · ');
 
       html += `<div class="release-item${isToday ? ' today-marker' : ''}${isAnnule ? ' annule' : ''}${r.artwork ? ' has-art' : ''}" data-id="${r.id}" style="${isPast && !isAnnule ? 'opacity:0.5' : ''}">`;
       if (r.artwork) html += `<img class="rel-artwork" src="${r.artwork}" />`;
@@ -408,7 +489,7 @@ function render() {
       html += `<span class="rel-date">${r.date}</span>`;
       html += `<span class="rel-type">${r.type}</span>`;
       html += `<span class="rel-status ${stClass}">${st}</span>`;
-      if (flag) html += `<span class="rel-flag">${flag}</span>`;
+      if (flagDisplay) html += `<span class="rel-flag">${flagDisplay}</span>`;
       html += `</div>`;
       html += `<div class="rel-info">`;
       html += `<span class="rel-artist">${r.artist}</span>`;

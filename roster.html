@@ -189,7 +189,9 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .pdf-playlist-row { display: flex; gap: 8px; flex-wrap: wrap; }
 .pdf-bio { font-size: 0.76rem; color: #d0d0d0; line-height: 1.7; font-family: 'Syne Mono', monospace; text-align: center; margin: 16px 0; padding: 16px 22px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); }
 .pdf-context { font-size: 0.82rem; color: #fff; line-height: 1.6; font-family: 'Syne', Arial, sans-serif; font-weight: 600; text-align: center; margin: 12px 0; padding: 18px 24px; background: rgba(232,197,71,0.08); border: 1px solid rgba(232,197,71,0.3); letter-spacing: 0.02em; }
-.pdf-dash { display: flex; flex-wrap: wrap; gap: 14px; margin: 10px 0; padding: 10px 0; border-top: 1px solid rgba(255,255,255,0.06); }
+.pdf-dash { display: flex; flex-wrap: wrap; gap: 12px; margin: 4px 0 6px; padding: 0; }
+.pdf-dash-row { display: flex; align-items: baseline; gap: 14px; margin: 6px 0; padding: 6px 0; border-top: 1px solid rgba(255,255,255,0.06); flex-wrap: wrap; }
+.pdf-dash-title { font-size: 0.52rem; color: #bbb; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700; margin-right: 4px; }
 .pdf-dash-stat { display: flex; align-items: baseline; gap: 4px; }
 .pdf-dash-num { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 800; color: #fff; }
 .pdf-dash-num.accent { color: #e8c547; }
@@ -204,7 +206,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .pdf-rp-title { color: #aaa; font-size: 0.46rem; }
 .pdf-rp-date { color: #555; font-size: 0.4rem; }
 .pdf-rp-link { color: #e8c547; font-size: 0.42rem; text-decoration: none; }
-.pdf-section-label { font-size: 0.6rem; color: #bbb; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700; margin: 10px 0 4px; padding-top: 8px; padding-bottom: 3px; border-top: 1px solid rgba(255,255,255,0.06); border-bottom: 1px solid rgba(255,255,255,0.06); }
+.pdf-section-label { font-size: 0.52rem; color: #bbb; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700; margin: 6px 0 3px; padding-top: 5px; padding-bottom: 2px; border-top: 1px solid rgba(255,255,255,0.06); }
 .pdf-tags { display: flex; gap: 3px; flex-wrap: wrap; margin-bottom: 2px; }
 .pdf-tag { font-size: 0.5rem; color: #ddd; padding: 2px 6px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.05); font-family: 'Syne Mono', monospace; }
 .pdf-majors { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 2px; }
@@ -212,11 +214,11 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .pdf-major img { width: 28px; height: 28px; object-fit: cover; }
 .pdf-major-info { font-size: 0.52rem; color: #aaa; line-height: 1.2; }
 .pdf-major-info strong { color: #fff; }
-.pdf-certs { display: flex; flex-direction: column; gap: 4px; }
-.pdf-cert { display: inline-flex; align-items: center; gap: 5px; font-size: 0.54rem; color: #e8c547; padding: 3px 8px; border: 1px solid #4a3e10; font-family: 'Syne Mono', monospace; margin: 0 3px 3px 0; }
-.pdf-cert img { width: 22px; height: 22px; object-fit: cover; }
-.pdf-cert-emoji { font-size: 0.8rem; }
-.pdf-certs { display: flex; flex-wrap: wrap; gap: 0; margin-bottom: 4px; }
+.pdf-certs { display: flex; flex-wrap: wrap; gap: 3px; }
+.pdf-cert { display: inline-flex; align-items: center; gap: 4px; font-size: 0.46rem; color: #e8c547; padding: 2px 6px; border: 1px solid #4a3e10; font-family: 'Syne Mono', monospace; }
+.pdf-cert img { width: 16px; height: 16px; object-fit: cover; }
+.pdf-cert-emoji { font-size: 0.6rem; }
+
 .pdf-socials { position: absolute; top: 40px; right: 40px; display: flex; flex-wrap: wrap; gap: 10px; z-index: 2; max-width: 260px; justify-content: flex-end; }
 .pdf-socials a { color: #ddd; }
 .pdf-socials svg { width: 28px; height: 28px; }
@@ -489,11 +491,12 @@ function rerenderRoster() {
       if (!sorties.length) return '';
 
       const FLAGS = {FR:'🇫🇷',US:'🇺🇸',GB:'🇬🇧',DE:'🇩🇪',ES:'🇪🇸',IT:'🇮🇹',BE:'🇧🇪',CH:'🇨🇭',CA:'🇨🇦',JP:'🇯🇵',KR:'🇰🇷',BR:'🇧🇷',AR:'🇦🇷',MX:'🇲🇽',NG:'🇳🇬',CI:'🇨🇮',SN:'🇸🇳',MA:'🇲🇦',DZ:'🇩🇿',CM:'🇨🇲',GN:'🇬🇳',ML:'🇲🇱',CD:'🇨🇩',INTL:'🌍'};
+      const FSHORT = {FR:'FR',US:'US',GB:'UK',DE:'DE',ES:'ES',IT:'IT',BE:'BE',CH:'CH',CA:'CA',JP:'JP',KR:'KR',BR:'BR',AR:'AR',MX:'MX',NG:'NG',CI:'CI',SN:'SN',MA:'MA',DZ:'DZ',CM:'CM',GN:'GN',ML:'ML',CD:'CD',INTL:'INTL'};
 
       let h = '<div class="card-section-title">Derniers placements</div>';
       h += '<div class="recent-placements">';
       sorties.forEach(r => {
-        const flag = r.country ? r.country.split(',').map(c => FLAGS[c]||'').filter(Boolean).join(' ') + ' ' : '';
+        const flag = r.country ? r.country.split(',').map(c => (FLAGS[c]||'') + (FSHORT[c]||c)).filter(Boolean).join(' ') + ' ' : '';
         h += '<div class="rp-item">';
         if (r.artwork) h += `<img class="rp-artwork" src="${r.artwork}" />`;
         h += '<div class="rp-info">';
@@ -999,8 +1002,8 @@ function buildArtistCardHTML(a, pdfLang, opts) {
       if (_certA.length) _stats.push({ n: _certA.length, l: 'CERTIFS ALBUMS', c: 'orange' });
       if (_syn.length) _stats.push({ n: _syn.length, l: 'SYNCHROS', c: '' });
       if (_stats.length) {
-        h += `<div class="pdf-section-label">${pdfLang==='en'?'LAST 6 MONTHS':'6 DERNIERS MOIS'}</div>`;
-        h += '<div class="pdf-dash">';
+        h += '<div class="pdf-dash-row">';
+        h += `<span class="pdf-dash-title">${pdfLang==='en'?'LAST 6 MONTHS':'6 DERNIERS MOIS'}</span>`;
         _stats.forEach(s => { h += `<div class="pdf-dash-stat"><span class="pdf-dash-num${s.c?' '+s.c:''}">${s.n}</span><span class="pdf-dash-label">${s.l}</span></div>`; });
         h += '</div>';
       }
