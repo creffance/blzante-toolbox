@@ -684,7 +684,7 @@ function rerenderRoster() {
             type: r.certType || 'Single',
             level: r.certLevel || '',
             artist: r.artist || '',
-            project: r.title || r.track || '',
+            project: (r.track || '').trim() || (r.title || '').replace(/\s*\((?:Or|Platine|Double platine|Triple platine|Diamant)\s+(?:Single|Album)\)\s*/gi, '').trim(),
             artwork: r.artwork || '',
             date: r.date || '',
             fromPlanning: true
@@ -1162,7 +1162,7 @@ function buildArtistCardHTML(a, pdfLang, opts) {
       return sw.some(s => s.toUpperCase() === _nu2 || (_alt2 && s.toUpperCase() === _alt2));
     };
     _pd2.filter(r => r.type === 'Certification' && r.status !== 'Annulé' && _mSw2(r)).forEach(r => {
-      allPdfCerts.push({ type: r.certType||'Single', level: r.certLevel||'', artist: r.artist||'', project: r.title||'', artwork: r.artwork||'', date: r.date||'' });
+      allPdfCerts.push({ type: r.certType||'Single', level: r.certLevel||'', artist: r.artist||'', project: (r.track||'').trim() || (r.title||'').replace(/\s*\((?:Or|Platine|Double platine|Triple platine|Diamant)\s+(?:Single|Album)\)\s*/gi,'').trim(), artwork: r.artwork||'', date: r.date||'', link: r.link||'' });
     });
   }
   if (allPdfCerts.length) {

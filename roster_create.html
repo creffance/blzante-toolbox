@@ -684,13 +684,12 @@ async function loadForEdit(id) {
           const sw = r.songwriters ? (Array.isArray(r.songwriters) ? r.songwriters : [r.songwriters]) : [];
           const swMapped = sw.map(s => SW_R2[s] || s);
           if (!swMapped.some(s => s.toUpperCase() === nameUp2 || (altN2 && s.toUpperCase() === altN2))) return;
-          // Clean the title - remove cert info like "(Or Single)", "(Platine Album)" etc
-          let cleanTitle = (r.track || r.title || '').replace(/\s*\((?:Or|Platine|Double platine|Triple platine|Diamant)\s+(?:Single|Album)\)\s*/gi, '').trim();
-          if (!cleanTitle) cleanTitle = r.title || '';
-          const key = `${(r.artist||'').toLowerCase().trim()}-${cleanTitle.toLowerCase().trim()}-${(r.certLevel||'').toLowerCase().trim()}`;
+          // Use the clean track name field, NOT the formatted title
+          const certProject = (r.track || '').trim() || (r.project || '').trim() || (r.title || '').replace(/\s*\((?:Or|Platine|Double platine|Triple platine|Diamant)\s+(?:Single|Album)\)\s*/gi, '').trim();
+          const key = `${(r.artist||'').toLowerCase().trim()}-${certProject.toLowerCase()}-${(r.certLevel||'').toLowerCase().trim()}`;
           if (!existingCerts.has(key)) {
             existingCerts.add(key);
-            addCert(r.certType||'Single', r.certLevel||'', r.artist||'', cleanTitle, r.artwork||'', r.date||'', r.link||'');
+            addCert(r.certType||'Single', r.certLevel||'', r.artist||'', certProject, r.artwork||'', r.date||'', r.link||'');
           }
         });
       }
