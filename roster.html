@@ -225,7 +225,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .pdf-socials svg { width: 28px; height: 28px; }
 .pdf-socials .pdf-playlist-row { width: 100%; display: flex; gap: 6px; justify-content: flex-end; }
 .pdf-footer { display: flex; justify-content: center; margin-top: auto; padding-top: 16px; }
-.pdf-footer img { height: 70px; width: auto; opacity: 0.6; }
+.pdf-footer img { height: 50px; width: auto; opacity: 0.5; }
 
 </style>
 </head>
@@ -701,16 +701,22 @@ function rerenderRoster() {
         const other = sortedCerts.filter(c => c.type !== 'Single' && c.type !== 'Album');
         const renderCertGroup = (title, list) => {
           if (!list.length) return '';
-          let out = `<div class="card-section-title">${title}</div><div class="card-certs">`;
-          list.forEach(c => {
+          const displayList = list.slice(0, 5);
+          const label = 'Dernières ' + title;
+          let out = `<div class="card-section-title" style="display:block;width:100%;clear:both">${label}</div>`;
+          out += `<div class="card-majors" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;width:100%">`;
+          displayList.forEach(c => {
             const emoji = CERT_EMOJI[c.level] || '';
-            out += `<span class="cert-tag">`;
-            if (c.artwork) out += `<img class="cert-art" src="${c.artwork}" />`;
-            else if (emoji) out += `<span style="font-size:1rem">${emoji}</span>`;
-            out += buildCertLabel(c);
-            if (c.date) out += ` <span style="color:#555;font-size:0.5rem">${c.date}</span>`;
-            if (c.link) out += ` <a href="${c.link}" target="_blank" style="color:var(--accent);font-size:0.55rem;text-decoration:none" title="Écouter">▶</a>`;
-            out += `</span>`;
+            out += `<div class="major-block" style="border-color:#4a3e10">`;
+            if (c.artwork) out += `<img class="major-art" src="${c.artwork}" style="width:36px;height:36px;object-fit:cover" />`;
+            if (emoji) out += `<span style="font-size:0.9rem;flex-shrink:0">${emoji}</span>`;
+            out += `<div class="major-info" style="font-size:0.58rem;color:#aaa;line-height:1.3;overflow:hidden">`;
+            out += `<strong style="color:#e8c547">${c.artist || ''}</strong>`;
+            out += `<br>${c.project || ''}`;
+            out += `<br><span style="color:#888;font-size:0.5rem">${c.level || ''}</span>`;
+            if (c.date) out += ` <span style="color:#555;font-size:0.46rem">${c.date}</span>`;
+            if (c.link) out += ` <a href="${c.link}" target="_blank" style="color:var(--accent);font-size:0.5rem;text-decoration:none" title="Écouter">▶</a>`;
+            out += `</div></div>`;
           });
           return out + '</div>';
         };
@@ -1176,11 +1182,11 @@ function buildArtistCardHTML(a, pdfLang, opts) {
         const emoji = CERT_EMOJI[c.level] || '';
         out += `<div class="pdf-major" style="border-color:#4a3e10">`;
         if (c.artwork) out += `<img src="${c.artwork}" crossorigin="anonymous" />`;
-        else if (emoji) out += `<span style="font-size:0.8rem;flex-shrink:0">${emoji}</span>`;
+        if (emoji) out += `<span style="font-size:0.7rem;flex-shrink:0">${emoji}</span>`;
         out += `<div class="pdf-major-info">`;
         out += `<strong style="color:#e8c547">${c.artist || ''}</strong>`;
         out += `<br><span style="color:#aaa">${c.project || ''}</span>`;
-        out += `<br><span style="color:#888;font-size:0.42rem">${c.level || ''} · ${c.type || ''}</span>`;
+        out += `<br><span style="color:#888;font-size:0.42rem">${c.level || ''}</span>`;
         if (c.date) out += ` <span style="color:#555;font-size:0.38rem">${c.date}</span>`;
         if (c.link) out += ` <a href="${c.link}" target="_blank" style="color:#e8c547;font-size:0.38rem;text-decoration:none">▶</a>`;
         out += `</div></div>`;
