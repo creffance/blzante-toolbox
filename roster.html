@@ -967,7 +967,7 @@ function buildArtistCardHTML(a, pdfLang, opts) {
     if (!country) return '';
     return country.split(',').map(c => {
       if (c === 'INTL') return '🌍';
-      return '<img src="https://flagcdn.com/16x12/' + c.toLowerCase() + '.png" crossorigin="anonymous" style="vertical-align:middle;margin-right:1px" />';
+      return '<img src="https://flagcdn.com/12x9/' + c.toLowerCase() + '.png" crossorigin="anonymous" style="width:12px;height:9px;vertical-align:middle;margin-right:1px" />';
     }).filter(Boolean).join('') + ' ';
   };
   const options = opts || {};
@@ -1106,7 +1106,7 @@ function buildArtistCardHTML(a, pdfLang, opts) {
     h += '</div>';
   }
 
-  if (discography.length) {
+  if (discography.length && a.showDisco !== false) {
     const sortedDisco = [...discography].sort((x, y) => {
       const [am, ay] = (x.date || '00/0000').split('/'); const [bm, by] = (y.date || '00/0000').split('/');
       return (by + bm).localeCompare(ay + am);
@@ -1134,7 +1134,7 @@ function buildArtistCardHTML(a, pdfLang, opts) {
       const codes = p.country ? p.country.split(',').filter(cc => cc && cc !== 'FR') : [];
       const flagTxt = codes.length ? codes.map(cc => {
         if (cc === 'INTL') return '🌍';
-        return '<img src="https://flagcdn.com/16x12/' + cc.toLowerCase() + '.png" crossorigin="anonymous" style="vertical-align:middle;margin-right:1px" />';
+        return '<img src="https://flagcdn.com/12x9/' + cc.toLowerCase() + '.png" crossorigin="anonymous" style="width:12px;height:9px;vertical-align:middle;margin-right:1px" />';
       }).join('') + ' ' : '';
       h += `<span class="pdf-tag">${flagTxt}${p.name}</span>`;
     });
