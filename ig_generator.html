@@ -2105,13 +2105,21 @@ async function loadPlanningForIG() {
 loadPlanningForIG();
 
 // Live search results
+document.getElementById('igImportSearch').addEventListener('focus', () => {
+  if (!document.getElementById('igImportSearch').value && window._igAllEvents) showIGResults('');
+});
 document.getElementById('igImportSearch').addEventListener('input', (e) => {
-  const q = e.target.value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  showIGResults(e.target.value);
+});
+function showIGResults(val) {
+  const q = (val||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   const results = document.getElementById('igImportResults');
-  if (!q || q.length < 2 || !window._igAllEvents) { results.style.display = 'none'; return; }
-  const filtered = window._igAllEvents.filter(([id, r]) =>
-    ((r.artist||'')+(r.title||'')+(r.type||'')+(r.date||'')).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(q)
-  ).slice(0, 15);
+  if (!window._igAllEvents) { results.style.display = 'none'; return; }
+  const today = new Date().toISOString().slice(0,10);
+  const pastEvents = window._igAllEvents.filter(([id, r]) => r.dateSortable <= today);
+  const filtered = q
+    ? pastEvents.filter(([id, r]) => ((r.artist||'')+(r.title||'')+(r.type||'')+(r.date||'')).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(q)).slice(0, 15)
+    : pastEvents.slice(0, 15);
   if (!filtered.length) { results.innerHTML = '<div style="padding:8px;color:#555;font-size:0.65rem">Aucun résultat</div>'; results.style.display = 'block'; return; }
   results.innerHTML = filtered.map(([id, r]) => {
     const j = JSON.stringify(r).replace(/'/g, "&#39;");
@@ -2120,7 +2128,7 @@ document.getElementById('igImportSearch').addEventListener('input', (e) => {
       '<span style="float:right;color:#e8c547;font-weight:700">IMPORTER →</span></div>';
   }).join('');
   results.style.display = 'block';
-});
+}
 
 // Click on result to import
 document.getElementById('igImportResults').addEventListener('click', (e) => {
@@ -2130,40 +2138,72 @@ document.getElementById('igImportResults').addEventListener('click', (e) => {
   document.getElementById('igImportResults').style.display = 'none';
   document.getElementById('igImportSearch').value = (r.date||'') + ' · ' + (r.artist||'') + ' · ' + (r.title||'');
 
-  // Auto-detect template type
+  // Auto-detect and click the correct type tile
   const typeMap = { 'Single': 'sortie', 'EP': 'sortie', 'Album': 'sortie', 'Certification': 'certif', 'Synchro': 'synchro', 'Actu': 'actu', 'Live': 'sortie' };
   const detectedType = typeMap[r.type] || 'sortie';
-  document.querySelectorAll('.template-btn').forEach(btn => {
-    if (btn.dataset.type === detectedType) btn.click();
-  });
+  // Click the type tile to switch template
+  const typeTile = document.querySelector('.type-tile[data-type="' + detectedType + '"]');
+  if (typeTile) typeTile.click();
 
   setTimeout(() => {
-    // Fill artist
+    // Fill artist name (common to sortie/certif)
     const ai = document.getElementById('f_artist');
     if (ai && r.artist) { ai.value = r.artist; ai.dispatchEvent(new Event('input')); }
-    // Fill title
-    const ti = document.getElementById('f_title');
-    if (ti && r.title) { ti.value = r.title; ti.dispatchEvent(new Event('input')); }
-    // Fill songwriter(s)
-    if (r.songwriters) {
-      const sw = Array.isArray(r.songwriters) ? r.songwriters : [r.songwriters];
-      const swSel = document.getElementById('f_sw');
-      if (swSel && sw[0]) { swSel.value = sw[0]; swSel.dispatchEvent(new Event('change')); }
-    }
-    // Fill sortie type
-    if (['Single','EP','Album'].includes(r.type)) {
+
+    // Fill based on detected type
+    if (detectedType === 'sortie') {
+      // Type de sortie (single/ep/album)
       const tsel = document.getElementById('f_type');
-      if (tsel) { tsel.value = r.type.toLowerCase(); tsel.dispatchEvent(new Event('change')); }
+      if (tsel && r.type) { tsel.value = r.type.toLowerCase(); tsel.dispatchEvent(new Event('change')); }
+      // Titre du track/projet
+      const ti = document.getElementById('f_title');
+      if (ti && r.title) { ti.value = r.title; ti.dispatchEvent(new Event('input')); }
     }
-    // Fill cert fields
-    if (r.type === 'Certification') {
-      setTimeout(() => {
-        const el1 = document.getElementById('f_certType'); if (el1 && r.certType) el1.value = r.certType;
-        const el2 = document.getElementById('f_certLevel'); if (el2 && r.certLevel) el2.value = r.certLevel;
-        const el3 = document.getElementById('f_certTrack'); if (el3 && r.title) { el3.value = r.title; el3.dispatchEvent(new Event('input')); }
-        const el4 = document.getElementById('f_certArtist'); if (el4 && r.artist) { el4.value = r.artist; el4.dispatchEvent(new Event('input')); }
-      }, 100);
+
+    if (detectedType === 'certif') {
+      // Type de certif (Single/Album)
+      const ct = document.getElementById('f_cert_type');
+      if (ct && r.certType) { ct.value = r.certType; ct.dispatchEvent(new Event('change')); }
+      // Niveau (Or/Platine/Diamant...)
+      const cl = document.getElementById('f_cert_level');
+      if (cl && r.certLevel) { cl.value = r.certLevel; cl.dispatchEvent(new Event('change')); }
+      // Titre du track/projet
+      const cti = document.getElementById('f_cert_title');
+      if (cti && r.title) { cti.value = r.title; cti.dispatchEvent(new Event('input')); }
     }
+
+    if (detectedType === 'actu') {
+      const at = document.getElementById('f_actu_title');
+      if (at && r.title) { at.value = r.title; at.dispatchEvent(new Event('input')); }
+      if (r.actuDesc) {
+        const ad = document.getElementById('f_actu_desc');
+        if (ad) { ad.innerHTML = r.actuDesc; ad.dispatchEvent(new Event('input')); }
+      }
+    }
+
+    if (detectedType === 'synchro') {
+      const st = document.getElementById('f_synchro_title');
+      if (st && r.title) { st.value = r.title; st.dispatchEvent(new Event('input')); }
+      const sa = document.getElementById('f_synchro_artist');
+      if (sa && r.artist) { sa.value = r.artist; sa.dispatchEvent(new Event('input')); }
+      const strk = document.getElementById('f_synchro_track');
+      if (strk && r.track) { strk.value = r.track; strk.dispatchEvent(new Event('input')); }
+    }
+
+    // Fill songwriter(s) - use the multi-select mechanism
+    if (r.songwriters) {
+      const swList = Array.isArray(r.songwriters) ? r.songwriters : [r.songwriters];
+      swList.forEach(name => {
+        if (!S.songwriters.includes(name)) {
+          S.songwriters.push(name);
+          const opt = document.querySelector('#swDropdown [data-name="' + name + '"]');
+          if (opt) opt.classList.add('selected');
+        }
+      });
+      renderTags();
+      updatePreview();
+    }
+
     // Fill artwork
     if (r.artwork) {
       S.artworkSrc = r.artwork; S.artX = 0; S.artY = 0; S.artZoom = 1;

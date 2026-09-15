@@ -965,7 +965,10 @@ function buildArtistCardHTML(a, pdfLang, opts) {
   const PDF_FNAMES = {FR:'FR',US:'US',GB:'UK',DE:'DE',ES:'ES',IT:'IT',BE:'BE',CH:'CH',CA:'CA',JP:'JP',KR:'KR',BR:'BR',AR:'AR',MX:'MX',NG:'NG',CI:'CI',SN:'SN',MA:'MA',DZ:'DZ',CM:'CM',GN:'GN',ML:'ML',CV:'CV',NL:'NL',GA:'GA',BJ:'BJ',CD:'CD',INTL:'INTL'};
   const _flagLabel = (country) => {
     if (!country) return '';
-    return country.split(',').map(c => PDF_FLAGS[c] || '').filter(Boolean).join('') + ' ';
+    return country.split(',').map(c => {
+      if (c === 'INTL') return '🌍';
+      return '<img src="https://flagcdn.com/16x12/' + c.toLowerCase() + '.png" crossorigin="anonymous" style="vertical-align:middle;margin-right:1px" />';
+    }).filter(Boolean).join('') + ' ';
   };
   const options = opts || {};
   const types = a.types ? (Array.isArray(a.types) ? a.types : [a.types]) : [];
@@ -1129,7 +1132,10 @@ function buildArtistCardHTML(a, pdfLang, opts) {
     sortedPl.forEach(p => {
       const isIntl = p.country && p.country.split(',').some(c => c && c !== 'FR');
       const codes = p.country ? p.country.split(',').filter(cc => cc && cc !== 'FR') : [];
-      const flagTxt = codes.length ? codes.map(cc => PDF_FLAGS[cc] || '🌍').join('') + ' ' : '';
+      const flagTxt = codes.length ? codes.map(cc => {
+        if (cc === 'INTL') return '🌍';
+        return '<img src="https://flagcdn.com/16x12/' + cc.toLowerCase() + '.png" crossorigin="anonymous" style="vertical-align:middle;margin-right:1px" />';
+      }).join('') + ' ' : '';
       h += `<span class="pdf-tag">${flagTxt}${p.name}</span>`;
     });
     h += '</div>';
