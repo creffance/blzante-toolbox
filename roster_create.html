@@ -679,15 +679,18 @@ async function loadForEdit(id) {
         const SW_R2 = { 'LEANDRE': 'LEANDRE PICK', 'YANNICK SERI': 'LE SERI', 'BRO': 'BRÖ' };
         const SW_INV2 = {}; Object.entries(SW_R2).forEach(([o,n]) => { SW_INV2[n] = o; });
         const altN2 = SW_INV2[nameUp2] || '';
-        const existingCerts = new Set(cr.map(c => `${c.artist}-${c.project}-${c.level}`));
+        const existingCerts = new Set(cr.map(c => `${(c.artist||'').toLowerCase().trim()}-${(c.project||'').toLowerCase().trim()}-${(c.level||'').toLowerCase().trim()}`));
         Object.values(planJson2).filter(r => r.type === 'Certification' && r.status !== 'Annulé').forEach(r => {
           const sw = r.songwriters ? (Array.isArray(r.songwriters) ? r.songwriters : [r.songwriters]) : [];
           const swMapped = sw.map(s => SW_R2[s] || s);
           if (!swMapped.some(s => s.toUpperCase() === nameUp2 || (altN2 && s.toUpperCase() === altN2))) return;
-          const key = `${r.artist||''}-${r.title||''}-${r.certLevel||''}`;
+          // Clean the title - remove cert info like "(Or Single)", "(Platine Album)" etc
+          let cleanTitle = (r.track || r.title || '').replace(/\s*\((?:Or|Platine|Double platine|Triple platine|Diamant)\s+(?:Single|Album)\)\s*/gi, '').trim();
+          if (!cleanTitle) cleanTitle = r.title || '';
+          const key = `${(r.artist||'').toLowerCase().trim()}-${cleanTitle.toLowerCase().trim()}-${(r.certLevel||'').toLowerCase().trim()}`;
           if (!existingCerts.has(key)) {
             existingCerts.add(key);
-            addCert(r.certType||'Single', r.certLevel||'', r.artist||'', r.title||'', r.artwork||'', r.date||'', r.link||'');
+            addCert(r.certType||'Single', r.certLevel||'', r.artist||'', cleanTitle, r.artwork||'', r.date||'', r.link||'');
           }
         });
       }

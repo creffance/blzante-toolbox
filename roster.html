@@ -963,11 +963,14 @@ function openSpecialExport(a) {
 function buildArtistCardHTML(a, pdfLang, opts) {
   const PDF_FLAGS = {FR:'🇫🇷',US:'🇺🇸',GB:'🇬🇧',DE:'🇩🇪',ES:'🇪🇸',IT:'🇮🇹',BE:'🇧🇪',CH:'🇨🇭',CA:'🇨🇦',JP:'🇯🇵',KR:'🇰🇷',BR:'🇧🇷',AR:'🇦🇷',MX:'🇲🇽',NG:'🇳🇬',CI:'🇨🇮',SN:'🇸🇳',MA:'🇲🇦',DZ:'🇩🇿',CM:'🇨🇲',GN:'🇬🇳',ML:'🇲🇱',CV:'🇨🇻',NL:'🇳🇱',GA:'🇬🇦',BJ:'🇧🇯',CD:'🇨🇩',INTL:'🌍'};
   const PDF_FNAMES = {FR:'FR',US:'US',GB:'UK',DE:'DE',ES:'ES',IT:'IT',BE:'BE',CH:'CH',CA:'CA',JP:'JP',KR:'KR',BR:'BR',AR:'AR',MX:'MX',NG:'NG',CI:'CI',SN:'SN',MA:'MA',DZ:'DZ',CM:'CM',GN:'GN',ML:'ML',CV:'CV',NL:'NL',GA:'GA',BJ:'BJ',CD:'CD',INTL:'INTL'};
+  // Flag label using preloaded data URIs (html2canvas can't load external images reliably)
   const _flagLabel = (country) => {
     if (!country) return '';
     return country.split(',').map(c => {
       if (c === 'INTL') return '🌍';
-      return '<img src="https://flagcdn.com/12x9/' + c.toLowerCase() + '.png" crossorigin="anonymous" style="width:12px;height:9px;vertical-align:middle;margin-right:1px" />';
+      const dataUri = window._flagDataURIs && window._flagDataURIs[c.toLowerCase()];
+      if (dataUri) return '<img src="' + dataUri + '" style="width:12px;height:9px;vertical-align:middle;margin-right:1px" />';
+      return c;
     }).filter(Boolean).join('') + ' ';
   };
   const options = opts || {};
@@ -1134,7 +1137,9 @@ function buildArtistCardHTML(a, pdfLang, opts) {
       const codes = p.country ? p.country.split(',').filter(cc => cc && cc !== 'FR') : [];
       const flagTxt = codes.length ? codes.map(cc => {
         if (cc === 'INTL') return '🌍';
-        return '<img src="https://flagcdn.com/12x9/' + cc.toLowerCase() + '.png" crossorigin="anonymous" style="width:12px;height:9px;vertical-align:middle;margin-right:1px" />';
+        const du = window._flagDataURIs && window._flagDataURIs[cc.toLowerCase()];
+        if (du) return '<img src="' + du + '" style="width:12px;height:9px;vertical-align:middle;margin-right:1px" />';
+        return cc;
       }).join('') + ' ' : '';
       h += `<span class="pdf-tag">${flagTxt}${p.name}</span>`;
     });
@@ -1163,18 +1168,22 @@ function buildArtistCardHTML(a, pdfLang, opts) {
     const renderPdfCertGroup = (title, list) => {
       if (!list.length) return '';
       const displayList = list.slice(0, 5);
-      const label = list.length > 3 ? 'DERNIÈRES ' + title : title;
-      let out = `<div class="pdf-section-label">${label}</div><div class="pdf-certs">`;
+      const label = pdfLang === 'en' ? 'LATEST ' + title : 'DERNIÈRES ' + title;
+      const cols = Math.min(displayList.length, 3);
+      let out = `<div class="pdf-section-label">${label}</div>`;
+      out += `<div style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:4px;margin-bottom:4px">`;
       displayList.forEach(c => {
         const emoji = CERT_EMOJI[c.level] || '';
-        const label = buildCertLabel(c, pdfLang);
-        out += '<span class="pdf-cert">';
+        out += `<div class="pdf-major" style="border-color:#4a3e10">`;
         if (c.artwork) out += `<img src="${c.artwork}" crossorigin="anonymous" />`;
-        else if (emoji) out += `<span class="pdf-cert-emoji">${emoji}</span>`;
-        out += label;
-        if (c.date) out += ` <span style="color:#555;font-size:0.4rem">${c.date}</span>`;
+        else if (emoji) out += `<span style="font-size:0.8rem;flex-shrink:0">${emoji}</span>`;
+        out += `<div class="pdf-major-info">`;
+        out += `<strong style="color:#e8c547">${c.artist || ''}</strong>`;
+        out += `<br><span style="color:#aaa">${c.project || ''}</span>`;
+        out += `<br><span style="color:#888;font-size:0.42rem">${c.level || ''} · ${c.type || ''}</span>`;
+        if (c.date) out += ` <span style="color:#555;font-size:0.38rem">${c.date}</span>`;
         if (c.link) out += ` <a href="${c.link}" target="_blank" style="color:#e8c547;font-size:0.38rem;text-decoration:none">▶</a>`;
-        out += '</span>';
+        out += `</div></div>`;
       });
       return out + '</div>';
     };
@@ -1249,7 +1258,23 @@ function outputPDF(pdf, filename) {
 }
 
 // ─── Generate single artist PDF ───
+// Preload flag images as data URIs for PDF rendering
+async function preloadFlags() {
+  if (window._flagDataURIs) return;
+  window._flagDataURIs = {};
+  const codes = ['fr','us','gb','de','es','it','be','ch','ca','nl','jp','kr','br','ar','mx','ng','ci','sn','ma','dz','cm','gn','ml','cv','ga','bj','cd'];
+  await Promise.all(codes.map(async code => {
+    try {
+      const res = await fetch('https://flagcdn.com/16x12/' + code + '.png');
+      const blob = await res.blob();
+      const dataUri = await new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(blob); });
+      window._flagDataURIs[code] = dataUri;
+    } catch(e) {}
+  }));
+}
+
 async function generatePDF(a, lang) {
+  await preloadFlags();
   try {
     const render = document.getElementById('pdfRender');
     render.style.width = '794px';
