@@ -229,12 +229,13 @@ input[type=date]::-webkit-calendar-picker-indicator{filter:invert(.8)}
   font-size:13px;z-index:200;box-shadow:0 6px 24px rgba(0,0,0,.5);
 }
 
-/* ---------- document preview / print ---------- */
-#doc{background:#fff;color:#000;font-family:Helvetica,Arial,sans-serif;font-size:9.5pt;line-height:1.32}
+/* ---------- document preview / print (toujours noir sur blanc) ---------- */
+#doc{background:#fff;color:#000}
 .pv .ovl{padding:24px 20px}
 .pv-mdl{background:#141414;border:1px solid var(--rule);border-radius:var(--r);width:100%;max-width:850px}
 .pv-b{padding:0;max-height:none;background:#333;padding:20px;display:flex;justify-content:center}
-.pv-page{background:#fff;width:210mm;min-height:250mm;padding:18mm 16mm;box-shadow:0 3px 18px rgba(0,0,0,.55)}
+.pv-page{background:#fff;color:#000;font-family:Helvetica,Arial,sans-serif;font-size:9.5pt;line-height:1.32;width:210mm;min-height:250mm;padding:18mm 16mm;box-shadow:0 3px 18px rgba(0,0,0,.55)}
+.pv-page table,.pv-page tr,.pv-page td,.pv-page th{color:#000}
 @media(max-width:920px){.pv-page{width:100%;padding:10mm}}
 .d-hd{display:flex;justify-content:space-between;gap:30px}
 .d-hd .l{max-width:55%}
@@ -277,10 +278,12 @@ input[type=date]::-webkit-calendar-picker-indicator{filter:invert(.8)}
 
 @media print{
   body{background:#fff}
+  body::before{display:none !important}
   body>*{display:none !important}
   body>#printroot{display:block !important}
   #printroot{position:static}
-  .pv-page{width:auto;min-height:0;padding:0;box-shadow:none}
+  .pv-page{width:auto;min-height:0;padding:0;box-shadow:none;background:#fff !important;color:#000 !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .pv-page *{color:#000 !important}
   @page{size:A4;margin:16mm}
 }
 #printroot{display:none}
