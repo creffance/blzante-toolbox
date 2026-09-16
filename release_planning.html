@@ -745,6 +745,20 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
+    // Collect link positions before rendering
+    const renderRect2 = render.getBoundingClientRect();
+    const planLinkData = [];
+    render.querySelectorAll('a[href]').forEach(link => {
+      const rect = link.getBoundingClientRect();
+      planLinkData.push({
+        url: link.href,
+        x: rect.left - renderRect2.left,
+        y: rect.top - renderRect2.top,
+        w: rect.width,
+        h: rect.height
+      });
+    });
+
     for (let i = 0; i < pages; i++) {
       if (i > 0) pdf.addPage();
       const canvas = await html2canvas(render, {
@@ -755,6 +769,23 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
       });
       const imgData = canvas.toDataURL('image/jpeg', 0.92);
       pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
+
+      // Add link annotations for this page
+      const scaleX = 210 / 794;
+      const scaleY = 297 / pageH;
+      const pTop = i * pageH;
+      const pBot = (i + 1) * pageH;
+      planLinkData.forEach(ld => {
+        if (ld.w <= 0 || ld.h <= 0) return;
+        if (ld.y + ld.h < pTop || ld.y > pBot) return;
+        const x = ld.x * scaleX;
+        const y = (ld.y - pTop) * scaleY;
+        const w = ld.w * scaleX;
+        const ht = ld.h * scaleY;
+        if (y >= 0 && y < 297) {
+          pdf.link(x, y, w, ht, { url: ld.url });
+        }
+      });
     }
 
     render.innerHTML = '';
