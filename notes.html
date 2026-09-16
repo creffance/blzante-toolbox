@@ -505,9 +505,10 @@ function numero(type,societeId,date,selfId){
   });
   return pre+String(max+1).padStart(3,'0');
 }
+function montantFichier(v){return (Math.round((Number(v)||0)*100)/100).toFixed(2).replace('.','-');}
 function fichier(n){
-  const a=art(n.artisteId);
-  return (n.date||'').replace(/-/g,'')+'_'+(n.numero||'note')+(a?'_'+slug(nomArt(a)):'')+'.pdf';
+  const a=art(n.artisteId),c=calc(n);
+  return (n.date||'').replace(/-/g,'')+'_'+montantFichier(c.net)+'_'+montantFichier(c.brut)+'_'+(n.numero||'note')+(a?'_'+slug(nomArt(a)):'')+'.pdf';
 }
 function fichierCession(n){
   const a=art(n.artisteId),s=soc(n.societeId);
