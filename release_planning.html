@@ -363,9 +363,17 @@ function buildDashboard() {
   const certsAlbum = recent.filter(r => r.type === 'Certification' && r.certType === 'Album');
   const synchros = recent.filter(r => r.type === 'Synchro');
 
-  // Count tracks not releases: EP/Album with blzTrackCount count as N tracks, Single as 1
+  // Count tracks not releases: EP/Album counts per-track, Single as 1
+  // When a songwriter filter is active, only count tracks where that SW appears
   const countTracks = (list) => list.reduce((sum, r) => {
-    if ((r.type === 'EP' || r.type === 'Album') && r.blzTrackCount && parseInt(r.blzTrackCount) > 0) return sum + parseInt(r.blzTrackCount);
+    if ((r.type === 'EP' || r.type === 'Album') && r.blzTrackCount && parseInt(r.blzTrackCount) > 0) {
+      if (activeSw !== 'all' && r.blzTracks && Array.isArray(r.blzTracks)) {
+        // Count only tracks where this songwriter is credited
+        const swTracks = r.blzTracks.filter(t => t.songwriters && Array.isArray(t.songwriters) && t.songwriters.includes(activeSw));
+        return sum + swTracks.length;
+      }
+      return sum + parseInt(r.blzTrackCount);
+    }
     return sum + 1;
   }, 0);
   const totalTracks = countTracks(sorties);
@@ -687,7 +695,13 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
     // Dashboard recap in PDF (when filtered by songwriter or always)
     const pdfSorties = filtered.filter(r => ['Single','EP','Album'].includes(r.type) && r.status !== 'Annulé');
     const pdfCountTracks = (list) => list.reduce((sum, r) => {
-      if ((r.type === 'EP' || r.type === 'Album') && r.blzTrackCount && parseInt(r.blzTrackCount) > 0) return sum + parseInt(r.blzTrackCount);
+      if ((r.type === 'EP' || r.type === 'Album') && r.blzTrackCount && parseInt(r.blzTrackCount) > 0) {
+        if (activeSw !== 'all' && r.blzTracks && Array.isArray(r.blzTracks)) {
+          const swTracks = r.blzTracks.filter(t => t.songwriters && Array.isArray(t.songwriters) && t.songwriters.includes(activeSw));
+          return sum + swTracks.length;
+        }
+        return sum + parseInt(r.blzTrackCount);
+      }
       return sum + 1;
     }, 0);
     const pdfHasNonFR = (r) => r.country && r.country.split(',').some(c => c && c !== 'FR');
