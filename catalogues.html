@@ -1,41 +1,45 @@
-<title>Catalogues éditoriaux BLZante</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<title>Catalogues — BLZante Toolbox</title>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Syne+Mono&display=swap');
 :root{
-  --paper:#f4f4f2; --surface:#fff; --surface-2:#ecefec; --surface-3:#e1e5e2;
-  --ink:#14171a; --ink-2:#4a5560; --ink-3:#79838d;
-  --line:#dcdfdc; --line-2:#c4c9c5;
-  --accent:#1f5e50; --accent-ink:#fff; --accent-soft:#e1efea;
-  --pos:#1b6b4f; --neg:#b03f3a; --warn:#96600f; --warn-soft:#f6ecd9;
-  --shadow:0 1px 2px rgba(16,20,26,.05),0 8px 20px -14px rgba(16,20,26,.24);
-  --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
-  --sans:'IBM Plex Sans',system-ui,-apple-system,Segoe UI,sans-serif;
-  --disp:'Libre Franklin','IBM Plex Sans',system-ui,sans-serif;
-}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --paper:#111315; --surface:#181b1e; --surface-2:#202427; --surface-3:#282d31;
-  --ink:#eef1f2; --ink-2:#aeb7bd; --ink-3:#7f8990;
-  --line:#282d31; --line-2:#363c41;
-  --accent:#64b8a3; --accent-ink:#0b1614; --accent-soft:#16302a;
-  --pos:#4fbd93; --neg:#e07a75; --warn:#d2a04a; --warn-soft:#2e2718;
-  --shadow:0 1px 2px rgba(0,0,0,.45),0 10px 24px -16px rgba(0,0,0,.7);
-}}
-:root[data-theme="dark"]{
-  --paper:#111315; --surface:#181b1e; --surface-2:#202427; --surface-3:#282d31;
-  --ink:#eef1f2; --ink-2:#aeb7bd; --ink-3:#7f8990;
-  --line:#282d31; --line-2:#363c41;
-  --accent:#64b8a3; --accent-ink:#0b1614; --accent-soft:#16302a;
-  --pos:#4fbd93; --neg:#e07a75; --warn:#d2a04a; --warn-soft:#2e2718;
-  --shadow:0 1px 2px rgba(0,0,0,.45),0 10px 24px -16px rgba(0,0,0,.7);
+  --paper:#0d0d0d; --surface:#141414; --surface-2:#1a1a1a; --surface-3:#242424;
+  --ink:#f0ede6; --ink-2:#a8a49c; --ink-3:#777;
+  --line:#2a2a2a; --line-2:#3a3a3a;
+  --accent:#e8c547; --accent-ink:#0d0d0d; --accent-soft:#2b2510;
+  --pos:#7bc47f; --neg:#e07a75; --warn:#e8a03c; --warn-soft:#2e2413;
+  --shadow:none;
+  --mono:'Syne Mono',ui-monospace,monospace;
+  --sans:'Syne',system-ui,sans-serif;
+  --disp:'Syne',system-ui,sans-serif;
 }
 *{box-sizing:border-box}
 html,body{margin:0}
-body{background:var(--paper);color:var(--ink);font:14px/1.45 var(--sans);-webkit-font-smoothing:antialiased}
-.wrap{max-width:1360px;margin:0 auto;padding-inline:16px;padding-block:18px 60px}
+body{background:var(--paper);color:var(--ink);font:14px/1.45 var(--sans);-webkit-font-smoothing:antialiased;
+ min-height:100vh;display:flex;flex-direction:column}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.3;
+ background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
+ background-size:60px 60px}
+nav{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 40px;
+ border-bottom:1px solid var(--line);position:relative;z-index:1}
+.nav-logo{font-family:var(--disp);font-size:1.4rem;font-weight:800;color:#fff;text-decoration:none;
+ letter-spacing:.08em;display:flex;align-items:center;gap:10px}
+.nav-logo-img{height:28px;width:auto;display:block}
+.nav-right{display:flex;align-items:center;gap:12px;font-family:var(--mono);font-size:.65rem;color:var(--ink-3);
+ letter-spacing:.14em;text-transform:uppercase}
+.nav-right a{color:var(--ink-3);text-decoration:none}
+.nav-right a:hover{color:var(--ink)}
+.nav-sep{color:var(--line-2)}
+.deco{background:none;border:1px solid var(--line);color:var(--ink-3);font-family:var(--mono);font-size:.55rem;
+ padding:4px 10px;cursor:pointer;letter-spacing:.08em;text-transform:uppercase}
+.deco:hover{border-color:#555;color:#fff}
+footer.tb{border-top:1px solid var(--line);padding:14px 40px;display:flex;align-items:center;
+ justify-content:space-between;gap:12px;position:relative;z-index:1;font-family:var(--mono);font-size:.6rem;
+ letter-spacing:.08em;color:var(--ink-3)}
+.wrap{position:relative;z-index:1;flex:1;max-width:1360px;width:100%;margin:0 auto;
+ padding-inline:40px;padding-block:26px 40px}
+@media(max-width:600px){nav,footer.tb{padding-left:24px;padding-right:24px}.wrap{padding-inline:24px}}
 h1,h2,h3{font-family:var(--disp);margin:0;text-wrap:balance}
 h1{font-size:20px;font-weight:700;letter-spacing:-.01em}
 h2{font-size:15px;font-weight:600}
@@ -46,10 +50,8 @@ h2{font-size:15px;font-weight:600}
 a{color:var(--accent)}
 
 .top{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:center;justify-content:space-between;
- padding-bottom:14px;border-bottom:2px solid var(--ink)}
+ padding-bottom:14px;border-bottom:1px solid var(--line-2)}
 .brand{display:flex;align-items:center;gap:11px}
-.logo{width:30px;height:30px;border-radius:5px;background:var(--ink);color:var(--paper);
- display:grid;place-items:center;font:700 11px/1 var(--disp);flex:none}
 .cats{display:flex;flex-wrap:wrap;gap:6px}
 .stateline{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;padding:10px 0 0;font-size:12px;color:var(--ink-2)}
 .stateline b{font-family:var(--mono);color:var(--ink);font-weight:600}
@@ -65,7 +67,7 @@ button,select,input,textarea{font-family:inherit}
 .btn[disabled]{opacity:.45;cursor:not-allowed}
 .chip{font:500 12px/1 var(--sans);padding:7px 11px;border:1px solid var(--line-2);background:var(--surface);
  color:var(--ink-2);border-radius:4px;cursor:pointer;transition:.12s}
-.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--paper);font-weight:600}
+.chip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600}
 .chip:hover{border-color:var(--accent)}
 input[type=text],input[type=search],input[type=number],input[type=date],input[type=url],select,textarea{
  font:400 13px/1.3 var(--sans);padding:7px 9px;border:1px solid var(--line-2);border-radius:4px;
@@ -90,11 +92,10 @@ label.fl{display:block;font:600 10.5px/1 var(--sans);letter-spacing:.08em;text-t
 .kpi .k{font:600 10px/1.2 var(--sans);letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)}
 .kpi .v{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:21px;font-weight:600;margin-top:6px;line-height:1.1}
 .kpi .s{font-size:11.5px;color:var(--ink-2);margin-top:4px}
-.kpi.lead{background:var(--ink);color:var(--paper)}
-.kpi.lead .k{color:color-mix(in srgb,var(--paper) 60%,transparent)}
-.kpi.lead .s{color:color-mix(in srgb,var(--paper) 76%,transparent)}
+.kpi.lead{background:var(--surface-2);box-shadow:inset 2px 0 0 var(--accent)}
+.kpi.lead .v{color:var(--accent)}
 
-.panel{background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow);margin-bottom:18px}
+.panel{background:var(--surface);border:1px solid var(--line);margin-bottom:18px}
 .phead{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between;
  padding:11px 14px;border-bottom:1px solid var(--line);background:var(--surface-2)}
 .phead .note{font-size:11.5px;color:var(--ink-3);max-width:70ch}
@@ -110,7 +111,7 @@ th.l,td.l{text-align:left}
 td.num,th.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
 tbody tr.clickable{cursor:pointer}
 tbody tr:hover td{background:var(--surface-2)}
-tfoot td{font-weight:600;border-top:2px solid var(--ink);border-bottom:0;background:var(--surface)}
+tfoot td{font-weight:600;border-top:1px solid var(--line-2);border-bottom:0;background:var(--surface-2)}
 th.sortable{cursor:pointer;user-select:none}
 th.sortable:hover{color:var(--ink)}
 .car{font-size:9px;color:var(--accent)}
@@ -167,11 +168,18 @@ input[type=checkbox]{width:15px;height:15px;accent-color:var(--accent);cursor:po
 @media print{.tabs,.top .btn,.chip,#toast{display:none!important}}
 </style>
 
+<nav>
+  <a class="nav-logo" href="index.html"><img src="blzante_spiral_white.png" alt="" class="nav-logo-img"
+     onerror="this.style.display='none'"><span>BLZante</span></a>
+  <div class="nav-right">
+    <button class="deco" onclick="try{firebase.auth().signOut().then(function(){location.href='login.html'})}catch(e){}">Déconnexion</button>
+    <a href="index.html">&larr; Toolbox</a><span class="nav-sep">/</span><span>Catalogues</span>
+  </div>
+</nav>
 <div class="wrap">
   <div class="top">
     <div class="brand">
-      <div class="logo">BLZ</div>
-      <div><div class="eyebrow">Toolbox BLZante</div><h1>Catalogues éditoriaux</h1></div>
+      <div><div class="eyebrow">Catalogues éditoriaux</div><h1>Sacem · revenus · songwriters</h1></div>
     </div>
     <div class="cats" id="cats"></div>
     <div class="rowline">
@@ -186,6 +194,7 @@ input[type=checkbox]{width:15px;height:15px;accent-color:var(--accent);cursor:po
   <div class="tabs" id="tabs" role="tablist"></div>
   <div id="view"></div>
 </div>
+<footer class="tb"><span>BLZante Toolbox © 2026</span><span>Catalogues éditoriaux</span></footer>
 <div id="toast" role="status" aria-live="polite"></div>
 <div id="modalroot"></div>
 
@@ -317,6 +326,10 @@ async function rtSet(p,v){
 async function rtDel(p){
   await dbFetch('/'+fbRoot()+'/'+p+'.json',{method:'DELETE'});
 }
+async function rtSetAbs(p,v){    // écrit ailleurs dans la base : la section d'un outil sur une fiche globale
+  var r=await dbFetch('/'+p+'.json',{method:'PUT',body:JSON.stringify(clean(v))});
+  if(!r.ok)throw new Error('écriture refusée ('+r.status+')');
+}
 /* --- roster de la Toolbox : /roster.json --- */
 var SW_RENAME={'LEANDRE':'LEANDRE PICK','YANNICK SERI':'LE SERI','BRO':'BRÖ'};
 async function chargerRoster(){
@@ -324,24 +337,49 @@ async function chargerRoster(){
   if(!r.ok)throw new Error('roster illisible ('+r.status+')');
   var data=await r.json();
   if(!data)return [];
-  return Object.keys(data).map(function(k){var a=data[k];a.id=a.id||k;return a;})
+  return Object.keys(data).map(function(k){var a=data[k]||{};a.id=a.id||k;a._key=k;return a;})
     .filter(function(a){
       var tp=a.types?(Array.isArray(a.types)?a.types:[a.types]):[];
       return tp.indexOf('Auteur')>=0||tp.indexOf('Compositeur')>=0||tp.indexOf('Topliner')>=0;})
     .sort(function(a,b){return (a.name||'').localeCompare(b.name||'','fr');});
 }
-var ROSTER=[];
+var ROSTER=[],PLANNING=[];
+async function chargerPlanning(){
+  var r=await dbFetch('/releases.json');
+  if(!r.ok)return [];
+  var d=await r.json();
+  if(!d)return [];
+  return Object.keys(d).map(function(k){return d[k];}).map(function(x){
+    var sw=x.songwriters?(Array.isArray(x.songwriters)?x.songwriters:[x.songwriters]):[];
+    x._sw=sw.map(function(n){return norm(SW_RENAME[n]||n);});
+    return x;});
+}
+function sortiesDe(sw){
+  if(!PLANNING.length)return [];
+  var noms=[norm(sw.nom)].concat((sw.alias||[]).map(norm));
+  return PLANNING.filter(function(r){
+    return r._sw.some(function(n){return noms.indexOf(n)>=0;});})
+    .sort(function(a,b){return (b.dateSortable||'').localeCompare(a.dateSortable||'');});
+}
+function sortiePourOeuvre(titre){
+  if(!PLANNING.length||!titre)return null;
+  var t=norm(titre);
+  return PLANNING.filter(function(r){
+    return norm(r.track||r.title||'')===t;})
+    .sort(function(a,b){return (a.dateSortable||'').localeCompare(b.dateSortable||'');})[0]||null;
+}
 // Le roster de la Toolbox fait foi sur l'identité ; l'outil n'y ajoute que l'édition
 // (part cédée, COAD, IPI, ayants droit rattachés), conservée sous editions/songwriters/r:<id>.
 var CHAMPS_EDITION=['part','coad','ipis','ads','alias','type','note','societe'];
 function fusionRoster(){
   ROSTER.forEach(function(a){
-    var id='r:'+a.id, ov=store.overlays[id]||{};
+    var id='r:'+a.id, ov=a.edition||store.overlays[id]||{};
     var alias=(ov.alias||[]).slice();
     Object.keys(SW_RENAME).forEach(function(o2){
       if(norm(SW_RENAME[o2])===norm(a.name)&&alias.indexOf(o2)<0)alias.push(o2);
       if(norm(o2)===norm(a.name)&&alias.indexOf(SW_RENAME[o2])<0)alias.push(SW_RENAME[o2]);});
-    store.songwriters[id]={id:id,nom:a.name||'',rosterId:a.id,roles:a.types||[],source:'roster',
+    store.songwriters[id]={id:id,nom:a.name||'',rosterId:a.id,rosterKey:a._key||a.id,
+      roles:a.types||[],source:'roster',
       societe:ov.societe||'',part:ov.part==null?50:ov.part,coad:ov.coad||'',
       ipis:ov.ipis||[],ads:ov.ads||[],alias:alias,type:ov.type||'roster',note:ov.note||''};
   });
@@ -445,6 +483,7 @@ async function loadAll(){
       else store.songwriters[k]=x;});                   // fiche propre à l'outil (externe, non signé)
     try{ROSTER=await chargerRoster();fusionRoster();}
     catch(e){console.warn('roster illisible',e);}
+    try{PLANNING=await chargerPlanning();}catch(e){console.warn('planning illisible',e);}
     var im=await rtGet('imports')||{};
     store.imports=Object.keys(im).map(function(k){var x=im[k];x.id=k;return x;})
       .sort(function(a,b){return (b.date||'').localeCompare(a.date||'');}).slice(0,60);
@@ -510,9 +549,17 @@ async function saveEdit(soc,code){
 }
 async function saveSW(sw){
   var corps=sw;
-  if(sw.source==='roster'){                     // on ne réécrit jamais l'identité du roster
+  if(sw.source==='roster'){
+    // fiche globale : on n'écrit que la section « edition », l'identité reste au Roster
     corps={};CHAMPS_EDITION.forEach(function(c){corps[c]=sw[c];});
+    corps.maj=new Date().toISOString();
     store.overlays[sw.id]=corps;
+    var r=ROSTER.filter(function(a){return 'r:'+a.id===sw.id;})[0];
+    if(r)r.edition=corps;
+    if(MODE==='firebase')return rtSetAbs('roster/'+(sw.rosterKey||sw.rosterId)+'/edition',corps);
+    if(MODE==='local')return void localSave();
+    if(DB)return DB.doc('songwriters/'+sw.id).set(corps);
+    return;
   }
   if(MODE==='local')return void localSave();
   if(MODE==='firebase')return rtSet('songwriters/'+sw.id,corps);
@@ -1241,7 +1288,9 @@ function ficheOeuvre(code){
       swId:swId,coche:!!cur,deal:cur?(cur.part!=null?cur.part:50):(sw&&sw.part!=null?sw.part:50)};});
   var body='<div class="split"><div>'+
     '<div class="field"><label class="fl">Titre</label><input type="text" id="f-titre" value="'+esc(o.titre)+'"></div>'+
-    '<div class="field"><label class="fl">Artiste interprète</label><input type="text" id="f-artiste" value="'+esc(e.artiste||'')+'" placeholder="Nom de l\'artiste"></div>'+
+    '<div class="field"><label class="fl">Artiste interprète</label>'+
+      '<input type="text" id="f-artiste" value="'+esc(e.artiste||'')+'" placeholder="Nom de l\'artiste">'+
+      '<div class="hint" id="f-plan"></div></div>'+
     '<div class="grid2"><div class="field"><label class="fl">Date de sortie</label><input type="date" id="f-sortie" value="'+esc(e.sortie||'')+'"></div>'+
     '<div class="field"><label class="fl">Date de dépôt</label><input type="date" id="f-depot" value="'+esc(o.depot||'')+'"></div></div>'+
     '<div class="field"><label class="fl">Lien Spotify</label><input type="url" id="f-spotify" value="'+esc(e.spotify||'')+'" placeholder="https://open.spotify.com/track/…"></div>'+
@@ -1376,6 +1425,18 @@ function ficheOeuvre(code){
       '<b>'+pv(partPh)+' %</b> en phono. Ces points se répartissent entre les songwriters ci-dessous.';
   }
   drawAut();drawVent();
+  var rel=sortiePourOeuvre(o.titre);
+  if(rel){
+    el('f-plan').innerHTML='Planning : <b>'+esc(rel.artist||'')+'</b>'+
+      (rel.date||rel.dateSortable?' · '+esc(rel.date||rel.dateSortable):'')+
+      ' <button class="btn sm" id="f-plan-ok" style="margin-left:6px">Reprendre</button>';
+    el('f-plan-ok').onclick=function(){
+      if(rel.artist)el('f-artiste').value=rel.artist;
+      var d=(rel.dateSortable||'').slice(0,10);
+      if(/^\d{4}-\d{2}-\d{2}$/.test(d))el('f-sortie').value=d;
+      if(rel.link&&!el('f-spotify').value&&/spotify/.test(rel.link))el('f-spotify').value=rel.link;
+      this.remove();};
+  }
   el('f-cancel').onclick=closeModal;
   el('f-save').onclick=async function(){
     var E=store.edits[soc]||(store.edits[soc]={}),ed=E[code]||(E[code]={});
@@ -1491,6 +1552,8 @@ function ficheSW(id,pre){
       '<span class="pill">'+st.oeuvres+' œuvres</span><span class="pill">'+eur(st.net)+' € attribués</span>'+
       '<span class="pill">'+pv(st.ecr)+' % d\'écriture cumulée</span></div></div>':'')+
     '<div class="field"><label class="fl">Œuvres liées</label><div id="s-oeuvres" class="tscroll"></div></div>'+
+    '<div class="field" id="s-plan-wrap" hidden><label class="fl">Sorties au Planning</label>'+
+      '<div id="s-plan" class="tscroll"></div></div>'+
     '</div></div>';
   openModal('<div class="eyebrow">Songwriter</div><h2>'+esc(sw.nom||'Nouvelle fiche')+'</h2>',body,
     (id?'<button class="btn left" id="s-del">Supprimer</button>':'<span class="left"></span>')+
@@ -1551,6 +1614,17 @@ function ficheSW(id,pre){
     (liste.length>15?'<div class="hint">'+(liste.length-15)+' autres œuvres</div>':''))
     :'<span class="mut" style="font-size:12px">Aucune œuvre au catalogue pour cette identité.</span>';
 
+  var sorties=sortiesDe(sw);
+  if(sorties.length){
+    el('s-plan-wrap').hidden=false;
+    el('s-plan').innerHTML='<table><thead><tr><th class="l">Sortie</th><th class="l">Artiste</th>'+
+      '<th class="l">Date</th><th class="l">Statut</th></tr></thead><tbody>'+
+      sorties.slice(0,8).map(function(r){
+        return '<tr><td class="l">'+esc(r.track||r.title||'')+'</td><td class="l mut">'+esc(r.artist||'')+'</td>'+
+          '<td class="l mut num">'+esc(r.date||r.dateSortable||'')+'</td>'+
+          '<td class="l mut">'+esc(r.status||'')+'</td></tr>';}).join('')+'</tbody></table>'+
+      (sorties.length>8?'<div class="hint">'+(sorties.length-8)+' autres sorties</div>':'');
+  }
   el('s-cancel').onclick=closeModal;
   if(id&&el('s-del'))el('s-del').onclick=async function(){
     if(!confirm('Supprimer la fiche « '+(sw.nom||'')+' » ?'))return;
@@ -1693,6 +1767,14 @@ el('btn-export').onclick=exportBase;
 el('btn-restore').onclick=function(){el('file-restore').click();};
 el('file-restore').onchange=function(){if(this.files&&this.files[0])importBase(this.files[0]);this.value='';};
 (async function(){
+  if(location.protocol!=='file:'){
+    try{
+      if(typeof firebase!=='undefined'&&firebase.auth){
+        if(!firebase.apps.length)firebase.initializeApp(FBCFG);
+        firebase.auth().onAuthStateChanged(function(u){if(!u)location.href='login.html';});
+      }
+    }catch(e){}
+  }
   SOCIETES.forEach(function(s2){store.oeuvres[s2.id]={};store.edits[s2.id]={};store.liens[s2.id]={};});
   render();
   await connect();
