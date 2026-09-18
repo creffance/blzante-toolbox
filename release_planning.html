@@ -147,6 +147,8 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .empty-msg { text-align: center; padding: 48px 20px; color: #444; font-size: 0.78rem; }
 .empty-msg a { color: var(--accent); text-decoration: none; }
 .empty-msg a:hover { text-decoration: underline; }
+.load-more-indicator { text-align: center; padding: 24px 0 40px; }
+.load-more-text { font-family: 'Syne Mono', monospace; font-size: 0.62rem; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; }
 
 .today-marker { border-left: 2px solid var(--accent); }
 
@@ -269,6 +271,10 @@ let activeSw = 'all';
 let dateFrom = '';
 let dateTo = '';
 let cachedReleases = [];
+const PAGE_INITIAL = 50;
+const PAGE_INCREMENT = 30;
+let displayLimit = PAGE_INITIAL;
+let totalFiltered = 0;
 
 function applyDateFilter(releases) {
   if (!dateFrom && !dateTo) return releases;
@@ -403,6 +409,7 @@ function updateDateFilter() {
   dateFrom = dateFromEl.value || '';
   dateTo = dateToEl.value || '';
   dateClearEl.classList.toggle('visible', !!(dateFrom || dateTo));
+  resetPagination();
   buildDashboard();
   render();
 }
@@ -439,17 +446,25 @@ function render() {
   const content = document.getElementById('planningContent');
   const stats = document.getElementById('stats');
 
-  stats.textContent = `${filtered.length} event${filtered.length > 1 ? 's' : ''}`;
+  totalFiltered = filtered.length;
+  const showing = Math.min(displayLimit, totalFiltered);
+  stats.textContent = totalFiltered <= displayLimit
+    ? `${totalFiltered} event${totalFiltered > 1 ? 's' : ''}`
+    : `${showing} / ${totalFiltered} events`;
 
   if (filtered.length === 0) {
     content.innerHTML = '<div class="empty-msg">Aucun event pour le moment.<br><a href="release_create.html">Ajouter →</a></div>';
     return;
   }
 
+  // Sort all filtered events by date descending, then slice to displayLimit
+  const allSorted = [...filtered].sort((a, b) => (b.dateSortable || '').localeCompare(a.dateSortable || ''));
+  const visible = allSorted.slice(0, displayLimit);
+
   const groups = {};
   const today = new Date().toISOString().slice(0, 10);
 
-  filtered.forEach(r => {
+  visible.forEach(r => {
     const parts = (r.dateSortable || '').split('-');
     const key = parts[0] + '-' + parts[1];
     if (!groups[key]) groups[key] = [];
@@ -494,7 +509,12 @@ function render() {
       html += `</div>`;
       html += `<div class="rel-info">`;
       html += `<span class="rel-artist">${r.artist}</span>`;
-      html += `<span class="rel-title">${r.title}</span>`;
+      if (r.type === 'Certification' && r.track) {
+        html += `<span class="rel-title">${r.track}</span>`;
+        html += `<span class="rel-blz">${r.certType || ''} — ${r.certLevel || ''}</span>`;
+      } else {
+        html += `<span class="rel-title">${r.title}</span>`;
+      }
       if (r.actuDesc) html += `<span class="rel-desc">${r.actuDesc}</span>`;
       if (r.blzTrackCount) html += `<span class="rel-blz">${r.blzTrackCount} titre${r.blzTrackCount > 1 ? 's' : ''} BLZante</span>`;
       if (r.blzTrackNames) html += `<span class="rel-sw">${r.blzTrackNames.replace(/\n/g, ' · ')}</span>`;
@@ -508,8 +528,29 @@ function render() {
     html += `</div></div>`;
   });
 
+  if (totalFiltered > displayLimit) {
+    html += `<div class="load-more-indicator" id="loadMoreIndicator">` +
+      `<span class="load-more-text">Scroll pour charger plus · ${totalFiltered - displayLimit} restants</span>` +
+      `</div>`;
+  }
+
   content.innerHTML = html;
 }
+
+function resetPagination() {
+  displayLimit = PAGE_INITIAL;
+}
+
+// Infinite scroll
+window.addEventListener('scroll', () => {
+  if (displayLimit >= totalFiltered) return;
+  const scrollBottom = window.innerHeight + window.scrollY;
+  const docHeight = document.documentElement.scrollHeight;
+  if (scrollBottom >= docHeight - 300) {
+    displayLimit += PAGE_INCREMENT;
+    render();
+  }
+});
 
 // Filters
 document.getElementById('filters').addEventListener('click', (e) => {
@@ -518,6 +559,7 @@ document.getElementById('filters').addEventListener('click', (e) => {
   document.querySelectorAll('#filters .filter-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   activeFilter = btn.dataset.filter;
+  resetPagination();
   render();
 });
 
@@ -527,6 +569,7 @@ document.getElementById('swFilters').addEventListener('click', (e) => {
   document.querySelectorAll('#swFilters .filter-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   activeSw = btn.dataset.sw;
+  resetPagination();
   buildDashboard();
   render();
 });
