@@ -273,7 +273,7 @@ var SOCIETES=[
   {id:'rossinante',nom:'Rossinante',coad:'1160447'}
 ];
 var ROLE_AUTEUR={A:1,C:1,AC:1,AR:1,ADA:1};
-var DB=null,WRITABLE=true,MODE='local',BESOIN_SESSION=false;
+var DB=null,WRITABLE=true,MODE='local',BESOIN_SESSION=false,FBERR='';
 var LSKEY='blz-catalogues-v1';
 var store={meta:{},oeuvres:{},edits:{},songwriters:{},imports:[],liens:{},overlays:{}};
 var state={societe:'blzante',tab:'apercu',q:'',filtre:'tous',rfiltre:'rev',sort:{k:'net',d:-1},swSort:{k:'net',d:-1}};
@@ -292,7 +292,11 @@ async function connect(){
     return;
   }
   // 2. Firebase de la Toolbox
-  try{ if(await initFirebase()){MODE='firebase';return;} }catch(e){ console.warn('Firebase indisponible',e); }
+  try{ if(await initFirebase()){
+    MODE='firebase';
+    try{ await rtSet('ping',{t:Date.now()}); }               // on vérifie tout de suite qu'on peut écrire
+    catch(e){ WRITABLE=false;FBERR=(e&&e.message)||String(e); }
+    return;} }catch(e){ console.warn('Firebase indisponible',e); }
   if(location.protocol!=='file:')BESOIN_SESSION=true;
   // 3. repli : base locale au navigateur
   MODE='local';
@@ -309,10 +313,28 @@ var FBCFG=window.BLZ_FIREBASE||{apiKey:"AIzaSyBuwwcRdlxLf7-ZdmUAi0ajB5uL3y-m800"
   messagingSenderId:"599088931653",appId:"1:599088931653:web:34f936e8302e894afb942c"};
 var FBDB=FBCFG.databaseURL, FBTOKEN='', FBUSER=null;
 function fbRoot(){return (window.BLZ_PATH||'editions').replace(/^\/+|\/+$/g,'');}
-function dbFetch(path,opts){
+async function fbToken(force){
+  try{
+    var u=FBUSER||(typeof firebase!=='undefined'&&firebase.auth&&firebase.auth().currentUser);
+    if(u){FBUSER=u;FBTOKEN=await u.getIdToken(!!force);window._fbToken=FBTOKEN;}
+  }catch(e){}
+  return FBTOKEN;
+}
+async function dbFetch(path,opts){
   if(window.dbFetch&&window.dbFetch!==dbFetch)return window.dbFetch(path,opts);
   var sep=path.indexOf('?')>=0?'&':'?';
-  return fetch(FBDB+path+sep+'auth='+FBTOKEN,opts);
+  var r=await fetch(FBDB+path+sep+'auth='+FBTOKEN,opts);
+  if(r.status===401||r.status===403){                    // jeton périmé : on le renouvelle et on rejoue
+    var t=await fbToken(true);
+    if(t)r=await fetch(FBDB+path+sep+'auth='+t,opts);
+  }
+  return r;
+}
+async function fbMsg(r){
+  var t='';
+  try{var j=await r.clone().json();t=(j&&(j.error||j.message))||'';}catch(e){}
+  if(!t){try{t=String(await r.text()).slice(0,140);}catch(e){}}
+  return r.status+(t?' — '+t:'');
 }
 async function initFirebase(){
   if(location.protocol==='file:')return false;                  // fichier ouvert en local
@@ -331,19 +353,19 @@ async function initFirebase(){
 function clean(o){return JSON.parse(JSON.stringify(o===undefined?null:o));}
 async function rtGet(p){
   var r=await dbFetch('/'+fbRoot()+'/'+p+'.json');
-  if(!r.ok)throw new Error('lecture refusée ('+r.status+')');
+  if(!r.ok)throw new Error('lecture refusée sur /'+fbRoot()+'/'+p+' ('+(await fbMsg(r))+')');
   return await r.json();
 }
 async function rtSet(p,v){
   var r=await dbFetch('/'+fbRoot()+'/'+p+'.json',{method:'PUT',body:JSON.stringify(clean(v))});
-  if(!r.ok)throw new Error('écriture refusée ('+r.status+')');
+  if(!r.ok)throw new Error('écriture refusée sur /'+fbRoot()+'/'+p+' ('+(await fbMsg(r))+')');
 }
 async function rtDel(p){
   await dbFetch('/'+fbRoot()+'/'+p+'.json',{method:'DELETE'});
 }
 async function rtSetAbs(p,v){    // écrit ailleurs dans la base : la section d'un outil sur une fiche globale
   var r=await dbFetch('/'+p+'.json',{method:'PUT',body:JSON.stringify(clean(v))});
-  if(!r.ok)throw new Error('écriture refusée ('+r.status+')');
+  if(!r.ok)throw new Error('écriture refusée sur /'+p+' ('+(await fbMsg(r))+')');
 }
 /* --- roster de la Toolbox : /roster.json --- */
 var SW_RENAME={'LEANDRE':'LEANDRE PICK','YANNICK SERI':'LE SERI','BRO':'BRÖ'};
@@ -543,8 +565,9 @@ async function saveOeuvres(soc){
   if(MODE==='local'){
     store.meta[soc]=Object.assign({},store.meta[soc],{oeuvres:codes.length,chunks:n});localSave();return;}
   if(MODE==='firebase'){
-    var tout={};for(var i=0;i<n;i++)tout['b'+i]=bloc(i);
-    await rtSet('bulk/'+soc,tout);
+    for(var i=0;i<n;i++)await rtSet('bulk/'+soc+'/b'+i,bloc(i));   // bloc par bloc : charges légères
+    var vieux=(store.meta[soc]||{}).chunks||0;
+    for(var k3=n;k3<vieux;k3++){try{await rtDel('bulk/'+soc+'/b'+k3);}catch(e){}}
     store.meta[soc]=Object.assign({},store.meta[soc],{chunks:n,oeuvres:codes.length});
     await saveMeta();return;}
   if(!DB)return;
@@ -970,7 +993,8 @@ function renderChrome(){
     :MODE==='firebase'?'<span class="tag ok">Firebase Toolbox</span>'
     :BESOIN_SESSION?'<span class="tag warn">session Toolbox absente — base locale</span>'
     :'<span class="tag neutral">base locale à ce navigateur</span>');
-  if(MODE==='partage'&&!WRITABLE)p.push('<span class="tag warn">lecture seule</span>');
+  if(!WRITABLE)p.push('<span class="tag warn" title="'+esc(FBERR)+'">écriture refusée'+
+    (MODE==='firebase'?' sous /'+esc(fbRoot()):'')+'</span>');
   el('stateline').innerHTML=p.join(' <span class="dotsep">·</span> ');
   var att=enAttente(state.societe).length+ventilationsEnAttente(state.societe).length;
   var tabs=[['apercu','Aperçu',''],['oeuvres','Œuvres',t.oeuvres],
@@ -1786,9 +1810,8 @@ function ficheSW(id,pre){
 /* ---------- import ---------- */
 function modalImport(){
   var TYPES=[['catalogue','Catalogue « Mes œuvres »','Œuvres, splits, ISWC et dates de dépôt'],
-             ['repartition','Répartition « Toutes œuvres »','Revenus nets par œuvre et par trimestre'],
-             ['roster','Roster (CSV)','Fiches songwriters, hors roster Firebase']];
-  var typeChoisi='',files=[],openMap=-1;
+             ['repartition','Répartition « Toutes œuvres »','Revenus nets par œuvre et par trimestre']];
+  var typeChoisi='',files=[];
   var body='<div class="field"><label class="fl">1 · Type de données à importer</label>'+
     '<div class="rowline" id="i-types">'+TYPES.map(function(t){
       return '<button class="chip" data-t="'+t[0]+'" aria-pressed="false" style="text-align:left">'+
@@ -1803,8 +1826,10 @@ function modalImport(){
     '<p><button class="btn" id="i-pick" disabled>Choisir des fichiers</button></p>'+
     '<input type="file" id="i-file" accept=".csv,text/csv" multiple hidden></div></div>'+
     '<div class="filelist" id="i-list"></div><div class="prog" id="i-prog" hidden><i></i></div>'+
+    '<div id="i-err"></div>'+
     '<div class="hint">Chaque fichier est vérifié : s\'il ne correspond pas au type annoncé, il est signalé '+
-    'et laissé de côté. Le catalogue fait foi sur les splits, les répartitions n\'apportent que les montants.</div>';
+    'et laissé de côté. Le catalogue fait foi sur les splits, les répartitions n\'apportent que les montants. '+
+    'Les songwriters viennent du roster de la Toolbox, il n\'y a rien à importer pour eux.</div>';
   openModal('<div class="eyebrow">Import</div><h2>Ajouter des données</h2>',body,
     '<span class="left mut" id="i-state"></span><button class="btn" id="i-cancel">Fermer</button>'+
     '<button class="btn primary" id="i-go" disabled>Importer</button>');
@@ -1850,27 +1875,16 @@ function modalImport(){
       var fr=new FileReader();
       fr.onload=function(){var p=parseCSV(String(fr.result));
         x.head=p.head;x.rows=p.rows;
-        x.detect=isRepartition(p.head)?'repartition':isCatalogue(p.head)?'catalogue':'roster';
-        if(x.detect==='roster')x.map=autoMapRoster(p.head);
+        x.detect=isRepartition(p.head)?'repartition':isCatalogue(p.head)?'catalogue':'inconnu';
         draw();};
       fr.onerror=function(){toast('Lecture impossible : '+f.name);};
       fr.readAsText(f,'utf-8');});
     draw();
   }
-  function libelle(t){var x=TYPES.filter(function(y){return y[0]===t;})[0];return x?x[1]:t;}
+  function libelle(t){var x=TYPES.filter(function(y){return y[0]===t;})[0];
+    return x?x[1]:'format non reconnu';}
   function retenus(){return files.filter(function(x){
     return x.head&&(x.detect===typeChoisi||x.force);});}
-  function mapRoster(f,i){
-    if(openMap!==i||!f.head||f.map===undefined)return '';
-    var ch=[['nom','Nom'],['prenom','Prénom'],['coad','COAD'],['ipi','IPI'],
-            ['part','Part cédée (%)'],['statut','Statut'],['alias','Pseudonyme']];
-    return '<div style="padding:12px;border:1px solid var(--line);border-top:0;background:var(--surface-2)">'+
-      '<div class="grid2">'+ch.map(function(c){
-        return '<div class="field"><label class="fl">'+c[1]+'</label><select data-m="'+c[0]+'" data-fi="'+i+'">'+
-          '<option value="-1">— ignorer —</option>'+
-          f.head.map(function(h,j){return '<option value="'+j+'"'+(f.map[c[0]]===j?' selected':'')+'>'+esc(h)+'</option>';}).join('')+
-          '</select></div>';}).join('')+'</div></div>';
-  }
   function draw(){
     el('i-list').innerHTML=files.map(function(x,i){
       var etat;
@@ -1879,20 +1893,14 @@ function modalImport(){
       else if(x.force)etat='<span class="tag warn">forcé</span>';
       else etat='<span class="tag warn">semble être : '+libelle(x.detect)+'</span>'+
         '<button class="btn sm" data-force="'+i+'">Importer quand même</button>';
-      return '<div><div class="filerow"><div><b>'+esc(x.file.name)+'</b><div class="mini">'+
+      return '<div class="filerow"><div><b>'+esc(x.file.name)+'</b><div class="mini">'+
         (x.head?x.rows.length+' lignes · '+x.head.length+' colonnes':'…')+'</div></div>'+
         '<div class="rowline">'+etat+
-        (x.head&&(x.detect==='roster'||typeChoisi==='roster')&&x.map?'<button class="btn sm" data-map="'+i+'">'+
-          (openMap===i?'Masquer':'Colonnes')+'</button>':'')+
-        '<button class="btn sm" data-rm="'+i+'">Retirer</button></div></div>'+mapRoster(x,i)+'</div>';}).join('');
+        '<button class="btn sm" data-rm="'+i+'">Retirer</button></div></div>';}).join('');
     el('i-list').querySelectorAll('[data-rm]').forEach(function(b2){
-      b2.onclick=function(){files.splice(+this.dataset.rm,1);openMap=-1;draw();};});
+      b2.onclick=function(){files.splice(+this.dataset.rm,1);draw();};});
     el('i-list').querySelectorAll('[data-force]').forEach(function(b2){
       b2.onclick=function(){files[+this.dataset.force].force=true;draw();};});
-    el('i-list').querySelectorAll('[data-map]').forEach(function(b2){
-      b2.onclick=function(){var i=+this.dataset.map;openMap=(openMap===i?-1:i);draw();};});
-    el('i-list').querySelectorAll('[data-m]').forEach(function(sel){
-      sel.onchange=function(){files[+this.dataset.fi].map[this.dataset.m]=+this.value;};});
     var n=retenus().length;
     el('i-go').disabled=!n;
     el('i-go').textContent=n?('Importer '+n+' fichier'+(n>1?'s':'')):'Importer';
@@ -1913,13 +1921,6 @@ function modalImport(){
           await logImport({type:'catalogue',societe:soc,fichier:f.file.name,date:new Date().toISOString(),
             n:c.lignes,detail:c.oeuvres+' œuvres · '+c.nouvelles+' nouvelles · COAD '+c.coad});
           resume.push(f.file.name+' : '+c.oeuvres+' œuvres');
-        }else if(typeChoisi==='roster'){
-          var ro=importRoster(soc,f.head,f.rows,f.map||autoMapRoster(f.head));
-          var ids=Object.keys(store.songwriters);
-          for(var q=0;q<ids.length;q++){try{await saveSW(store.songwriters[ids[q]]);}catch(e){}}
-          await logImport({type:'roster',societe:soc,fichier:f.file.name,date:new Date().toISOString(),
-            n:f.rows.length,detail:ro.cree+' fiches créées · '+ro.maj+' mises à jour'});
-          resume.push(f.file.name+' : '+ro.cree+' fiches');
         }else{
           var r=importRepartition(soc,f.head,f.rows);
           var rs=Object.keys(r.reps).map(Number).sort(function(x,y){return x-y;});
@@ -1934,10 +1935,41 @@ function modalImport(){
       done++;prog.querySelector('i').style.width=Math.round(100*done/liste.length)+'%';
     }
     el('i-state').textContent='Enregistrement…';
-    try{if(typeChoisi!=='roster')await saveOeuvres(soc);else await saveMeta();}
-    catch(err){el('i-state').textContent='Échec de l\'enregistrement : '+(err&&err.code?err.code:'refusé');btn.disabled=false;return;}
+    try{
+      await saveOeuvres(soc);
+      el('i-err').innerHTML='';
+    }catch(err){
+      prog.hidden=true;el('i-state').textContent='';btn.disabled=false;
+      echecEnregistrement((err&&err.message)||String(err),soc);
+      return;
+    }
     state.societe=soc;closeModal();render();toast(resume.join(' · '),5500);
   };
+  // L'import a réussi en mémoire mais la base refuse d'écrire : on le dit, on garde tout,
+  // et on laisse réessayer ou sortir une sauvegarde.
+  function echecEnregistrement(msg,soc){
+    var droits=/401|403|[Pp]ermission|denied/.test(msg);
+    el('i-err').innerHTML='<div class="filerow" style="display:block;border-color:var(--warn)">'+
+      '<b>Les données sont importées mais la base refuse de les enregistrer.</b>'+
+      '<div class="mini" style="white-space:normal;margin-top:5px">'+esc(msg)+'</div>'+
+      (droits?'<div class="hint">La Realtime Database n\'autorise pas l\'écriture sous <b>/'+esc(fbRoot())+
+        '</b>. Il faut ouvrir ce chemin aux utilisateurs connectés dans les règles de la base '+
+        '(le roster et le planning, eux, ont leur règle).</div>':
+        '<div class="hint">Vérifiez la connexion, puis réessayez.</div>')+
+      '<div class="rowline" style="margin-top:9px">'+
+        '<button class="btn sm primary" id="i-retry">Réessayer l\'enregistrement</button>'+
+        '<button class="btn sm" id="i-dl">Télécharger une sauvegarde</button>'+
+        '<button class="btn sm" id="i-keep">Continuer sans enregistrer</button></div></div>';
+    el('i-retry').onclick=async function(){
+      this.disabled=true;el('i-state').textContent='Enregistrement…';
+      try{await saveOeuvres(soc);el('i-err').innerHTML='';el('i-state').textContent='';
+        state.societe=soc;closeModal();render();toast('Enregistré');}
+      catch(e2){el('i-state').textContent='';echecEnregistrement((e2&&e2.message)||String(e2),soc);}
+    };
+    el('i-dl').onclick=exportBase;
+    el('i-keep').onclick=function(){state.societe=soc;closeModal();render();
+      toast('Données chargées pour cette session seulement — elles disparaîtront au rechargement',6000);};
+  }
 }
 
 /* ============================== démarrage ============================== */
