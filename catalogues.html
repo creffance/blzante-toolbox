@@ -176,6 +176,8 @@ input[type=checkbox]{width:15px;height:15px;accent-color:var(--accent);cursor:po
 tr.nous td{background:var(--accent-soft)}
 tr.nous td.ph{color:var(--accent);font-weight:600}
 tr.yr td{background:var(--surface-2)}
+tr.grp td{background:var(--surface-2);font:600 10px/1.3 var(--sans);letter-spacing:.07em;
+ text-transform:uppercase;color:var(--ink-3);padding-top:9px;padding-bottom:9px}
 td.ph{font-weight:600}
 td.sec,th.sec{font-size:11.5px}
 .pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-2);border-radius:20px;
@@ -1389,7 +1391,7 @@ function repsSoc(soc){
 function ficheOeuvre(code){
   var soc=state.societe,o=(store.oeuvres[soc]||{})[code];if(!o)return;
   var e=(store.edits[soc]||{})[code]||{};
-  var a=attach(soc,code),aut=a.aut,eds=editeurs(o);
+  var a=attach(soc,code),aut=a.aut;
   var ix=swIndex(soc),moiCoad=String(socCoad(soc));
   var P=socParts(o),partDep=P.dep,partDr=P.dr,partPh=P.ph;
   var PIL=pilote(P),TOT=PIL==='ph'?partPh:partDep;
@@ -1399,10 +1401,19 @@ function ficheOeuvre(code){
     var cur=a.list.filter(function(l){return l.id===swId;})[0];
     var sw=swId?store.songwriters[swId]:null;
     return {i:i,coad:x.coad,nom:x.nom,ipi:x.ipi,ecr:x.dep,ecrDr:x.dr||0,ecrPh:x.ph,
-      roles:Object.keys(x.roles).join('/'),swId:swId,coche:!!cur,
+      roles:Object.keys(x.roles).join('/'),swId:swId,coche:!!cur,role:Object.keys(x.roles).join('/'),
       deal:cur?(cur.part!=null?cur.part:100):(sw&&sw.part!=null?sw.part:100)};});
-  var nous=eds.filter(function(p){return String(p.c)===moiCoad;});
-  var autresEd=eds.filter(function(p){return String(p.c)!==moiCoad;});
+  // éditeurs regroupés par identité, avec la nôtre repérée sur place
+  var eds=(function(){
+    var m={};
+    editeurs(o).forEach(function(p){
+      var k=p.c||('n:'+norm(p.n));
+      var x=m[k]||(m[k]={nom:p.n,coad:p.c||'',role:p.r||'E',ecr:0,ecrDr:0,ecrPh:0,
+        moi:String(p.c)===moiCoad});
+      x.ecr+=p.dep||0;x.ecrDr+=p.dr||0;x.ecrPh+=p.ph||0;});
+    return Object.keys(m).map(function(k){return m[k];});
+  })();
+  var nous=eds.filter(function(p){return p.moi;});
 
   /* ---- revenus : total + détail sur les répartitions dont on a l'historique ---- */
   var toutes=repsSoc(soc),parAn={};
@@ -1461,8 +1472,12 @@ function ficheOeuvre(code){
     '</div><div>'+
     /* --- ayants droit --- */
     '<label class="fl">Ayants droit de l\'œuvre</label>'+
-    '<div class="tscroll"><table><thead><tr><th class="l">Rôle</th><th class="l">Ayant droit</th>'+
-      '<th class="num">Phono</th><th class="num">DEP</th><th class="num">DR</th>'+
+    '<div class="tscroll"><table><thead><tr id="aut-head">'+
+      '<th class="l sortable" data-ak="role" data-lbl="Rôle">Rôle</th>'+
+      '<th class="l sortable" data-ak="nom" data-lbl="Ayant droit">Ayant droit</th>'+
+      '<th class="num sortable" data-ak="ecrPh" data-lbl="Phono">Phono</th>'+
+      '<th class="num sortable sec" data-ak="ecr" data-lbl="DEP">DEP</th>'+
+      '<th class="num sortable sec" data-ak="ecrDr" data-lbl="DR">DR</th>'+
       '<th class="num">Représenté</th><th class="num">Part</th></tr></thead>'+
       '<tbody id="aut-body"></tbody></table></div>'+
     '<div class="hint" id="vent-hint"></div>'+
@@ -1509,30 +1524,49 @@ function ficheOeuvre(code){
   el('f-youtube').onchange=function(){majPochette(true);};
 
   /* ---- ayants droit : nous d'abord, puis les auteurs, puis les autres éditeurs ---- */
+  var triAD={k:'nom',d:1};
+  function cmp(k,d){
+    return function(x,y){
+      if(k==='nom')return (String(x.nom||'').localeCompare(String(y.nom||''),'fr'))*d;
+      if(k==='role')return (String(x.role||'').localeCompare(String(y.role||''),'fr'))*d;
+      return (((+x[k]||0)-(+y[k]||0))||String(x.nom||'').localeCompare(String(y.nom||''),'fr'))*d;};
+  }
   function ligneEd(p,moi){
-    return '<tr class="'+(moi?'nous':'')+'"><td class="l mut">'+esc(p.r||'E')+'</td>'+
-      '<td class="l'+(moi?' w':' mut')+'">'+esc(p.n)+(moi?' <span class="tag ok">nous</span>':'')+'</td>'+
-      '<td class="num ph'+(moi?'':' mut')+'">'+pv(p.ph)+' %</td>'+
-      '<td class="num mut sec">'+pv(p.dep)+' %</td><td class="num mut sec">'+pv(p.dr)+' %</td>'+
+    return '<tr class="'+(moi?'nous':'')+'"><td class="l mut">'+esc(p.role||'E')+'</td>'+
+      '<td class="l'+(moi?' w':' mut')+'">'+esc(p.nom)+(moi?' <span class="tag ok">nous</span>':'')+'</td>'+
+      '<td class="num ph'+(moi?'':' mut')+'">'+pv(p.ecrPh)+' %</td>'+
+      '<td class="num mut sec">'+pv(p.ecr)+' %</td><td class="num mut sec">'+pv(p.ecrDr)+' %</td>'+
       '<td></td><td></td></tr>';
   }
+  function groupe(t){return '<tr class="grp"><td class="l mut" colspan="7">'+t+'</td></tr>';}
   function drawAut(){
-    var h='';
-    h+=nous.length?nous.map(function(p){return ligneEd(p,true);}).join('')
-      :'<tr class="nous"><td class="l mut">E</td><td class="l w">'+esc(socNom(soc))+
-       ' <span class="tag warn">absent du dépôt</span></td><td class="num ph">0 %</td>'+
-       '<td class="num mut sec">0 %</td><td class="num mut sec">0 %</td><td></td><td></td></tr>';
-    h+=lignes.map(function(l,i){
+    var h='',aSort=lignes.slice().sort(cmp(triAD.k,triAD.d));
+    var eSort=eds.slice().sort(cmp(triAD.k,triAD.d));
+    h+=groupe('Auteurs et compositeurs');
+    h+=aSort.length?aSort.map(function(l){
       return '<tr><td class="l mut">'+esc(l.roles)+'</td>'+
         '<td class="l'+(l.coche?' w':'')+'">'+esc(l.nom)+(l.swId?'':' <span class="tag warn">sans fiche</span>')+
         '<div class="mini">'+esc(l.coad||'')+'</div></td>'+
         '<td class="num ph">'+pv(l.ecrPh)+' %</td>'+
         '<td class="num mut sec">'+pv(l.ecr)+' %</td><td class="num mut sec">'+pv(l.ecrDr)+' %</td>'+
-        '<td class="num"><input type="checkbox" data-c="'+i+'"'+(l.coche?' checked':'')+'></td>'+
-        '<td class="num"><input type="number" step="1" min="0" max="100" data-d="'+i+'" value="'+
-          (l.deal!=null?l.deal:'')+'"'+(l.coche?'':' disabled')+' style="width:66px"></td></tr>';}).join('');
-    h+=autresEd.map(function(p){return ligneEd(p,false);}).join('');
-    el('aut-body').innerHTML=h||'<tr><td colspan="7" class="mut">Aucun ayant droit — importez le catalogue.</td></tr>';
+        '<td class="num"><input type="checkbox" data-c="'+l.i+'"'+(l.coche?' checked':'')+'></td>'+
+        '<td class="num"><input type="number" step="1" min="0" max="100" data-d="'+l.i+'" value="'+
+          (l.deal!=null?l.deal:'')+'"'+(l.coche?'':' disabled')+' style="width:66px"></td></tr>';}).join('')
+      :'<tr><td colspan="7" class="mut">Aucun auteur au dépôt — importez le catalogue.</td></tr>';
+    h+=groupe('Éditeurs');
+    h+=eSort.length?eSort.map(function(p){return ligneEd(p,p.moi);}).join('')
+      :'<tr><td colspan="7" class="mut">Aucun éditeur au dépôt.</td></tr>';
+    if(!nous.length)h+='<tr class="nous"><td class="l mut">E</td><td class="l w">'+esc(socNom(soc))+
+      ' <span class="tag warn">absent du dépôt</span></td><td class="num ph">0 %</td>'+
+      '<td class="num mut sec">0 %</td><td class="num mut sec">0 %</td><td></td><td></td></tr>';
+    el('aut-body').innerHTML=h;
+    el('aut-head').querySelectorAll('[data-ak]').forEach(function(t){
+      var k=t.dataset.ak;
+      t.innerHTML=t.dataset.lbl+(triAD.k===k?' <span class="car">'+(triAD.d<0?'▼':'▲')+'</span>':'');
+      t.onclick=function(){
+        if(triAD.k===k)triAD.d=-triAD.d;
+        else{triAD.k=k;triAD.d=(k==='nom'||k==='role')?1:-1;}
+        drawAut();};});
     el('aut-body').querySelectorAll('[data-c]').forEach(function(c){
       c.onchange=function(){
         var i=+this.dataset.c;lignes[i].coche=this.checked;
@@ -1559,7 +1593,7 @@ function ficheOeuvre(code){
   }
   function eurDe(pt,t){return t>0?(o.net||0)*pt/t:0;}
   function drawVent(){
-    var sel=lignes.filter(function(l){return l.coche;});
+    var sel=lignes.filter(function(l){return l.coche;}).sort(cmp(triAD.k,triAD.d));
     el('vent-hint').innerHTML=partLigne();
     if(!sel.length){
       el('vent').innerHTML='<div class="mut" style="font-size:12px">Cochez les ayants droit que '+
@@ -1594,7 +1628,7 @@ function ficheOeuvre(code){
   }
   function majTotaux(){
     // recalcul des totaux et des euros sans reconstruire les champs de saisie
-    var sel=lignes.filter(function(l){return l.coche;}),t=0;
+    var sel=lignes.filter(function(l){return l.coche;}).sort(cmp(triAD.k,triAD.d)),t=0;
     sel.forEach(function(l){t+=+pts[l.swId||('tmp'+l.i)]||0;});
     var tb=el('vent').querySelector('tbody'),tf=el('vent').querySelector('tfoot tr');
     sel.forEach(function(l,idx){
