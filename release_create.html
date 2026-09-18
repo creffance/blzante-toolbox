@@ -104,6 +104,66 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 }
 .sw-tag-remove:hover { color: var(--error); }
 
+/* BLZ Tracks (EP/Album) */
+.blz-tracks-section { margin-top: 4px; }
+.blz-track-entry {
+  background: var(--surface); border: 1px solid var(--border); padding: 14px 16px;
+  margin-bottom: 6px; position: relative;
+}
+.blz-track-entry .form-group { margin-bottom: 10px; }
+.blz-track-entry .form-group:last-child { margin-bottom: 0; }
+.blz-track-row { display: flex; gap: 8px; }
+.blz-track-row .form-group { flex: 1; }
+.blz-track-num {
+  font-family: 'Syne Mono', monospace; font-size: 0.58rem; color: var(--muted);
+  letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 8px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.blz-track-remove {
+  cursor: pointer; color: #444; font-size: 0.72rem; transition: color 0.15s; background: none; border: none; padding: 2px 6px;
+}
+.blz-track-remove:hover { color: var(--error); }
+.add-track-btn {
+  width: 100%; padding: 10px; background: none; border: 1px dashed var(--border);
+  color: var(--muted); font-family: 'Syne Mono', monospace; font-size: 0.68rem;
+  letter-spacing: 0.08em; cursor: pointer; transition: all 0.15s; margin-top: 4px;
+}
+.add-track-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Track SW mini picker */
+.track-sw-picker { position: relative; }
+.track-sw-input {
+  width: 100%; font-family: 'Syne Mono', monospace; font-size: 0.75rem;
+  padding: 8px 12px; border: 1px solid var(--border); background: var(--bg);
+  color: var(--text); outline: none; transition: border-color 0.2s;
+}
+.track-sw-input:focus { border-color: #555; }
+.track-sw-dropdown {
+  display: none; position: absolute; top: 100%; left: 0; right: 0; z-index: 12;
+  background: var(--surface); border: 1px solid var(--border); border-top: none;
+  max-height: 160px; overflow-y: auto;
+}
+.track-sw-dropdown.open { display: block; }
+.track-sw-opt {
+  padding: 7px 12px; font-size: 0.72rem; cursor: pointer; transition: background 0.1s;
+}
+.track-sw-opt:hover { background: #1a1a1a; }
+.track-sw-opt.selected { color: var(--accent); }
+.track-sw-opt.hidden { display: none; }
+.track-sw-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.track-sw-tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 8px; font-size: 0.6rem; background: #1a1a1a;
+  border: 1px solid var(--border); color: var(--text);
+}
+.track-sw-tag-x { cursor: pointer; color: var(--muted); font-size: 0.72rem; }
+.track-sw-tag-x:hover { color: var(--error); }
+
+.sw-auto-note {
+  font-size: 0.58rem; color: var(--muted); letter-spacing: 0.08em; margin-top: 4px;
+  font-style: italic;
+}
+
 /* Submit */
 .submit-btn {
   margin-top: 28px; width: 100%; padding: 14px;
@@ -243,22 +303,9 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
   </div>
 
   <div class="form-group conditional" id="epTracksGroup">
-    <div class="form-group" style="display:none">
-      <label class="form-label">Nombre de titres total (optionnel)</label>
-      <input type="number" class="form-input" id="epTrackCount" placeholder="Ex: 12" min="1" max="30" autocomplete="off" />
-    </div>
-    <div class="form-group" style="display:none">
-      <label class="form-label">Noms des tracks (optionnel — un par ligne)</label>
-      <textarea class="form-input form-textarea" id="epTrackNames" placeholder="Track 1&#10;Track 2&#10;Track 3" rows="4"></textarea>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Nombre de titres BLZante</label>
-      <input type="number" class="form-input" id="blzTrackCount" placeholder="Ex: 3" min="0" max="30" autocomplete="off" />
-    </div>
-    <div class="form-group">
-      <label class="form-label">Titres BLZante (un par ligne)</label>
-      <textarea class="form-input form-textarea" id="blzTrackNames" placeholder="Titre BLZ 1&#10;Titre BLZ 2" rows="3"></textarea>
-    </div>
+    <label class="form-label">Titres BLZante</label>
+    <div class="blz-tracks-section" id="blzTracksList"></div>
+    <button type="button" class="add-track-btn" id="addTrackBtn">+ Ajouter un titre BLZante</button>
   </div>
 
   <div class="form-group conditional" id="trackGroup">
@@ -291,8 +338,8 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
     </div>
   </div>
 
-  <div class="form-group">
-    <label class="form-label">Songwriters BLZante</label>
+  <div class="form-group" id="swGroup">
+    <label class="form-label" id="swGroupLabel">Songwriters BLZante</label>
     <div class="sw-picker">
       <input type="text" class="sw-picker-input" id="swSearch" placeholder="Rechercher un songwriter..." autocomplete="off" />
       <div class="sw-dropdown" id="swDropdown">
@@ -373,6 +420,127 @@ async function fbDelete(id) {
 // ─── State ───
 let selectedSw = [];
 let editId = null;
+let blzTracks = []; // [{title, link, songwriters:[]}]
+
+// ─── Songwriter list ───
+const SW_LIST = ['2B','AKATCHE','OZZY','BRÖ','CHERI','DANI TERREUR','EMY JO','GABRIEL MABILAT','HADRIEN MABILAT','HUGO LARDENET','IVY','KEV 117','LAGOS IN PARIS','LAURINA MALAKA','LEANDRE PICK','LEITH','LIONNEL BUZAC','LONIR','MAB','MALAKA','MATSHIMOTO','NINO VELLA','NOLAN','PABLO','PALMAE','PIERRE-LAURENT FAURE','RITUAL X','ROI LUIS','SACHA MALAKA','SEBASTIEN ROUSSELET','VINCHA','VJ','LE SERI'];
+
+// ─── BLZ Tracks (EP/Album) ───
+function renderBlzTracks() {
+  const list = document.getElementById('blzTracksList');
+  list.innerHTML = '';
+  blzTracks.forEach((t, idx) => {
+    const el = document.createElement('div');
+    el.className = 'blz-track-entry';
+    el.innerHTML = `
+      <div class="blz-track-num">
+        <span>Titre ${idx + 1}</span>
+        <button type="button" class="blz-track-remove" data-idx="${idx}">✕</button>
+      </div>
+      <div class="form-group">
+        <input type="text" class="form-input" placeholder="Titre du track" value="${escH(t.title)}" data-idx="${idx}" data-field="title" />
+      </div>
+      <div class="form-group">
+        <input type="text" class="form-input" placeholder="Lien Spotify ou YouTube" value="${escH(t.link)}" data-idx="${idx}" data-field="link" />
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="margin-bottom:4px">Songwriters BLZante</label>
+        <div class="track-sw-picker" data-idx="${idx}">
+          <input type="text" class="track-sw-input" placeholder="Rechercher..." autocomplete="off" />
+          <div class="track-sw-dropdown">
+            ${SW_LIST.map(sw => `<div class="track-sw-opt${t.songwriters.includes(sw) ? ' selected' : ''}" data-sw="${escH(sw)}">${sw}</div>`).join('')}
+          </div>
+        </div>
+        <div class="track-sw-tags" data-idx="${idx}">
+          ${t.songwriters.map(sw => `<span class="track-sw-tag">${sw} <span class="track-sw-tag-x" data-sw="${escH(sw)}" data-idx="${idx}">✕</span></span>`).join('')}
+        </div>
+      </div>
+    `;
+    list.appendChild(el);
+  });
+  updateSwFromTracks();
+}
+
+function escH(s) { return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+
+function updateSwFromTracks() {
+  const t = typeSelect.value;
+  if (t !== 'EP' && t !== 'Album') return;
+  const allSw = new Set();
+  blzTracks.forEach(tk => tk.songwriters.forEach(sw => allSw.add(sw)));
+  selectedSw = [...allSw];
+  swOptions.forEach(opt => opt.classList.toggle('selected', selectedSw.includes(opt.dataset.name)));
+  renderTags();
+}
+
+document.getElementById('addTrackBtn').addEventListener('click', () => {
+  blzTracks.push({ title: '', link: '', songwriters: [] });
+  renderBlzTracks();
+});
+
+document.getElementById('blzTracksList').addEventListener('click', (e) => {
+  // Remove track
+  const rmBtn = e.target.closest('.blz-track-remove');
+  if (rmBtn) { blzTracks.splice(parseInt(rmBtn.dataset.idx), 1); renderBlzTracks(); return; }
+  // SW option click
+  const swOpt = e.target.closest('.track-sw-opt');
+  if (swOpt) {
+    const picker = swOpt.closest('.track-sw-picker');
+    const idx = parseInt(picker.dataset.idx);
+    const sw = swOpt.dataset.sw;
+    const track = blzTracks[idx];
+    if (track.songwriters.includes(sw)) {
+      track.songwriters = track.songwriters.filter(n => n !== sw);
+      swOpt.classList.remove('selected');
+    } else {
+      track.songwriters.push(sw);
+      swOpt.classList.add('selected');
+    }
+    const inp = picker.querySelector('.track-sw-input');
+    inp.value = '';
+    picker.querySelector('.track-sw-dropdown').classList.remove('open');
+    renderBlzTracks();
+    return;
+  }
+  // SW tag remove
+  const tagX = e.target.closest('.track-sw-tag-x');
+  if (tagX) {
+    const idx = parseInt(tagX.dataset.idx);
+    const sw = tagX.dataset.sw;
+    blzTracks[idx].songwriters = blzTracks[idx].songwriters.filter(n => n !== sw);
+    renderBlzTracks();
+    return;
+  }
+});
+
+// Input change for track fields
+document.getElementById('blzTracksList').addEventListener('input', (e) => {
+  const inp = e.target;
+  if (inp.dataset.field && inp.dataset.idx !== undefined) {
+    blzTracks[parseInt(inp.dataset.idx)][inp.dataset.field] = inp.value;
+  }
+  // SW search filter
+  if (inp.classList.contains('track-sw-input')) {
+    const q = inp.value.toLowerCase();
+    const dd = inp.nextElementSibling;
+    dd.querySelectorAll('.track-sw-opt').forEach(o => {
+      o.classList.toggle('hidden', !o.textContent.toLowerCase().includes(q));
+    });
+    dd.classList.add('open');
+  }
+});
+
+// Focus/blur for track SW dropdowns
+document.getElementById('blzTracksList').addEventListener('focusin', (e) => {
+  if (e.target.classList.contains('track-sw-input')) {
+    e.target.nextElementSibling.classList.add('open');
+  }
+});
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.track-sw-picker')) {
+    document.querySelectorAll('.track-sw-dropdown.open').forEach(d => d.classList.remove('open'));
+  }
+});
 
 // ─── Elements ───
 const dateInput = document.getElementById('releaseDate');
@@ -406,13 +574,16 @@ dateInput.addEventListener('input', (e) => {
 // ─── Conditional fields ───
 function updateConditionals() {
   const t = typeSelect.value;
-  projectGroup.classList.toggle('visible', t === 'EP' || t === 'Album');
-  epTracksGroup.classList.toggle('visible', t === 'EP' || t === 'Album');
+  const isEPAlbum = t === 'EP' || t === 'Album';
+  projectGroup.classList.toggle('visible', isEPAlbum);
+  epTracksGroup.classList.toggle('visible', isEPAlbum);
   trackGroup.classList.toggle('visible', t === 'Single' || t === 'Certification');
   liveGroup.classList.toggle('visible', t === 'Live');
   certGroup.classList.toggle('visible', t === 'Certification');
   countryGroup.classList.toggle('visible', ['Single','EP','Album'].includes(t));
   actuGroup.classList.toggle('visible', t === 'Actu');
+  // Hide manual SW picker for EP/Album (auto-computed from tracks)
+  document.getElementById('swGroup').style.display = isEPAlbum ? 'none' : '';
 }
 typeSelect.addEventListener('change', updateConditionals);
 
@@ -697,10 +868,24 @@ function enterEditMode(release) {
   document.getElementById('actuDesc').value = release.actuDesc || '';
   document.getElementById('releaseLink').value = release.link || '';
   if (release.artwork) showArtwork(release.artwork);
-  document.getElementById('epTrackCount').value = release.epTrackCount || '';
-  document.getElementById('epTrackNames').value = release.epTrackNames || '';
-  document.getElementById('blzTrackCount').value = release.blzTrackCount || '';
-  document.getElementById('blzTrackNames').value = release.blzTrackNames || '';
+  // Load blzTracks (new format) or migrate from old format
+  if (release.blzTracks && Array.isArray(release.blzTracks)) {
+    blzTracks = release.blzTracks.map(t => ({
+      title: t.title || '', link: t.link || '',
+      songwriters: t.songwriters ? (Array.isArray(t.songwriters) ? [...t.songwriters] : [t.songwriters]) : []
+    }));
+  } else if (release.blzTrackNames) {
+    // Migrate old format: split names into tracks
+    const names = release.blzTrackNames.split('\n').filter(Boolean);
+    const oldSw = release.songwriters ? (Array.isArray(release.songwriters) ? [...release.songwriters] : release.songwriters.split(',')) : [];
+    blzTracks = names.map(n => ({ title: n.trim(), link: '', songwriters: [...oldSw] }));
+  } else if (release.blzTrackCount && parseInt(release.blzTrackCount) > 0) {
+    blzTracks = [];
+    for (let i = 0; i < parseInt(release.blzTrackCount); i++) blzTracks.push({ title: '', link: '', songwriters: [] });
+  } else {
+    blzTracks = [];
+  }
+  renderBlzTracks();
   selectedSw = release.songwriters ? (Array.isArray(release.songwriters) ? [...release.songwriters] : release.songwriters.split(',')) : [];
   swOptions.forEach(opt => { opt.classList.toggle('selected', selectedSw.includes(opt.dataset.name)); });
   renderTags();
@@ -729,10 +914,8 @@ function resetForm() {
   document.getElementById('liveVille').value = '';
   document.getElementById('certType').value = '';
   document.getElementById('certLevel').value = '';
-  document.getElementById('epTrackCount').value = '';
-  document.getElementById('epTrackNames').value = '';
-  document.getElementById('blzTrackCount').value = '';
-  document.getElementById('blzTrackNames').value = '';
+  blzTracks = [];
+  renderBlzTracks();
   projectGroup.classList.remove('visible');
   trackGroup.classList.remove('visible');
   liveGroup.classList.remove('visible');
@@ -785,10 +968,6 @@ submitBtn.addEventListener('click', async () => {
   const ville = document.getElementById('liveVille').value.trim();
   const certType = document.getElementById('certType').value;
   const certLevel = document.getElementById('certLevel').value;
-  const epTrackCount = document.getElementById('epTrackCount').value.trim();
-  const epTrackNames = document.getElementById('epTrackNames').value.trim();
-  const blzTrackCount = document.getElementById('blzTrackCount').value.trim();
-  const blzTrackNames = document.getElementById('blzTrackNames').value.trim();
   const statusMsg = document.getElementById('statusMsg');
 
   if (!date || !/^\d{2}\/\d{2}\/\d{4}$/.test(date)) {
@@ -799,11 +978,21 @@ submitBtn.addEventListener('click', async () => {
   if (type === 'Live' && !lieu) { statusMsg.textContent = '⚠ Lieu requis pour un Live'; statusMsg.className = 'status error'; return; }
   if (type === 'Certification' && (!certType || !certLevel)) { statusMsg.textContent = '⚠ Choisir le type et le niveau de certification'; statusMsg.className = 'status error'; return; }
 
+  // Compute blzTrack derived fields for EP/Album
+  const isEPA = type === 'EP' || type === 'Album';
+  const validTracks = isEPA ? blzTracks.filter(t => t.title.trim()) : [];
+  const blzTrackCount = isEPA ? String(validTracks.length) : '';
+  const blzTrackNames = isEPA ? validTracks.map(t => t.title.trim()).join('\n') : '';
+
+  // For EP/Album, songwriters = union of all track songwriters
+  if (isEPA) {
+    updateSwFromTracks();
+  }
+
   let title = '';
   if (type === 'EP' || type === 'Album') {
     title = project || artist;
-    if (type === 'EP' && epTrackCount) title += ' (' + epTrackCount + ' titres)';
-    if (type === 'Album' && epTrackCount) title += ' (' + epTrackCount + ' titres)';
+    if (validTracks.length) title += ' (' + validTracks.length + ' titres BLZ)';
   } else if (type === 'Live') {
     title = lieu + (ville ? ' — ' + ville : '');
   } else if (type === 'Certification') {
@@ -820,7 +1009,8 @@ submitBtn.addEventListener('click', async () => {
       id: editId || Date.now(), date, dateSortable: date.split('/').reverse().join('-'),
       type, status: releaseStatus, artist, title,
       project, track, lieu, ville, certType, certLevel,
-      epTrackCount, epTrackNames, blzTrackCount, blzTrackNames,
+      blzTrackCount, blzTrackNames,
+      blzTracks: isEPA ? validTracks.map(t => ({ title: t.title.trim(), link: t.link.trim(), songwriters: [...t.songwriters] })) : [],
       country: ['Single','EP','Album'].includes(type) ? document.getElementById('releaseCountry').value : '',
       actuDesc: type === 'Actu' ? document.getElementById('actuDesc').value.trim() : '',
       link: document.getElementById('releaseLink').value.trim(),
