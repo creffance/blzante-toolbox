@@ -251,7 +251,7 @@ var SOCIETES=[
 var ROLE_AUTEUR={A:1,C:1,AC:1,AR:1,ADA:1};
 var DB=null,WRITABLE=true,MODE='local',BESOIN_SESSION=false;
 var LSKEY='blz-catalogues-v1';
-var store={meta:{},oeuvres:{},edits:{},songwriters:{},imports:[],liens:{}};
+var store={meta:{},oeuvres:{},edits:{},songwriters:{},imports:[],liens:{},overlays:{}};
 var state={societe:'blzante',tab:'apercu',q:'',filtre:'tous',rfiltre:'rev',sort:{k:'net',d:-1},swSort:{k:'net',d:-1}};
 
 var CHUNK=120;
@@ -330,6 +330,22 @@ async function chargerRoster(){
       return tp.indexOf('Auteur')>=0||tp.indexOf('Compositeur')>=0||tp.indexOf('Topliner')>=0;})
     .sort(function(a,b){return (a.name||'').localeCompare(b.name||'','fr');});
 }
+var ROSTER=[];
+// Le roster de la Toolbox fait foi sur l'identité ; l'outil n'y ajoute que l'édition
+// (part cédée, COAD, IPI, ayants droit rattachés), conservée sous editions/songwriters/r:<id>.
+var CHAMPS_EDITION=['part','coad','ipis','ads','alias','type','note','societe'];
+function fusionRoster(){
+  ROSTER.forEach(function(a){
+    var id='r:'+a.id, ov=store.overlays[id]||{};
+    var alias=(ov.alias||[]).slice();
+    Object.keys(SW_RENAME).forEach(function(o2){
+      if(norm(SW_RENAME[o2])===norm(a.name)&&alias.indexOf(o2)<0)alias.push(o2);
+      if(norm(o2)===norm(a.name)&&alias.indexOf(SW_RENAME[o2])<0)alias.push(SW_RENAME[o2]);});
+    store.songwriters[id]={id:id,nom:a.name||'',rosterId:a.id,roles:a.types||[],source:'roster',
+      societe:ov.societe||'',part:ov.part==null?50:ov.part,coad:ov.coad||'',
+      ipis:ov.ipis||[],ads:ov.ads||[],alias:alias,type:ov.type||'roster',note:ov.note||''};
+  });
+}
 function fichesDepuisRoster(soc,liste){
   var cree=0,maj=0;
   liste.forEach(function(a){
@@ -362,7 +378,7 @@ function localSave(){
   try{
     localStorage.setItem(LSKEY,JSON.stringify({v:1,maj:new Date().toISOString(),
       meta:store.meta,oeuvres:store.oeuvres,edits:store.edits,liens:store.liens,
-      songwriters:store.songwriters,imports:store.imports.slice(0,80)}));
+      overlays:store.overlays,songwriters:store.songwriters,imports:store.imports.slice(0,80)}));
   }catch(e){ toast('Sauvegarde locale impossible (espace du navigateur saturé) — exportez la base'); }
 }
 function localLoad(){
@@ -374,13 +390,14 @@ function localLoad(){
 function adopte(d){
   store.meta=d.meta||{};store.oeuvres=d.oeuvres||{};store.edits=d.edits||{};
   store.songwriters=d.songwriters||{};store.imports=d.imports||[];store.liens=d.liens||{};
+  store.overlays=d.overlays||{};
   SOCIETES.forEach(function(s2){store.oeuvres[s2.id]=store.oeuvres[s2.id]||{};
     store.edits[s2.id]=store.edits[s2.id]||{};store.liens[s2.id]=store.liens[s2.id]||{};});
 }
 function exportBase(){
   var data={format:'toolbox-blzante/catalogues',version:1,exporte:new Date().toISOString(),
     meta:store.meta,oeuvres:store.oeuvres,edits:store.edits,liens:store.liens,
-    songwriters:store.songwriters,imports:store.imports};
+    overlays:store.overlays,songwriters:store.songwriters,imports:store.imports};
   var txt=JSON.stringify(data),nom='blzante-catalogues-'+today()+'.json';
   try{
     var url=URL.createObjectURL(new Blob([txt],{type:'application/json'}));
@@ -421,7 +438,13 @@ async function loadAll(){
     var st=await rtGet('meta/state');
     if(st){store.meta=st.societes||{};store.liens=st.liens||{};}
     var sw=await rtGet('songwriters')||{};
-    store.songwriters={};Object.keys(sw).forEach(function(k){var x=sw[k];x.id=k;store.songwriters[k]=x;});
+    store.songwriters={};store.overlays={};
+    Object.keys(sw).forEach(function(k){
+      var x=sw[k]||{};x.id=k;
+      if(k.indexOf('r:')===0)store.overlays[k]=x;      // greffe d'édition sur un profil du roster
+      else store.songwriters[k]=x;});                   // fiche propre à l'outil (externe, non signé)
+    try{ROSTER=await chargerRoster();fusionRoster();}
+    catch(e){console.warn('roster illisible',e);}
     var im=await rtGet('imports')||{};
     store.imports=Object.keys(im).map(function(k){var x=im[k];x.id=k;return x;})
       .sort(function(a,b){return (b.date||'').localeCompare(a.date||'');}).slice(0,60);
@@ -486,11 +509,17 @@ async function saveEdit(soc,code){
   if(DB)return DB.doc('edits/'+soc+'-e'+b).set(body);
 }
 async function saveSW(sw){
+  var corps=sw;
+  if(sw.source==='roster'){                     // on ne réécrit jamais l'identité du roster
+    corps={};CHAMPS_EDITION.forEach(function(c){corps[c]=sw[c];});
+    store.overlays[sw.id]=corps;
+  }
   if(MODE==='local')return void localSave();
-  if(MODE==='firebase')return rtSet('songwriters/'+sw.id,sw);
-  if(DB)return DB.doc('songwriters/'+sw.id).set(sw);
+  if(MODE==='firebase')return rtSet('songwriters/'+sw.id,corps);
+  if(DB)return DB.doc('songwriters/'+sw.id).set(corps);
 }
 async function delSW(id){
+  delete store.overlays[id];
   if(MODE==='local')return void localSave();
   if(MODE==='firebase')return rtDel('songwriters/'+id);
   if(DB)return DB.doc('songwriters/'+id).delete();
@@ -843,7 +872,8 @@ function renderChrome(){
   var m=store.meta[state.societe]||{},t=totals(state.societe),p=[];
   p.push('Catalogue : <b>'+(m.catalogueDate?frDate(m.catalogueDate):'aucun import')+'</b>');
   p.push('Dernière répartition : <b>'+(m.lastRep?(m.lastRep+' · '+repDate(m.lastRep).lbl):'aucune')+'</b>');
-  p.push('<b>'+e0(t.oeuvres)+'</b> œuvres · <b>'+e0(swList(state.societe).length)+'</b> fiches songwriters');
+  p.push('<b>'+e0(t.oeuvres)+'</b> œuvres · <b>'+e0(swList(state.societe).length)+'</b> songwriters'+
+    (ROSTER.length?' <span class="mut">(dont '+ROSTER.length+' du roster)</span>':''));
   if(t.na)p.push('<span class="tag neutral">'+eur(t.na)+' € non affectés à une œuvre</span>');
   p.push(MODE==='partage'?'<span class="tag ok">base partagée</span>'
     :MODE==='firebase'?'<span class="tag ok">Firebase Toolbox</span>'
@@ -998,7 +1028,8 @@ function viewSongwriters(){
     return (va-vb)*d;});
   var tot=list.reduce(function(s,x){return s+x.net;},0),sf=auteursSansFiche(soc);
   var h='<div class="panel"><div class="phead"><h2>Fiches songwriters — '+esc(socNom(soc))+'</h2>'+
-    '<div class="rowline"><span class="note">La part cédée à la société s\'applique par défaut à chaque œuvre, et se corrige œuvre par œuvre.</span>'+
+    '<div class="rowline"><span class="note">Les profils viennent du roster de la Toolbox ; l\'outil n\'y ajoute que '+
+    'l\'édition : part cédée, COAD, IPI et ayants droit rattachés. La part cédée s\'applique par défaut à chaque œuvre.</span>'+
     '<button class="btn primary sm" id="sw-new">Nouvelle fiche</button></div></div>';
   if(!list.length){
     h+='<div class="empty"><h2>Aucune fiche</h2><p>Une fiche par songwriter représenté : son nom, son COAD Sacem '+
@@ -1430,7 +1461,10 @@ function ficheSW(id,pre){
   var st=swRows(soc).filter(function(x){return x.sw.id===sw.id;})[0];
   var TYPES=[['roster','Roster BLZante'],['externe','Externe (part récupérée)'],['artiste','Artiste non signé']];
   var body='<div class="grid2"><div>'+
-    '<div class="field"><label class="fl">Nom du songwriter</label><input type="text" id="s-nom" value="'+esc(sw.nom||'')+'"></div>'+
+    '<div class="field"><label class="fl">Nom du songwriter</label>'+
+      '<input type="text" id="s-nom" value="'+esc(sw.nom||'')+'"'+(sw.source==='roster'?' readonly':'')+'>'+
+      (sw.source==='roster'?'<div class="hint">Profil du roster'+((sw.roles||[]).length?' · '+esc((sw.roles||[]).join(', ')):'')+
+        ' — le nom se modifie dans la fiche roster.</div>':'')+'</div>'+
     '<div class="grid2"><div class="field"><label class="fl">Statut</label><select id="s-type">'+
       TYPES.map(function(t){return '<option value="'+t[0]+'"'+((sw.type||'roster')===t[0]?' selected':'')+'>'+t[1]+'</option>';}).join('')+
       '</select></div>'+
@@ -1552,12 +1586,7 @@ function modalImport(){
     '<p><button class="btn" id="i-pick">Choisir des fichiers</button></p>'+
     '<input type="file" id="i-file" accept=".csv,text/csv" multiple hidden></div>'+
     '<div class="filelist" id="i-list"></div><div class="prog" id="i-prog" hidden><i></i></div>'+
-    '<div class="sep"></div>'+
-    '<div class="rowline"><div><b style="font-size:13px">Roster de la Toolbox</b>'+
-      '<div class="hint" style="margin-top:2px">Crée une fiche pour chaque auteur, compositeur ou topliner '+
-      'du roster, puis propose les rapprochements avec les ayants droit du catalogue.</div></div>'+
-      '<button class="btn" id="i-roster" style="margin-left:auto;white-space:nowrap">Importer le roster</button></div>'+
-    '<div id="i-rosterout"></div>'+
+
     '<div class="hint">Le type de chaque fichier est reconnu à ses colonnes. Le catalogue fait foi sur les splits, '+
     'les répartitions n\'apportent que les montants. Réimporter un catalogue met à jour les splits sans toucher aux saisies.</div>';
   openModal('<div class="eyebrow">Import</div><h2>Ajouter des données</h2>',body,
@@ -1614,27 +1643,6 @@ function modalImport(){
       sel.onchange=function(){files[+this.dataset.fi].map[this.dataset.m]=+this.value;};});
     el('i-go').disabled=!files.filter(function(x){return x.head;}).length;
   }
-  el('i-roster').onclick=async function(){
-    var btn=this;btn.disabled=true;el('i-rosterout').innerHTML='<div class="hint">Lecture du roster…</div>';
-    try{
-      var liste=await chargerRoster();
-      if(!liste.length){el('i-rosterout').innerHTML='<div class="hint">Aucun songwriter dans le roster.</div>';
-        btn.disabled=false;return;}
-      var soc=el('i-soc').value;
-      var r=fichesDepuisRoster(soc,liste);
-      var ids=Object.keys(store.songwriters);
-      for(var i=0;i<ids.length;i++){try{await saveSW(store.songwriters[ids[i]]);}catch(e){}}
-      await logImport({type:'roster',societe:soc,fichier:'roster.json (Toolbox)',date:new Date().toISOString(),
-        n:r.total,detail:r.cree+' fiches créées · '+r.maj+' mises à jour'});
-      el('i-rosterout').innerHTML='<div class="hint"><b>'+r.cree+'</b> fiches créées, <b>'+r.maj+
-        '</b> mises à jour sur '+r.total+' songwriters du roster. Les rapprochements à confirmer sont dans l\'onglet Rapprochements.</div>';
-      render();
-    }catch(e){
-      el('i-rosterout').innerHTML='<div class="hint">Lecture impossible : '+esc(e.message||e)+
-        (MODE!=='firebase'?' — cette fonction demande la session Firebase de la Toolbox.':'')+'</div>';
-    }
-    btn.disabled=false;
-  };
   el('i-cancel').onclick=closeModal;
   el('i-go').onclick=async function(){
     var soc=el('i-soc').value,btn=this;btn.disabled=true;
