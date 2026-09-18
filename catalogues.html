@@ -487,7 +487,10 @@ function doublons(soc){
       :prefixe?'prénom abrégé'
       :sc>=0.72?Math.round(sc*100)+' % de proximité':'';
     if(!motif)continue;
-    vu[cle]=1;out.push({a:a,b:b,cle:cle,motif:motif,sc:sc});
+    // on garde de préférence le nom de travail : Roster, puis Planning, puis fiche de l'outil
+    var rang=function(x){return x.source==='roster'?0:x.source==='planning'?1:2;};
+    var inverse=rang(b)<rang(a);
+    vu[cle]=1;out.push({a:inverse?b:a,b:inverse?a:b,cle:cle,motif:motif,sc:sc});
   }
   return out.sort(function(x,y){return y.sc-x.sc;});
 }
@@ -730,7 +733,33 @@ function swIndex(soc){
   return ix;
 }
 function adKey(a){return a&&a.coad?String(a.coad):'n:'+norm(a&&a.nom);}
-function a2ad(a){return {cle:adKey(a),nom:a.nom,coad:a.coad||'',ipi:a.ipi||''};}
+function a2ad(a){return {cle:adKey(a),nom:a.nom,coad:a.coad||'',ipi:a.ipi||'',nf:a.nf||''};}
+// « VILLECHAISE Leandre » (fichier IPI) → « Leandre Villechaise »
+function prenomNom(nf,nom){
+  var s=String(nf||'').trim();
+  if(s){
+    var toks=s.split(/\s+/),nomF=[],pre=[];
+    toks.forEach(function(t){
+      if(t===t.toLocaleUpperCase('fr')&&/[A-ZÀ-Ý]/.test(t))
+        nomF.push(t.charAt(0)+t.slice(1).toLocaleLowerCase('fr'));
+      else pre.push(t);});
+    if(nomF.length&&pre.length)return pre.join(' ')+' '+nomF.join(' ');
+    return s;
+  }
+  return String(nom||'');
+}
+// identité civile d'une fiche : le premier ayant droit rattaché, sinon son COAD
+function identite(sw){
+  var ad=(sw.ads||[])[0]||{};
+  var nom=prenomNom(ad.nf,ad.nom||'');
+  var ipi=ad.ipi||(sw.ipis||[])[0]||sw.ipi||'';
+  var coad=sw.coad||ad.coad||'';
+  var p=[];
+  if(nom&&norm(nom)!==norm(sw.nom))p.push(esc(nom));
+  if(ipi)p.push('IPI '+esc(ipi));
+  if(coad)p.push('COAD '+esc(coad));
+  return p.join(' · ');
+}
 function big2(s){var o=[];for(var i=0;i<s.length-1;i++)o.push(s.slice(i,i+2));return o;}
 function simil(a,b){
   if(!a||!b)return 0;if(a===b)return 1;
@@ -745,9 +774,10 @@ function allAD(soc){
     var o=O[c],aut=auteurs(o),tot=aut.reduce(function(s,a){return s+a.dep;},0)||1;
     aut.forEach(function(a){
       var k=adKey(a);
-      var x=m[k]||(m[k]={cle:k,nom:a.nom,coad:a.coad||'',ipi:a.ipi||'',oeuvres:0,net:0,dep:0});
+      var x=m[k]||(m[k]={cle:k,nom:a.nom,coad:a.coad||'',ipi:a.ipi||'',nf:a.nf||'',oeuvres:0,net:0,dep:0});
       x.oeuvres++;x.dep+=a.dep;x.net+=(o.net||0)*a.dep/tot;
       if(!x.ipi&&a.ipi)x.ipi=a.ipi;
+      if(!x.nf&&a.nf)x.nf=a.nf;
     });
   });
   return Object.keys(m).map(function(k){return m[k];}).sort(function(a,b){return b.net-a.net;});
@@ -791,7 +821,8 @@ function auteurs(o){
   (o.parts||[]).forEach(function(p){
     if(!ROLE_AUTEUR[p.r])return;
     var k=p.c||('n:'+norm(p.n));
-    var a=m[k]||(m[k]={coad:p.c||'',nom:p.n,ipi:p.i||'',dep:0,dr:0,ph:0,roles:{}});
+    var a=m[k]||(m[k]={coad:p.c||'',nom:p.n,ipi:p.i||'',nf:p.f||'',dep:0,dr:0,ph:0,roles:{}});
+    if(!a.nf&&p.f)a.nf=p.f;
     a.dep+=p.dep||0;a.dr+=p.dr||0;a.ph+=p.ph||0;a.roles[p.r]=1;
   });
   return Object.keys(m).map(function(k){return m[k];}).sort(function(a,b){return (b.ph-a.ph)||(b.dep-a.dep);});
@@ -1026,7 +1057,8 @@ function importCatalogue(soc,head,rws,fichier){
     sous:colIndex(head,'Sous-titre(s)'),genre:colIndex(head,"Genre de l'oeuvre"),
     iswc:colIndex(head,'ISWC'),depot:colIndex(head,'Date de déclaration'),
     role:colIndex(head,'Rôle'),nom:colIndex(head,"Nom de l'ayant-droit"),coad:colIndex(head,'COAD'),
-    ipi:colIndex(head,'Code IPI'),dep:colIndex(head,'Part DEP'),dr:colIndex(head,'Part DR'),
+    ipi:colIndex(head,'Code IPI'),nf:colIndex(head,'Nom au fichier IPI'),
+    dep:colIndex(head,'Part DEP'),dr:colIndex(head,'Part DR'),
     ph:colIndex(head,'Part PHONO')};
   if(C.code<0)throw new Error('colonne « Code oeuvre » introuvable');
   var freq={};
@@ -1047,6 +1079,7 @@ function importCatalogue(soc,head,rws,fichier){
     if(C.depot>=0&&String(r[C.depot]).trim())o.depot=String(r[C.depot]).trim().slice(0,10);
     var p={r:C.role>=0?String(r[C.role]).trim():'',n:C.nom>=0?String(r[C.nom]).trim():'',
       c:C.coad>=0?String(r[C.coad]).trim():'',i:C.ipi>=0?String(r[C.ipi]).trim():'',
+      f:C.nf>=0?String(r[C.nf]).trim():'',
       dep:C.dep>=0?numFR(r[C.dep]):0,dr:C.dr>=0?numFR(r[C.dr]):0,ph:C.ph>=0?numFR(r[C.ph]):0};
     o.parts.push(p);
     if(p.c&&String(p.c)===String(coad))o.soc={dep:((o.soc&&o.soc.dep)||0)+p.dep,
@@ -1244,18 +1277,18 @@ function viewSongwriters(){
     var th=function(key,lbl,cls){return '<th class="sortable '+(cls||'num')+'" data-sk="'+key+'">'+lbl+
       (k===key?' <span class="car">'+(d<0?'▼':'▲')+'</span>':'')+'</th>';};
     h+='<div class="tscroll"><table><thead><tr>'+th('nom','Songwriter','l sortable')+
-      '<th class="l">COAD</th>'+th('part','Part cédée')+th('oeuvres','Œuvres')+
+      th('part','Part cédée')+th('oeuvres','Œuvres')+
       th('net','Revenus attribués €')+'<th class="num">Part du catalogue</th><th class="l"></th></tr></thead><tbody>';
     list.forEach(function(x){
+      var ident=identite(x.sw);
       h+='<tr class="clickable" data-sw="'+esc(x.sw.id)+'"><td class="l w">'+esc(x.sw.nom)+
         ' '+origineTag(x.sw)+
-        (x.sw.ipi?'<div class="mini">IPI '+esc(x.sw.ipi)+'</div>':'')+'</td>'+
-        '<td class="l mut num">'+esc(x.sw.coad||'—')+'</td>'+
+        '<div class="mini">'+(ident||'identité Sacem à rattacher')+'</div></td>'+
         '<td class="num">'+(x.sw.part!=null?pv(x.sw.part)+' %':'<span class="mut">—</span>')+'</td>'+
         '<td class="num">'+x.oeuvres+(x.auto?' <span class="tag neutral">auto</span>':'')+'</td>'+
         '<td class="num w">'+eur(x.net)+'</td><td class="num mut">'+(tot>0?pct(100*x.net/tot):'—')+'</td>'+
         '<td class="l"><button class="btn sm" data-edit="'+esc(x.sw.id)+'">Modifier</button></td></tr>';});
-    h+='</tbody><tfoot><tr><td class="l">'+list.length+' fiche'+(list.length>1?'s':'')+'</td><td></td><td></td>'+
+    h+='</tbody><tfoot><tr><td class="l">'+list.length+' fiche'+(list.length>1?'s':'')+'</td><td></td>'+
       '<td class="num">'+list.reduce(function(s,x){return s+x.oeuvres;},0)+'</td>'+
       '<td class="num">'+eur(tot)+'</td><td class="num">100,0 %</td><td></td></tr></tfoot></table></div></div>';
   }
@@ -1264,17 +1297,20 @@ function viewSongwriters(){
     var stats={};swRows(soc).forEach(function(x){stats[x.sw.id]=x;});
     var cote=function(sw){var st=stats[sw.id]||{oeuvres:0,net:0};
       return '<b>'+esc(sw.nom)+'</b> '+origineTag(sw)+
-        '<div class="mini">'+(sw.coad?'COAD '+esc(sw.coad)+' · ':'')+st.oeuvres+' œuvres · '+eur(st.net,0)+' €</div>';};
+        '<div class="mini">'+(identite(sw)||'sans identité Sacem')+'</div>'+
+        '<div class="mini">'+st.oeuvres+' œuvres · '+eur(st.net,0)+' €</div>';};
     h+='<div class="panel"><div class="phead"><h2>Doublons possibles</h2>'+
       '<span class="note">'+dbl.length+' paire'+(dbl.length>1?'s':'')+
-      ' de fiches qui semblent désigner la même personne — gardez-en une, l\'autre nom devient un pseudonyme</span></div>'+
+      ' de fiches qui semblent désigner la même personne. La fiche gardée conserve son nom partout '+
+      'et récupère le COAD, les IPI et les ayants droit Sacem de l\'autre, dont le nom devient un pseudonyme. '+
+      'Le premier choix est le nom de travail.</span></div>'+
       '<div class="tscroll"><table><thead><tr><th class="l">Fiche</th><th class="l">Fiche</th>'+
       '<th class="l">Motif</th><th class="l">Décision</th></tr></thead><tbody>';
     dbl.slice(0,25).forEach(function(d){
       h+='<tr><td class="l">'+cote(d.a)+'</td><td class="l">'+cote(d.b)+'</td>'+
         '<td class="l mut">'+esc(d.motif)+'</td><td class="l"><div class="rowline">'+
         '<button class="btn sm primary" data-fus="'+esc(d.b.id)+'" data-vers="'+esc(d.a.id)+'">Garder '+esc(d.a.nom)+'</button>'+
-        '<button class="btn sm primary" data-fus="'+esc(d.a.id)+'" data-vers="'+esc(d.b.id)+'">Garder '+esc(d.b.nom)+'</button>'+
+        '<button class="btn sm" data-fus="'+esc(d.a.id)+'" data-vers="'+esc(d.b.id)+'">Garder '+esc(d.b.nom)+'</button>'+
         '<button class="btn sm" data-pasdbl="'+esc(d.cle)+'">Ce n\'est pas un doublon</button>'+
         '</div></td></tr>';});
     h+='</tbody></table></div>'+(dbl.length>25?'<div class="pbody mut">25 premières sur '+dbl.length+'.</div>':'')+'</div>';
@@ -1494,7 +1530,7 @@ function ficheOeuvre(code){
     var swId=ix[String(x.coad)]||ix['n:'+norm(x.nom)]||'';
     var cur=a.list.filter(function(l){return l.id===swId;})[0];
     var sw=swId?store.songwriters[swId]:null;
-    return {i:i,coad:x.coad,nom:x.nom,ipi:x.ipi,ecr:x.dep,ecrDr:x.dr||0,ecrPh:x.ph,
+    return {i:i,coad:x.coad,nom:x.nom,ipi:x.ipi,nf:x.nf||'',ecr:x.dep,ecrDr:x.dr||0,ecrPh:x.ph,
       roles:Object.keys(x.roles).join('/'),swId:swId,coche:!!cur,role:Object.keys(x.roles).join('/'),
       deal:cur?(cur.part!=null?cur.part:100):(sw&&sw.part!=null?sw.part:100)};});
   // éditeurs regroupés par identité, avec la nôtre repérée sur place
@@ -1640,7 +1676,8 @@ function ficheOeuvre(code){
     h+=aSort.length?aSort.map(function(l){
       return '<tr><td class="l mut">'+esc(l.roles)+'</td>'+
         '<td class="l'+(l.coche?' w':'')+'">'+esc(l.nom)+(l.swId?'':' <span class="tag warn">sans fiche</span>')+
-        '<div class="mini">'+esc(l.coad||'')+'</div></td>'+
+        '<div class="mini">'+(l.swId&&store.songwriters[l.swId]&&norm(store.songwriters[l.swId].nom)!==norm(l.nom)
+          ?esc(store.songwriters[l.swId].nom)+' · ':'')+esc(l.coad||'')+'</div></td>'+
         '<td class="num ph">'+pv(l.ecrPh)+' %</td>'+
         '<td class="num mut sec">'+pv(l.ecr)+' %</td><td class="num mut sec">'+pv(l.ecrDr)+' %</td>'+
         '<td class="num"><input type="checkbox" data-c="'+l.i+'"'+(l.coche?' checked':'')+'></td>'+
@@ -1703,7 +1740,9 @@ function ficheOeuvre(code){
       '<th class="num">→ DEP</th><th class="num">→ DR</th><th class="num">Revenus €</th></tr></thead><tbody>'+
       sel.map(function(l){
         var k=l.swId||('tmp'+l.i),p=+pts[k]||0,r=TOT>0?p/TOT:0;
-        return '<tr><td class="l w">'+esc(l.nom)+'</td>'+
+        var fi=l.swId?store.songwriters[l.swId]:null;
+        return '<tr><td class="l w">'+esc(fi?fi.nom:l.nom)+
+          '<div class="mini">'+esc(prenomNom(l.nf,l.nom))+(l.coad?' · COAD '+esc(l.coad):'')+'</div></td>'+
           '<td class="num mut">'+pv(l.ecrPh)+' %</td><td class="num mut">'+pv(l.deal==null?0:l.deal)+' %</td>'+
           '<td class="num"><input type="number" step="0.01" min="0" data-pt="'+esc(k)+'" value="'+
             (Math.round(p*100)/100)+'" style="width:82px"></td>'+
@@ -1770,7 +1809,8 @@ function ficheOeuvre(code){
     for(var i=0;i<manq.length;i++){
       var l=manq[i];
       var sw={id:uid('sw'),nom:l.nom,coad:l.coad||'',ipi:l.ipi||'',societe:soc,
-        part:l.deal==null?100:+l.deal,alias:[],note:''};
+        part:l.deal==null?100:+l.deal,alias:[],note:'',
+        ads:[{nom:l.nom,coad:l.coad||'',ipi:l.ipi||'',nf:l.nf||''}],ipis:l.ipi?[l.ipi]:[]};
       store.songwriters[sw.id]=sw;l.swId=sw.id;
       try{await saveSW(sw);}catch(err){}
     }
@@ -1825,7 +1865,7 @@ function modalLier(cle){
     el('l-res').querySelectorAll('[data-pick]').forEach(function(b){
       b.onclick=async function(){
         var id=this.dataset.pick,sw=store.songwriters[id];
-        sw.ads=(sw.ads||[]).concat([{nom:ad.nom,coad:ad.coad||'',ipi:ad.ipi||''}]);
+        sw.ads=(sw.ads||[]).concat([{nom:ad.nom,coad:ad.coad||'',ipi:ad.ipi||'',nf:ad.nf||''}]);
         if(ad.ipi&&(sw.ipis||[]).indexOf(ad.ipi)<0)sw.ipis=(sw.ipis||[]).concat([ad.ipi]);
         (store.liens[soc]||(store.liens[soc]={}))[ad.cle]=id;
         try{await saveSW(sw);await saveLiens();}catch(e){}
@@ -1838,7 +1878,8 @@ function modalLier(cle){
 function ficheSW(id,pre){
   var soc=state.societe;
   var sw=id?store.songwriters[id]:{id:uid('sw'),nom:(pre&&pre.nom)||'',coad:(pre&&pre.coad)||'',
-    ipis:(pre&&pre.ipi)?[pre.ipi]:[],ads:(pre&&pre.nom)?[{nom:pre.nom,coad:(pre&&pre.coad)||'',ipi:(pre&&pre.ipi)||''}]:[],
+    ipis:(pre&&pre.ipi)?[pre.ipi]:[],
+    ads:(pre&&pre.nom)?[{nom:pre.nom,coad:(pre&&pre.coad)||'',ipi:(pre&&pre.ipi)||'',nf:(pre&&pre.nf)||''}]:[],
     societe:soc,part:50,type:'roster',alias:[],note:''};
   if(!sw)return;
   sw.ads=sw.ads||[];sw.ipis=sw.ipis||(sw.ipi?[sw.ipi]:[]);
@@ -1882,7 +1923,8 @@ function ficheSW(id,pre){
     '<div class="field" id="s-plan-wrap" hidden><label class="fl">Sorties au Planning</label>'+
       '<div id="s-plan" class="tscroll"></div></div>'+
     '</div></div>';
-  openModal('<div class="eyebrow">Songwriter</div><h2>'+esc(sw.nom||'Nouvelle fiche')+'</h2>',body,
+  openModal('<div class="eyebrow">Songwriter</div><h2>'+esc(sw.nom||'Nouvelle fiche')+'</h2>'+
+    (identite(sw)?'<div class="mini" style="margin-top:3px">'+identite(sw)+'</div>':''),body,
     (id?'<button class="btn left" id="s-del">Supprimer</button>':'<span class="left"></span>')+
     '<span class="mut" id="s-state"></span><button class="btn" id="s-cancel">Annuler</button>'+
     '<button class="btn primary" id="s-save">Enregistrer</button>','wide');
@@ -1936,7 +1978,7 @@ function ficheSW(id,pre){
     el('s-sugg').querySelectorAll('[data-addad]').forEach(function(b){
       b.onclick=function(){
         var a=allAD(soc).filter(function(x){return x.cle===this.dataset.addad;},this)[0];
-        if(a){ads.push({nom:a.nom,coad:a.coad||'',ipi:a.ipi||''});
+        if(a){ads.push({nom:a.nom,coad:a.coad||'',ipi:a.ipi||'',nf:a.nf||''});
           if(a.ipi){var t=el('s-ipis');if(t.value.indexOf(a.ipi)<0)t.value=(t.value?t.value.replace(/\s*$/,'')+'\n':'')+a.ipi;}
           if(!el('s-coad').value&&a.coad)el('s-coad').value=a.coad;}
         drawAds();drawSugg();};});
