@@ -278,7 +278,8 @@ var SOCIETES=[
 var ROLE_AUTEUR={A:1,C:1,AC:1,AR:1,ADA:1};
 var DB=null,WRITABLE=true,MODE='local',BESOIN_SESSION=false,FBERR='';
 var LSKEY='blz-catalogues-v1';
-var store={meta:{},oeuvres:{},edits:{},songwriters:{},imports:[],liens:{},overlays:{}};
+var store={meta:{},oeuvres:{},edits:{},songwriters:{},imports:[],liens:{},overlays:{},
+  fusions:{},ecartes:{}};
 var state={societe:'blzante',tab:'apercu',q:'',filtre:'tous',rfiltre:'rev',sort:{k:'net',d:-1},swSort:{k:'net',d:-1}};
 
 var CHUNK=120;
@@ -446,6 +447,50 @@ function fusionPlanning(){
       vus[cle]=1;n++;});});
   return n;
 }
+/* ---------- doublons entre Roster, Planning et fiches de l'outil ---------- */
+// store.fusions : { idAbsorbé : idConservé }. La fiche absorbée disparaît, son nom
+// devient un pseudonyme de celle qu'on garde, avec ses IPI et ses ayants droit.
+function appliquerFusions(){
+  var F=store.fusions||{};
+  Object.keys(F).forEach(function(k){
+    var src=store.songwriters[k],cib=store.songwriters[F[k]];
+    if(!src)return;
+    if(!cib){delete F[k];return;}
+    var al=(cib.alias||[]).slice();
+    [src.nom].concat(src.alias||[]).forEach(function(n){
+      if(n&&norm(n)!==norm(cib.nom)&&al.map(norm).indexOf(norm(n))<0)al.push(n);});
+    cib.alias=al;
+    (src.ipis||[]).forEach(function(i){if((cib.ipis||[]).indexOf(i)<0)cib.ipis=(cib.ipis||[]).concat([i]);});
+    (src.ads||[]).forEach(function(a){
+      if(!(cib.ads||[]).some(function(b){return adKey(b)===adKey(a);}))cib.ads=(cib.ads||[]).concat([a]);});
+    if(!cib.coad&&src.coad)cib.coad=src.coad;
+    delete store.songwriters[k];
+  });
+}
+function mots(n){return norm(n).split(' ').filter(function(w){return w.length>=4;});}
+function pairCle(a,b){return [a,b].sort().join('|');}
+function doublons(soc){
+  var L=swList(soc),out=[],vu={};
+  for(var i=0;i<L.length;i++)for(var j=i+1;j<L.length;j++){
+    var a=L[i],b=L[j],cle=pairCle(a.id,b.id);
+    if(vu[cle]||store.ecartes[cle])continue;
+    var na=norm(a.nom),nb=norm(b.nom);
+    if(!na||!nb)continue;
+    var ma=mots(a.nom),mb=mots(b.nom);
+    var communs=ma.filter(function(w){return mb.indexOf(w)>=0;});
+    // « SEB » et « SEBASTIEN » : un prénom abrégé reste un préfixe de l'autre
+    var prefixe=norm(a.nom).split(' ').some(function(w){
+      return norm(b.nom).split(' ').some(function(v){
+        return w!==v&&w.length>=3&&v.length>=3&&(w.indexOf(v)===0||v.indexOf(w)===0);});});
+    var sc=simil(na,nb);
+    var motif=communs.length?'nom commun : '+communs.join(', ')
+      :prefixe?'prénom abrégé'
+      :sc>=0.72?Math.round(sc*100)+' % de proximité':'';
+    if(!motif)continue;
+    vu[cle]=1;out.push({a:a,b:b,cle:cle,motif:motif,sc:sc});
+  }
+  return out.sort(function(x,y){return y.sc-x.sc;});
+}
 function fichesDepuisRoster(soc,liste){
   var cree=0,maj=0;
   liste.forEach(function(a){
@@ -478,7 +523,8 @@ function localSave(){
   try{
     localStorage.setItem(LSKEY,JSON.stringify({v:1,maj:new Date().toISOString(),
       meta:store.meta,oeuvres:store.oeuvres,edits:store.edits,liens:store.liens,
-      overlays:store.overlays,songwriters:store.songwriters,imports:store.imports.slice(0,80)}));
+      overlays:store.overlays,songwriters:store.songwriters,imports:store.imports.slice(0,80),
+      fusions:store.fusions,ecartes:store.ecartes}));
   }catch(e){ toast('Sauvegarde locale impossible (espace du navigateur saturé) — exportez la base'); }
 }
 function localLoad(){
@@ -490,14 +536,15 @@ function localLoad(){
 function adopte(d){
   store.meta=d.meta||{};store.oeuvres=d.oeuvres||{};store.edits=d.edits||{};
   store.songwriters=d.songwriters||{};store.imports=d.imports||[];store.liens=d.liens||{};
-  store.overlays=d.overlays||{};
+  store.overlays=d.overlays||{};store.fusions=d.fusions||{};store.ecartes=d.ecartes||{};
   SOCIETES.forEach(function(s2){store.oeuvres[s2.id]=store.oeuvres[s2.id]||{};
     store.edits[s2.id]=store.edits[s2.id]||{};store.liens[s2.id]=store.liens[s2.id]||{};});
 }
 function exportBase(){
   var data={format:'toolbox-blzante/catalogues',version:1,exporte:new Date().toISOString(),
     meta:store.meta,oeuvres:store.oeuvres,edits:store.edits,liens:store.liens,
-    overlays:store.overlays,songwriters:store.songwriters,imports:store.imports};
+    overlays:store.overlays,songwriters:store.songwriters,imports:store.imports,
+    fusions:store.fusions,ecartes:store.ecartes};
   var txt=JSON.stringify(data),nom='blzante-catalogues-'+today()+'.json';
   try{
     var url=URL.createObjectURL(new Blob([txt],{type:'application/json'}));
@@ -536,7 +583,8 @@ async function loadAll(){
   if(MODE==='local')return void localLoad();
   if(MODE==='firebase'){
     var st=await rtGet('meta/state');
-    if(st){store.meta=st.societes||{};store.liens=st.liens||{};}
+    if(st){store.meta=st.societes||{};store.liens=st.liens||{};
+      store.fusions=st.fusions||{};store.ecartes=st.ecartes||{};}
     var sw=await rtGet('songwriters')||{};
     store.songwriters={};store.overlays={};
     Object.keys(sw).forEach(function(k){
@@ -565,7 +613,8 @@ async function loadAll(){
   var r=await Promise.all([DB.doc('meta/state').get(),
     DB.collection('songwriters').limit(900).get(),
     DB.collection('imports').orderBy('date','desc').limit(60).get()]);
-  if(r[0].exists){store.meta=r[0].data().societes||{};store.liens=r[0].data().liens||{};}
+  if(r[0].exists){var d0=r[0].data();store.meta=d0.societes||{};store.liens=d0.liens||{};
+    store.fusions=d0.fusions||{};store.ecartes=d0.ecartes||{};}
   store.songwriters={};
   r[1].docs.forEach(function(d){var x=d.data();x.id=d.id;store.songwriters[d.id]=x;});
   store.imports=r[2].docs.map(function(d){var x=d.data();x.id=d.id;return x;});
@@ -641,7 +690,8 @@ async function delSW(id){
   if(DB)return DB.doc('songwriters/'+id).delete();
 }
 async function saveMeta(){
-  var body={societes:store.meta,liens:store.liens,maj:new Date().toISOString()};
+  var body={societes:store.meta,liens:store.liens,fusions:store.fusions,ecartes:store.ecartes,
+    maj:new Date().toISOString()};
   if(MODE==='local')return void localSave();
   if(MODE==='firebase')return rtSet('meta/state',body);
   if(DB)return DB.doc('meta/state').set(body);
@@ -1209,6 +1259,26 @@ function viewSongwriters(){
       '<td class="num">'+list.reduce(function(s,x){return s+x.oeuvres;},0)+'</td>'+
       '<td class="num">'+eur(tot)+'</td><td class="num">100,0 %</td><td></td></tr></tfoot></table></div></div>';
   }
+  var dbl=doublons(soc);
+  if(dbl.length){
+    var stats={};swRows(soc).forEach(function(x){stats[x.sw.id]=x;});
+    var cote=function(sw){var st=stats[sw.id]||{oeuvres:0,net:0};
+      return '<b>'+esc(sw.nom)+'</b> '+origineTag(sw)+
+        '<div class="mini">'+(sw.coad?'COAD '+esc(sw.coad)+' · ':'')+st.oeuvres+' œuvres · '+eur(st.net,0)+' €</div>';};
+    h+='<div class="panel"><div class="phead"><h2>Doublons possibles</h2>'+
+      '<span class="note">'+dbl.length+' paire'+(dbl.length>1?'s':'')+
+      ' de fiches qui semblent désigner la même personne — gardez-en une, l\'autre nom devient un pseudonyme</span></div>'+
+      '<div class="tscroll"><table><thead><tr><th class="l">Fiche</th><th class="l">Fiche</th>'+
+      '<th class="l">Motif</th><th class="l">Décision</th></tr></thead><tbody>';
+    dbl.slice(0,25).forEach(function(d){
+      h+='<tr><td class="l">'+cote(d.a)+'</td><td class="l">'+cote(d.b)+'</td>'+
+        '<td class="l mut">'+esc(d.motif)+'</td><td class="l"><div class="rowline">'+
+        '<button class="btn sm primary" data-fus="'+esc(d.b.id)+'" data-vers="'+esc(d.a.id)+'">Garder '+esc(d.a.nom)+'</button>'+
+        '<button class="btn sm primary" data-fus="'+esc(d.a.id)+'" data-vers="'+esc(d.b.id)+'">Garder '+esc(d.b.nom)+'</button>'+
+        '<button class="btn sm" data-pasdbl="'+esc(d.cle)+'">Ce n\'est pas un doublon</button>'+
+        '</div></td></tr>';});
+    h+='</tbody></table></div>'+(dbl.length>25?'<div class="pbody mut">25 premières sur '+dbl.length+'.</div>':'')+'</div>';
+  }
   if(sf.length){
     h+='<div class="panel"><div class="phead"><h2>Auteurs du catalogue sans fiche</h2>'+
       '<span class="note">'+sf.length+' auteurs apparaissent dans les splits sans fiche associée</span></div>'+
@@ -1348,6 +1418,30 @@ function render(){
     var soc=state.societe;(store.liens[soc]||(store.liens[soc]={}))[this.dataset.skip]='-';
     try{await saveLiens();}catch(e){}
     render();toast('Ayant droit écarté');};});
+  v.querySelectorAll('[data-fus]').forEach(function(b){b.onclick=async function(){
+    var src=this.dataset.fus,cib=this.dataset.vers;
+    var n1=(store.songwriters[src]||{}).nom||'',n2=(store.songwriters[cib]||{}).nom||'';
+    // les liens et les allocations qui pointaient vers la fiche absorbée suivent
+    Object.keys(store.liens).forEach(function(so){
+      var L=store.liens[so]||{};Object.keys(L).forEach(function(k){if(L[k]===src)L[k]=cib;});});
+    Object.keys(store.edits).forEach(function(so){
+      var E=store.edits[so]||{};Object.keys(E).forEach(function(c){
+        var ed=E[c]||{};
+        (ed.sw||[]).forEach(function(x){if(x.id===src)x.id=cib;});
+        (ed.alloc||[]).forEach(function(x){if(x.id===src)x.id=cib;});});});
+    store.fusions[src]=cib;
+    appliquerFusions();
+    var g=store.songwriters[cib];
+    try{if(g)await saveSW(g);await saveMeta();
+      for(var i2=0;i2<SOCIETES.length;i2++){var so2=SOCIETES[i2].id;
+        var cs=Object.keys(store.edits[so2]||{});
+        for(var j2=0;j2<cs.length;j2++)await saveEdit(so2,cs[j2]);}
+    }catch(e){}
+    render();toast('« '+n1+' » fusionné dans « '+n2+' »');};});
+  v.querySelectorAll('[data-pasdbl]').forEach(function(b){b.onclick=async function(){
+    store.ecartes[this.dataset.pasdbl]=1;
+    try{await saveMeta();}catch(e){}
+    render();};});
   v.querySelectorAll('[data-lier]').forEach(function(b){b.onclick=function(){modalLier(this.dataset.lier);};});
   v.querySelectorAll('[data-fiche]').forEach(function(b){b.onclick=function(){
     var ad=allAD(state.societe).filter(function(x){return x.cle===this.dataset.fiche;},this)[0];
@@ -2106,6 +2200,7 @@ el('file-restore').onchange=function(){if(this.files&&this.files[0])importBase(t
   render();
   await connect();
   try{await loadAll();}catch(e){toast('Base momentanément illisible — '+(e.message||e));}
+  appliquerFusions();
   render();
 })();
 })();
