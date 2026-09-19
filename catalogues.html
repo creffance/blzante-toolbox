@@ -1,3 +1,8 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Catalogues — BLZante Toolbox</title>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
@@ -185,6 +190,8 @@ td.sec,th.sec{font-size:11.5px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 @media print{.tabs,.top .btn,.chip,#toast{display:none!important}}
 </style>
+</head>
+<body>
 
 <nav>
   <a class="nav-logo" href="index.html"><img src="blzante_spiral_white.png" alt="" class="nav-logo-img"
@@ -422,7 +429,7 @@ function fusionRoster(){
     store.songwriters[id]={id:id,nom:a.name||'',rosterId:a.id,rosterKey:a._key||a.id,
       roles:a.types||[],source:'roster',
       societe:ov.societe||'',part:ov.part==null?50:ov.part,coad:ov.coad||'',
-      ipis:ov.ipis||[],ads:ov.ads||[],alias:alias,type:ov.type||'roster',note:ov.note||''};
+      ipis:ov.ipis||[],ads:ov.ads||[],alias:alias,type:ov.type||'',note:ov.note||''};
   });
 }
 // Certains songwriters n'ont pas de fiche artiste au Roster : ils n'apparaissent que sur
@@ -443,7 +450,7 @@ function fusionPlanning(){
       store.songwriters[id]={id:id,nom:ov.nom||nom,source:'planning',roles:['Songwriter'],
         societe:ov.societe||'',part:ov.part==null?50:ov.part,coad:ov.coad||'',
         ipis:ov.ipis||[],ads:ov.ads||[],alias:ov.alias||[],
-        type:ov.type||'roster',note:ov.note||''};
+        type:ov.type||'',note:ov.note||''};
       vus[cle]=1;n++;});});
   return n;
 }
@@ -493,31 +500,6 @@ function doublons(soc){
     vu[cle]=1;out.push({a:inverse?b:a,b:inverse?a:b,cle:cle,motif:motif,sc:sc});
   }
   return out.sort(function(x,y){return y.sc-x.sc;});
-}
-function fichesDepuisRoster(soc,liste){
-  var cree=0,maj=0;
-  liste.forEach(function(a){
-    var nom=(a.name||'').trim();if(!nom)return;
-    var ex=null,ids=Object.keys(store.songwriters);
-    for(var i=0;i<ids.length;i++){var sw=store.songwriters[ids[i]];
-      if(sw.rosterId&&a.id&&String(sw.rosterId)===String(a.id)){ex=sw;break;}
-      if(norm(sw.nom)===norm(nom)){ex=sw;break;}}
-    var alias=[];
-    Object.keys(SW_RENAME).forEach(function(o2){
-      if(norm(SW_RENAME[o2])===norm(nom))alias.push(o2);
-      if(norm(o2)===norm(nom))alias.push(SW_RENAME[o2]);});
-    var tp=a.types?(Array.isArray(a.types)?a.types:[a.types]):[];
-    if(ex){
-      ex.rosterId=ex.rosterId||a.id;ex.roles=tp;
-      alias.forEach(function(x){if((ex.alias||[]).indexOf(x)<0)ex.alias=(ex.alias||[]).concat([x]);});
-      maj++;
-    }else{
-      var n={id:uid('sw'),nom:nom,coad:'',ipis:[],ads:[],societe:soc,part:50,type:'roster',
-        alias:alias,note:'',source:'roster',rosterId:a.id,roles:tp};
-      store.songwriters[n.id]=n;cree++;
-    }
-  });
-  return {cree:cree,maj:maj,total:liste.length};
 }
 
 /* ---------------- base locale au navigateur ---------------- */
@@ -981,50 +963,6 @@ function isRepartition(head){
   return colIndex(head,'Mes droits en NET (Euros)')>=0&&colIndex(head,'Rion paiement')>=0;}
 function isCatalogue(head){
   return colIndex(head,'Code oeuvre')>=0&&colIndex(head,"Nom de l'ayant-droit")>=0;}
-function autoMapRoster(head){
-  var f=function(c){for(var i=0;i<c.length;i++){var j=colIndex(head,c[i]);if(j>=0)return j;}return -1;};
-  return {nom:f(['Nom','Songwriter','Artiste','Nom complet','Name']),
-    prenom:f(['Prénom','Prenom','First name']),
-    coad:f(['COAD','Code ayant droit','Code Sacem']),
-    ipi:f(['IPI','Code IPI','IPI name number']),
-    part:f(['Part','Part éditoriale','Part cédée','Edition','% édition','Pourcentage']),
-    statut:f(['Statut','Type','Contrat']),
-    alias:f(['Pseudonyme','Pseudo','Alias','Nom d artiste',"Nom d'artiste"])};
-}
-function importRoster(soc,head,rws,map){
-  var cree=0,maj=0,ignore=0;
-  rws.forEach(function(r){
-    var nom=(map.nom>=0?String(r[map.nom]||'').trim():'');
-    if(map.prenom>=0&&String(r[map.prenom]||'').trim())
-      nom=(String(r[map.prenom]).trim()+' '+nom).trim();
-    if(!nom){ignore++;return;}
-    var coad=map.coad>=0?String(r[map.coad]||'').replace(/\D+/g,''):'';
-    var ipi=map.ipi>=0?String(r[map.ipi]||'').trim():'';
-    var part=map.part>=0?numFR(r[map.part]):null;
-    if(part!=null&&part>0&&part<=1)part=part*100;          // 0,8 → 80 %
-    var alias=map.alias>=0?String(r[map.alias]||'').trim():'';
-    var statut=map.statut>=0?norm(r[map.statut]):'';
-    var type=/EXTERN|TIERS/.test(statut)?'externe':/ARTISTE|NON SIGNE/.test(statut)?'artiste':'roster';
-    // fiche existante : par COAD, puis par IPI, puis par nom
-    var ex=null,ids=Object.keys(store.songwriters);
-    for(var i=0;i<ids.length;i++){var sw=store.songwriters[ids[i]];
-      if(coad&&sw.coad&&String(sw.coad)===coad){ex=sw;break;}
-      if(ipi&&(sw.ipis||[]).indexOf(ipi)>=0){ex=sw;break;}
-      if(norm(sw.nom)===norm(nom)&&(sw.societe||soc)===soc){ex=sw;break;}}
-    if(ex){
-      if(coad&&!ex.coad)ex.coad=coad;
-      if(ipi&&(ex.ipis||[]).indexOf(ipi)<0)ex.ipis=(ex.ipis||[]).concat([ipi]);
-      if(part!=null&&ex.part==null)ex.part=part;
-      if(alias&&(ex.alias||[]).indexOf(alias)<0)ex.alias=(ex.alias||[]).concat([alias]);
-      ex.type=ex.type||type;maj++;
-    }else{
-      var n={id:uid('sw'),nom:nom,coad:coad,ipis:ipi?[ipi]:[],ads:[],societe:soc,
-        part:part==null?50:part,type:type,alias:alias?[alias]:[],note:'',source:'roster'};
-      store.songwriters[n.id]=n;cree++;
-    }
-  });
-  return {cree:cree,maj:maj,ignore:ignore};
-}
 
 function importRepartition(soc,head,rws){
   var ic=colIndex(head,"Code de l'oeuvre"),it=colIndex(head,"Titre de l'oeuvre"),
@@ -1136,8 +1074,8 @@ function viewApercu(){
     kpi('lead','Revenus du catalogue',eur(t.net)+' €',t.avecRev+' œuvres rémunérées sur '+t.oeuvres)+
     kpi('','Part éditoriale au dépôt',t.nPart?pv(t.partSocPh/t.nPart)+' %':'—','en phono, sur '+t.nPart+' œuvres')+
     kpi('','Œuvres rattachées',e0(t.ratt),t.oeuvres?pct(100*t.ratt/t.oeuvres)+' du catalogue':'—')+
-    kpi('','Songwriters suivis',e0(sws.filter(function(x){return x.oeuvres>0;}).length),
-      swList(soc).length+' fiches · '+sf.length+' auteurs sans fiche')+
+    kpi('','Songwriters signés',e0(sws.filter(function(x){return estBLZ(x.sw)&&x.oeuvres>0;}).length),
+      sws.filter(function(x){return !estBLZ(x.sw)&&x.oeuvres>0;}).length+' externes · '+sf.length+' auteurs sans fiche')+
     kpi('','Dernier trimestre',dernierRep(t),(store.meta[soc]||{}).lastRep?'répartition '+(store.meta[soc]||{}).lastRep:'—')+
     '</div><div class="split">';
   h+='<div class="panel"><div class="phead"><h2>Top œuvres</h2><span class="note">Revenus nets cumulés</span></div>'+
@@ -1151,13 +1089,18 @@ function viewApercu(){
       ans.map(function(a){return '<td class="num'+(r.ans[a]?'':' mut')+'">'+(r.ans[a]?eur(r.ans[a]):'·')+'</td>';}).join('')+
       '<td class="num w">'+eur(r.net)+'</td><td class="l">'+swTags(r)+'</td></tr>';});
   h+='</tbody></table></div></div>';
-  h+='<div class="panel"><div class="phead"><h2>Par songwriter</h2>'+
-    '<span class="note">Part d\'écriture × part éditoriale</span></div><div class="tscroll"><table>'+
+  var swBLZ=sws.filter(function(x){return estBLZ(x.sw);});
+  var swExt=sws.filter(function(x){return !estBLZ(x.sw);});
+  var netExt=swExt.reduce(function(s2,x){return s2+x.net;},0);
+  h+='<div class="panel"><div class="phead"><h2>Par songwriter signé</h2>'+
+    '<span class="note">'+(swExt.length?swExt.length+' songwriter'+(swExt.length>1?'s':'')+
+      ' externe'+(swExt.length>1?'s':'')+' à part, '+eur(netExt,0)+' € — onglet Songwriters'
+      :'Revenus attribués par la ventilation')+'</span></div><div class="tscroll"><table>'+
     '<thead><tr><th class="l">Songwriter</th><th class="num">Part édito</th><th class="num">Œuvres</th>'+
     '<th class="num">Revenus €</th><th class="l">Poids</th></tr></thead><tbody>';
-  var mx=sws.length?Math.max(1,sws[0].net):1;
-  if(!sws.length)h+='<tr><td colspan="5" class="empty">Aucune fiche songwriter.</td></tr>';
-  sws.slice(0,12).forEach(function(x){
+  var mx=swBLZ.length?Math.max(1,swBLZ[0].net):1;
+  if(!swBLZ.length)h+='<tr><td colspan="5" class="empty">Aucun songwriter signé.</td></tr>';
+  swBLZ.slice(0,12).forEach(function(x){
     h+='<tr class="clickable" data-sw="'+esc(x.sw.id)+'"><td class="l w">'+esc(x.sw.nom)+'</td>'+
       '<td class="num mut">'+(x.sw.part!=null?pv(x.sw.part)+' %':'—')+'</td><td class="num">'+x.oeuvres+'</td>'+
       '<td class="num w">'+eur(x.net)+'</td>'+
@@ -1180,6 +1123,16 @@ function viewApercu(){
 function dernierRep(t){var k=Object.keys(t.reps);if(!k.length)return '—';
   k.sort(function(a,b){return (+b)-(+a);});return eur(t.reps[k[0]])+' €';}
 function kpi(c,k,v,s){return '<div class="kpi '+c+'"><div class="k">'+k+'</div><div class="v">'+v+'</div><div class="s">'+s+'</div></div>';}
+// Un profil venu du Roster ou du Planning est un signé BLZante ; un nom qui n'apparaît
+// que dans les dépôts Sacem est externe, jusqu'à ce qu'on en décide autrement sur sa fiche.
+function typeSW(sw){
+  if(sw&&sw.type)return sw.type;
+  return (sw&&(sw.source==='roster'||sw.source==='planning'))?'roster':'externe';
+}
+function estBLZ(sw){return typeSW(sw)==='roster';}
+// Le nom affiché d'un artiste du roster vient du Roster et de lui seul : rattacher des
+// profils Sacem n'ajoute que des identités, ça ne renomme jamais la fiche.
+function nomFige(sw){return !!sw&&sw.source==='roster';}
 function origineTag(sw){
   return sw.source==='roster'?'<span class="tag neutral">roster</span>'
     :sw.source==='planning'?'<span class="tag neutral">planning</span>'
@@ -1265,32 +1218,49 @@ function viewSongwriters(){
     var vb=k==='net'?b.net:k==='oeuvres'?b.oeuvres:(+b.sw.part||0);
     return (va-vb)*d;});
   var tot=list.reduce(function(s,x){return s+x.net;},0),sf=auteursSansFiche(soc);
-  var h='<div class="panel"><div class="phead"><h2>Fiches songwriters — '+esc(socNom(soc))+'</h2>'+
-    '<div class="rowline"><span class="note">Les profils viennent du roster de la Toolbox ; l\'outil n\'y ajoute que '+
-    'l\'édition : part cédée, COAD, IPI et ayants droit rattachés. La part cédée s\'applique par défaut à chaque œuvre.</span>'+
-    '<button class="btn primary sm" id="sw-new">Nouvelle fiche</button></div></div>';
-  if(!list.length){
-    h+='<div class="empty"><h2>Aucune fiche</h2><p>Une fiche par songwriter représenté : son nom, son COAD Sacem '+
-      'et la part éditoriale détenue. Le rattachement à ses œuvres devient ensuite automatique.</p>'+
-      '<button class="btn primary" id="sw-new2">Créer une fiche</button></div></div>';
-  }else{
-    var th=function(key,lbl,cls){return '<th class="sortable '+(cls||'num')+'" data-sk="'+key+'">'+lbl+
-      (k===key?' <span class="car">'+(d<0?'▼':'▲')+'</span>':'')+'</th>';};
-    h+='<div class="tscroll"><table><thead><tr>'+th('nom','Songwriter','l sortable')+
+  var dedans=list.filter(function(x){return estBLZ(x.sw);});
+  var dehors=list.filter(function(x){return !estBLZ(x.sw);});
+  var th=function(key,lbl,cls){return '<th class="sortable '+(cls||'num')+'" data-sk="'+key+'">'+lbl+
+    (k===key?' <span class="car">'+(d<0?'▼':'▲')+'</span>':'')+'</th>';};
+  function tableau(rs){
+    var hh='<div class="tscroll"><table><thead><tr>'+th('nom','Songwriter','l sortable')+
       th('part','Part cédée')+th('oeuvres','Œuvres')+
       th('net','Revenus attribués €')+'<th class="num">Part du catalogue</th><th class="l"></th></tr></thead><tbody>';
-    list.forEach(function(x){
-      var ident=identite(x.sw);
-      h+='<tr class="clickable" data-sw="'+esc(x.sw.id)+'"><td class="l w">'+esc(x.sw.nom)+
+    rs.forEach(function(x){
+      var ident=identite(x.sw),t=typeSW(x.sw);
+      hh+='<tr class="clickable" data-sw="'+esc(x.sw.id)+'"><td class="l w">'+esc(x.sw.nom)+
         ' '+origineTag(x.sw)+
+        (t==='artiste'?' <span class="tag warn">non signé</span>'
+         :t==='termine'?' <span class="tag warn">contrat terminé</span>':'')+
         '<div class="mini">'+(ident||'identité Sacem à rattacher')+'</div></td>'+
         '<td class="num">'+(x.sw.part!=null?pv(x.sw.part)+' %':'<span class="mut">—</span>')+'</td>'+
         '<td class="num">'+x.oeuvres+(x.auto?' <span class="tag neutral">auto</span>':'')+'</td>'+
         '<td class="num w">'+eur(x.net)+'</td><td class="num mut">'+(tot>0?pct(100*x.net/tot):'—')+'</td>'+
         '<td class="l"><button class="btn sm" data-edit="'+esc(x.sw.id)+'">Modifier</button></td></tr>';});
-    h+='</tbody><tfoot><tr><td class="l">'+list.length+' fiche'+(list.length>1?'s':'')+'</td><td></td>'+
-      '<td class="num">'+list.reduce(function(s,x){return s+x.oeuvres;},0)+'</td>'+
-      '<td class="num">'+eur(tot)+'</td><td class="num">100,0 %</td><td></td></tr></tfoot></table></div></div>';
+    var n=rs.reduce(function(s2,x){return s2+x.net;},0);
+    return hh+'</tbody><tfoot><tr><td class="l">'+rs.length+' fiche'+(rs.length>1?'s':'')+'</td><td></td>'+
+      '<td class="num">'+rs.reduce(function(s2,x){return s2+x.oeuvres;},0)+'</td>'+
+      '<td class="num">'+eur(n)+'</td><td class="num">'+(tot>0?pct(100*n/tot):'—')+'</td><td></td></tr></tfoot></table></div>';
+  }
+  var h='';
+  if(!list.length){
+    h+='<div class="panel"><div class="phead"><h2>Fiches songwriters — '+esc(socNom(soc))+'</h2>'+
+      '<button class="btn primary sm" id="sw-new">Nouvelle fiche</button></div>'+
+      '<div class="empty"><h2>Aucune fiche</h2><p>Une fiche par songwriter représenté : son nom, son COAD Sacem '+
+      'et la part éditoriale détenue. Le rattachement à ses œuvres devient ensuite automatique.</p>'+
+      '<button class="btn primary" id="sw-new2">Créer une fiche</button></div></div>';
+  }else{
+    h+='<div class="panel"><div class="phead"><h2>Songwriters '+esc(socNom(soc))+'</h2>'+
+      '<div class="rowline"><span class="note">Les signés : profils du roster et du planning de la Toolbox. '+
+      'L\'outil n\'y ajoute que l\'édition — part cédée, COAD, IPI et ayants droit rattachés.</span>'+
+      '<button class="btn primary sm" id="sw-new">Nouvelle fiche</button></div></div>'+
+      (dedans.length?tableau(dedans)
+        :'<div class="pbody mut">Aucun songwriter signé pour l\'instant.</div>')+'</div>';
+    h+='<div class="panel"><div class="phead"><h2>Songwriters externes</h2>'+
+      '<span class="note">Parts éditoriales récupérées sur des auteurs qui ne sont pas signés chez nous, '+
+      'contrats terminés et artistes non signés. Ils comptent dans les revenus mais plus dans le roster.</span></div>'+
+      (dehors.length?tableau(dehors)
+        :'<div class="pbody mut">Aucun songwriter externe.</div>')+'</div>';
   }
   var dbl=doublons(soc);
   if(dbl.length){
@@ -1310,7 +1280,8 @@ function viewSongwriters(){
       h+='<tr><td class="l">'+cote(d.a)+'</td><td class="l">'+cote(d.b)+'</td>'+
         '<td class="l mut">'+esc(d.motif)+'</td><td class="l"><div class="rowline">'+
         '<button class="btn sm primary" data-fus="'+esc(d.b.id)+'" data-vers="'+esc(d.a.id)+'">Garder '+esc(d.a.nom)+'</button>'+
-        '<button class="btn sm" data-fus="'+esc(d.a.id)+'" data-vers="'+esc(d.b.id)+'">Garder '+esc(d.b.nom)+'</button>'+
+        (nomFige(d.a)&&!nomFige(d.b)?'<span class="mut" style="font-size:11.5px">fiche du roster, son nom ne change pas</span>'
+          :'<button class="btn sm" data-fus="'+esc(d.a.id)+'" data-vers="'+esc(d.b.id)+'">Garder '+esc(d.b.nom)+'</button>')+
         '<button class="btn sm" data-pasdbl="'+esc(d.cle)+'">Ce n\'est pas un doublon</button>'+
         '</div></td></tr>';});
     h+='</tbody></table></div>'+(dbl.length>25?'<div class="pbody mut">25 premières sur '+dbl.length+'.</div>':'')+'</div>';
@@ -1808,7 +1779,7 @@ function ficheOeuvre(code){
     var manq=lignes.filter(function(l){return l.coche&&!l.swId;});
     for(var i=0;i<manq.length;i++){
       var l=manq[i];
-      var sw={id:uid('sw'),nom:l.nom,coad:l.coad||'',ipi:l.ipi||'',societe:soc,
+      var sw={id:uid('sw'),nom:l.nom,coad:l.coad||'',ipi:l.ipi||'',societe:soc,type:'externe',
         part:l.deal==null?100:+l.deal,alias:[],note:'',
         ads:[{nom:l.nom,coad:l.coad||'',ipi:l.ipi||'',nf:l.nf||''}],ipis:l.ipi?[l.ipi]:[]};
       store.songwriters[sw.id]=sw;l.swId=sw.id;
@@ -1880,21 +1851,22 @@ function ficheSW(id,pre){
   var sw=id?store.songwriters[id]:{id:uid('sw'),nom:(pre&&pre.nom)||'',coad:(pre&&pre.coad)||'',
     ipis:(pre&&pre.ipi)?[pre.ipi]:[],
     ads:(pre&&pre.nom)?[{nom:pre.nom,coad:(pre&&pre.coad)||'',ipi:(pre&&pre.ipi)||'',nf:(pre&&pre.nf)||''}]:[],
-    societe:soc,part:50,type:'roster',alias:[],note:''};
+    societe:soc,part:50,type:'',alias:[],note:''};
   if(!sw)return;
   sw.ads=sw.ads||[];sw.ipis=sw.ipis||(sw.ipi?[sw.ipi]:[]);
   var ads=sw.ads.slice();
   var st=swRows(soc).filter(function(x){return x.sw.id===sw.id;})[0];
-  var TYPES=[['roster','Roster BLZante'],['externe','Externe (part récupérée)'],['artiste','Artiste non signé']];
+  var TYPES=[['roster','Signé '+socNom(soc)],['termine','Contrat terminé'],
+             ['externe','Externe (part récupérée)'],['artiste','Artiste non signé']];
   var body='<div class="grid2"><div>'+
     '<div class="field"><label class="fl">Nom du songwriter</label>'+
       '<input type="text" id="s-nom" value="'+esc(sw.nom||'')+'"'+(sw.source?' readonly':'')+'>'+
-      (sw.source==='roster'?'<div class="hint">Profil du roster'+((sw.roles||[]).length?' · '+esc((sw.roles||[]).join(', ')):'')+
-        ' — le nom se modifie dans la fiche roster.</div>'
+      (sw.source==='roster'?'<div class="hint">Artiste du roster'+((sw.roles||[]).length?' · '+esc((sw.roles||[]).join(', ')):'')+
+        ' — son nom vient du Roster de la Toolbox et ne bouge pas ici, quels que soient les profils Sacem rattachés.</div>'
        :sw.source==='planning'?'<div class="hint">Profil repris du Planning : ce songwriter apparaît sur des sorties '+
         'ou des posts sans avoir de fiche au roster. Le nom se modifie dans le Planning.</div>':'')+'</div>'+
     '<div class="grid2"><div class="field"><label class="fl">Statut</label><select id="s-type">'+
-      TYPES.map(function(t){return '<option value="'+t[0]+'"'+((sw.type||'roster')===t[0]?' selected':'')+'>'+t[1]+'</option>';}).join('')+
+      TYPES.map(function(t){return '<option value="'+t[0]+'"'+(typeSW(sw)===t[0]?' selected':'')+'>'+t[1]+'</option>';}).join('')+
       '</select></div>'+
       '<div class="field"><label class="fl">Part d\'édition cédée à la société (%)</label>'+
       '<input type="number" id="s-part" step="0.01" min="0" max="100" value="'+(sw.part!=null?sw.part:'')+'">'+
@@ -1911,10 +1883,11 @@ function ficheSW(id,pre){
     '<div class="field"><label class="fl">Note</label><textarea id="s-note">'+esc(sw.note||'')+'</textarea></div>'+
     '</div><div>'+
     '<div class="field"><label class="fl">Ayants droit rattachés à ce profil</label><div id="s-ads"></div>'+
-      '<div class="rowline" style="margin-top:8px"><input type="search" id="s-search" placeholder="Chercher un ayant droit du catalogue…"></div>'+
+      '<div class="rowline" style="margin-top:8px"><input type="search" id="s-search" placeholder="Chercher par nom, COAD ou IPI…"></div>'+
       '<div id="s-sugg"></div>'+
       '<div class="hint">Un même songwriter peut déposer sous plusieurs identités : rattachez-les toutes ici, '+
-      'leurs œuvres et leurs revenus se cumulent sur cette fiche.</div></div>'+
+      'leurs œuvres et leurs revenus se cumulent sur cette fiche. Ce sont des données en plus : '+
+      'le nom affiché du songwriter ne change pas.</div></div>'+
     (st?'<div class="field"><label class="fl">Sur ce catalogue</label><div class="rowline">'+
       '<span class="pill">'+st.oeuvres+' œuvres</span><span class="pill">'+eur(st.net)+' € attribués</span>'+
       '<span class="pill">'+pv(st.moyPh)+' % de phono en moyenne</span>'+
@@ -1963,7 +1936,9 @@ function ficheSW(id,pre){
     var list=allAD(soc).filter(function(a){
       if(pris[a.cle])return false;
       if(!q)return score(a.nom)>0.5;
-      return norm(a.nom).indexOf(q)>=0||String(a.coad).indexOf(q)>=0;})
+      var qb=el('s-search').value.replace(/\s+/g,'');
+      return norm(a.nom).indexOf(q)>=0||
+        (/\d/.test(qb)&&(String(a.coad).indexOf(qb)>=0||String(a.ipi).indexOf(qb)>=0));})
       .map(function(a){a._sc=score(a.nom);return a;})
       .sort(function(x,y){return (y._sc-x._sc)||(y.net-x.net);}).slice(0,10);
     el('s-sugg').innerHTML=list.length?('<table><tbody>'+list.map(function(a){
@@ -2247,3 +2222,5 @@ el('file-restore').onchange=function(){if(this.files&&this.files[0])importBase(t
 })();
 })();
 </script>
+</body>
+</html>
