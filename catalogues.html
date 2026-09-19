@@ -197,7 +197,7 @@ td.sec,th.sec{font-size:11.5px}
   <a class="nav-logo" href="index.html"><img src="blzante_spiral_white.png" alt="" class="nav-logo-img"
      onerror="this.style.display='none'"><span>BLZante</span></a>
   <div class="nav-right">
-    <button class="deco" onclick="try{firebase.auth().signOut().then(function(){location.href='login.html'})}catch(e){}">Déconnexion</button>
+    <button class="deco" onclick="try{localStorage.removeItem('blz-catalogues-snap-v1')}catch(e){}try{firebase.auth().signOut().then(function(){location.href='login.html'})}catch(e){}">Déconnexion</button>
     <a href="index.html">&larr; Toolbox</a><span class="nav-sep">/</span><span>Catalogues</span>
   </div>
 </nav>
@@ -237,8 +237,16 @@ var pct=function(v){return (Number(v)||0).toLocaleString('fr-FR',{minimumFractio
 var pv=function(v){var r=Math.round((Number(v)||0)*100)/100;
   return r.toLocaleString('fr-FR',{minimumFractionDigits:0,maximumFractionDigits:2});};
 var uid=function(p){return (p||'id')+'-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7);};
-var norm=function(s){return String(s==null?'':s).normalize('NFD').replace(/[̀-ͯ]/g,'')
-  .toUpperCase().replace(/[^A-Z0-9]+/g,' ').trim();};
+var NORM=new Map();
+var norm=function(s){var k=String(s==null?'':s),v=NORM.get(k);
+  if(v===undefined){v=k.normalize('NFD').replace(/[̀-ͯ]/g,'')
+    .toUpperCase().replace(/[^A-Z0-9]+/g,' ').trim();NORM.set(k,v);}
+  return v;};
+// Cache de calcul : tout ce qui se déduit du store est calculé une fois, puis
+// oublié dès qu'une donnée change (enregistrement, import, rendu).
+var MEMO=Object.create(null);
+function memo(k,fn){return (k in MEMO)?MEMO[k]:(MEMO[k]=fn());}
+function invalide(){MEMO=Object.create(null);}
 var normCode=function(s){return String(s==null?'':s).replace(/\D+/g,'').replace(/^0+/,'');};
 var numFR=function(v){if(v==null||v==='')return 0;
   var n=parseFloat(String(v).replace(/[\s  ]/g,'').replace(',','.'));return isNaN(n)?0:n;};
@@ -286,7 +294,7 @@ var ROLE_AUTEUR={A:1,C:1,AC:1,AR:1,ADA:1};
 var DB=null,WRITABLE=true,MODE='local',BESOIN_SESSION=false,FBERR='';
 var LSKEY='blz-catalogues-v1';
 var store={meta:{},oeuvres:{},edits:{},songwriters:{},imports:[],liens:{},overlays:{},
-  fusions:{},ecartes:{}};
+  fusions:{},ecartes:{},base:null};
 var state={societe:'blzante',tab:'apercu',q:'',filtre:'tous',rfiltre:'rev',sort:{k:'net',d:-1},swSort:{k:'net',d:-1}};
 
 var CHUNK=120;
@@ -305,8 +313,9 @@ async function connect(){
   // 2. Firebase de la Toolbox
   try{ if(await initFirebase()){
     MODE='firebase';
-    try{ await rtSet('ping',{t:Date.now()}); }               // on vérifie tout de suite qu'on peut écrire
-    catch(e){ WRITABLE=false;FBERR=(e&&e.message)||String(e); }
+    // on vérifie qu'on peut écrire, en tâche de fond : l'ouverture n'attend pas
+    rtSet('ping',{t:Date.now()}).then(null,function(e){
+      WRITABLE=false;FBERR=(e&&e.message)||String(e);try{renderChrome();}catch(e2){}});
     return;} }catch(e){ console.warn('Firebase indisponible',e); }
   if(location.protocol!=='file:')BESOIN_SESSION=true;
   // 3. repli : base locale au navigateur
@@ -432,27 +441,83 @@ function fusionRoster(){
       ipis:ov.ipis||[],ads:ov.ads||[],alias:alias,type:ov.type||'',note:ov.note||''};
   });
 }
+// Même personne écrite deux fois ? On ne fusionne d'office que les cas sûrs : même nom,
+// ou mêmes mots à un prénom abrégé près (« SEB ROUSSELET » / « SEBASTIEN ROUSSELET »).
+// Un nom de famille partagé ne suffit pas : Gabriel et Hadrien Mabilat restent deux fiches.
+function memePersonne(x,y){
+  var a=norm(x),b=norm(y);
+  if(!a||!b)return false;
+  if(a===b)return true;
+  var ta=a.split(' '),tb=b.split(' ');
+  if(ta.length!==tb.length||ta.length<2)return false;
+  var libres=tb.slice(),exact=0;
+  for(var i=0;i<ta.length;i++){
+    var w=ta[i],j=libres.indexOf(w);
+    if(j>=0){libres.splice(j,1);if(w.length>=4)exact++;continue;}
+    j=-1;
+    for(var k=0;k<libres.length;k++){var v=libres[k];
+      if(w.length>=3&&v.length>=3&&(w.indexOf(v)===0||v.indexOf(w)===0)){j=k;break;}}
+    if(j<0)return false;
+    libres.splice(j,1);
+  }
+  return exact>=1;
+}
 // Certains songwriters n'ont pas de fiche artiste au Roster : ils n'apparaissent que sur
-// les sorties et les posts du Planning. On leur fabrique un profil à partir de ces noms.
+// les sorties et les posts du Planning. On leur fabrique un profil à partir de ces noms,
+// sauf s'ils désignent quelqu'un qui a déjà sa fiche.
 function fusionPlanning(){
-  var vus={},n=0;
-  Object.keys(store.songwriters).forEach(function(k){
-    var x=store.songwriters[k];if(!x)return;
-    vus[norm(x.nom)]=1;(x.alias||[]).forEach(function(a){vus[norm(a)]=1;});});
+  var n=0,existants=Object.keys(store.songwriters).map(function(k){return store.songwriters[k];});
+  var trouve=function(nom){
+    for(var i=0;i<existants.length;i++){var x=existants[i];
+      if(memePersonne(nom,x.nom))return x;
+      if((x.alias||[]).some(function(al){return memePersonne(nom,al);}))return x;}
+    return null;};
   PLANNING.forEach(function(r){
     var bruts=r.songwriters?(Array.isArray(r.songwriters)?r.songwriters:String(r.songwriters).split(',')):[];
     bruts.forEach(function(b){
-      var nom=String(b==null?'':b).trim();
-      nom=String(SW_RENAME[nom]||nom).trim();
-      var cle=norm(nom);
-      if(!cle||vus[cle])return;
+      var brut=String(b==null?'':b).trim(),nom=String(SW_RENAME[brut]||brut).trim();
+      var cle=norm(nom);if(!cle)return;
+      var deja=trouve(nom);
+      if(deja){                                      // même personne : son nom de planning devient un pseudonyme
+        [brut,nom].forEach(function(x){
+          if(x&&norm(x)!==norm(deja.nom)&&(deja.alias||[]).map(norm).indexOf(norm(x))<0)
+            deja.alias=(deja.alias||[]).concat([x]);});
+        return;}
       var id='p:'+cle,ov=store.overlays[id]||{};
-      store.songwriters[id]={id:id,nom:ov.nom||nom,source:'planning',roles:['Songwriter'],
+      var sw={id:id,nom:nom,source:'planning',roles:['Songwriter'],
         societe:ov.societe||'',part:ov.part==null?50:ov.part,coad:ov.coad||'',
         ipis:ov.ipis||[],ads:ov.ads||[],alias:ov.alias||[],
         type:ov.type||'',note:ov.note||''};
-      vus[cle]=1;n++;});});
+      store.songwriters[id]=sw;existants.push(sw);n++;});});
   return n;
+}
+// La base des songwriters de l'outil : Roster × Planning, moins les exclusions, plus les ajouts.
+// Réglage par défaut : le duo MAB est remplacé par Gabriel et Hadrien Mabilat, Malaka est ajouté.
+var BASE_DEFAUT={exclus:{'MAB':1},ajouts:{'MALAKA':{nom:'MALAKA'}}};
+function baseCfg(){
+  if(!store.base)store.base=JSON.parse(JSON.stringify(BASE_DEFAUT));
+  store.base.exclus=store.base.exclus||{};store.base.ajouts=store.base.ajouts||{};
+  return store.base;
+}
+function appliquerBase(){
+  var B=baseCfg();
+  Object.keys(store.songwriters).forEach(function(k){
+    var x=store.songwriters[k];
+    if(x&&x.source&&B.exclus[norm(x.nom)])delete store.songwriters[k];});
+  Object.keys(B.ajouts).forEach(function(cle){
+    if(B.exclus[cle])return;
+    var nom=B.ajouts[cle].nom||cle;
+    var deja=Object.keys(store.songwriters).some(function(k){var x=store.songwriters[k];
+      return memePersonne(x.nom,nom)||(x.alias||[]).some(function(al){return memePersonne(al,nom);});});
+    if(deja)return;
+    var id='b:'+cle,ov=store.overlays[id]||{};
+    store.songwriters[id]={id:id,nom:nom,source:'base',roles:['Songwriter'],
+      societe:ov.societe||'',part:ov.part==null?50:ov.part,coad:ov.coad||'',
+      ipis:ov.ipis||[],ads:ov.ads||[],alias:ov.alias||[],type:ov.type||'',note:ov.note||''};
+  });
+}
+function construireBase(){
+  fusionRoster();nbPlanning=fusionPlanning();appliquerBase();appliquerFusions();
 }
 /* ---------- doublons entre Roster, Planning et fiches de l'outil ---------- */
 // store.fusions : { idAbsorbé : idConservé }. La fiche absorbée disparaît, son nom
@@ -512,6 +577,29 @@ function localSave(){
       fusions:store.fusions,ecartes:store.ecartes}));
   }catch(e){ toast('Sauvegarde locale impossible (espace du navigateur saturé) — exportez la base'); }
 }
+// Instantané de la dernière base Firebase, pour afficher tout de suite à l'ouverture
+// pendant que la connexion et la synchronisation se font. Effacé à la déconnexion.
+var SNAP='blz-catalogues-snap-v1',SYNCHRO=false,snapT=null;
+function snapSave(){
+  if(MODE!=='firebase')return;
+  clearTimeout(snapT);
+  snapT=setTimeout(function(){
+    try{localStorage.setItem(SNAP,JSON.stringify({v:1,t:Date.now(),
+      meta:store.meta,oeuvres:store.oeuvres,edits:store.edits,liens:store.liens,overlays:store.overlays,
+      songwriters:store.songwriters,imports:store.imports.slice(0,30),fusions:store.fusions,
+      ecartes:store.ecartes,base:store.base,roster:ROSTER,planning:PLANNING}));}
+    catch(e){try{localStorage.removeItem(SNAP);}catch(e2){}}
+  },400);
+}
+function snapLoad(){
+  try{
+    var raw=localStorage.getItem(SNAP);if(!raw)return false;
+    var d=JSON.parse(raw);if(!d||d.v!==1)return false;
+    adopte(d);store.base=d.base||store.base;ROSTER=d.roster||[];PLANNING=d.planning||[];
+    return true;
+  }catch(e){return false;}
+}
+function snapEfface(){try{localStorage.removeItem(SNAP);}catch(e){}}
 function localLoad(){
   try{
     var raw=localStorage.getItem(LSKEY);if(!raw)return false;
@@ -567,30 +655,34 @@ function importBase(file){
 async function loadAll(){
   if(MODE==='local')return void localLoad();
   if(MODE==='firebase'){
-    var st=await rtGet('meta/state');
+    // Toutes les lectures partent en même temps : un aller-retour au lieu d'une douzaine.
+    var sur=function(pr){return pr.then(null,function(e){console.warn(e);return null;});};
+    var imports=dbFetch('/'+fbRoot()+'/imports.json?orderBy=%22%24key%22&limitToLast=60')
+      .then(function(r){return r.ok?r.json():null;});
+    var R=await Promise.all([
+      rtGet('meta/state'),rtGet('songwriters'),sur(chargerRoster()),sur(chargerPlanning()),sur(imports)]
+      .concat(SOCIETES.map(function(x){return rtGet('bulk/'+x.id);}))
+      .concat(SOCIETES.map(function(x){return rtGet('edits/'+x.id);})));
+    var st=R[0],sw=R[1]||{},im=R[4]||{},nS=SOCIETES.length;
     if(st){store.meta=st.societes||{};store.liens=st.liens||{};
-      store.fusions=st.fusions||{};store.ecartes=st.ecartes||{};}
-    var sw=await rtGet('songwriters')||{};
+      store.fusions=st.fusions||{};store.ecartes=st.ecartes||{};store.base=st.base||store.base;}
     store.songwriters={};store.overlays={};
     Object.keys(sw).forEach(function(k){
       var x=sw[k]||{};x.id=k;
-      if(k.indexOf('r:')===0||k.indexOf('p:')===0)store.overlays[k]=x;  // greffe Roster ou Planning
-      else store.songwriters[k]=x;});                   // fiche propre à l'outil (externe, non signé)
-    try{ROSTER=await chargerRoster();fusionRoster();}
-    catch(e){console.warn('roster illisible',e);}
-    try{PLANNING=await chargerPlanning();nbPlanning=fusionPlanning();}catch(e){console.warn('planning illisible',e);}
-    var im=await rtGet('imports')||{};
+      if(/^[rpb]:/.test(k))store.overlays[k]=x;     // greffe sur un profil Roster, Planning ou de base
+      else store.songwriters[k]=x;});                // fiche propre à l'outil (externe, non signé)
+    ROSTER=R[2]||[];PLANNING=R[3]||[];
+    construireBase();
     store.imports=Object.keys(im).map(function(k){var x=im[k];x.id=k;return x;})
       .sort(function(a,b){return (b.date||'').localeCompare(a.date||'');}).slice(0,60);
-    for(var i=0;i<SOCIETES.length;i++){
-      var soc=SOCIETES[i].id;store.oeuvres[soc]={};store.edits[soc]={};store.liens[soc]=store.liens[soc]||{};
-      var blocs=await rtGet('bulk/'+soc)||{};
+    SOCIETES.forEach(function(x,i){
+      var soc=x.id,blocs=R[5+i]||{},eds=R[5+nS+i]||{};
+      store.oeuvres[soc]={};store.edits[soc]={};store.liens[soc]=store.liens[soc]||{};
       Object.keys(blocs).forEach(function(b){var it=(blocs[b]||{}).items||{};
         Object.keys(it).forEach(function(c){store.oeuvres[soc][c]=it[c];});});
-      var eds=await rtGet('edits/'+soc)||{};
       Object.keys(eds).forEach(function(b){var it=(eds[b]||{}).items||{};
         Object.keys(it).forEach(function(c){store.edits[soc][c]=it[c];});});
-    }
+    });
     return;
   }
   // artefact Claude
@@ -616,6 +708,7 @@ async function loadAll(){
   }
 }
 async function saveOeuvres(soc){
+  invalide();snapSave();
   var codes=Object.keys(store.oeuvres[soc]||{});
   var n=Math.max(1,Math.ceil(codes.length/CHUNK));
   var bloc=function(i){var items={};
@@ -637,6 +730,7 @@ async function saveOeuvres(soc){
   await saveMeta();
 }
 async function saveEdit(soc,code){
+  invalide();snapSave();
   if(MODE==='local'){localSave();return;}
   var b=bucketOf(code),items={};
   Object.keys(store.edits[soc]||{}).forEach(function(c){if(bucketOf(c)===b)items[c]=store.edits[soc][c];});
@@ -645,6 +739,7 @@ async function saveEdit(soc,code){
   if(DB)return DB.doc('edits/'+soc+'-e'+b).set(body);
 }
 async function saveSW(sw){
+  invalide();snapSave();
   var corps=sw;
   if(sw.source==='roster'){
     // fiche globale : on n'écrit que la section « edition », l'identité reste au Roster
@@ -658,25 +753,50 @@ async function saveSW(sw){
     if(DB)return DB.doc('songwriters/'+sw.id).set(corps);
     return;
   }
-  if(sw.source==='planning'){
+  if(sw.source==='planning'||sw.source==='base'){
     // profil déduit du Planning : on ne garde que la partie édition, sous son propre identifiant
     corps={};CHAMPS_EDITION.forEach(function(c){corps[c]=sw[c];});
-    corps.nom=sw.nom;corps.source='planning';corps.maj=new Date().toISOString();
+    corps.nom=sw.nom;corps.source=sw.source;corps.maj=new Date().toISOString();
     store.overlays[sw.id]=corps;
   }
   if(MODE==='local')return void localSave();
   if(MODE==='firebase')return rtSet('songwriters/'+sw.id,corps);
   if(DB)return DB.doc('songwriters/'+sw.id).set(corps);
 }
-async function delSW(id){
+// Une fiche disparaît : ses rapprochements, ses fusions et ses places dans les ventilations aussi.
+function oublierSW(id){
+  Object.keys(store.liens).forEach(function(so){var L=store.liens[so]||{};
+    Object.keys(L).forEach(function(k){if(L[k]===id)delete L[k];});});
+  Object.keys(store.fusions||{}).forEach(function(k){
+    if(k===id||store.fusions[k]===id)delete store.fusions[k];});
+  var touches=[];
+  Object.keys(store.edits).forEach(function(so){var E=store.edits[so]||{};
+    Object.keys(E).forEach(function(c){var ed=E[c]||{},avant=JSON.stringify([ed.sw,ed.alloc]);
+      if(ed.sw)ed.sw=ed.sw.filter(function(x){return x.id!==id;});
+      if(ed.alloc)ed.alloc=ed.alloc.filter(function(x){return x.id!==id;});
+      if(JSON.stringify([ed.sw,ed.alloc])!==avant){delete ed.vsig;touches.push([so,c]);}});});
+  delete store.songwriters[id];delete store.overlays[id];
+  return touches;
+}
+async function enregistrerEdits(touches){
+  var vus={};
+  await Promise.all(touches.filter(function(t){
+    var k=t[0]+':'+bucketOf(t[1]);if(vus[k])return false;vus[k]=1;return true;})
+    .map(function(t){return saveEdit(t[0],t[1]);}));
+}
+async function delSW(id,sw){
+  invalide();snapSave();
   delete store.overlays[id];
   if(MODE==='local')return void localSave();
+  if(MODE==='firebase'&&sw&&sw.source==='roster')
+    return dbFetch('/roster/'+encodeURIComponent(sw.rosterKey||sw.rosterId)+'/edition.json',{method:'DELETE'});
   if(MODE==='firebase')return rtDel('songwriters/'+id);
   if(DB)return DB.doc('songwriters/'+id).delete();
 }
 async function saveMeta(){
+  invalide();snapSave();
   var body={societes:store.meta,liens:store.liens,fusions:store.fusions,ecartes:store.ecartes,
-    maj:new Date().toISOString()};
+    base:baseCfg(),maj:new Date().toISOString()};
   if(MODE==='local')return void localSave();
   if(MODE==='firebase')return rtSet('meta/state',body);
   if(DB)return DB.doc('meta/state').set(body);
@@ -693,12 +813,14 @@ async function logImport(rec){
 function socNom(id){var s=SOCIETES.filter(function(x){return x.id===id;})[0];return s?s.nom:id;}
 function socCoad(id){var m=store.meta[id]||{},s=SOCIETES.filter(function(x){return x.id===id;})[0];
   return m.coad||(s?s.coad:'');}
-function swList(soc){
+function swList(soc){return memo('swl:'+soc,function(){return swList0(soc);});}
+function swList0(soc){
   return Object.keys(store.songwriters).map(function(k){return store.songwriters[k];})
     .filter(function(s){return !s.societe||s.societe===soc;})
     .sort(function(a,b){return (a.nom||'').localeCompare(b.nom||'','fr');});
 }
-function swIndex(soc){
+function swIndex(soc){return memo('ix:'+soc,function(){return swIndex0(soc);});}
+function swIndex0(soc){
   // index des correspondances sûres : COAD, IPI, ayants droit déjà rattachés, alias, nom
   var ix={};
   swList(soc).forEach(function(s){
@@ -743,14 +865,23 @@ function identite(sw){
   return p.join(' · ');
 }
 function big2(s){var o=[];for(var i=0;i<s.length-1;i++)o.push(s.slice(i,i+2));return o;}
+var SIMIL=new Map();
 function simil(a,b){
   if(!a||!b)return 0;if(a===b)return 1;
+  var k=a<b?a+'|'+b:b+'|'+a,v=SIMIL.get(k);if(v!==undefined)return v;
+  v=simil0(a,b);SIMIL.set(k,v);return v;
+}
+function simil0(a,b){
   var ga=big2(a),gb=big2(b),used={},inter=0;
   ga.forEach(function(g){for(var i=0;i<gb.length;i++){if(!used[i]&&gb[i]===g){used[i]=1;inter++;break;}}});
   return 2*inter/((ga.length+gb.length)||1);
 }
 // tous les ayants droit auteurs du catalogue, agrégés
 function allAD(soc){
+  // copie superficielle : les appelants annotent parfois les objets (match, _sc)
+  return memo('ad:'+soc,function(){return allAD0(soc);}).map(function(x){return Object.assign({},x);});
+}
+function allAD0(soc){
   var O=store.oeuvres[soc]||{},m={};
   Object.keys(O).forEach(function(c){
     var o=O[c],aut=auteurs(o),tot=aut.reduce(function(s,a){return s+a.dep;},0)||1;
@@ -765,7 +896,8 @@ function allAD(soc){
   return Object.keys(m).map(function(k){return m[k];}).sort(function(a,b){return b.net-a.net;});
 }
 // niveau de confiance du rapprochement d'un ayant droit
-function swMatch(soc,ad){
+function swMatch(soc,ad){return memo('m:'+soc+':'+ad.cle,function(){return swMatch0(soc,ad);});}
+function swMatch0(soc,ad){
   var L=store.liens[soc]||{};
   if(L[ad.cle]!==undefined)
     return L[ad.cle]==='-'?{id:null,niveau:'ignore'}:{id:L[ad.cle],niveau:'valide',raison:'validé'};
@@ -793,7 +925,8 @@ function swMatch(soc,ad){
   return {id:null,niveau:'aucun'};
 }
 // file d'attente : ce qui reste à trancher
-function enAttente(soc){
+function enAttente(soc){return memo('att:'+soc,function(){return enAttente0(soc);});}
+function enAttente0(soc){
   return allAD(soc).map(function(ad){var m=swMatch(soc,ad);ad.match=m;return ad;})
     .filter(function(ad){return ad.match.niveau==='probable'||ad.match.niveau==='doute'||ad.match.niveau==='aucun';});
 }
@@ -842,7 +975,8 @@ function chercherPochette(sp,yt,cb){
     .catch(function(){if(fait)return;fait=true;clearTimeout(to);secours();});
 }
 
-function attach(soc,code){
+function attach(soc,code){return memo('at:'+soc+':'+code,function(){return attach0(soc,code);});}
+function attach0(soc,code){
   var o=(store.oeuvres[soc]||{})[code]||{},e=(store.edits[soc]||{})[code];
   var aut=auteurs(o);
   if(e&&e.sw)return {list:e.sw.filter(function(x){return x.id&&store.songwriters[x.id];}),auto:false,aut:aut};
@@ -913,11 +1047,13 @@ function ventStatut(soc,code,list){
   var e=(store.edits[soc]||{})[code]||{};
   return e.vsig===vsig(list)?'valide':'attente';
 }
-function ventilationsEnAttente(soc){
+function ventilationsEnAttente(soc){return memo('vat:'+soc,function(){return ventilationsEnAttente0(soc);});}
+function ventilationsEnAttente0(soc){
   return rows(soc).filter(function(r){return r.vstat==='attente';})
     .sort(function(a,b){return b.net-a.net;});
 }
-function rows(soc){
+function rows(soc){return memo('rows:'+soc,function(){return rows0(soc);});}
+function rows0(soc){
   var O=store.oeuvres[soc]||{},E=store.edits[soc]||{};
   return Object.keys(O).map(function(code){
     var o=O[code],e=E[code]||{},v=ventile(soc,code,o);
@@ -930,7 +1066,8 @@ function rows(soc){
       sw:v.list,swAuto:v.auto,vstat:ventStatut(soc,code,v.list)};
   });
 }
-function swRows(soc){
+function swRows(soc){return memo('swr:'+soc,function(){return swRows0(soc);});}
+function swRows0(soc){
   var rs=rows(soc),agg={};
   swList(soc).forEach(function(s){agg[s.id]={sw:s,net:0,oeuvres:0,auto:0,sPh:0,sDep:0};});
   rs.forEach(function(r){r.sw.forEach(function(x){
@@ -941,7 +1078,8 @@ function swRows(soc){
   return Object.keys(agg).map(function(k){var a=agg[k];
     a.moyPh=a.oeuvres?a.sPh/a.oeuvres:0;a.moyDep=a.oeuvres?a.sDep/a.oeuvres:0;return a;});
 }
-function totals(soc){
+function totals(soc){return memo('tot:'+soc,function(){return totals0(soc);});}
+function totals0(soc){
   var rs=rows(soc),t={net:0,oeuvres:0,avecRev:0,ratt:0,ans:{},reps:{},partSoc:0,partSocPh:0,nPart:0,na:0};
   rs.forEach(function(r){
     t.net+=r.net;
@@ -1044,7 +1182,8 @@ function renderChrome(){
     (ROSTER.length||PLANNING.length?' <span class="mut">(dont '+ROSTER.length+' du roster'+
       (nbPlanning?' et '+nbPlanning+' du planning':'')+')</span>':''));
   if(t.na)p.push('<span class="tag neutral">'+eur(t.na)+' € non affectés à une œuvre</span>');
-  p.push(MODE==='partage'?'<span class="tag ok">base partagée</span>'
+  if(SYNCHRO)p.push('<span class="tag neutral">synchronisation…</span>');
+  else p.push(MODE==='partage'?'<span class="tag ok">base partagée</span>'
     :MODE==='firebase'?'<span class="tag ok">Firebase Toolbox</span>'
     :BESOIN_SESSION?'<span class="tag warn">session Toolbox absente — base locale</span>'
     :'<span class="tag neutral">base locale à ce navigateur</span>');
@@ -1127,7 +1266,7 @@ function kpi(c,k,v,s){return '<div class="kpi '+c+'"><div class="k">'+k+'</div><
 // que dans les dépôts Sacem est externe, jusqu'à ce qu'on en décide autrement sur sa fiche.
 function typeSW(sw){
   if(sw&&sw.type)return sw.type;
-  return (sw&&(sw.source==='roster'||sw.source==='planning'))?'roster':'externe';
+  return (sw&&(sw.source==='roster'||sw.source==='planning'||sw.source==='base'))?'roster':'externe';
 }
 function estBLZ(sw){return typeSW(sw)==='roster';}
 // Le nom affiché d'un artiste du roster vient du Roster et de lui seul : rattacher des
@@ -1136,6 +1275,7 @@ function nomFige(sw){return !!sw&&sw.source==='roster';}
 function origineTag(sw){
   return sw.source==='roster'?'<span class="tag neutral">roster</span>'
     :sw.source==='planning'?'<span class="tag neutral">planning</span>'
+    :sw.source==='base'?'<span class="tag neutral">base</span>'
     :'<span class="tag neutral">fiche outil</span>';
 }
 function swTags(r){
@@ -1253,9 +1393,14 @@ function viewSongwriters(){
     h+='<div class="panel"><div class="phead"><h2>Songwriters '+esc(socNom(soc))+'</h2>'+
       '<div class="rowline"><span class="note">Les signés : profils du roster et du planning de la Toolbox. '+
       'L\'outil n\'y ajoute que l\'édition — part cédée, COAD, IPI et ayants droit rattachés.</span>'+
+      '<button class="btn sm" id="sw-reset">Réinitialiser…</button>'+
       '<button class="btn primary sm" id="sw-new">Nouvelle fiche</button></div></div>'+
       (dedans.length?tableau(dedans)
-        :'<div class="pbody mut">Aucun songwriter signé pour l\'instant.</div>')+'</div>';
+        :'<div class="pbody mut">Aucun songwriter signé pour l\'instant.</div>')+
+      (function(){var ex=Object.keys(baseCfg().exclus);
+        return ex.length?'<div class="pbody mut" style="font-size:12px">Retirés de l\'outil : '+
+          ex.map(function(k){return esc(k)+' <button class="btn sm" data-retab="'+esc(k)+'">Rétablir</button>';}).join(' · ')+
+          '</div>':'';})()+'</div>';
     h+='<div class="panel"><div class="phead"><h2>Songwriters externes</h2>'+
       '<span class="note">Parts éditoriales récupérées sur des auteurs qui ne sont pas signés chez nous, '+
       'contrats terminés et artistes non signés. Ils comptent dans les revenus mais plus dans le roster.</span></div>'+
@@ -1389,6 +1534,7 @@ function viewImports(){
 
 /* ============================== rendu ============================== */
 function render(){
+  invalide();
   renderChrome();
   var v=el('view');
   v.innerHTML=state.tab==='apercu'?viewApercu():state.tab==='oeuvres'?viewOeuvres():
@@ -1468,6 +1614,12 @@ function render(){
     var n=el('q');if(n){n.focus();n.setSelectionRange(p,p);}};
   ['empty-import','imp-new','imp-new2'].forEach(function(i){var b=el(i);if(b)b.onclick=modalImport;});
   ['sw-new','sw-new2'].forEach(function(i){var b=el(i);if(b)b.onclick=function(){ficheSW(null);};});
+  if(el('sw-reset'))el('sw-reset').onclick=modalReset;
+  v.querySelectorAll('[data-retab]').forEach(function(b){b.onclick=async function(){
+    delete baseCfg().exclus[this.dataset.retab];
+    try{await saveMeta();}catch(e){}
+    if(MODE==='firebase'){try{await loadAll();}catch(e){}}else construireBase();
+    render();toast('« '+this.dataset.retab+' » rétabli');};});
 }
 
 /* ============================== modales ============================== */
@@ -1504,6 +1656,12 @@ function ficheOeuvre(code){
     return {i:i,coad:x.coad,nom:x.nom,ipi:x.ipi,nf:x.nf||'',ecr:x.dep,ecrDr:x.dr||0,ecrPh:x.ph,
       roles:Object.keys(x.roles).join('/'),swId:swId,coche:!!cur,role:Object.keys(x.roles).join('/'),
       deal:cur?(cur.part!=null?cur.part:100):(sw&&sw.part!=null?sw.part:100)};});
+  // ventilés sur l'œuvre mais plus reliés à une ligne du dépôt (rattachement Sacem à refaire)
+  a.list.forEach(function(x){
+    if(lignes.some(function(l){return l.swId===x.id;}))return;
+    var sw=store.songwriters[x.id];if(!sw)return;
+    lignes.push({i:lignes.length,coad:'',nom:sw.nom,ipi:'',nf:'',ecr:0,ecrDr:0,ecrPh:0,roles:'—',
+      role:'—',swId:x.id,coche:true,orphelin:true,deal:x.part!=null?x.part:(sw.part!=null?sw.part:100)});});
   // éditeurs regroupés par identité, avec la nôtre repérée sur place
   var eds=(function(){
     var m={};
@@ -1647,6 +1805,7 @@ function ficheOeuvre(code){
     h+=aSort.length?aSort.map(function(l){
       return '<tr><td class="l mut">'+esc(l.roles)+'</td>'+
         '<td class="l'+(l.coche?' w':'')+'">'+esc(l.nom)+(l.swId?'':' <span class="tag warn">sans fiche</span>')+
+        (l.orphelin?' <span class="tag warn">rattachement Sacem à refaire</span>':'')+
         '<div class="mini">'+(l.swId&&store.songwriters[l.swId]&&norm(store.songwriters[l.swId].nom)!==norm(l.nom)
           ?esc(store.songwriters[l.swId].nom)+' · ':'')+esc(l.coad||'')+'</div></td>'+
         '<td class="num ph">'+pv(l.ecrPh)+' %</td>'+
@@ -1898,7 +2057,8 @@ function ficheSW(id,pre){
     '</div></div>';
   openModal('<div class="eyebrow">Songwriter</div><h2>'+esc(sw.nom||'Nouvelle fiche')+'</h2>'+
     (identite(sw)?'<div class="mini" style="margin-top:3px">'+identite(sw)+'</div>':''),body,
-    (id?'<button class="btn left" id="s-del">Supprimer</button>':'<span class="left"></span>')+
+    (id?'<button class="btn left" id="s-del">'+(sw.source?'Retirer de l\'outil':'Supprimer la fiche')+'</button>'
+      :'<span class="left"></span>')+
     '<span class="mut" id="s-state"></span><button class="btn" id="s-cancel">Annuler</button>'+
     '<button class="btn primary" id="s-save">Enregistrer</button>','wide');
 
@@ -2010,12 +2170,35 @@ function ficheSW(id,pre){
       (sorties.length>8?'<div class="hint">'+(sorties.length-8)+' autres sorties</div>':'');
   }
   el('s-cancel').onclick=closeModal;
-  if(id&&el('s-del'))el('s-del').onclick=async function(){
-    if(!confirm('Supprimer la fiche « '+(sw.nom||'')+' » ?'))return;
-    delete store.songwriters[sw.id];
-    var L=store.liens[soc]||{};Object.keys(L).forEach(function(k){if(L[k]===sw.id)delete L[k];});
-    try{await delSW(sw.id);await saveLiens();}catch(e){}
-    closeModal();render();toast('Fiche supprimée');};
+  if(id&&el('s-del'))el('s-del').onclick=function(){
+    var derive=!!sw.source,nom=sw.nom||'';
+    var n=0;Object.keys(store.edits).forEach(function(so){var E=store.edits[so]||{};
+      Object.keys(E).forEach(function(c){if((E[c].sw||[]).some(function(x){return x.id===sw.id;}))n++;});});
+    el('s-state').innerHTML='';
+    var zone=document.createElement('div');
+    zone.className='filerow';zone.style.cssText='display:block;border-color:var(--warn);margin-top:12px';
+    zone.innerHTML='<b>'+(derive?'Retirer « '+esc(nom)+' » de l\'outil Catalogues ?':'Supprimer la fiche « '+esc(nom)+' » ?')+'</b>'+
+      '<div class="hint">'+(derive
+        ?'L\'artiste reste au '+(sw.source==='roster'?'Roster':sw.source==='planning'?'Planning':'roster de base')+
+         ' de la Toolbox ; il ne sera simplement plus proposé ici. Ses rattachements Sacem sont effacés. '+
+         'Vous pourrez le rétablir depuis l\'onglet Songwriters.'
+        :'La fiche et ses rattachements Sacem sont effacés définitivement.')+
+        (n?' Il figure dans la ventilation de '+n+' œuvre'+(n>1?'s':'')+', qui sera recalculée sans lui.':'')+'</div>'+
+      '<div class="rowline" style="margin-top:9px"><button class="btn sm primary" id="s-del-ok">'+
+        (derive?'Retirer':'Supprimer')+'</button><button class="btn sm" id="s-del-no">Annuler</button></div>';
+    el('modalroot').querySelector('.modal .body').appendChild(zone);
+    zone.scrollIntoView({block:'nearest'});
+    el('s-del-no').onclick=function(){zone.remove();};
+    el('s-del-ok').onclick=async function(){
+      this.disabled=true;
+      if(derive){
+        var B=baseCfg(),cle=norm(nom);
+        if(sw.source==='base')delete B.ajouts[cle];else B.exclus[cle]=1;
+      }
+      var touches=oublierSW(sw.id);
+      try{await delSW(sw.id,sw);await saveMeta();await enregistrerEdits(touches);}catch(e){}
+      closeModal();render();toast(derive?'« '+nom+' » retiré de l\'outil':'Fiche supprimée');};
+  };
   el('s-save').onclick=async function(){
     var nom=el('s-nom').value.trim();
     if(!nom){el('s-state').textContent='Le nom est obligatoire';return;}
@@ -2024,6 +2207,12 @@ function ficheSW(id,pre){
     sw.ipis=el('s-ipis').value.split('\n').map(function(x){return x.trim();}).filter(Boolean);
     sw.alias=el('s-alias').value.split('\n').map(function(x){return x.trim();}).filter(Boolean);
     sw.note=el('s-note').value.trim();sw.ads=ads;
+    if(!id&&!sw.source&&sw.type==='roster'){
+      var B=baseCfg(),cle=norm(nom);
+      B.ajouts[cle]={nom:nom};delete B.exclus[cle];
+      sw.id='b:'+cle;sw.source='base';
+      try{await saveMeta();}catch(e){}
+    }
     store.songwriters[sw.id]=sw;
     var L=store.liens[soc]||(store.liens[soc]={});
     ads.forEach(function(a){L[adKey(a)]=sw.id;});
@@ -2031,6 +2220,107 @@ function ficheSW(id,pre){
     try{await saveSW(sw);await saveLiens();closeModal();render();toast('Fiche « '+nom+' » enregistrée');}
     catch(err){el('s-state').textContent='Échec : '+(err&&err.code?err.code:'écriture refusée');this.disabled=false;}
   };
+}
+
+/* ---------- réinitialisation des songwriters ---------- */
+// Une fiche créée à la main qui désigne quelqu'un du Roster ou du Planning est un doublon.
+function doublonDeBase(x){
+  return Object.keys(store.songwriters).some(function(k){var d=store.songwriters[k];
+    if(!d.source||d===x)return false;
+    return [d.nom].concat(d.alias||[]).some(function(n){
+      return memePersonne(n,x.nom)||(x.alias||[]).some(function(al){return memePersonne(n,al);});});});
+}
+function modalReset(){
+  var tout=Object.keys(store.songwriters).map(function(k){return store.songwriters[k];});
+  var outils=tout.filter(function(x){return !x.source;});
+  var dbl=outils.filter(doublonDeBase);
+  var ext=outils.filter(function(x){return !estBLZ(x)&&dbl.indexOf(x)<0;});
+  var nbAds=tout.reduce(function(n,x){return n+(x.ads||[]).length;},0);
+  openModal('<div class="eyebrow">Songwriters</div><h2>Réinitialiser la liste</h2>',
+    '<p style="margin:0 0 10px">La liste est reconstruite à partir des artistes du <b>Roster</b> et des songwriters du '+
+    '<b>Planning</b> de la Toolbox, sans doublons : un même nom écrit de deux façons (« Seb » / « Sébastien ») '+
+    'ne donne plus qu\'une fiche. Le duo MAB laisse la place à Gabriel et Hadrien Mabilat, Malaka est ajouté, '+
+    'et vos retraits restent en place.</p>'+
+    '<div class="grid2"><div><label class="fl">Effacé</label><ul style="margin:4px 0 0 18px;padding:0;font-size:12.5px">'+
+      '<li>les rattachements aux profils Sacem ('+nbAds+' ayant'+(nbAds>1?'s':'')+' droit rattaché'+(nbAds>1?'s':'')+
+        ', COAD, IPI, pseudonymes ajoutés)</li>'+
+      '<li>les rapprochements validés et les fusions</li>'+
+      '<li>les '+(outils.length-ext.length)+' fiche'+(outils.length-ext.length>1?'s':'')+' créée'+
+        (outils.length-ext.length>1?'s':'')+' à la main qui font doublon'+
+        (dbl.length?' ('+dbl.map(function(x){return esc(x.nom);}).join(', ')+')':'')+'</li></ul></div>'+
+    '<div><label class="fl">Conservé</label><ul style="margin:4px 0 0 18px;padding:0;font-size:12.5px">'+
+      '<li>catalogue, revenus et fiches œuvres</li>'+
+      '<li>la part cédée, le statut et la note de chaque songwriter</li>'+
+      '<li>les ventilations des œuvres : elles restent comptées et se raccrochent d\'elles-mêmes '+
+        'au dépôt dès que le profil Sacem est rattaché de nouveau</li></ul></div></div>'+
+    (ext.length?'<label class="rowline" style="margin-top:12px;font-size:12.5px;cursor:pointer">'+
+      '<input type="checkbox" id="rz-ext" checked> Garder les '+ext.length+' fiche'+(ext.length>1?'s':'')+
+      ' externe'+(ext.length>1?'s':'')+' créée'+(ext.length>1?'s':'')+' à la main, avec leurs rattachements '+
+      '<span class="mut">('+ext.slice(0,6).map(function(x){return esc(x.nom);}).join(', ')+(ext.length>6?'…':'')+')</span></label>':'')+
+    '<div class="hint" style="margin-top:12px">Par précaution, téléchargez une sauvegarde avant : '+
+      '« Restaurer » la remettra telle quelle.</div>',
+    '<button class="btn left" id="rz-dl">Télécharger une sauvegarde</button><span class="mut" id="rz-state"></span>'+
+    '<button class="btn" id="rz-no">Annuler</button><button class="btn primary" id="rz-go">Réinitialiser</button>');
+  el('rz-dl').onclick=exportBase;el('rz-no').onclick=closeModal;
+  el('rz-go').onclick=async function(){
+    this.disabled=true;el('rz-state').textContent='Réinitialisation…';
+    try{await reinitialiserSW(el('rz-ext')?el('rz-ext').checked:true);
+      closeModal();render();toast('Songwriters réinitialisés : '+swList(state.societe).length+' fiches');}
+    catch(e){el('rz-state').textContent='Échec : '+((e&&e.message)||e);this.disabled=false;}
+  };
+}
+async function reinitialiserSW(garderExt){
+  var avant={};Object.keys(store.songwriters).forEach(function(k){
+    var x=store.songwriters[k];avant[k]={nom:x.nom,alias:x.alias||[]};});
+  // 1. ce qu'on garde de chaque fiche : le contrat, pas l'identité Sacem
+  var contrat=function(x){return {part:x.part==null?null:x.part,type:x.type||'',note:x.note||'',societe:x.societe||''};};
+  var garde={},overlays={};
+  Object.keys(store.songwriters).forEach(function(k){
+    var x=store.songwriters[k];
+    if(!x.source){if(garderExt&&!estBLZ(x)&&!doublonDeBase(x))garde[k]=x;return;}
+    if(x.source==='roster')return;                        // réécrit plus bas, sur sa fiche Roster
+    overlays[k]=Object.assign(contrat(x),{nom:x.nom,source:x.source});});
+  // 2. rapprochements : on ne garde que ceux des externes conservés
+  Object.keys(store.liens).forEach(function(so){var L=store.liens[so]||{},N={};
+    Object.keys(L).forEach(function(c){if(garde[L[c]])N[c]=L[c];});store.liens[so]=N;});
+  store.fusions={};store.ecartes={};
+  // 3. écriture
+  if(MODE==='firebase'){
+    var corps={};
+    Object.keys(garde).forEach(function(k){var x=Object.assign({},garde[k]);delete x.id;corps[k]=x;});
+    Object.keys(overlays).forEach(function(k){corps[k]=overlays[k];});
+    await rtSet('songwriters',corps);
+    await Promise.all(ROSTER.map(function(a){
+      var sw=store.songwriters['r:'+a.id],c=sw?contrat(sw):null;
+      a.edition=c;
+      return dbFetch('/roster/'+encodeURIComponent(a._key||a.id)+'/edition.json',
+        c?{method:'PUT',body:JSON.stringify(clean(c))}:{method:'DELETE'});}));
+    await saveMeta();
+    await loadAll();
+  }else{
+    store.overlays=overlays;
+    Object.keys(store.songwriters).forEach(function(k){if(!garde[k])delete store.songwriters[k];});
+    construireBase();
+    localSave();
+  }
+  // 4. ventilations : une fiche disparue est remplacée par celle qui porte désormais son nom
+  var touches=[];
+  var retrouve=function(id){
+    if(store.songwriters[id])return id;
+    var a=avant[id];if(!a)return null;
+    var noms=[a.nom].concat(a.alias);
+    var k=Object.keys(store.songwriters).filter(function(k2){var x=store.songwriters[k2];
+      return noms.some(function(n){return memePersonne(n,x.nom)||(x.alias||[]).some(function(al){return memePersonne(n,al);});});})[0];
+    return k||null;};
+  Object.keys(store.edits).forEach(function(so){var E=store.edits[so]||{};
+    Object.keys(E).forEach(function(c){var ed=E[c]||{};if(!ed.sw&&!ed.alloc)return;
+      var avantJ=JSON.stringify([ed.sw,ed.alloc]);
+      var map=function(l){return (l||[]).map(function(x){var n=retrouve(x.id);return n?Object.assign({},x,{id:n}):null;})
+        .filter(Boolean).filter(function(x,i,arr){return arr.findIndex(function(y){return y.id===x.id;})===i;});};
+      if(ed.sw)ed.sw=map(ed.sw);if(ed.alloc)ed.alloc=map(ed.alloc);
+      if(JSON.stringify([ed.sw,ed.alloc])!==avantJ){delete ed.vsig;touches.push([so,c]);}});});
+  await enregistrerEdits(touches);
+  invalide();snapSave();
 }
 
 /* ---------- import ---------- */
@@ -2214,11 +2504,14 @@ el('file-restore').onchange=function(){if(this.files&&this.files[0])importBase(t
     }catch(e){}
   }
   SOCIETES.forEach(function(s2){store.oeuvres[s2.id]={};store.edits[s2.id]={};store.liens[s2.id]={};});
+  if(location.protocol!=='file:'&&snapLoad()){SYNCHRO=true;}
   render();
   await connect();
   try{await loadAll();}catch(e){toast('Base momentanément illisible — '+(e.message||e));}
-  appliquerFusions();
+  if(MODE!=='firebase')appliquerFusions();
+  SYNCHRO=false;
   render();
+  snapSave();
 })();
 })();
 </script>
