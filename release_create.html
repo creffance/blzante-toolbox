@@ -40,6 +40,18 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .form-select { cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23777'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
 
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+/* Œuvres du catalogue & statut Sacem */
+.oe-row { display: grid; grid-template-columns: minmax(90px,1fr) 1.6fr 150px; gap: 8px; align-items: center; margin-bottom: 6px; }
+.oe-track { font-size: 0.72rem; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.oe-row .form-input, .oe-row .form-select { padding: 9px 10px; font-size: 0.72rem; }
+.oe-row .form-select:disabled { opacity: 0.7; cursor: default; }
+.oe-hint { font-size: 0.6rem; color: var(--muted); margin-top: 6px; line-height: 1.6; }
+.oe-empty { font-size: 0.68rem; color: #555; }
+.sacem-badges { display: inline-flex; gap: 4px; flex-wrap: wrap; }
+.sacem-b { font-size: 0.55rem; letter-spacing: 0.06em; padding: 2px 6px; border: 1px solid var(--border); color: var(--muted); white-space: nowrap; }
+.sacem-b.depose { border-color: rgba(74,222,128,0.4); color: var(--success); }
+.sacem-b.en_cours { border-color: rgba(232,197,71,0.4); color: var(--accent); }
+.sacem-b.a_lancer { border-color: rgba(255,107,107,0.35); color: var(--error); }
 .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
 
 /* Conditional fields */
@@ -103,83 +115,6 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
   transition: color 0.15s;
 }
 .sw-tag-remove:hover { color: var(--error); }
-
-/* Feat tags */
-.feat-input-wrap { display: flex; gap: 6px; }
-.feat-input-wrap .form-input { flex: 1; }
-.feat-add-btn {
-  padding: 0 14px; background: none; border: 1px solid var(--border); color: var(--accent);
-  font-family: 'Syne Mono', monospace; font-size: 0.72rem; cursor: pointer; transition: all 0.15s; white-space: nowrap;
-}
-.feat-add-btn:hover { border-color: var(--accent); }
-.feat-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-.feat-tag {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 4px 10px; font-size: 0.68rem; background: #1a1208;
-  border: 1px solid #3d3010; color: var(--accent);
-}
-.feat-tag-x { cursor: pointer; color: var(--muted); font-size: 0.8rem; line-height: 1; transition: color 0.15s; }
-.feat-tag-x:hover { color: var(--error); }
-
-/* BLZ Tracks (EP/Album) */
-.blz-tracks-section { margin-top: 4px; }
-.blz-track-entry {
-  background: var(--surface); border: 1px solid var(--border); padding: 14px 16px;
-  margin-bottom: 6px; position: relative;
-}
-.blz-track-entry .form-group { margin-bottom: 10px; }
-.blz-track-entry .form-group:last-child { margin-bottom: 0; }
-.blz-track-row { display: flex; gap: 8px; }
-.blz-track-row .form-group { flex: 1; }
-.blz-track-num {
-  font-family: 'Syne Mono', monospace; font-size: 0.58rem; color: var(--muted);
-  letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 8px;
-  display: flex; justify-content: space-between; align-items: center;
-}
-.blz-track-remove {
-  cursor: pointer; color: #444; font-size: 0.72rem; transition: color 0.15s; background: none; border: none; padding: 2px 6px;
-}
-.blz-track-remove:hover { color: var(--error); }
-.add-track-btn {
-  width: 100%; padding: 10px; background: none; border: 1px dashed var(--border);
-  color: var(--muted); font-family: 'Syne Mono', monospace; font-size: 0.68rem;
-  letter-spacing: 0.08em; cursor: pointer; transition: all 0.15s; margin-top: 4px;
-}
-.add-track-btn:hover { border-color: var(--accent); color: var(--accent); }
-
-/* Track SW mini picker */
-.track-sw-picker { position: relative; }
-.track-sw-input {
-  width: 100%; font-family: 'Syne Mono', monospace; font-size: 0.75rem;
-  padding: 8px 12px; border: 1px solid var(--border); background: var(--bg);
-  color: var(--text); outline: none; transition: border-color 0.2s;
-}
-.track-sw-input:focus { border-color: #555; }
-.track-sw-dropdown {
-  display: none; position: absolute; top: 100%; left: 0; right: 0; z-index: 12;
-  background: var(--surface); border: 1px solid var(--border); border-top: none;
-  max-height: 160px; overflow-y: auto;
-}
-.track-sw-dropdown.open { display: block; }
-.track-sw-opt {
-  padding: 7px 12px; font-size: 0.72rem; cursor: pointer; transition: background 0.1s;
-}
-.track-sw-opt:hover { background: #1a1a1a; }
-.track-sw-opt.selected { color: var(--accent); }
-.track-sw-opt.hidden { display: none; }
-.track-sw-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
-.track-sw-tag {
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 2px 8px; font-size: 0.6rem; background: #1a1a1a;
-  border: 1px solid var(--border); color: var(--text);
-}
-.track-sw-tag-x { cursor: pointer; color: var(--muted); font-size: 0.72rem; }
-.track-sw-tag-x:hover { color: var(--error); }
-
-.sw-auto-note {
-  font-size: 0.58rem; color: var(--muted); letter-spacing: 0.08em; margin-top: 4px;
-  font-style: italic;
-}
 
 /* Submit */
 .submit-btn {
@@ -314,24 +249,28 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
     <input type="text" class="form-input" id="artistName" placeholder="Nom de l'artiste" autocomplete="off" />
   </div>
 
-  <div class="form-group conditional" id="featGroup">
-    <label class="form-label">Featuring</label>
-    <div class="feat-input-wrap">
-      <input type="text" class="form-input" id="featInput" placeholder="Nom de l'artiste feat." autocomplete="off" />
-      <button type="button" class="feat-add-btn" id="featAddBtn">+ Ajouter</button>
-    </div>
-    <div class="feat-tags" id="featTags"></div>
-  </div>
-
   <div class="form-group conditional" id="projectGroup">
     <label class="form-label">Nom du projet (EP / Album)</label>
     <input type="text" class="form-input" id="projectName" placeholder="Titre du projet" autocomplete="off" />
   </div>
 
   <div class="form-group conditional" id="epTracksGroup">
-    <label class="form-label">Titres BLZante</label>
-    <div class="blz-tracks-section" id="blzTracksList"></div>
-    <button type="button" class="add-track-btn" id="addTrackBtn">+ Ajouter un titre BLZante</button>
+    <div class="form-group" style="display:none">
+      <label class="form-label">Nombre de titres total (optionnel)</label>
+      <input type="number" class="form-input" id="epTrackCount" placeholder="Ex: 12" min="1" max="30" autocomplete="off" />
+    </div>
+    <div class="form-group" style="display:none">
+      <label class="form-label">Noms des tracks (optionnel — un par ligne)</label>
+      <textarea class="form-input form-textarea" id="epTrackNames" placeholder="Track 1&#10;Track 2&#10;Track 3" rows="4"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nombre de titres BLZante</label>
+      <input type="number" class="form-input" id="blzTrackCount" placeholder="Ex: 3" min="0" max="30" autocomplete="off" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Titres BLZante (un par ligne)</label>
+      <textarea class="form-input form-textarea" id="blzTrackNames" placeholder="Titre BLZ 1&#10;Titre BLZ 2" rows="3"></textarea>
+    </div>
   </div>
 
   <div class="form-group conditional" id="trackGroup">
@@ -352,6 +291,14 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
     </div>
   </div>
 
+  <div class="form-group conditional" id="oeuvresGroup">
+    <label class="form-label">Œuvres du catalogue &amp; statut Sacem</label>
+    <div id="oeuvresRows"></div>
+    <datalist id="oeuvresList"></datalist>
+    <div class="oe-hint">Liez chaque titre à son œuvre du catalogue éditorial. Une œuvre déjà au catalogue Sacem est « Déposée » d'office ;
+      sinon indiquez si le dépôt est à lancer ou en cours.</div>
+  </div>
+
   <div class="form-group">
     <label class="form-label">Lien pour image (Spotify, YouTube, Instagram…)</label>
     <input type="text" class="form-input" id="releaseLink" placeholder="Coller un lien pour récupérer l'artwork automatiquement" autocomplete="off" />
@@ -364,8 +311,8 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
     </div>
   </div>
 
-  <div class="form-group" id="swGroup">
-    <label class="form-label" id="swGroupLabel">Songwriters BLZante</label>
+  <div class="form-group">
+    <label class="form-label">Songwriters BLZante</label>
     <div class="sw-picker">
       <input type="text" class="sw-picker-input" id="swSearch" placeholder="Rechercher un songwriter..." autocomplete="off" />
       <div class="sw-dropdown" id="swDropdown">
@@ -446,174 +393,78 @@ async function fbDelete(id) {
 // ─── State ───
 let selectedSw = [];
 let editId = null;
-let blzTracks = []; // [{title, link, songwriters:[], featurings:[]}]
-let featurings = []; // event-level feat artists (Single/Synchro/Cert)
 
-// ─── Songwriter list ───
-const SW_LIST = ['2B','AKATCHE','OZZY','BRÖ','CHERI','DANI TERREUR','EMY JO','GABRIEL MABILAT','HADRIEN MABILAT','HUGO LARDENET','IVY','KEV 117','LAGOS IN PARIS','LAURINA MALAKA','LEANDRE PICK','LEITH','LIONNEL BUZAC','LONIR','MAB','MALAKA','MATSHIMOTO','NINO VELLA','NOLAN','PABLO','PALMAE','PIERRE-LAURENT FAURE','RITUAL X','ROI LUIS','SACHA MALAKA','SEBASTIEN ROUSSELET','VINCHA','VJ','LE SERI'];
-
-// ─── BLZ Tracks (EP/Album) ───
-function renderBlzTracks() {
-  const list = document.getElementById('blzTracksList');
-  list.innerHTML = '';
-  blzTracks.forEach((t, idx) => {
-    const el = document.createElement('div');
-    el.className = 'blz-track-entry';
-    el.innerHTML = `
-      <div class="blz-track-num">
-        <span>Titre ${idx + 1}</span>
-        <button type="button" class="blz-track-remove" data-idx="${idx}">✕</button>
-      </div>
-      <div class="form-group">
-        <input type="text" class="form-input" placeholder="Titre du track" value="${escH(t.title)}" data-idx="${idx}" data-field="title" />
-      </div>
-      <div class="form-group">
-        <input type="text" class="form-input" placeholder="Lien Spotify ou YouTube" value="${escH(t.link)}" data-idx="${idx}" data-field="link" />
-      </div>
-      <div class="form-group">
-        <label class="form-label" style="margin-bottom:4px">Featuring</label>
-        <div class="feat-input-wrap">
-          <input type="text" class="form-input track-feat-input" placeholder="Nom de l'artiste feat." data-idx="${idx}" autocomplete="off" />
-          <button type="button" class="feat-add-btn track-feat-add" data-idx="${idx}">+</button>
-        </div>
-        <div class="feat-tags track-feat-tags" data-idx="${idx}">
-          ${(t.featurings||[]).map(f => `<span class="feat-tag">${escH(f)} <span class="feat-tag-x track-feat-remove" data-feat="${escH(f)}" data-idx="${idx}">✕</span></span>`).join('')}
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label" style="margin-bottom:4px">Songwriters BLZante</label>
-        <div class="track-sw-picker" data-idx="${idx}">
-          <input type="text" class="track-sw-input" placeholder="Rechercher..." autocomplete="off" />
-          <div class="track-sw-dropdown">
-            ${SW_LIST.map(sw => `<div class="track-sw-opt${t.songwriters.includes(sw) ? ' selected' : ''}" data-sw="${escH(sw)}">${sw}</div>`).join('')}
-          </div>
-        </div>
-        <div class="track-sw-tags" data-idx="${idx}">
-          ${t.songwriters.map(sw => `<span class="track-sw-tag">${sw} <span class="track-sw-tag-x" data-sw="${escH(sw)}" data-idx="${idx}">✕</span></span>`).join('')}
-        </div>
-      </div>
-    `;
-    list.appendChild(el);
-  });
-  updateSwFromTracks();
+// ─── Œuvres du catalogue (outil Catalogues) & statut Sacem par titre ───
+// Même normalisation que l'outil Catalogues, pour que les clés correspondent des deux côtés.
+const normT = s => String(s == null ? '' : s).replace(/œ/g, 'oe').replace(/Œ/g, 'OE').replace(/æ/g, 'ae').replace(/Æ/g, 'AE').replace(/ß/g, 'ss').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  .toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim();
+const SOCS = [['blzante','BLZante'],['blz-publishing','BLZ Publishing'],['rossinante','Rossinante']];
+const STATUTS = [['a_lancer','À lancer'],['en_cours','En cours'],['depose','Déposé à la Sacem']];
+let OEUVRES = [];            // {soc, code, t, tt, a, c}
+let oeChoix = {};            // clé du titre → {soc, code, titre, statut}
+const libOe = x => (x.tt || x.t) + (x.a ? ' — ' + x.a : '') + ' · ' + (SOCS.find(s => s[0] === x.soc) || [,''])[1] + ' · ' + x.code;
+async function chargerOeuvres() {
+  const res = await Promise.all(SOCS.map(s => dbFetch('/editions/index/' + s[0] + '.json')
+    .then(r => r.ok ? r.json() : null).catch(() => null)));
+  OEUVRES = [];
+  res.forEach((d, i) => Object.keys(d || {}).forEach(code => {
+    const x = d[code] || {}; OEUVRES.push({ soc: SOCS[i][0], code, t: x.t || '', tt: x.tt || '', a: x.a || '', c: x.c, r: x.r || '' });
+  }));
+  OEUVRES.sort((a, b) => (a.tt || a.t).localeCompare(b.tt || b.t, 'fr'));
+  document.getElementById('oeuvresList').innerHTML = OEUVRES.map(x => `<option value="${libOe(x).replace(/"/g, '&quot;')}">`).join('');
+  renderOeuvres();
 }
-
-function escH(s) { return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
-
-function updateSwFromTracks() {
+function titresBLZ() {
   const t = typeSelect.value;
-  if (t !== 'EP' && t !== 'Album') return;
-  const allSw = new Set();
-  blzTracks.forEach(tk => tk.songwriters.forEach(sw => allSw.add(sw)));
-  selectedSw = [...allSw];
-  swOptions.forEach(opt => opt.classList.toggle('selected', selectedSw.includes(opt.dataset.name)));
-  renderTags();
+  if (t === 'Single') return [document.getElementById('trackName').value.trim()].filter(Boolean);
+  if (t === 'EP' || t === 'Album') return document.getElementById('blzTrackNames').value.split(/\n|,|;/).map(x => x.trim()).filter(Boolean);
+  return [];
 }
-
-document.getElementById('addTrackBtn').addEventListener('click', () => {
-  blzTracks.push({ title: '', link: '', songwriters: [], featurings: [] });
-  renderBlzTracks();
-});
-
-document.getElementById('blzTracksList').addEventListener('click', (e) => {
-  // Remove track
-  const rmBtn = e.target.closest('.blz-track-remove');
-  if (rmBtn) { blzTracks.splice(parseInt(rmBtn.dataset.idx), 1); renderBlzTracks(); return; }
-  // Track feat add button
-  const featAddBtn = e.target.closest('.track-feat-add');
-  if (featAddBtn) {
-    const idx = parseInt(featAddBtn.dataset.idx);
-    const inp = featAddBtn.parentElement.querySelector('.track-feat-input');
-    const name = inp.value.trim();
-    if (name && !(blzTracks[idx].featurings||[]).includes(name)) {
-      if (!blzTracks[idx].featurings) blzTracks[idx].featurings = [];
-      blzTracks[idx].featurings.push(name);
-      renderBlzTracks();
-    }
-    return;
-  }
-  // Track feat remove
-  const featRm = e.target.closest('.track-feat-remove');
-  if (featRm) {
-    const idx = parseInt(featRm.dataset.idx);
-    const feat = featRm.dataset.feat;
-    blzTracks[idx].featurings = (blzTracks[idx].featurings||[]).filter(f => f !== feat);
-    renderBlzTracks();
-    return;
-  }
-  // SW option click
-  const swOpt = e.target.closest('.track-sw-opt');
-  if (swOpt) {
-    const picker = swOpt.closest('.track-sw-picker');
-    const idx = parseInt(picker.dataset.idx);
-    const sw = swOpt.dataset.sw;
-    const track = blzTracks[idx];
-    if (track.songwriters.includes(sw)) {
-      track.songwriters = track.songwriters.filter(n => n !== sw);
-      swOpt.classList.remove('selected');
-    } else {
-      track.songwriters.push(sw);
-      swOpt.classList.add('selected');
-    }
-    const inp = picker.querySelector('.track-sw-input');
-    inp.value = '';
-    picker.querySelector('.track-sw-dropdown').classList.remove('open');
-    renderBlzTracks();
-    return;
-  }
-  // SW tag remove
-  const tagX = e.target.closest('.track-sw-tag-x');
-  if (tagX) {
-    const idx = parseInt(tagX.dataset.idx);
-    const sw = tagX.dataset.sw;
-    blzTracks[idx].songwriters = blzTracks[idx].songwriters.filter(n => n !== sw);
-    renderBlzTracks();
-    return;
-  }
-});
-
-// Input change for track fields
-document.getElementById('blzTracksList').addEventListener('input', (e) => {
-  const inp = e.target;
-  if (inp.dataset.field && inp.dataset.idx !== undefined) {
-    blzTracks[parseInt(inp.dataset.idx)][inp.dataset.field] = inp.value;
-  }
-  // SW search filter
-  if (inp.classList.contains('track-sw-input')) {
-    const q = inp.value.toLowerCase();
-    const dd = inp.nextElementSibling;
-    dd.querySelectorAll('.track-sw-opt').forEach(o => {
-      o.classList.toggle('hidden', !o.textContent.toLowerCase().includes(q));
-    });
-    dd.classList.add('open');
-  }
-});
-
-// Enter key for track feat inputs
-document.getElementById('blzTracksList').addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && e.target.classList.contains('track-feat-input')) {
-    e.preventDefault();
-    const idx = parseInt(e.target.dataset.idx);
-    const name = e.target.value.trim();
-    if (name && !(blzTracks[idx].featurings||[]).includes(name)) {
-      if (!blzTracks[idx].featurings) blzTracks[idx].featurings = [];
-      blzTracks[idx].featurings.push(name);
-      renderBlzTracks();
-    }
-  }
-});
-
-// Focus/blur for track SW dropdowns
-document.getElementById('blzTracksList').addEventListener('focusin', (e) => {
-  if (e.target.classList.contains('track-sw-input')) {
-    e.target.nextElementSibling.classList.add('open');
-  }
-});
-document.addEventListener('click', (e) => {
-  if (!e.target.closest('.track-sw-picker')) {
-    document.querySelectorAll('.track-sw-dropdown.open').forEach(d => d.classList.remove('open'));
-  }
-});
+function proposition(titre) {
+  const k = normT(titre);
+  const x = OEUVRES.find(o => normT(o.tt) === k) || OEUVRES.find(o => normT(o.t) === k);
+  return x ? { soc: x.soc, code: x.code, titre: x.t, statut: x.c ? 'depose' : 'a_lancer', auto: true } : { statut: 'a_lancer' };
+}
+function renderOeuvres() {
+  const box = document.getElementById('oeuvresRows');
+  const titres = titresBLZ();
+  if (!titres.length) { box.innerHTML = '<div class="oe-empty">Renseignez le titre du single, ou les titres BLZ du projet.</div>'; return; }
+  box.innerHTML = titres.map(tr => {
+    const k = normT(tr), ch = oeChoix[k] || (oeChoix[k] = proposition(tr));
+    const x = ch.code ? OEUVRES.find(o => o.soc === ch.soc && o.code === ch.code) : null;
+    const auCatalogue = !!(x && x.c);
+    const st = auCatalogue ? 'depose' : (ch.statut || 'a_lancer');
+    return `<div class="oe-row" data-k="${k}">
+      <span class="oe-track" title="${tr.replace(/"/g, '&quot;')}">${tr}</span>
+      <input class="form-input" list="oeuvresList" data-oe="${k}" placeholder="Œuvre du catalogue…" value="${x ? libOe(x).replace(/"/g, '&quot;') : (ch.code ? ch.titre + ' · ' + ch.code : '')}" autocomplete="off">
+      <select class="form-select" data-st="${k}" ${auCatalogue ? 'disabled title="Œuvre déposée au catalogue Sacem"' : ''}>
+        ${STATUTS.map(s => `<option value="${s[0]}"${s[0] === st ? ' selected' : ''}>${s[1]}</option>`).join('')}
+      </select></div>`;
+  }).join('');
+  box.querySelectorAll('[data-oe]').forEach(inp => inp.addEventListener('change', function () {
+    const k = this.dataset.oe, v = this.value.trim(), x = OEUVRES.find(o => libOe(o) === v);
+    const ch = oeChoix[k] || (oeChoix[k] = {});
+    if (x) { ch.soc = x.soc; ch.code = x.code; ch.titre = x.t; if (x.c) ch.statut = 'depose'; }
+    else if (!v) { delete ch.soc; delete ch.code; delete ch.titre; if (ch.statut === 'depose') ch.statut = 'a_lancer'; }
+    renderOeuvres();
+  }));
+  box.querySelectorAll('[data-st]').forEach(sel => sel.addEventListener('change', function () {
+    (oeChoix[this.dataset.st] || (oeChoix[this.dataset.st] = {})).statut = this.value;
+  }));
+}
+function oeuvresDuFormulaire() {
+  const oeuvres = {}, sacem = {};
+  titresBLZ().forEach(tr => {
+    const k = normT(tr), ch = oeChoix[k] || {};
+    const x = ch.code ? OEUVRES.find(o => o.soc === ch.soc && o.code === ch.code) : null;
+    if (ch.code) oeuvres[k] = { soc: ch.soc, code: ch.code, titre: ch.titre || (x && x.t) || tr };
+    sacem[k] = (x && x.c) ? 'depose' : (ch.statut || 'a_lancer');
+  });
+  return { oeuvres, sacem };
+}
+let oeT = null;
+['trackName', 'blzTrackNames'].forEach(id => document.getElementById(id).addEventListener('input', () => {
+  clearTimeout(oeT); oeT = setTimeout(renderOeuvres, 300); }));
 
 // ─── Elements ───
 const dateInput = document.getElementById('releaseDate');
@@ -647,18 +498,15 @@ dateInput.addEventListener('input', (e) => {
 // ─── Conditional fields ───
 function updateConditionals() {
   const t = typeSelect.value;
-  const isEPAlbum = t === 'EP' || t === 'Album';
-  projectGroup.classList.toggle('visible', isEPAlbum);
-  epTracksGroup.classList.toggle('visible', isEPAlbum);
+  projectGroup.classList.toggle('visible', t === 'EP' || t === 'Album');
+  epTracksGroup.classList.toggle('visible', t === 'EP' || t === 'Album');
   trackGroup.classList.toggle('visible', t === 'Single' || t === 'Certification');
   liveGroup.classList.toggle('visible', t === 'Live');
   certGroup.classList.toggle('visible', t === 'Certification');
   countryGroup.classList.toggle('visible', ['Single','EP','Album'].includes(t));
   actuGroup.classList.toggle('visible', t === 'Actu');
-  // Event-level feat: shown for Single/Synchro/Cert (EP/Album have per-track feat)
-  document.getElementById('featGroup').classList.toggle('visible', ['Single','Synchro','Certification'].includes(t));
-  // Hide manual SW picker for EP/Album (auto-computed from tracks)
-  document.getElementById('swGroup').style.display = isEPAlbum ? 'none' : '';
+  document.getElementById('oeuvresGroup').classList.toggle('visible', ['Single','EP','Album'].includes(t));
+  renderOeuvres();
 }
 typeSelect.addEventListener('change', updateConditionals);
 
@@ -920,38 +768,6 @@ swTags.addEventListener('click', (e) => {
   renderTags();
 });
 
-// ─── Event-level featuring (Single/Synchro/Cert) ───
-const featInput = document.getElementById('featInput');
-const featAddBtn2 = document.getElementById('featAddBtn');
-const featTagsDiv = document.getElementById('featTags');
-
-function renderFeatTags() {
-  featTagsDiv.innerHTML = featurings.map(f =>
-    `<span class="feat-tag">${escH(f)} <span class="feat-tag-x" data-feat="${escH(f)}">✕</span></span>`
-  ).join('');
-}
-
-function addFeatArtist() {
-  const name = featInput.value.trim();
-  if (name && !featurings.includes(name)) {
-    featurings.push(name);
-    renderFeatTags();
-  }
-  featInput.value = '';
-}
-
-featAddBtn2.addEventListener('click', addFeatArtist);
-featInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') { e.preventDefault(); addFeatArtist(); }
-});
-featTagsDiv.addEventListener('click', (e) => {
-  const x = e.target.closest('.feat-tag-x');
-  if (x) {
-    featurings = featurings.filter(f => f !== x.dataset.feat);
-    renderFeatTags();
-  }
-});
-
 // ─── Edit mode ───
 function enterEditMode(release) {
   editId = release.id;
@@ -975,28 +791,18 @@ function enterEditMode(release) {
   document.getElementById('actuDesc').value = release.actuDesc || '';
   document.getElementById('releaseLink').value = release.link || '';
   if (release.artwork) showArtwork(release.artwork);
-  // Load event-level featurings
-  featurings = release.featurings ? (Array.isArray(release.featurings) ? [...release.featurings] : []) : [];
-  renderFeatTags();
-  // Load blzTracks (new format) or migrate from old format
-  if (release.blzTracks && Array.isArray(release.blzTracks)) {
-    blzTracks = release.blzTracks.map(t => ({
-      title: t.title || '', link: t.link || '',
-      songwriters: t.songwriters ? (Array.isArray(t.songwriters) ? [...t.songwriters] : [t.songwriters]) : [],
-      featurings: t.featurings ? (Array.isArray(t.featurings) ? [...t.featurings] : []) : []
-    }));
-  } else if (release.blzTrackNames) {
-    // Migrate old format: split names into tracks
-    const names = release.blzTrackNames.split('\n').filter(Boolean);
-    const oldSw = release.songwriters ? (Array.isArray(release.songwriters) ? [...release.songwriters] : release.songwriters.split(',')) : [];
-    blzTracks = names.map(n => ({ title: n.trim(), link: '', songwriters: [...oldSw] }));
-  } else if (release.blzTrackCount && parseInt(release.blzTrackCount) > 0) {
-    blzTracks = [];
-    for (let i = 0; i < parseInt(release.blzTrackCount); i++) blzTracks.push({ title: '', link: '', songwriters: [] });
-  } else {
-    blzTracks = [];
-  }
-  renderBlzTracks();
+  document.getElementById('epTrackCount').value = release.epTrackCount || '';
+  document.getElementById('epTrackNames').value = release.epTrackNames || '';
+  document.getElementById('blzTrackCount').value = release.blzTrackCount || '';
+  document.getElementById('blzTrackNames').value = release.blzTrackNames || '';
+  oeChoix = {};
+  Object.keys(release.sacem || {}).forEach(k => { oeChoix[k] = { statut: release.sacem[k] }; });
+  Object.keys(release.oeuvres || {}).forEach(k => { const x = release.oeuvres[k] || {};
+    oeChoix[k] = Object.assign(oeChoix[k] || {}, { soc: x.soc, code: x.code, titre: x.titre }); });
+  // liens posés depuis l'outil Catalogues (fiche œuvre → sortie)
+  OEUVRES.filter(o => String(o.r) === String(release.id)).forEach(o => {
+    const k = normT(o.tt || o.t); if (!oeChoix[k] || !oeChoix[k].code)
+      oeChoix[k] = { soc: o.soc, code: o.code, titre: o.t, statut: o.c ? 'depose' : ((oeChoix[k] || {}).statut || 'a_lancer') }; });
   selectedSw = release.songwriters ? (Array.isArray(release.songwriters) ? [...release.songwriters] : release.songwriters.split(',')) : [];
   swOptions.forEach(opt => { opt.classList.toggle('selected', selectedSw.includes(opt.dataset.name)); });
   renderTags();
@@ -1025,10 +831,10 @@ function resetForm() {
   document.getElementById('liveVille').value = '';
   document.getElementById('certType').value = '';
   document.getElementById('certLevel').value = '';
-  blzTracks = [];
-  featurings = [];
-  renderFeatTags();
-  renderBlzTracks();
+  document.getElementById('epTrackCount').value = '';
+  document.getElementById('epTrackNames').value = '';
+  document.getElementById('blzTrackCount').value = '';
+  document.getElementById('blzTrackNames').value = '';
   projectGroup.classList.remove('visible');
   trackGroup.classList.remove('visible');
   liveGroup.classList.remove('visible');
@@ -1036,7 +842,6 @@ function resetForm() {
   countryGroup.classList.remove('visible');
   actuGroup.classList.remove('visible');
   epTracksGroup.classList.remove('visible');
-  document.getElementById('featGroup').classList.remove('visible');
   document.getElementById('releaseCountry').value = 'FR';
   setCountry('FR');
   document.getElementById('actuDesc').value = '';
@@ -1045,6 +850,8 @@ function resetForm() {
   selectedSw = [];
   swOptions.forEach(o => o.classList.remove('selected'));
   renderTags();
+  oeChoix = {};
+  document.getElementById('oeuvresGroup').classList.remove('visible');
 }
 
 cancelBtn.addEventListener('click', exitEditMode);
@@ -1059,6 +866,7 @@ deleteBtn.addEventListener('click', async () => {
 // Check URL for edit param
 (async () => {
   try { await _waitAuth(); } catch(e) { return; }
+  try { await chargerOeuvres(); } catch(e) {}
 
   const urlParams = new URLSearchParams(window.location.search);
   const editParam = urlParams.get('edit');
@@ -1082,6 +890,10 @@ submitBtn.addEventListener('click', async () => {
   const ville = document.getElementById('liveVille').value.trim();
   const certType = document.getElementById('certType').value;
   const certLevel = document.getElementById('certLevel').value;
+  const epTrackCount = document.getElementById('epTrackCount').value.trim();
+  const epTrackNames = document.getElementById('epTrackNames').value.trim();
+  const blzTrackCount = document.getElementById('blzTrackCount').value.trim();
+  const blzTrackNames = document.getElementById('blzTrackNames').value.trim();
   const statusMsg = document.getElementById('statusMsg');
 
   if (!date || !/^\d{2}\/\d{2}\/\d{4}$/.test(date)) {
@@ -1092,49 +904,38 @@ submitBtn.addEventListener('click', async () => {
   if (type === 'Live' && !lieu) { statusMsg.textContent = '⚠ Lieu requis pour un Live'; statusMsg.className = 'status error'; return; }
   if (type === 'Certification' && (!certType || !certLevel)) { statusMsg.textContent = '⚠ Choisir le type et le niveau de certification'; statusMsg.className = 'status error'; return; }
 
-  // Compute blzTrack derived fields for EP/Album
-  const isEPA = type === 'EP' || type === 'Album';
-  const validTracks = isEPA ? blzTracks.filter(t => t.title.trim()) : [];
-  const blzTrackCount = isEPA ? String(validTracks.length) : '';
-  const blzTrackNames = isEPA ? validTracks.map(t => t.title.trim()).join('\n') : '';
-
-  // For EP/Album, songwriters = union of all track songwriters
-  if (isEPA) {
-    updateSwFromTracks();
-  }
-
-  // Build feat suffix for title
-  const featSuffix = !isEPA && featurings.length ? ' feat. ' + featurings.join(', ') : '';
-
   let title = '';
   if (type === 'EP' || type === 'Album') {
     title = project || artist;
-    if (validTracks.length) title += ' (' + validTracks.length + ' titres BLZ)';
+    if (type === 'EP' && epTrackCount) title += ' (' + epTrackCount + ' titres)';
+    if (type === 'Album' && epTrackCount) title += ' (' + epTrackCount + ' titres)';
   } else if (type === 'Live') {
     title = lieu + (ville ? ' — ' + ville : '');
   } else if (type === 'Certification') {
-    title = (track || artist) + featSuffix + ' (' + certLevel + ' ' + certType + ')';
+    title = (track || artist) + ' (' + certLevel + ' ' + certType + ')';
   } else {
-    title = (track || artist) + featSuffix;
+    title = track || artist;
   }
 
   submitBtn.disabled = true;
   submitBtn.textContent = '⏳ Enregistrement...';
 
   try {
-    const release = {
+    let precedent = {};
+    if (editId) { try { const r0 = await dbFetch('/releases/' + editId + '.json'); precedent = (r0.ok && await r0.json()) || {}; } catch (e) {} }
+    const liens = ['Single','EP','Album'].includes(type) ? oeuvresDuFormulaire() : { oeuvres: precedent.oeuvres || {}, sacem: precedent.sacem || {} };
+    const release = Object.assign({}, precedent, {
       id: editId || Date.now(), date, dateSortable: date.split('/').reverse().join('-'),
       type, status: releaseStatus, artist, title,
       project, track, lieu, ville, certType, certLevel,
-      blzTrackCount, blzTrackNames,
-      blzTracks: isEPA ? validTracks.map(t => ({ title: t.title.trim(), link: t.link.trim(), songwriters: [...t.songwriters], featurings: [...(t.featurings||[])] })) : [],
-      featurings: !isEPA ? [...featurings] : [],
+      epTrackCount, epTrackNames, blzTrackCount, blzTrackNames,
       country: ['Single','EP','Album'].includes(type) ? document.getElementById('releaseCountry').value : '',
       actuDesc: type === 'Actu' ? document.getElementById('actuDesc').value.trim() : '',
       link: document.getElementById('releaseLink').value.trim(),
       artwork: extractedArtwork,
-      songwriters: [...selectedSw], createdAt: editId ? undefined : new Date().toISOString(),
-    };
+      songwriters: [...selectedSw], createdAt: precedent.createdAt || new Date().toISOString(),
+      oeuvres: liens.oeuvres, sacem: liens.sacem,
+    });
 
     await fbPut(release);
 
@@ -1170,12 +971,16 @@ async function renderRecent() {
   list.innerHTML = recent.map(r => {
     const st = r.status && r.status !== 'Confirmé' ? ` [${r.status}]` : '';
     const sw = r.songwriters && r.songwriters.length ? (Array.isArray(r.songwriters) ? r.songwriters.join(', ') : r.songwriters) : '';
+    const sc = r.sacem ? Object.values(r.sacem) : [];
+    const n = v => sc.filter(x => x === v).length;
+    const badges = sc.length ? '<span class="sacem-badges">' + STATUTS.filter(s => n(s[0])).map(s =>
+      `<span class="sacem-b ${s[0]}">${sc.length > 1 ? n(s[0]) + ' ' : ''}${s[1]}</span>`).join('') + '</span>' : '';
     return `
     <div class="recent-item" data-id="${r.id}">
       <span class="recent-date">${r.date}</span>
       <span class="recent-type">${r.type}</span>
       <span class="recent-name">${r.artist} — ${r.title}${st}</span>
-      <span class="recent-sw">${sw}</span>
+      <span class="recent-sw">${sw}</span>${badges}
     </div>`;
   }).join('');
 }
