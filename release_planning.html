@@ -135,6 +135,8 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .rel-sacem.en_cours { color: #f1c40f; border-color: #4a3e10; }
 .rel-sacem.a_lancer { color: #ff9f6b; border-color: #4a2e1a; }
 .rel-sacem.a_definir { color: #777; border-color: var(--border); }
+.rel-sacem.non_editeur { color: #888; border-color: var(--border); font-style: italic; }
+.rel-tracks .dot.non_editeur { background: #555; }
 .rel-tracks { color: #666; font-size: 0.55rem; font-family: 'Syne Mono', monospace; display: flex; flex-wrap: wrap; gap: 4px 10px; }
 .rel-tracks .pt { display: inline-flex; align-items: center; gap: 4px; }
 .rel-tracks .dot { width: 5px; height: 5px; border-radius: 50%; background: #444; flex-shrink: 0; }
@@ -276,7 +278,9 @@ function _waitAuth(){return new Promise((res,rej)=>{firebase.auth().onAuthStateC
 const MONTHS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 
 // ─── Statut Sacem des titres BLZante (posé par l'outil Catalogues ou la fiche event) ───
-const SACEM_LIB = { a_definir: 'À définir', a_lancer: 'À lancer', en_cours: 'En cours', depose: 'Déposé à la Sacem' };
+const SACEM_LIB = { a_definir: 'À définir', a_lancer: 'À lancer', en_cours: 'En cours',
+  depose: 'Déposé à la Sacem', non_editeur: "Non éditeur sur l'œuvre" };
+const SACEM_FAIT = { depose: 1, non_editeur: 1 };   // rien à lancer sur ces deux-là
 // Même normalisation que l'outil Catalogues : les clés doivent correspondre des deux côtés.
 const normT = s => String(s == null ? '' : s).replace(/œ/g, 'oe').replace(/Œ/g, 'OE').replace(/æ/g, 'ae').replace(/Æ/g, 'AE')
   .replace(/ß/g, 'ss').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim();
@@ -308,9 +312,11 @@ function sacemResume(r) {
   const p = pistesSacem(r);
   if (!p.length) return null;
   const n = v => p.filter(x => x.statut === v).length;
-  if (n('depose') === p.length) return { cls: 'depose', lbl: 'Sacem ✓' };
+  const faits = p.filter(x => SACEM_FAIT[x.statut]).length;
+  if (n('non_editeur') === p.length) return { cls: 'non_editeur', lbl: 'Non éditeur' };
+  if (faits === p.length) return { cls: 'depose', lbl: 'Sacem ✓' };
   const cls = n('a_definir') ? 'a_definir' : n('a_lancer') ? 'a_lancer' : 'en_cours';
-  const lbl = n('a_definir') === p.length ? 'Sacem à définir' : 'Sacem ' + n('depose') + '/' + p.length;
+  const lbl = n('a_definir') === p.length ? 'Sacem à définir' : 'Sacem ' + faits + '/' + p.length;
   return { cls, lbl };
 }
 
@@ -359,12 +365,22 @@ async function fetchReleases() {
   }
 }
 
+// Songwriters signés chez BLZante, publiés par l'outil Catalogues
+let SIGNES = null;
+async function chargerSignes() {
+  try {
+    const r = await dbFetch('/editions/signes.json');
+    const d = r.ok ? await r.json() : null;
+    SIGNES = d && Object.keys(d).length ? d : null;
+  } catch (e) { SIGNES = null; }
+}
+function estSigne(nom) { return !SIGNES || !!SIGNES[normT(nom)]; }
 function buildSwFilters() {
   const swSet = new Set();
   cachedReleases.forEach(r => {
     if (r.songwriters) {
       const sw = Array.isArray(r.songwriters) ? r.songwriters : [r.songwriters];
-      sw.forEach(s => swSet.add(s));
+      sw.forEach(s => { if (estSigne(s)) swSet.add(s); });
     }
   });
   const sorted = [...swSet].sort();
@@ -452,7 +468,7 @@ function buildDashboard() {
   h += `<div class="dash-card"><div class="dash-num${certsAlbum.length ? ' orange' : ''}">${certsAlbum.length}</div><div class="dash-label">Certifs Albums</div></div>`;
   h += `<div class="dash-card"><div class="dash-num">${synchros.length}</div><div class="dash-label">Synchros</div></div>`;
   // dépôts Sacem restants sur la période
-  const aDeposer = sorties.reduce((n, r) => n + pistesSacem(r).filter(p => p.statut !== 'depose').length, 0);
+  const aDeposer = sorties.reduce((n, r) => n + pistesSacem(r).filter(p => !SACEM_FAIT[p.statut]).length, 0);
   h += `<div class="dash-card"><div class="dash-num${aDeposer ? ' red' : ' green'}">${aDeposer}</div><div class="dash-label">Dépôts Sacem à faire</div></div>`;
   dash.innerHTML = h;
 }
@@ -495,7 +511,7 @@ function applyTypeFilter(releases) {
   else if (activeFilter === 'Passé') result = releases.filter(r => r.dateSortable <= today);
   else if (activeFilter === 'À venir') result = releases.filter(r => r.dateSortable > today);
   else if (activeFilter === 'Sorties') result = releases.filter(r => ['Single','EP','Album'].includes(r.type));
-  else if (activeFilter === 'Sacem') result = releases.filter(r => pistesSacem(r).some(p => p.statut !== 'depose'));
+  else if (activeFilter === 'Sacem') result = releases.filter(r => pistesSacem(r).some(p => !SACEM_FAIT[p.statut]));
   else if (activeFilter === 'France') result = releases.filter(r => ['Single','EP','Album'].includes(r.type) && (!r.country || !r.country.split(',').some(c => c && c !== 'FR')));
   else if (activeFilter === 'International') result = releases.filter(r => ['Single','EP','Album'].includes(r.type) && r.country && r.country.split(',').some(c => c && c !== 'FR'));
   else result = releases.filter(r => r.type === activeFilter);
@@ -659,7 +675,7 @@ document.getElementById('swFilters').addEventListener('click', (e) => {
   try { await _waitAuth(); } catch(e) { return; }
 
   document.getElementById('stats').textContent = 'Chargement...';
-  await fetchReleases();
+  await Promise.all([fetchReleases(), chargerSignes()]);
   buildSwFilters();
   // Fetch roster for artist photos in export
   try {
@@ -851,7 +867,7 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
         // Titres BLZante, avec featuring et statut de dépôt
         const pdfPistes = pistesSacem(r);
         if (pdfPistes.length) {
-          const cD = { depose: '#4ade80', en_cours: '#f1c40f', a_lancer: '#ff9f6b', a_definir: '#555' };
+          const cD = { depose: '#4ade80', en_cours: '#f1c40f', a_lancer: '#ff9f6b', a_definir: '#555', non_editeur: '#555' };
           h += `<div style="color:#555;font-size:0.54rem;font-family:Syne Mono,monospace;margin-top:1px">` +
             pdfPistes.map(p => `<span style="color:${cD[p.statut]}">•</span> <span style="color:#aaa">${p.titre}</span>` +
               (p.feat ? ' feat. ' + p.feat : '')).join(' &nbsp; ') + `</div>`;

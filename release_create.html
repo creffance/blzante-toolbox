@@ -56,10 +56,15 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .oe-lie { font-size: 0.62rem; color: var(--success); margin-top: 5px; }
 .oe-lie button { background: none; border: none; color: var(--muted); cursor: pointer; font-family: inherit; font-size: 0.62rem; text-decoration: underline; }
 .oe-nores { font-size: 0.62rem; color: var(--error); padding: 7px 10px; border: 1px solid var(--border); border-top: none; }
+.oe-feat .form-input { font-size: 0.68rem; }
+.oe-feat .oe-track { color: var(--muted); font-size: 0.6rem; letter-spacing: 0.08em; text-transform: uppercase; }
+.oe-add2 { background: none; border: 1px solid var(--border); color: var(--muted); font-family: inherit; font-size: 0.6rem; padding: 7px 6px; cursor: pointer; white-space: nowrap; }
+.oe-add2:hover { color: var(--accent); border-color: var(--accent); }
 .oe-add { background: none; border: 1px dashed var(--border); color: var(--muted); font-family: inherit; font-size: 0.62rem; padding: 7px 12px; cursor: pointer; }
 .oe-hint { font-size: 0.6rem; color: var(--muted); margin-top: 6px; line-height: 1.6; }
 .oe-empty { font-size: 0.68rem; color: #555; }
 .sacem-b.a_definir { border-color: var(--border); color: var(--muted); }
+.sacem-b.non_editeur { border-color: var(--border); color: #888; font-style: italic; }
 .sacem-badges { display: inline-flex; gap: 4px; flex-wrap: wrap; }
 .sacem-b { font-size: 0.55rem; letter-spacing: 0.06em; padding: 2px 6px; border: 1px solid var(--border); color: var(--muted); white-space: nowrap; }
 .sacem-b.depose { border-color: rgba(74,222,128,0.4); color: var(--success); }
@@ -418,7 +423,8 @@ let editId = null;
 const normT = s => String(s == null ? '' : s).replace(/œ/g, 'oe').replace(/Œ/g, 'OE').replace(/æ/g, 'ae').replace(/Æ/g, 'AE').replace(/ß/g, 'ss').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
   .toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim();
 const SOCS = [['blzante','BLZante'],['blz-publishing','BLZ Publishing'],['rossinante','Rossinante']];
-const STATUTS = [['a_definir','À définir'],['a_lancer','À lancer'],['en_cours','En cours'],['depose','Déposé à la Sacem']];
+const STATUTS = [['a_definir','À définir'],['a_lancer','À lancer'],['en_cours','En cours'],
+  ['depose','Déposé à la Sacem'],['non_editeur',"Non éditeur sur l'œuvre"]];
 const libStatut = v => (STATUTS.find(s => s[0] === v) || STATUTS[0])[1];
 let OEUVRES = [];            // {soc, code, t, tt, a, c, f, r}
 // Une ligne par track : son libellé vit indépendamment du titre saisi plus haut.
@@ -460,12 +466,14 @@ function semerLignes() {
     if (oeRows.some(l => normT(l.track) === k)) return;
     const vide = oeRows.find(l => !l.track && !l.code);
     const x = chercherOeuvre(tr);
-    const l = vide || { id: oeNext++, track: '', feat: '', statut: 'a_definir', q: '' };
+    const l = vide || { id: oeNext++, track: '', feats: [''], statut: 'a_definir', q: '' };
     l.track = tr;
-    if (x && !l.code) { l.soc = x.soc; l.code = x.code; l.titre = x.t; l.statut = x.c ? 'depose' : l.statut; if (x.f && !l.feat) l.feat = x.f; }
+    if (x && !l.code) { l.soc = x.soc; l.code = x.code; l.titre = x.t; l.statut = x.c ? 'depose' : l.statut;
+      if (x.f && !featsDe(l).some(Boolean)) l.feats = listeFeat(x.f); }
     if (!vide) oeRows.push(l);
   });
 }
+function featsDe(l) { return Array.isArray(l.feats) && l.feats.length ? l.feats : ['']; }
 function renderOeuvres() {
   const box = document.getElementById('oeuvresRows');
   if (!oeRows.length) { box.innerHTML = '<div class="oe-empty">Renseignez le titre du single, ou les titres BLZante du projet, ou ajoutez un titre ci-dessous.</div>'; return; }
@@ -478,23 +486,28 @@ function renderOeuvres() {
       const trouves = nq ? OEUVRES.filter(o => normT(o.tt + ' ' + o.t + ' ' + o.a + ' ' + o.code).includes(nq)).slice(0, 8) : [];
       res = nq
         ? (trouves.length
-          ? `<div class="oe-res">${trouves.map(o => `<div class="oe-opt" data-pick="${l.id}" data-soc="${o.soc}" data-code="${o.code}"><b>${esc(o.tt || o.t)}</b>${o.a ? ' — ' + esc(o.a) : ''} · ${esc((SOCS.find(s => s[0] === o.soc) || [,''])[1])} · ${esc(o.code)}${o.c ? ' · déposée' : ''}</div>`).join('')}</div>`
+          ? `<div class="oe-res">${trouves.map(o => `<div class="oe-opt" data-pick="${l.id}" data-soc="${o.soc}" data-code="${o.code}"><b>${esc(o.tt || o.t)}</b>${o.a ? ' — ' + esc(o.a) : ''} · ${esc((SOCS.find(s => s[0] === o.soc) || [,''])[1])} · ${esc(o.code)}${o.c ? ' · déposée' : ''}${o.f ? ' · feat. ' + esc(o.f) : ''}</div>`).join('')}</div>`
           : `<div class="oe-nores">Aucune œuvre au catalogue pour « ${esc(q)} » — choisissez le statut du dépôt à droite.</div>`)
         : '';
     }
+    const feats = featsDe(l).map((f, n) => `<div class="oe-line oe-feat">
+        <span class="oe-track">${n === 0 ? 'Featuring' : 'Featuring ' + (n + 1)}</span>
+        <input class="form-input" data-feat="${l.id}" data-n="${n}" placeholder="Nom de l'artiste invité" value="${esc(f)}" autocomplete="off">
+        <button type="button" class="oe-add2" data-addfeat="${l.id}">+ feat</button>
+        <button type="button" class="oe-x" data-rmfeat="${l.id}" data-n="${n}" title="Retirer ce featuring"${featsDe(l).length > 1 ? '' : ' style="visibility:hidden"'}>✕</button>
+      </div>`).join('');
     return `<div class="oe-row">
       <div class="oe-line">
         <input class="form-input" data-tr="${l.id}" placeholder="Titre du track" value="${esc(l.track)}" autocomplete="off">
-        ${l.code
-          ? `<input class="form-input" data-feat="${l.id}" placeholder="feat. (optionnel)" value="${esc(l.feat)}" autocomplete="off">`
-          : `<input class="form-input" data-q="${l.id}" placeholder="Chercher une œuvre du catalogue…" value="${esc(l.q || '')}" autocomplete="off">`}
+        <input class="form-input" data-q="${l.id}" placeholder="${l.code ? 'Chercher une autre œuvre…' : 'Chercher une œuvre du catalogue…'}" value="${esc(l.q || '')}" autocomplete="off">
         <select class="form-select" data-st="${l.id}" ${auCatalogue ? 'disabled title="Œuvre déposée au catalogue Sacem"' : ''}>
           ${STATUTS.map(s => `<option value="${s[0]}"${s[0] === st ? ' selected' : ''}>${s[1]}</option>`).join('')}
         </select>
         <button type="button" class="oe-x" data-rm="${l.id}" title="Retirer la ligne">✕</button>
       </div>
+      ${feats}
       ${res}
-      ${l.code ? `<div class="oe-lie">↳ ${esc(x ? libOe(x) : (l.titre || '') + ' · ' + l.code)} <button type="button" data-unl="${l.id}">changer</button></div>`
+      ${l.code ? `<div class="oe-lie">↳ ${esc(x ? libOe(x) : (l.titre || '') + ' · ' + l.code)} <button type="button" data-unl="${l.id}">délier</button></div>`
         : (l.open ? '' : `<div class="oe-lie" style="color:var(--muted)">Non liée au catalogue · ${esc(libStatut(st))}</div>`)}
     </div>`;
   }).join('');
@@ -502,7 +515,17 @@ function renderOeuvres() {
   box.querySelectorAll('[data-tr]').forEach(i => i.addEventListener('input', function () {
     const l = oeRows.find(z => z.id === +this.dataset.tr); if (l) l.track = this.value; }));
   box.querySelectorAll('[data-feat]').forEach(i => i.addEventListener('input', function () {
-    const l = oeRows.find(z => z.id === +this.dataset.feat); if (l) l.feat = this.value; }));
+    const l = oeRows.find(z => z.id === +this.dataset.feat); if (!l) return;
+    l.feats = featsDe(l).slice(); l.feats[+this.dataset.n] = this.value; }));
+  box.querySelectorAll('[data-addfeat]').forEach(b => b.addEventListener('click', function () {
+    const l = oeRows.find(z => z.id === +this.dataset.addfeat); if (!l) return;
+    l.feats = featsDe(l).slice(); l.feats.push(''); maj();
+    const inp = box.querySelectorAll('[data-feat="' + l.id + '"]');
+    if (inp.length) inp[inp.length - 1].focus();
+  }));
+  box.querySelectorAll('[data-rmfeat]').forEach(b => b.addEventListener('click', function () {
+    const l = oeRows.find(z => z.id === +this.dataset.rmfeat); if (!l) return;
+    l.feats = featsDe(l).filter((f, n) => n !== +this.dataset.n); maj(); }));
   box.querySelectorAll('[data-q]').forEach(i => {
     i.addEventListener('focus', function () {
       const l = oeRows.find(z => z.id === +this.dataset.q); if (l && !l.open) { l.open = true; maj(); focusQ(l.id); } });
@@ -516,7 +539,7 @@ function renderOeuvres() {
     const o = OEUVRES.find(z => z.soc === this.dataset.soc && z.code === this.dataset.code);
     l.soc = this.dataset.soc; l.code = this.dataset.code; l.titre = o ? o.t : ''; l.open = false; l.q = '';
     if (o && o.c) l.statut = 'depose';
-    if (o && o.f && !l.feat) l.feat = o.f;
+    if (o && o.f && !featsDe(l).some(Boolean)) l.feats = listeFeat(o.f);
     if (o && !l.track) l.track = o.tt || o.t;
     maj();
   }));
@@ -543,7 +566,7 @@ function oeuvresDuFormulaire() {
     const x = oeParCode(l);
     if (l.code) oeuvres[k] = { soc: l.soc, code: l.code, titre: l.titre || (x && x.t) || tr };
     sacem[k] = (x && x.c) ? 'depose' : (l.statut || 'a_definir');
-    blzTracks.push({ title: tr || (l.titre || ''), featurings: listeFeat(l.feat) });
+    blzTracks.push({ title: tr || (l.titre || ''), featurings: featsDe(l).map(f => f.trim()).filter(Boolean) });
   });
   return { oeuvres, sacem, blzTracks };
 }
@@ -552,7 +575,7 @@ let oeT = null;
 ['trackName', 'blzTrackNames'].forEach(id => document.getElementById(id).addEventListener('input', () => {
   clearTimeout(oeT); oeT = setTimeout(() => { semerLignes(); renderOeuvres(); }, 300); }));
 document.getElementById('oeAdd').addEventListener('click', () => {
-  oeRows.push({ id: oeNext++, track: '', feat: '', statut: 'a_definir', q: '', open: true });
+  oeRows.push({ id: oeNext++, track: '', feats: [''], statut: 'a_definir', q: '', open: true });
   renderOeuvres();
 });
 
@@ -891,13 +914,13 @@ function enterEditMode(release) {
   const ligne = t => {
     const k = normT(t); if (!k) return null;
     let l = oeRows.find(z => normT(z.track) === k);
-    if (!l) { l = { id: oeNext++, track: t, feat: '', statut: 'a_definir', q: '' }; oeRows.push(l); }
+    if (!l) { l = { id: oeNext++, track: t, feats: [''], statut: 'a_definir', q: '' }; oeRows.push(l); }
     return l;
   };
   (release.type === 'Single' ? [release.track || ''] : String(release.blzTrackNames || '').split(/\n|,|;/))
     .map(x => x.trim()).filter(Boolean).forEach(ligne);
   (Array.isArray(release.blzTracks) ? release.blzTracks : []).forEach(t => {
-    const l = ligne(t && t.title); if (l && t.featurings && t.featurings.length) l.feat = t.featurings.join(', '); });
+    const l = ligne(t && t.title); if (l && t.featurings && t.featurings.length) l.feats = t.featurings.slice(); });
   Object.keys(release.sacem || {}).forEach(k => {
     const x = release.oeuvres && release.oeuvres[k];
     const l = ligne((x && x.titre) || k) || null;
@@ -912,7 +935,7 @@ function enterEditMode(release) {
     const l = ligne(o.tt || o.t); if (!l || l.code) return;
     l.soc = o.soc; l.code = o.code; l.titre = o.t;
     if (o.c) l.statut = 'depose';
-    if (o.f && !l.feat) l.feat = o.f;
+    if (o.f && !featsDe(l).some(Boolean)) l.feats = listeFeat(o.f);
   });
   oeSeed = (release.type === 'Single' ? [release.track || ''] : String(release.blzTrackNames || '').split(/\n|,|;/))
     .map(x => x.trim()).filter(Boolean).join('|');
@@ -1044,7 +1067,10 @@ submitBtn.addEventListener('click', async () => {
       id: editId || Date.now(), date, dateSortable: date.split('/').reverse().join('-'),
       type, status: releaseStatus, artist, title,
       project, track, lieu, ville, certType, certLevel,
-      epTrackCount, epTrackNames, blzTrackCount, blzTrackNames,
+      epTrackCount, epTrackNames,
+      blzTrackCount: ['EP','Album'].includes(type) && (liens.blzTracks || []).length ? String(liens.blzTracks.length) : blzTrackCount,
+      blzTrackNames: ['EP','Album'].includes(type) && (liens.blzTracks || []).length
+        ? liens.blzTracks.map(t => t.title).join('\n') : blzTrackNames,
       country: ['Single','EP','Album'].includes(type) ? document.getElementById('releaseCountry').value : '',
       actuDesc: type === 'Actu' ? document.getElementById('actuDesc').value.trim() : '',
       link: document.getElementById('releaseLink').value.trim(),
