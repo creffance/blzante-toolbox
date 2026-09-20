@@ -104,6 +104,23 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 }
 .sw-tag-remove:hover { color: var(--error); }
 
+/* Feat tags */
+.feat-input-wrap { display: flex; gap: 6px; }
+.feat-input-wrap .form-input { flex: 1; }
+.feat-add-btn {
+  padding: 0 14px; background: none; border: 1px solid var(--border); color: var(--accent);
+  font-family: 'Syne Mono', monospace; font-size: 0.72rem; cursor: pointer; transition: all 0.15s; white-space: nowrap;
+}
+.feat-add-btn:hover { border-color: var(--accent); }
+.feat-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.feat-tag {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px; font-size: 0.68rem; background: #1a1208;
+  border: 1px solid #3d3010; color: var(--accent);
+}
+.feat-tag-x { cursor: pointer; color: var(--muted); font-size: 0.8rem; line-height: 1; transition: color 0.15s; }
+.feat-tag-x:hover { color: var(--error); }
+
 /* BLZ Tracks (EP/Album) */
 .blz-tracks-section { margin-top: 4px; }
 .blz-track-entry {
@@ -297,6 +314,15 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
     <input type="text" class="form-input" id="artistName" placeholder="Nom de l'artiste" autocomplete="off" />
   </div>
 
+  <div class="form-group conditional" id="featGroup">
+    <label class="form-label">Featuring</label>
+    <div class="feat-input-wrap">
+      <input type="text" class="form-input" id="featInput" placeholder="Nom de l'artiste feat." autocomplete="off" />
+      <button type="button" class="feat-add-btn" id="featAddBtn">+ Ajouter</button>
+    </div>
+    <div class="feat-tags" id="featTags"></div>
+  </div>
+
   <div class="form-group conditional" id="projectGroup">
     <label class="form-label">Nom du projet (EP / Album)</label>
     <input type="text" class="form-input" id="projectName" placeholder="Titre du projet" autocomplete="off" />
@@ -420,7 +446,8 @@ async function fbDelete(id) {
 // ─── State ───
 let selectedSw = [];
 let editId = null;
-let blzTracks = []; // [{title, link, songwriters:[]}]
+let blzTracks = []; // [{title, link, songwriters:[], featurings:[]}]
+let featurings = []; // event-level feat artists (Single/Synchro/Cert)
 
 // ─── Songwriter list ───
 const SW_LIST = ['2B','AKATCHE','OZZY','BRÖ','CHERI','DANI TERREUR','EMY JO','GABRIEL MABILAT','HADRIEN MABILAT','HUGO LARDENET','IVY','KEV 117','LAGOS IN PARIS','LAURINA MALAKA','LEANDRE PICK','LEITH','LIONNEL BUZAC','LONIR','MAB','MALAKA','MATSHIMOTO','NINO VELLA','NOLAN','PABLO','PALMAE','PIERRE-LAURENT FAURE','RITUAL X','ROI LUIS','SACHA MALAKA','SEBASTIEN ROUSSELET','VINCHA','VJ','LE SERI'];
@@ -442,6 +469,16 @@ function renderBlzTracks() {
       </div>
       <div class="form-group">
         <input type="text" class="form-input" placeholder="Lien Spotify ou YouTube" value="${escH(t.link)}" data-idx="${idx}" data-field="link" />
+      </div>
+      <div class="form-group">
+        <label class="form-label" style="margin-bottom:4px">Featuring</label>
+        <div class="feat-input-wrap">
+          <input type="text" class="form-input track-feat-input" placeholder="Nom de l'artiste feat." data-idx="${idx}" autocomplete="off" />
+          <button type="button" class="feat-add-btn track-feat-add" data-idx="${idx}">+</button>
+        </div>
+        <div class="feat-tags track-feat-tags" data-idx="${idx}">
+          ${(t.featurings||[]).map(f => `<span class="feat-tag">${escH(f)} <span class="feat-tag-x track-feat-remove" data-feat="${escH(f)}" data-idx="${idx}">✕</span></span>`).join('')}
+        </div>
       </div>
       <div class="form-group">
         <label class="form-label" style="margin-bottom:4px">Songwriters BLZante</label>
@@ -474,7 +511,7 @@ function updateSwFromTracks() {
 }
 
 document.getElementById('addTrackBtn').addEventListener('click', () => {
-  blzTracks.push({ title: '', link: '', songwriters: [] });
+  blzTracks.push({ title: '', link: '', songwriters: [], featurings: [] });
   renderBlzTracks();
 });
 
@@ -482,6 +519,28 @@ document.getElementById('blzTracksList').addEventListener('click', (e) => {
   // Remove track
   const rmBtn = e.target.closest('.blz-track-remove');
   if (rmBtn) { blzTracks.splice(parseInt(rmBtn.dataset.idx), 1); renderBlzTracks(); return; }
+  // Track feat add button
+  const featAddBtn = e.target.closest('.track-feat-add');
+  if (featAddBtn) {
+    const idx = parseInt(featAddBtn.dataset.idx);
+    const inp = featAddBtn.parentElement.querySelector('.track-feat-input');
+    const name = inp.value.trim();
+    if (name && !(blzTracks[idx].featurings||[]).includes(name)) {
+      if (!blzTracks[idx].featurings) blzTracks[idx].featurings = [];
+      blzTracks[idx].featurings.push(name);
+      renderBlzTracks();
+    }
+    return;
+  }
+  // Track feat remove
+  const featRm = e.target.closest('.track-feat-remove');
+  if (featRm) {
+    const idx = parseInt(featRm.dataset.idx);
+    const feat = featRm.dataset.feat;
+    blzTracks[idx].featurings = (blzTracks[idx].featurings||[]).filter(f => f !== feat);
+    renderBlzTracks();
+    return;
+  }
   // SW option click
   const swOpt = e.target.closest('.track-sw-opt');
   if (swOpt) {
@@ -527,6 +586,20 @@ document.getElementById('blzTracksList').addEventListener('input', (e) => {
       o.classList.toggle('hidden', !o.textContent.toLowerCase().includes(q));
     });
     dd.classList.add('open');
+  }
+});
+
+// Enter key for track feat inputs
+document.getElementById('blzTracksList').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && e.target.classList.contains('track-feat-input')) {
+    e.preventDefault();
+    const idx = parseInt(e.target.dataset.idx);
+    const name = e.target.value.trim();
+    if (name && !(blzTracks[idx].featurings||[]).includes(name)) {
+      if (!blzTracks[idx].featurings) blzTracks[idx].featurings = [];
+      blzTracks[idx].featurings.push(name);
+      renderBlzTracks();
+    }
   }
 });
 
@@ -582,6 +655,8 @@ function updateConditionals() {
   certGroup.classList.toggle('visible', t === 'Certification');
   countryGroup.classList.toggle('visible', ['Single','EP','Album'].includes(t));
   actuGroup.classList.toggle('visible', t === 'Actu');
+  // Event-level feat: shown for Single/Synchro/Cert (EP/Album have per-track feat)
+  document.getElementById('featGroup').classList.toggle('visible', ['Single','Synchro','Certification'].includes(t));
   // Hide manual SW picker for EP/Album (auto-computed from tracks)
   document.getElementById('swGroup').style.display = isEPAlbum ? 'none' : '';
 }
@@ -845,6 +920,38 @@ swTags.addEventListener('click', (e) => {
   renderTags();
 });
 
+// ─── Event-level featuring (Single/Synchro/Cert) ───
+const featInput = document.getElementById('featInput');
+const featAddBtn2 = document.getElementById('featAddBtn');
+const featTagsDiv = document.getElementById('featTags');
+
+function renderFeatTags() {
+  featTagsDiv.innerHTML = featurings.map(f =>
+    `<span class="feat-tag">${escH(f)} <span class="feat-tag-x" data-feat="${escH(f)}">✕</span></span>`
+  ).join('');
+}
+
+function addFeatArtist() {
+  const name = featInput.value.trim();
+  if (name && !featurings.includes(name)) {
+    featurings.push(name);
+    renderFeatTags();
+  }
+  featInput.value = '';
+}
+
+featAddBtn2.addEventListener('click', addFeatArtist);
+featInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') { e.preventDefault(); addFeatArtist(); }
+});
+featTagsDiv.addEventListener('click', (e) => {
+  const x = e.target.closest('.feat-tag-x');
+  if (x) {
+    featurings = featurings.filter(f => f !== x.dataset.feat);
+    renderFeatTags();
+  }
+});
+
 // ─── Edit mode ───
 function enterEditMode(release) {
   editId = release.id;
@@ -868,11 +975,15 @@ function enterEditMode(release) {
   document.getElementById('actuDesc').value = release.actuDesc || '';
   document.getElementById('releaseLink').value = release.link || '';
   if (release.artwork) showArtwork(release.artwork);
+  // Load event-level featurings
+  featurings = release.featurings ? (Array.isArray(release.featurings) ? [...release.featurings] : []) : [];
+  renderFeatTags();
   // Load blzTracks (new format) or migrate from old format
   if (release.blzTracks && Array.isArray(release.blzTracks)) {
     blzTracks = release.blzTracks.map(t => ({
       title: t.title || '', link: t.link || '',
-      songwriters: t.songwriters ? (Array.isArray(t.songwriters) ? [...t.songwriters] : [t.songwriters]) : []
+      songwriters: t.songwriters ? (Array.isArray(t.songwriters) ? [...t.songwriters] : [t.songwriters]) : [],
+      featurings: t.featurings ? (Array.isArray(t.featurings) ? [...t.featurings] : []) : []
     }));
   } else if (release.blzTrackNames) {
     // Migrate old format: split names into tracks
@@ -915,6 +1026,8 @@ function resetForm() {
   document.getElementById('certType').value = '';
   document.getElementById('certLevel').value = '';
   blzTracks = [];
+  featurings = [];
+  renderFeatTags();
   renderBlzTracks();
   projectGroup.classList.remove('visible');
   trackGroup.classList.remove('visible');
@@ -923,6 +1036,7 @@ function resetForm() {
   countryGroup.classList.remove('visible');
   actuGroup.classList.remove('visible');
   epTracksGroup.classList.remove('visible');
+  document.getElementById('featGroup').classList.remove('visible');
   document.getElementById('releaseCountry').value = 'FR';
   setCountry('FR');
   document.getElementById('actuDesc').value = '';
@@ -989,6 +1103,9 @@ submitBtn.addEventListener('click', async () => {
     updateSwFromTracks();
   }
 
+  // Build feat suffix for title
+  const featSuffix = !isEPA && featurings.length ? ' feat. ' + featurings.join(', ') : '';
+
   let title = '';
   if (type === 'EP' || type === 'Album') {
     title = project || artist;
@@ -996,9 +1113,9 @@ submitBtn.addEventListener('click', async () => {
   } else if (type === 'Live') {
     title = lieu + (ville ? ' — ' + ville : '');
   } else if (type === 'Certification') {
-    title = (track || artist) + ' (' + certLevel + ' ' + certType + ')';
+    title = (track || artist) + featSuffix + ' (' + certLevel + ' ' + certType + ')';
   } else {
-    title = track || artist;
+    title = (track || artist) + featSuffix;
   }
 
   submitBtn.disabled = true;
@@ -1010,7 +1127,8 @@ submitBtn.addEventListener('click', async () => {
       type, status: releaseStatus, artist, title,
       project, track, lieu, ville, certType, certLevel,
       blzTrackCount, blzTrackNames,
-      blzTracks: isEPA ? validTracks.map(t => ({ title: t.title.trim(), link: t.link.trim(), songwriters: [...t.songwriters] })) : [],
+      blzTracks: isEPA ? validTracks.map(t => ({ title: t.title.trim(), link: t.link.trim(), songwriters: [...t.songwriters], featurings: [...(t.featurings||[])] })) : [],
+      featurings: !isEPA ? [...featurings] : [],
       country: ['Single','EP','Album'].includes(type) ? document.getElementById('releaseCountry').value : '',
       actuDesc: type === 'Actu' ? document.getElementById('actuDesc').value.trim() : '',
       link: document.getElementById('releaseLink').value.trim(),

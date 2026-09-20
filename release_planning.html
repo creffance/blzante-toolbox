@@ -516,7 +516,9 @@ function render() {
       if (flagDisplay) html += `<span class="rel-flag">${flagDisplay}</span>`;
       html += `</div>`;
       html += `<div class="rel-info">`;
-      html += `<span class="rel-artist">${r.artist}</span>`;
+      // Build feat display
+      const featList = r.featurings && Array.isArray(r.featurings) && r.featurings.length ? ' <span style="color:var(--muted);font-size:0.65rem">feat. ' + r.featurings.join(', ') + '</span>' : '';
+      html += `<span class="rel-artist">${r.artist}${featList}</span>`;
       if (r.type === 'Certification' && r.track) {
         html += `<span class="rel-title">${r.track}</span>`;
         html += `<span class="rel-blz">${r.certType || ''} — ${r.certLevel || ''}</span>`;
@@ -525,8 +527,18 @@ function render() {
       }
       if (r.actuDesc) html += `<span class="rel-desc">${r.actuDesc}</span>`;
       if (r.blzTrackCount) html += `<span class="rel-blz">${r.blzTrackCount} titre${r.blzTrackCount > 1 ? 's' : ''} BLZante</span>`;
-      if (r.blzTrackNames) html += `<span class="rel-sw">${r.blzTrackNames.replace(/\n/g, ' · ')}</span>`;
-      if (r.epTrackNames && !r.blzTrackNames) html += `<span class="rel-sw">${r.epTrackNames.replace(/\n/g, ' · ')}</span>`;
+      // Show track names with featurings if available
+      if (r.blzTracks && Array.isArray(r.blzTracks) && r.blzTracks.length) {
+        const trackDisplay = r.blzTracks.filter(t => t.title).map(t => {
+          let s = t.title;
+          if (t.featurings && t.featurings.length) s += ' feat. ' + t.featurings.join(', ');
+          return s;
+        }).join(' · ');
+        if (trackDisplay) html += `<span class="rel-sw">${trackDisplay}</span>`;
+      } else if (r.blzTrackNames) {
+        html += `<span class="rel-sw">${r.blzTrackNames.replace(/\n/g, ' · ')}</span>`;
+      }
+      if (r.epTrackNames && !r.blzTrackNames && !(r.blzTracks && r.blzTracks.length)) html += `<span class="rel-sw">${r.epTrackNames.replace(/\n/g, ' · ')}</span>`;
       if (swText) html += `<span class="rel-sw">${swText}</span>`;
       html += `</div>`;
       html += `<a class="rel-edit" href="release_create.html?edit=${r.id}" title="Modifier">edit</a>`;
@@ -764,12 +776,24 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
 
         // Info
         h += '<div style="flex:1;min-width:0">';
-        h += `<div style="font-weight:700;color:#fff;font-size:0.72rem">${r.artist}</div>`;
+        const pdfFeat = r.featurings && Array.isArray(r.featurings) && r.featurings.length ? ' <span style="color:#777;font-size:0.6rem">feat. ' + r.featurings.join(', ') + '</span>' : '';
+        h += `<div style="font-weight:700;color:#fff;font-size:0.72rem">${r.artist}${pdfFeat}</div>`;
         h += `<div style="color:#aaa;font-size:0.62rem;font-family:Syne Mono,monospace">${r.title}</div>`;
         if (r.actuDesc) h += `<div style="color:#888;font-size:0.54rem;font-style:italic;margin-top:1px">${r.actuDesc}</div>`;
         if (r.blzTrackCount) h += `<div style="color:#e8c547;font-size:0.54rem;font-family:Syne Mono,monospace;margin-top:1px">${r.blzTrackCount} titre${r.blzTrackCount > 1 ? 's' : ''} BLZante</div>`;
-        if (r.blzTrackNames) h += `<div style="color:#555;font-size:0.54rem;font-family:Syne Mono,monospace;margin-top:1px">${r.blzTrackNames.replace(/\n/g, ' · ')}</div>`;
-        else if (r.epTrackNames) h += `<div style="color:#555;font-size:0.54rem;font-family:Syne Mono,monospace;margin-top:1px">${r.epTrackNames.replace(/\n/g, ' · ')}</div>`;
+        // Track names with per-track featurings
+        if (r.blzTracks && Array.isArray(r.blzTracks) && r.blzTracks.length) {
+          const pdfTrackDisplay = r.blzTracks.filter(t => t.title).map(t => {
+            let s = t.title;
+            if (t.featurings && t.featurings.length) s += ' feat. ' + t.featurings.join(', ');
+            return s;
+          }).join(' · ');
+          if (pdfTrackDisplay) h += `<div style="color:#555;font-size:0.54rem;font-family:Syne Mono,monospace;margin-top:1px">${pdfTrackDisplay}</div>`;
+        } else if (r.blzTrackNames) {
+          h += `<div style="color:#555;font-size:0.54rem;font-family:Syne Mono,monospace;margin-top:1px">${r.blzTrackNames.replace(/\n/g, ' · ')}</div>`;
+        } else if (r.epTrackNames) {
+          h += `<div style="color:#555;font-size:0.54rem;font-family:Syne Mono,monospace;margin-top:1px">${r.epTrackNames.replace(/\n/g, ' · ')}</div>`;
+        }
         if (swArr.length) h += `<div style="color:#555;font-size:0.54rem;font-family:Syne Mono,monospace;margin-top:1px">${swArr.join(', ')}</div>`;
         h += '</div>';
 

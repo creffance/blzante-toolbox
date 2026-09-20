@@ -60,10 +60,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .add-btn-dyn:hover { border-color: #555; color: var(--text); }
 
 /* Major placement row */
-.major-item { display: grid; grid-template-columns: auto 1fr 1fr auto auto; gap: 6px; align-items: center; }
-.major-item .drag-handle { cursor: grab; color: #555; font-size: 1rem; user-select: none; }
-.major-item .drag-handle:hover { color: #aaa; }
-.major-item.dragging { opacity: 0.3; }
+.major-item { display: grid; grid-template-columns: 1fr 1fr auto auto; gap: 6px; align-items: center; }
 .major-item .form-input { padding: 10px 12px; font-size: 0.78rem; }
 .major-artwork { width: 40px; height: 40px; object-fit: cover; border: 1px solid var(--border); }
 .major-upload { font-family: 'Syne Mono', monospace; font-size: 0.58rem; padding: 6px 8px; background: var(--surface); border: 1px solid var(--border); color: var(--muted); cursor: pointer; white-space: nowrap; }
@@ -165,12 +162,6 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
     </div>
   </div>
 
-  <div class="form-group" style="margin-top:12px">
-    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-family:'Syne Mono',monospace;font-size:0.7rem;color:#888">
-      <input type="checkbox" id="showDisco" /> Afficher la discographie
-    </label>
-  </div>
-
   <div class="form-section" id="discoSection" style="display:none">Discographie artiste</div>
   <div class="dynamic-list" id="discoList" style="display:none"></div>
   <button class="add-btn-dyn" id="addDisco" style="display:none">+ Ajouter une sortie</button>
@@ -186,7 +177,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
   <div class="dynamic-list" id="majorList"></div>
   <button class="add-btn-dyn" id="addMajor">+ Ajouter un placement majeur</button>
 
-  <div class="form-section">Certifications (avant 2026)</div>
+  <div class="form-section">Certifications</div>
   <div class="dynamic-list" id="certsList"></div>
   <button class="add-btn-dyn" id="addCert">+ Ajouter une certification</button>
 
@@ -247,12 +238,11 @@ document.getElementById('skillOptions').addEventListener('click', e => {
 });
 
 function toggleDiscoSection() {
-  const show = document.getElementById('showDisco').checked;
+  const show = selectedTypes.includes('Artiste Interprète');
   document.getElementById('discoSection').style.display = show ? '' : 'none';
   document.getElementById('discoList').style.display = show ? '' : 'none';
   document.getElementById('addDisco').style.display = show ? '' : 'none';
 }
-document.getElementById('showDisco').addEventListener('change', toggleDiscoSection);
 
 // ─── Generic gallery handler ───
 function makeGallery(arr, galId, addBtnId, fileInputId, urlInputId) {
@@ -299,24 +289,14 @@ const renderImages = makeGallery(images, 'imgGallery', 'imgAddBtn', 'imgFileInpu
 const renderBgImages = makeGallery(bgImages, 'bgGallery', 'bgAddBtn', 'bgFileInput', 'bgUrlInput');
 
 // ─── Placements (simple artist names) ───
-const deletedPlacements = new Set();
-function addPlacement(val, fromPlanning, country) {
+function addPlacement(val) {
   const div = document.createElement('div'); div.className = 'dynamic-item';
-  if (fromPlanning) div.dataset.fromPlanning = '1';
-  div.innerHTML = `<input type="text" class="form-input" placeholder="Nom de l'artiste" value="${val||''}" style="flex:1" /><select class="form-select" data-f="country" style="max-width:90px;font-size:0.62rem;padding:6px 4px"><option value="FR">🇫🇷 France</option><option value="US">🇺🇸 États-Unis</option><option value="GB">🇬🇧 Royaume-Uni</option><option value="DE">🇩🇪 Allemagne</option><option value="ES">🇪🇸 Espagne</option><option value="IT">🇮🇹 Italie</option><option value="BE">🇧🇪 Belgique</option><option value="CH">🇨🇭 Suisse</option><option value="CA">🇨🇦 Canada</option><option value="NL">🇳🇱 Pays-Bas</option><option value="JP">🇯🇵 Japon</option><option value="KR">🇰🇷 Corée du Sud</option><option value="BR">🇧🇷 Brésil</option><option value="AR">🇦🇷 Argentine</option><option value="MX">🇲🇽 Mexique</option><option value="NG">🇳🇬 Nigeria</option><option value="CI">🇨🇮 Côte d'Ivoire</option><option value="SN">🇸🇳 Sénégal</option><option value="MA">🇲🇦 Maroc</option><option value="DZ">🇩🇿 Algérie</option><option value="CM">🇨🇲 Cameroun</option><option value="GN">🇬🇳 Guinée</option><option value="ML">🇲🇱 Mali</option><option value="CV">🇨🇻 Cap-Vert</option><option value="GA">🇬🇦 Gabon</option><option value="BJ">🇧🇯 Bénin</option><option value="CD">🇨🇩 RD Congo</option><option value="INTL">🌍 International</option></select><button class="remove-btn" title="Supprimer">×</button>`;
-  div.querySelector('.remove-btn').addEventListener('click', () => {
-    const name = div.querySelector('input').value.trim();
-    if (name && div.dataset.fromPlanning) deletedPlacements.add(name);
-    div.remove();
-  });
+  div.innerHTML = `<input type="text" class="form-input" placeholder="Nom de l'artiste" value="${val||''}" /><button class="remove-btn" onclick="this.parentElement.remove()">×</button>`;
   const input = div.querySelector('input');
   input.addEventListener('keydown', e => {
     if (e.key !== 'Enter') return; e.preventDefault();
     if (input.value.trim()) { addPlacement(); }
   });
-  // Set country select value
-  const countrySelect = div.querySelector('[data-f=country]');
-  if (countrySelect && country) countrySelect.value = country;
   document.getElementById('placementsList').appendChild(div);
   if (!val) input.focus();
 }
@@ -324,66 +304,12 @@ document.getElementById('addPlacement').addEventListener('click', () => addPlace
 
 // ─── Major placements ───
 let majorCount = 0;
-// ─── Artwork extraction from links ───
-function extractYouTubeId(url) {
-  const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/);
-  return m ? m[1] : null;
-}
-async function tryExtractArtworkForDiv(url, div) {
-  if (!url) return;
-  const ytId = extractYouTubeId(url);
-  if (ytId) {
-    const sizes = ['maxresdefault', 'sddefault', 'hqdefault'];
-    for (const size of sizes) {
-      const thumbUrl = `https://img.youtube.com/vi/${ytId}/${size}.jpg`;
-      try {
-        const img = new Image();
-        const loaded = await new Promise(resolve => {
-          img.onload = () => resolve(img);
-          img.onerror = () => resolve(null);
-          img.src = thumbUrl;
-        });
-        if (loaded && loaded.naturalWidth > 200) {
-          setArtworkOnDiv(div, thumbUrl);
-          return;
-        }
-      } catch(e) {}
-    }
-    setArtworkOnDiv(div, `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`);
-    return;
-  }
-  if (url.includes('open.spotify.com')) {
-    try {
-      const res = await fetch(`https://open.spotify.com/oembed?url=${encodeURIComponent(url)}`);
-      if (res.ok) {
-        const data = await res.json();
-        if (data.thumbnail_url) {
-          setArtworkOnDiv(div, data.thumbnail_url.replace('ab67616d00001e02', 'ab67616d0000b273'));
-          return;
-        }
-      }
-    } catch(e) {}
-  }
-}
-function setArtworkOnDiv(div, src) {
-  let img = div.querySelector('[data-f=artworkSrc]');
-  if (!img) {
-    img = document.createElement('img');
-    img.className = div.classList.contains('major-item') ? 'major-artwork' : div.classList.contains('cert-item') ? 'cert-artwork' : 'major-artwork';
-    img.dataset.f = 'artworkSrc';
-    div.insertBefore(img, div.querySelector('.remove-btn'));
-  }
-  img.src = src;
-}
-
-function addMajor(artist, title, artwork, link, country) {
+function addMajor(artist, title, artwork, link) {
   majorCount++;
   const div = document.createElement('div'); div.className = 'major-item'; div.dataset.mid = majorCount;
-  div.setAttribute('draggable', 'true');
-  div.innerHTML = `<span class="drag-handle">☰</span><input type="text" class="form-input" placeholder="Artiste" value="${artist||''}" data-f="artist" />` +
+  div.innerHTML = `<input type="text" class="form-input" placeholder="Artiste" value="${artist||''}" data-f="artist" />` +
     `<input type="text" class="form-input" placeholder="Projet" value="${title||''}" data-f="title" />` +
-    `<select class="form-select" data-f="country" style="max-width:90px;font-size:0.62rem;padding:6px 4px"><option value="FR">🇫🇷 France</option><option value="US">🇺🇸 États-Unis</option><option value="GB">🇬🇧 Royaume-Uni</option><option value="DE">🇩🇪 Allemagne</option><option value="ES">🇪🇸 Espagne</option><option value="IT">🇮🇹 Italie</option><option value="BE">🇧🇪 Belgique</option><option value="CH">🇨🇭 Suisse</option><option value="CA">🇨🇦 Canada</option><option value="NL">🇳🇱 Pays-Bas</option><option value="JP">🇯🇵 Japon</option><option value="KR">🇰🇷 Corée du Sud</option><option value="BR">🇧🇷 Brésil</option><option value="AR">🇦🇷 Argentine</option><option value="MX">🇲🇽 Mexique</option><option value="NG">🇳🇬 Nigeria</option><option value="CI">🇨🇮 Côte d'Ivoire</option><option value="SN">🇸🇳 Sénégal</option><option value="MA">🇲🇦 Maroc</option><option value="DZ">🇩🇿 Algérie</option><option value="CM">🇨🇲 Cameroun</option><option value="GN">🇬🇳 Guinée</option><option value="ML">🇲🇱 Mali</option><option value="CV">🇨🇻 Cap-Vert</option><option value="GA">🇬🇦 Gabon</option><option value="BJ">🇧🇯 Bénin</option><option value="CD">🇨🇩 RD Congo</option><option value="INTL">🌍 International</option></select>` +
-    `<input type="text" class="form-input" placeholder="Lien écoute / artwork" value="${link||''}" data-f="link" style="font-size:0.68rem" />` +
+    `<input type="text" class="form-input" placeholder="Lien écoute (optionnel)" value="${link||''}" data-f="link" style="font-size:0.68rem" />` +
     `<input type="file" accept="image/*" style="display:none" data-f="file" />` +
     `<button type="button" class="major-upload" data-f="upload">img</button>` +
     `<button class="remove-btn" onclick="this.parentElement.remove()">×</button>`;
@@ -402,44 +328,19 @@ function addMajor(artist, title, artwork, link, country) {
     ev.target.value = '';
   });
   div.querySelector('[data-f=upload]').addEventListener('click', e => { e.preventDefault(); fileInput.click(); });
-  // Auto-extract artwork from link
-  const linkInput = div.querySelector('[data-f=link]');
-  linkInput.addEventListener('blur', () => {
-    if (linkInput.value && !div.querySelector('[data-f=artworkSrc]')) tryExtractArtworkForDiv(linkInput.value, div);
-  });
-  if (link && !artwork) tryExtractArtworkForDiv(link, div);
-  // Set country select value
-  const countrySelM = div.querySelector('[data-f=country]');
-  if (countrySelM && country) countrySelM.value = country;
   document.getElementById('majorList').appendChild(div);
 }
 document.getElementById('addMajor').addEventListener('click', () => addMajor());
-// Drag & drop reorder majors
-const majorListEl = document.getElementById('majorList');
-let dragEl = null;
-majorListEl.addEventListener('dragstart', e => { dragEl = e.target.closest('.major-item'); if (dragEl) dragEl.classList.add('dragging'); });
-majorListEl.addEventListener('dragend', () => { if (dragEl) dragEl.classList.remove('dragging'); dragEl = null; });
-majorListEl.addEventListener('dragover', e => {
-  e.preventDefault();
-  const d = majorListEl.querySelector('.dragging'); if (!d) return;
-  const siblings = [...majorListEl.querySelectorAll('.major-item:not(.dragging)')];
-  const next = siblings.reduce((closest, child) => {
-    const box = child.getBoundingClientRect();
-    const offset = e.clientY - box.top - box.height / 2;
-    if (offset < 0 && offset > closest.offset) return { offset, element: child };
-    return closest;
-  }, { offset: Number.NEGATIVE_INFINITY }).element;
-  if (next) majorListEl.insertBefore(d, next); else majorListEl.appendChild(d);
-});
 
 // ─── Discographie artiste ───
 let discoCount = 0;
-function addDisco(artist, title, artwork, date, link) {
+function addDisco(artist, title, artwork, date, link, feat) {
   discoCount++;
   const div = document.createElement('div'); div.className = 'major-item'; div.dataset.did = discoCount;
   div.innerHTML = `<input type="text" class="form-input" placeholder="MM/YYYY" value="${date||''}" data-f="date" style="max-width:90px" maxlength="7" />` +
     `<input type="text" class="form-input" placeholder="Artiste" value="${artist||''}" data-f="artist" />` +
     `<input type="text" class="form-input" placeholder="Projet" value="${title||''}" data-f="title" />` +
+    `<input type="text" class="form-input" placeholder="Feat. (séparés par virgule)" value="${feat||''}" data-f="feat" style="font-size:0.68rem;color:#e8c547" />` +
     `<input type="text" class="form-input" placeholder="Lien écoute (optionnel)" value="${link||''}" data-f="link" style="font-size:0.68rem" />` +
     `<input type="file" accept="image/*" style="display:none" data-f="file" />` +
     `<button type="button" class="major-upload" data-f="upload">img</button>` +
@@ -471,15 +372,13 @@ document.getElementById('addDisco').addEventListener('click', () => addDisco());
 
 // ─── Certifications ───
 let certCount = 0;
-function addCert(type, level, artist, project, artwork, date, link) {
+function addCert(type, level, artist, project, artwork) {
   certCount++;
   const div = document.createElement('div'); div.className = 'cert-item'; div.dataset.cid = certCount;
   div.innerHTML = `<select class="form-select" data-f="type"><option value="">Type</option><option value="Single" ${type==='Single'?'selected':''}>Single</option><option value="Album" ${type==='Album'?'selected':''}>Album</option></select>` +
     `<select class="form-select" data-f="level"><option value="">Certif</option><option value="Or" ${level==='Or'?'selected':''}>Or</option><option value="Platine" ${level==='Platine'?'selected':''}>Platine</option><option value="Double platine" ${level==='Double platine'?'selected':''}>Double platine</option><option value="Triple platine" ${level==='Triple platine'?'selected':''}>Triple platine</option><option value="Diamant" ${level==='Diamant'?'selected':''}>Diamant</option></select>` +
     `<input type="text" class="form-input" placeholder="Artiste" value="${artist||''}" data-f="artist" />` +
     `<input type="text" class="form-input" placeholder="Projet" value="${project||''}" data-f="project" />` +
-    `<input type="text" class="form-input" placeholder="Date (ex: 06/2024)" value="${date||''}" data-f="date" style="max-width:100px" />` +
-    `<input type="text" class="form-input" placeholder="Lien écoute / artwork" value="${link||''}" data-f="link" style="font-size:0.65rem" />` +
     `<input type="file" accept="image/*" style="display:none" data-f="file" />` +
     `<button type="button" class="major-upload" data-f="upload">img</button>` +
     `<button class="remove-btn" onclick="this.parentElement.remove()">×</button>`;
@@ -498,12 +397,6 @@ function addCert(type, level, artist, project, artwork, date, link) {
     ev.target.value = '';
   });
   div.querySelector('[data-f=upload]').addEventListener('click', e => { e.preventDefault(); fileInput.click(); });
-  // Auto-extract artwork from link
-  const certLinkInput = div.querySelector('[data-f=link]');
-  certLinkInput.addEventListener('blur', () => {
-    if (certLinkInput.value && !div.querySelector('[data-f=artworkSrc]')) tryExtractArtworkForDiv(certLinkInput.value, div);
-  });
-  if (link && !artwork) tryExtractArtworkForDiv(link, div);
   document.getElementById('certsList').appendChild(div);
 }
 document.getElementById('addCert').addEventListener('click', () => addCert());
@@ -527,20 +420,13 @@ function gatherData() {
   const name = document.getElementById('artistName').value.trim();
   const bio = document.getElementById('artistBio').value.trim();
   const bioEn = document.getElementById('artistBioEn').value.trim();
-  const placements = []; document.querySelectorAll('#placementsList .dynamic-item').forEach(div => {
-    const nameInput = div.querySelector('.form-input');
-    const countryInput = div.querySelector('[data-f=country]');
-    const v = nameInput ? nameInput.value.trim() : '';
-    const c = countryInput ? countryInput.value.trim() : 'FR';
-    if (v) placements.push({ name: v, country: c });
-  });
+  const placements = []; document.querySelectorAll('#placementsList .dynamic-item .form-input').forEach(i => { const v = i.value.trim(); if (v) placements.push(v); });
   const majors = []; document.querySelectorAll('#majorList .major-item').forEach(div => {
     const artist = div.querySelector('[data-f=artist]').value.trim();
     const title = div.querySelector('[data-f=title]').value.trim();
     const link = div.querySelector('[data-f=link]').value.trim();
-    const country = div.querySelector('[data-f=country]') ? div.querySelector('[data-f=country]').value.trim() : '';
     const artImg = div.querySelector('.major-artwork');
-    if (artist || title) majors.push({ artist, title, link, country, artwork: artImg ? artImg.src : '' });
+    if (artist || title) majors.push({ artist, title, link, artwork: artImg ? artImg.src : '' });
   });
   const discography = []; document.querySelectorAll('#discoList .major-item').forEach(div => {
     const date = div.querySelector('[data-f=date]').value.trim();
@@ -548,17 +434,16 @@ function gatherData() {
     const title = div.querySelector('[data-f=title]').value.trim();
     const link = div.querySelector('[data-f=link]').value.trim();
     const artImg = div.querySelector('.major-artwork');
-    if (artist || title) discography.push({ date, artist, title, link, artwork: artImg ? artImg.src : '' });
+    const feat = div.querySelector('[data-f=feat]').value.trim();
+    if (artist || title) discography.push({ date, artist, title, link, feat, artwork: artImg ? artImg.src : '' });
   });
   const certs = []; document.querySelectorAll('#certsList .cert-item').forEach(div => {
     const type = div.querySelector('[data-f=type]').value;
     const level = div.querySelector('[data-f=level]').value;
     const artist = div.querySelector('[data-f=artist]').value.trim();
     const project = div.querySelector('[data-f=project]').value.trim();
-    const date = div.querySelector('[data-f=date]') ? div.querySelector('[data-f=date]').value.trim() : '';
-    const link = div.querySelector('[data-f=link]') ? div.querySelector('[data-f=link]').value.trim() : '';
     const artImg = div.querySelector('.cert-artwork');
-    if (type || level || artist) certs.push({ type, level, artist, project, date, link, artwork: artImg ? artImg.src : '' });
+    if (type || level || artist) certs.push({ type, level, artist, project, artwork: artImg ? artImg.src : '' });
   });
   const specialInfo = []; const specialInfoEn = [];
   document.querySelectorAll('#specialList .dynamic-item').forEach(div => {
@@ -569,8 +454,6 @@ function gatherData() {
   return {
     name, types: selectedTypes, skills: selectedSkills, bio, bioEn, images, bgImages,
     placements, majors, discography, certs, specialInfo, specialInfoEn,
-    showDisco: document.getElementById('showDisco').checked,
-    deletedPlacements: [...deletedPlacements],
     instagram: document.getElementById('linkInsta').value.trim(),
     tiktok: document.getElementById('linkTiktok').value.trim(),
     spotify: document.getElementById('linkSpotify').value.trim(),
@@ -615,85 +498,14 @@ async function loadForEdit(id) {
     if (!bgImages.length && d.bg) bgImages.push({src: d.bg, primary: true});
     renderBgImages();
     toggleDiscoSection();
-    // Load showDisco state
-    if (d.showDisco !== undefined) {
-      document.getElementById('showDisco').checked = d.showDisco;
-      toggleDiscoSection();
-    }
     const pl = Array.isArray(d.placements) ? d.placements : d.placements ? Object.values(d.placements) : [];
-    // Also import artistes placés from planning
-    const manualNames = new Set(pl.map(p => typeof p === 'string' ? p : p.name || '').filter(Boolean));
-    const existingNames = new Set(manualNames);
-    // Build placement map with country
-    const placementMap = new Map();
-    pl.forEach(p => {
-      const name = typeof p === 'string' ? p : p.name || '';
-      const country = typeof p === 'object' ? (p.country || 'FR') : 'FR';
-      if (name) placementMap.set(name, { name, country });
-    });
-    try {
-      const planRes = await dbFetch('/releases.json');
-      const planJson = await planRes.json();
-      if (planJson) {
-        const SW_R = { 'LEANDRE': 'LEANDRE PICK', 'YANNICK SERI': 'LE SERI', 'BRO': 'BRÖ' };
-        const nameUp = (d.name || '').toUpperCase();
-        const SW_INV = {}; Object.entries(SW_R).forEach(([o,n]) => { SW_INV[n] = o; });
-        const altN = SW_INV[nameUp] || '';
-        Object.values(planJson).forEach(r => {
-          if (!['Single','EP','Album'].includes(r.type) || r.status === 'Annulé') return;
-          const sw = r.songwriters ? (Array.isArray(r.songwriters) ? r.songwriters : [r.songwriters]) : [];
-          const swMapped = sw.map(s => SW_R[s] || s);
-          if (!swMapped.some(s => s.toUpperCase() === nameUp || (altN && s.toUpperCase() === altN))) return;
-          if (r.artist && !existingNames.has(r.artist)) {
-            existingNames.add(r.artist);
-            const ctry = r.country || 'FR';
-            placementMap.set(r.artist, { name: r.artist, country: ctry });
-          }
-        });
-      }
-    } catch(e) { console.warn('Could not merge planning artistes'); }
-    // Sort alphabetically
-    const sortedPl = [...placementMap.values()].sort((a,b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
-    // Load deleted placements list
-    const dp = Array.isArray(d.deletedPlacements) ? d.deletedPlacements : [];
-    dp.forEach(n => deletedPlacements.add(n));
-    // Filter out deleted ones from planning imports
-    sortedPl.forEach(p => {
-      if (!deletedPlacements.has(p.name)) {
-        const isFromPlanning = !manualNames.has(p.name);
-        addPlacement(p.name, isFromPlanning, p.country);
-      }
-    });
+    pl.forEach(p => addPlacement(typeof p === 'string' ? p : p.name || ''));
     const mj = Array.isArray(d.majors) ? d.majors : d.majors ? Object.values(d.majors) : [];
-    mj.forEach(m => addMajor(m.artist, m.title, m.artwork, m.link, m.country));
+    mj.forEach(m => addMajor(m.artist, m.title, m.artwork, m.link));
     const dc = Array.isArray(d.discography) ? d.discography : d.discography ? Object.values(d.discography) : [];
-    dc.forEach(x => addDisco(x.artist, x.title, x.artwork, x.date, x.link));
+    dc.forEach(x => addDisco(x.artist, x.title, x.artwork, x.date, x.link, x.feat));
     const cr = Array.isArray(d.certs) ? d.certs : d.certs ? Object.values(d.certs) : [];
-    cr.forEach(c => addCert(c.type, c.level, c.artist, c.project, c.artwork, c.date, c.link));
-    // Import planning certifications
-    try {
-      const planRes2 = await dbFetch('/releases.json');
-      const planJson2 = await planRes2.json();
-      if (planJson2) {
-        const nameUp2 = (d.name || '').toUpperCase();
-        const SW_R2 = { 'LEANDRE': 'LEANDRE PICK', 'YANNICK SERI': 'LE SERI', 'BRO': 'BRÖ' };
-        const SW_INV2 = {}; Object.entries(SW_R2).forEach(([o,n]) => { SW_INV2[n] = o; });
-        const altN2 = SW_INV2[nameUp2] || '';
-        const existingCerts = new Set(cr.map(c => `${(c.artist||'').toLowerCase().trim()}-${(c.project||'').toLowerCase().trim()}-${(c.level||'').toLowerCase().trim()}`));
-        Object.values(planJson2).filter(r => r.type === 'Certification' && r.status !== 'Annulé').forEach(r => {
-          const sw = r.songwriters ? (Array.isArray(r.songwriters) ? r.songwriters : [r.songwriters]) : [];
-          const swMapped = sw.map(s => SW_R2[s] || s);
-          if (!swMapped.some(s => s.toUpperCase() === nameUp2 || (altN2 && s.toUpperCase() === altN2))) return;
-          // Use the clean track name field, NOT the formatted title
-          const certProject = (r.track || '').trim() || (r.project || '').trim() || (r.title || '').replace(/\s*\((?:Or|Platine|Double platine|Triple platine|Diamant)\s+(?:Single|Album)\)\s*/gi, '').trim();
-          const key = `${(r.artist||'').toLowerCase().trim()}-${certProject.toLowerCase()}-${(r.certLevel||'').toLowerCase().trim()}`;
-          if (!existingCerts.has(key)) {
-            existingCerts.add(key);
-            addCert(r.certType||'Single', r.certLevel||'', r.artist||'', certProject, r.artwork||'', r.date||'', r.link||'');
-          }
-        });
-      }
-    } catch(e) { console.warn('Could not import planning certs'); }
+    cr.forEach(c => addCert(c.type, c.level, c.artist, c.project, c.artwork));
     const sp = Array.isArray(d.specialInfo) ? d.specialInfo : d.specialInfo ? Object.values(d.specialInfo) : [];
     const spEn = Array.isArray(d.specialInfoEn) ? d.specialInfoEn : d.specialInfoEn ? Object.values(d.specialInfoEn) : [];
     sp.forEach((s, i) => addSpecial(typeof s === 'string' ? s : '', typeof spEn[i] === 'string' ? spEn[i] : ''));
