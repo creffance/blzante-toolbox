@@ -99,6 +99,9 @@ label.fl{display:block;font:600 10.5px/1 var(--sans);letter-spacing:.08em;text-t
 .kpi .s{font-size:11.5px;color:var(--ink-2);margin-top:4px}
 .kpi.lead{background:var(--surface-2);box-shadow:inset 2px 0 0 var(--accent)}
 .kpi.lead .v{color:var(--accent)}
+a.kpi-lien{color:inherit;text-decoration:none;cursor:pointer;display:block}
+a.kpi-lien:hover{background:var(--surface-2)}
+a.kpi-lien .k::after{content:' ›';color:var(--accent)}
 
 .panel{background:var(--surface);border:1px solid var(--line);margin-bottom:18px}
 .phead{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;justify-content:space-between;
@@ -192,7 +195,7 @@ td.sec,th.sec{font-size:11.5px}
 .tt{display:inline-flex;align-items:center;gap:10px;min-width:0}
 /* barres horizontales : un seul ton, valeur au bout, détail au survol */
 .bl{display:flex;flex-direction:column;gap:7px}
-.bl-r{display:grid;grid-template-columns:minmax(80px,1.1fr) 2fr auto 46px;gap:10px;align-items:center;
+.bl-r{display:grid;grid-template-columns:minmax(80px,1.1fr) 2fr auto 52px;gap:10px;align-items:center;
  font-size:12.5px;padding:2px 0;border-radius:3px;outline:none}
 .bl-r:hover,.bl-r:focus-visible{background:var(--surface-2)}
 .bl-l{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -200,7 +203,7 @@ td.sec,th.sec{font-size:11.5px}
 .bl-t i{display:block;height:8px;background:var(--accent);border-radius:0 4px 4px 0}
 .bl-t i.autre{background:var(--ink-3)}
 .bl-v{text-align:right;white-space:nowrap}
-.bl-p{text-align:right;font-size:11px}
+.bl-p{text-align:right;font-size:11px;white-space:nowrap}
 #tip{position:fixed;z-index:80;display:none;max-width:300px;background:var(--surface-3);color:var(--ink);
  border:1px solid var(--line-2);border-radius:5px;padding:8px 10px;font-size:12px;line-height:1.5;
  box-shadow:0 10px 30px -10px rgba(0,0,0,.6);pointer-events:none}
@@ -226,6 +229,27 @@ td.sec,th.sec{font-size:11.5px}
 .gq-res a .mini{display:block;margin-top:1px}
 .gq-res a:hover,.gq-res a.on{background:var(--surface-2)}
 .gq-vide{padding:10px;color:var(--ink-3);font-size:12px}
+.evo{width:100%;height:auto;display:block;margin:0 0 10px;overflow:visible}
+tr.sel td{background:var(--accent-soft)}
+.delta{white-space:nowrap;font-family:var(--mono);font-size:12px}
+.ck{display:inline-block;width:18px;text-align:center;font-weight:700}
+.ck.ok{color:var(--ink-3)}.ck.ko{color:var(--warn)}.ck.na{color:var(--line-2)}
+th.ckh{text-align:center;font-size:9.5px;padding-left:4px;padding-right:4px}
+td.ckc{text-align:center;padding-left:4px;padding-right:4px}
+.meter{display:inline-block;width:160px;height:6px;background:var(--surface-3);border-radius:3px;overflow:hidden;vertical-align:middle}
+.meter i{display:block;height:100%;background:var(--accent);border-radius:3px}
+.ckbar{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;padding:10px 14px;margin:-4px 0 18px;
+ border:1px solid var(--line);border-radius:4px;background:var(--surface);font-size:12.5px}
+.ckit{display:inline-flex;align-items:center;gap:4px;color:var(--ink-2)}
+.ckit.manque{color:var(--ink)}
+.evo-col{fill:var(--accent);opacity:.55}
+.evo-col.dern{opacity:1}
+.evo-grid{stroke:var(--line);stroke-width:1}
+.evo-base{stroke:var(--line-2);stroke-width:1}
+.evo-ax{fill:var(--ink-3);font:10px var(--mono)}
+.evo-v{fill:var(--ink);font:600 10.5px var(--mono)}
+.evo-hit{fill:transparent;cursor:default;outline:none}
+.evo-hit:hover,.evo-hit:focus{fill:rgba(255,255,255,.04)}
 .pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-2);border-radius:20px;
  padding:3px 10px;font-size:11.5px;background:var(--surface)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -337,7 +361,7 @@ var DB=null,WRITABLE=true,MODE='local',BESOIN_SESSION=false,FBERR='';
 var LSKEY='blz-catalogues-v1';
 var store={meta:{},oeuvres:{},edits:{},songwriters:{},imports:[],liens:{},overlays:{},
   fusions:{},ecartes:{},base:null};
-var state={societe:'blzante',tab:'apercu',vue:null,q:'',filtre:'tous',rfiltre:'rev',sort:{k:'net',d:-1},swSort:{k:'net',d:-1}};
+var state={societe:'blzante',tab:'apercu',vue:null,q:'',filtre:'tous',rfiltre:'rev',sort:{k:'net',d:-1},swSort:{k:'nom',d:1},adf:'',adq:'',adn:20,fq:'',rep:null};
 
 var CHUNK=120;
 function bulkPath(soc,i){return 'bulk/'+soc+'-o-'+i;}
@@ -1260,21 +1284,18 @@ function renderChrome(){
   var m=store.meta[state.societe]||{},t=totals(state.societe),p=[];
   p.push('Catalogue : <b>'+(m.catalogueDate?frDate(m.catalogueDate):'aucun import')+'</b>');
   p.push('Dernière répartition : <b>'+(m.lastRep?(m.lastRep+' · '+repDate(m.lastRep).lbl):'aucune')+'</b>');
-  p.push('<b>'+e0(t.oeuvres)+'</b> œuvres · <b>'+e0(swList(state.societe).length)+'</b> songwriters'+
-    (ROSTER.length||PLANNING.length?' <span class="mut">(dont '+ROSTER.length+' du roster'+
-      (nbPlanning?' et '+nbPlanning+' du planning':'')+')</span>':''));
-  if(t.na)p.push('<span class="tag neutral">'+eur(t.na)+' € non affectés à une œuvre</span>');
+  p.push('<b>'+e0(t.oeuvres)+'</b> œuvres · <b>'+e0(swList(state.societe).filter(estBLZ).length)+'</b> songwriters signés');
   if(SYNCHRO)p.push('<span class="tag neutral">synchronisation…</span>');
-  else p.push(MODE==='partage'?'<span class="tag ok">base partagée</span>'
-    :MODE==='firebase'?'<span class="tag ok">Firebase Toolbox</span>'
-    :BESOIN_SESSION?'<span class="tag warn">session Toolbox absente — base locale</span>'
+  else if(MODE!=='firebase'&&MODE!=='partage')p.push(BESOIN_SESSION
+    ?'<span class="tag warn">session Toolbox absente — base locale</span>'
     :'<span class="tag neutral">base locale à ce navigateur</span>');
   if(!WRITABLE)p.push('<span class="tag warn" title="'+esc(FBERR)+'">écriture refusée'+
     (MODE==='firebase'?' sous /'+esc(fbRoot()):'')+'</span>');
   el('stateline').innerHTML=p.join(' <span class="dotsep">·</span> ');
-  var att=enAttente(state.societe).length+ventilationsEnAttente(state.societe).length;
-  var tabs=[['apercu','Vue d\'ensemble',''],['songwriters','Songwriters',swList(state.societe).length],
-            ['oeuvres','Œuvres',t.oeuvres],['rappro','À traiter',att||''],['imports','Imports',store.imports.length]];
+  var att=nbATraiter(state.societe).oeuvres;
+  var tabs=[['apercu','Vue d\'ensemble',''],['songwriters','Songwriters',swList(state.societe).filter(estBLZ).length],
+            ['oeuvres','Œuvres',t.oeuvres],['repartitions','Répartitions',repsSoc(state.societe).length||''],
+            ['rappro','À traiter',att||''],['imports','Imports',store.imports.length]];
   el('tabs').innerHTML=tabs.map(function(x){
     return '<button role="tab" data-tab="'+x[0]+'" aria-selected="'+(state.tab===x[0])+'">'+x[1]+
       (x[2]!==''?'<span class="count">'+x[2]+'</span>':'')+'</button>';}).join('');
@@ -1290,18 +1311,21 @@ function viewApercu(){
   var ans=Object.keys(t.ans).sort();
   var sws=swRows(soc).sort(function(a,b){return b.net-a.net;});
   var top=rs.slice().sort(function(a,b){return b.net-a.net;}).slice(0,10);
-  var sf=auteursSansFiche(soc);
+  var dep=rs.filter(function(r){return r.cat;}),AT=nbATraiter(soc);
+  var lr=(store.meta[soc]||{}).lastRep;
   var h='<div class="kpis">'+
-    kpi('lead','Revenus du catalogue',eur(t.net)+' €',t.avecRev+' œuvres rémunérées sur '+t.oeuvres)+
-    kpi('','Part éditoriale au dépôt',t.nPart?pv(t.partSocPh/t.nPart)+' %':'—','en phono, sur '+t.nPart+' œuvres')+
-    kpi('','Œuvres rattachées',e0(t.ratt),t.oeuvres?pct(100*t.ratt/t.oeuvres)+' du catalogue':'—')+
-    kpi('','Songwriters signés',e0(sws.filter(function(x){return estBLZ(x.sw)&&x.oeuvres>0;}).length),
-      sws.filter(function(x){return !estBLZ(x.sw)&&x.oeuvres>0;}).length+' externes · '+sf.length+' auteurs sans fiche')+
-    kpi('','Dernier trimestre',dernierRep(t),(store.meta[soc]||{}).lastRep?'répartition '+(store.meta[soc]||{}).lastRep:'—')+
+    kpi('lead','Revenus du catalogue',eur(t.net)+' €',t.avecRev+' œuvres rémunérées')+
+    kpi('','Dernier trimestre',dernierRep(t),lr?'répartition '+lr+' · '+repDate(lr).lbl:'—')+
+    kpi('','Œuvres déposées',e0(dep.length),t.nPart?pv(t.partSocPh/t.nPart)+' % de phono en moyenne':'—')+
+    '<a class="kpi kpi-lien" href="#/'+soc+'/rappro" data-nav="rappro"><div class="k">Œuvres à traiter</div>'+
+      '<div class="v">'+e0(AT.oeuvres)+'</div><div class="s">'+e0(AT.faites)+' sur '+e0(AT.total)+' vérifiées'+
+      (AT.vent?' · '+AT.vent+' dissolution'+(AT.vent>1?'s':'')+' à valider':'')+'</div></a>'+
+    kpi('','Songwriters signés',e0(sws.filter(function(x){return estBLZ(x.sw);}).length),
+      e0(sws.filter(function(x){return estBLZ(x.sw)&&x.oeuvres>0;}).length)+' avec des œuvres ventilées')+
     '</div>';
   var AS=agregatSoc(soc);
   h+='<div class="grid3">'+
-    '<div class="panel"><div class="phead"><h2>Par répartition</h2></div><div class="pbody">'+tableReps(AS.reps)+'</div></div>'+
+    '<div class="panel"><div class="phead"><h2>Par répartition</h2></div><div class="pbody">'+tableReps(AS.reps,axeReps(soc))+'</div></div>'+
     '<div class="panel"><div class="phead"><h2>Par type d\'exploitation</h2><span class="note">survolez pour le détail</span></div>'+
       '<div class="pbody">'+barres(AS.fam,{detail:AS.famTyp})+couverture(AS)+'</div></div>'+
     '<div class="panel"><div class="phead"><h2>Par territoire</h2></div><div class="pbody">'+
@@ -1336,19 +1360,40 @@ function viewApercu(){
       '<td class="num w">'+eur(x.net)+'</td>'+
       '<td class="l" style="width:104px"><i class="bar" style="width:'+Math.max(2,100*x.net/mx)+'%"></i></td></tr>';});
   h+='</tbody></table></div></div></div>';
-  if(sf.length){
-    h+='<div class="panel"><div class="phead"><h2>Auteurs du catalogue sans fiche</h2>'+
-      '<span class="note">Créez la fiche pour rattacher toutes leurs œuvres d\'un coup. Le montant est la part '+
-      'de revenus qui leur revient au prorata de leur écriture.</span></div>'+
-      '<div class="tscroll"><table><thead><tr><th class="l">Auteur</th><th class="l">COAD</th>'+
-      '<th class="num">Œuvres</th><th class="num">Revenus liés €</th><th class="l"></th></tr></thead><tbody>';
-    sf.slice(0,12).forEach(function(a){
-      h+='<tr><td class="l w">'+esc(a.nom)+'</td><td class="l mut num">'+esc(a.coad||'—')+'</td>'+
-        '<td class="num">'+a.oeuvres+'</td><td class="num">'+eur(a.net)+'</td>'+
-        '<td class="l"><button class="btn sm" data-new="'+esc(a.coad||a.nom)+'">Créer la fiche</button></td></tr>';});
-    h+='</tbody></table></div></div>';
-  }
   return h;
+}
+// Six points à vérifier sur chaque œuvre. true = fait, false = manque, null = sans objet
+// (titre non commercialisé, ou aucune part de la société à dissoudre).
+var POINTS=[['artiste','Artiste'],['lien','Lien'],['sortie','Sortie'],['art','Artwork'],
+            ['sw','Songwriters'],['vent','Dissolution']];
+function checkOeuvre(soc,r){
+  var e=(store.edits[soc]||{})[r.code]||{},rel=sortiePourOeuvre(r.titre),hs=!!e.nonSorti;
+  var c={
+    artiste:hs?null:!!r.artiste,
+    lien:hs?null:!!(r.spotify||r.youtube||(rel&&rel.link)),
+    sortie:hs?null:!!r.sortie,
+    art:hs?null:!!artDe(soc,r.code),
+    sw:r.partSocPh>0?r.sw.length>0:null,
+    vent:r.sw.length>=2?r.vstat==='valide':r.sw.length===1?true:null};
+  c.manques=POINTS.filter(function(p2){return c[p2[0]]===false;}).map(function(p2){return p2[0];});
+  return c;
+}
+function puce(v,lib){
+  return v===true?'<span class="ck ok" title="'+lib+' : fait">✓</span>'
+    :v===false?'<span class="ck ko" title="'+lib+' : à faire">✕</span>'
+    :'<span class="ck na" title="'+lib+' : sans objet">–</span>';
+}
+// Fiches œuvres à compléter : œuvres qui rapportent, où l'on a une part mais aucun songwriter
+// ventilé, ou dont on ne connaît pas l'artiste interprète.
+function fichesATraiter(soc){
+  return memo('fat:'+soc,function(){
+    return rows(soc).filter(function(r){return !r.na;}).map(function(r){return {r:r,c:checkOeuvre(soc,r)};})
+      .filter(function(x){return x.c.manques.length;})
+      .sort(function(a,b){return (b.r.net-a.r.net)||String(a.r.titre).localeCompare(String(b.r.titre),'fr');});});
+}
+function nbATraiter(soc){
+  var f=fichesATraiter(soc),tot=rows(soc).filter(function(r){return !r.na;}).length;
+  return {oeuvres:f.length,vent:ventilationsEnAttente(soc).length,fiches:f.length,total:tot,faites:tot-f.length};
 }
 function dernierRep(t){var k=Object.keys(t.reps);if(!k.length)return '—';
   k.sort(function(a,b){return (+b)-(+a);});return eur(t.reps[k[0]])+' €';}
@@ -1445,13 +1490,14 @@ function liens(r){
 function viewSongwriters(){
   var soc=state.societe,list=swRows(soc),k=state.swSort.k,d=state.swSort.d;
   list.sort(function(a,b){
-    if(k==='nom')return ((a.sw.nom||'').toLowerCase()<(b.sw.nom||'').toLowerCase()?-d:d);
+    if(k==='nom')return String(a.sw.nom||'').localeCompare(String(b.sw.nom||''),'fr',{sensitivity:'base'})*d;
     var va=k==='net'?a.net:k==='oeuvres'?a.oeuvres:(+a.sw.part||0);
     var vb=k==='net'?b.net:k==='oeuvres'?b.oeuvres:(+b.sw.part||0);
     return (va-vb)*d;});
-  var tot=list.reduce(function(s,x){return s+x.net;},0),sf=auteursSansFiche(soc);
+  var tot=list.reduce(function(s,x){return s+x.net;},0);
   var dedans=list.filter(function(x){return estBLZ(x.sw);});
-  var dehors=list.filter(function(x){return !estBLZ(x.sw);});
+  var finis=list.filter(function(x){return typeSW(x.sw)==='termine';});
+  var dehors=list.filter(function(x){return !estBLZ(x.sw)&&typeSW(x.sw)!=='termine';});
   var th=function(key,lbl,cls){return '<th class="sortable '+(cls||'num')+'" data-sk="'+key+'">'+lbl+
     (k===key?' <span class="car">'+(d<0?'▼':'▲')+'</span>':'')+'</th>';};
   function tableau(rs){
@@ -1463,7 +1509,7 @@ function viewSongwriters(){
       hh+='<tr class="clickable" data-sw="'+esc(x.sw.id)+'"><td class="l w">'+esc(x.sw.nom)+
         ' '+origineTag(x.sw)+
         (t==='artiste'?' <span class="tag warn">non signé</span>'
-         :t==='termine'?' <span class="tag warn">contrat terminé</span>':'')+
+         :'')+
         '<div class="mini">'+(ident||'identité Sacem à rattacher')+'</div></td>'+
         '<td class="num">'+(x.sw.part!=null?pv(x.sw.part)+' %':'<span class="mut">—</span>')+'</td>'+
         '<td class="num">'+x.oeuvres+(x.auto?' <span class="tag neutral">auto</span>':'')+'</td>'+
@@ -1493,9 +1539,11 @@ function viewSongwriters(){
         return ex.length?'<div class="pbody mut" style="font-size:12px">Retirés de l\'outil : '+
           ex.map(function(k){return esc(k)+' <button class="btn sm" data-retab="'+esc(k)+'">Rétablir</button>';}).join(' · ')+
           '</div>':'';})()+'</div>';
+    if(finis.length)h+='<div class="panel"><div class="phead"><h2>Contrats terminés</h2>'+
+      '<span class="note">Anciens signés : leurs œuvres continuent de rapporter.</span></div>'+tableau(finis)+'</div>';
     h+='<div class="panel"><div class="phead"><h2>Songwriters externes</h2>'+
       '<span class="note">Parts éditoriales récupérées sur des auteurs qui ne sont pas signés chez nous, '+
-      'contrats terminés et artistes non signés. Ils comptent dans les revenus mais plus dans le roster.</span></div>'+
+      'et artistes non signés.</span></div>'+
       (dehors.length?tableau(dehors)
         :'<div class="pbody mut">Aucun songwriter externe.</div>')+'</div>';
   }
@@ -1523,66 +1571,15 @@ function viewSongwriters(){
         '</div></td></tr>';});
     h+='</tbody></table></div>'+(dbl.length>25?'<div class="pbody mut">25 premières sur '+dbl.length+'.</div>':'')+'</div>';
   }
-  if(sf.length){
-    h+='<div class="panel"><div class="phead"><h2>Auteurs du catalogue sans fiche</h2>'+
-      '<span class="note">'+sf.length+' auteurs apparaissent dans les splits sans fiche associée</span></div>'+
-      '<div class="tscroll"><table><thead><tr><th class="l">Auteur</th><th class="l">COAD</th><th class="l">IPI</th>'+
-      '<th class="num">Œuvres</th><th class="num">Revenus liés €</th><th class="l"></th></tr></thead><tbody>';
-    sf.slice(0,40).forEach(function(a){
-      h+='<tr><td class="l w">'+esc(a.nom)+'</td><td class="l mut num">'+esc(a.coad||'—')+'</td>'+
-        '<td class="l mut num">'+esc(a.ipi||'—')+'</td><td class="num">'+a.oeuvres+'</td>'+
-        '<td class="num">'+eur(a.net)+'</td>'+
-        '<td class="l"><button class="btn sm" data-new="'+esc(a.coad||a.nom)+'">Créer la fiche</button></td></tr>';});
-    h+='</tbody></table></div>'+(sf.length>40?'<div class="pbody mut">40 premiers affichés sur '+sf.length+'.</div>':'')+'</div>';
-  }
+  h+=panneauAD(soc);
   return h;
 }
 
 /* ============================== rapprochements ============================== */
+// Onglet « À traiter » : d'abord les dissolutions de parts, puis les fiches œuvres à compléter
 function viewRappro(){
-  var soc=state.societe,tous=enAttente(soc),vent=ventilationsEnAttente(soc);
-  var fr=state.rfiltre||'rev';
-  var att=tous.filter(function(a){
-    if(fr==='rev')return a.net>0;
-    if(fr==='prop')return !!a.match.id;
-    if(fr==='aucun')return !a.match.id;
-    return true;});
-  var h='';
-  if(!tous.length&&!vent.length){
-    h+='<div class="panel"><div class="empty"><h2>Rien à trancher</h2>'+
-      '<p>Tous les ayants droit du catalogue sont rattachés ou écartés, et toutes les œuvres portées par '+
-      'plusieurs songwriters ont une ventilation validée.</p></div></div>';
-  }
-  if(att.length){
-    h+='<div class="panel"><div class="phead">'+
-      '<div class="rowline"><h2>Ayants droit à rattacher</h2>'+
-      [['rev','Avec revenus'],['prop','Proposition à confirmer'],['aucun','Sans correspondance'],['tous','Tous']]
-        .map(function(x){return '<button class="chip" data-rf="'+x[0]+'" aria-pressed="'+(fr===x[0])+'">'+x[1]+'</button>';}).join('')+
-      '</div>'+
-      '<span class="note">'+att.length+' sur '+tous.length+' à trancher — un rapprochement n\'entre dans les '+
-      'récaps qu\'une fois confirmé</span></div>'+
-      '<div class="tscroll"><table><thead><tr><th class="l">Ayant droit au dépôt</th><th class="l">COAD</th>'+
-      '<th class="num">Œuvres</th><th class="num">Revenus liés €</th><th class="l">Proposition</th>'+
-      '<th class="l">Décision</th></tr></thead><tbody>';
-    att.slice(0,60).forEach(function(ad){
-      var m=ad.match,prop='';
-      if(m.id){
-        var sw=store.songwriters[m.id];
-        prop='<span class="tag '+(m.niveau==='doute'?'warn':'ok')+'">'+(m.niveau==='doute'?'doute':'probable')+'</span> '+
-          esc(sw?sw.nom:'')+' <span class="mut">'+esc(m.raison||'')+'</span>';
-      }else prop='<span class="tag warn">aucune correspondance</span>';
-      h+='<tr><td class="l w">'+esc(ad.nom)+(ad.ipi?'<div class="mini">IPI '+esc(ad.ipi)+'</div>':'')+'</td>'+
-        '<td class="l mut num">'+esc(ad.coad||'—')+'</td><td class="num">'+ad.oeuvres+'</td>'+
-        '<td class="num">'+eur(ad.net)+'</td><td class="l">'+prop+'</td>'+
-        '<td class="l"><div class="rowline">'+
-          (m.id?'<button class="btn sm primary" data-ok="'+esc(ad.cle)+'" data-id="'+esc(m.id)+'">Confirmer</button>':'')+
-          '<button class="btn sm" data-lier="'+esc(ad.cle)+'">Rattacher à…</button>'+
-          '<button class="btn sm" data-fiche="'+esc(ad.cle)+'">Créer une fiche</button>'+
-          '<button class="btn sm" data-skip="'+esc(ad.cle)+'">Écarter</button>'+
-        '</div></td></tr>';
-    });
-    h+='</tbody></table></div>'+(att.length>60?'<div class="pbody mut">60 premiers sur '+att.length+'.</div>':'')+'</div>';
-  }
+  var soc=state.societe,vent=ventilationsEnAttente(soc),fiches=fichesATraiter(soc),h='';
+  if(!rows(soc).length)return viewVide();
   if(vent.length){
     h+='<div class="panel"><div class="phead"><h2>Dissolutions de parts à valider</h2>'+
       '<span class="note">'+vent.length+' œuvre'+(vent.length>1?'s':'')+' portée'+(vent.length>1?'s':'')+
@@ -1599,10 +1596,87 @@ function viewRappro(){
           ' <b>'+pv(x.pt)+'</b> · '+eur(x.net,0)+' €</span>';}).join('')+
         '</div></td><td class="l"><div class="rowline">'+
         '<button class="btn sm primary" data-vok="'+esc(r.code)+'">Valider</button>'+
-        '<button class="btn sm" data-code="'+esc(r.code)+'">Ajuster</button></div></td></tr>';
+        '<button class="btn sm" data-code="'+esc(r.code)+'">Modifier</button></div></td></tr>';
     });
     h+='</tbody></table></div>'+(vent.length>40?'<div class="pbody mut">40 premières sur '+vent.length+'.</div>':'')+'</div>';
   }
+  var AT=nbATraiter(soc),filt=state.ckf||'';
+  var comptes={};POINTS.forEach(function(p2){comptes[p2[0]]=fiches.filter(function(x){return x.c[p2[0]]===false;}).length;});
+  var q=norm(state.fq);
+  var fl=fiches.filter(function(x){
+    if(filt&&x.c[filt]!==false)return false;
+    return !q||norm(x.r.titre+' '+x.r.artiste+' '+x.r.code).indexOf(q)>=0;});
+  var n=state.ckn||40;
+  h+='<div class="panel"><div class="phead"><div class="rowline"><h2>Vérification des œuvres</h2>'+
+      '<span class="num">'+e0(AT.faites)+' / '+e0(AT.total)+'</span>'+
+      '<span class="meter" title="'+pct(AT.total?100*AT.faites/AT.total:0)+' vérifiées"><i style="width:'+
+        (AT.total?100*AT.faites/AT.total:0)+'%"></i></span></div>'+
+    '<span class="note">Chaque œuvre doit avoir son artiste, un lien, sa date de sortie, sa pochette, '+
+    'ses songwriters représentés et, s\'ils sont plusieurs, la dissolution de nos parts validée.</span></div>'+
+    '<div class="pbody rowline" style="padding-bottom:0">'+
+      '<button class="chip" data-ckf="" aria-pressed="'+(!filt)+'">Toutes <span class="num mut">'+fiches.length+'</span></button>'+
+      POINTS.map(function(p2){return '<button class="chip" data-ckf="'+p2[0]+'" aria-pressed="'+(filt===p2[0])+'">'+
+        ({artiste:'Artiste manquant',lien:'Lien manquant',sortie:'Sortie manquante',art:'Artwork manquant',
+          sw:'Songwriters manquants',vent:'Dissolution à valider'})[p2[0]]+' <span class="num mut">'+comptes[p2[0]]+'</span></button>';}).join('')+
+      '<input type="search" id="fq" placeholder="Titre, artiste, code…" value="'+esc(state.fq)+'" style="width:200px;margin-left:auto">'+
+    '</div>';
+  if(fiches.length){
+    h+='<div class="tscroll"><table><thead><tr><th class="l">Œuvre</th><th class="num">Revenus €</th>'+
+      POINTS.map(function(p2){return '<th class="ckh">'+p2[1]+'</th>';}).join('')+'<th class="l"></th></tr></thead><tbody>'+
+      fl.slice(0,n).map(function(x){var r=x.r;
+        return '<tr class="clickable" data-go-oe="'+esc(r.code)+'"><td class="l w"><span class="tt">'+vignette(artDe(soc,r.code))+
+          '<span>'+esc(r.titre)+'<div class="mini">'+(r.artiste?esc(r.artiste)+' · ':'')+esc(r.code)+'</div></span></span></td>'+
+          '<td class="num'+(r.net?' w':' mut')+'">'+(r.net?eur(r.net):'—')+'</td>'+
+          POINTS.map(function(p2){return '<td class="ckc">'+puce(x.c[p2[0]],p2[1])+'</td>';}).join('')+
+          '<td class="l"><button class="btn sm" data-code="'+esc(r.code)+'">Modifier</button></td></tr>';}).join('')+
+      (fl.length?'':'<tr><td colspan="9" class="mut">Aucune œuvre ne correspond.</td></tr>')+
+      '</tbody></table></div>'+(fl.length>n?'<div class="pbody rowline"><span class="mut">'+n+' premières sur '+fl.length+
+        ', classées par revenus</span><button class="btn sm" id="ck-plus">Afficher 40 de plus</button></div>':'');
+  }else h+='<div class="pbody">Toutes les œuvres sont vérifiées.</div>';
+  h+='</div>';
+  return h;
+}
+// File des ayants droit Sacem à rattacher (onglet Songwriters)
+function panneauAD(soc){
+  var tous=enAttente(soc);
+  if(!tous.length)return '';
+  var prop=tous.filter(function(a){return !!a.match.id;}),sans=tous.filter(function(a){return !a.match.id;});
+  var f=state.adf||(prop.length?'prop':'aucun');
+  var q=norm(state.adq),qb=String(state.adq||'').replace(/\s+/g,'');
+  var base=f==='prop'?prop:f==='aucun'?sans:tous;
+  var L=base.filter(function(a){
+    if(!q&&!qb)return true;
+    return norm(a.nom).indexOf(q)>=0||(/\d/.test(qb)&&(String(a.coad).indexOf(qb)>=0||String(a.ipi).indexOf(qb)>=0));})
+    .sort(function(a,b){return (b.net-a.net)||String(a.nom).localeCompare(String(b.nom),'fr');});
+  var n=state.adn||20;
+  var h='<div class="panel" id="p-ad"><div class="phead"><div class="rowline"><h2>Ayants droit Sacem à rattacher</h2>'+
+    [['prop','Propositions à confirmer',prop.length],['aucun','Sans fiche',sans.length],['tous','Tous',tous.length]]
+      .map(function(x){return '<button class="chip" data-adf="'+x[0]+'" aria-pressed="'+(f===x[0])+'">'+x[1]+
+        ' <span class="num mut">'+x[2]+'</span></button>';}).join('')+
+    '<input type="search" id="adq" placeholder="Nom, COAD, IPI…" value="'+esc(state.adq)+'" style="width:200px"></div>'+
+    '<span class="note">Les identités des dépôts Sacem pas encore reliées à une fiche. '+
+    'Un rapprochement ne compte dans les récaps qu\'une fois confirmé.</span></div>'+
+    '<div class="tscroll"><table><thead><tr><th class="l">Ayant droit au dépôt</th><th class="l">COAD</th>'+
+    '<th class="num">Œuvres</th><th class="num">Revenus liés €</th><th class="l">Proposition</th>'+
+    '<th class="l">Décision</th></tr></thead><tbody>';
+  L.slice(0,n).forEach(function(ad){
+    var m=ad.match,pr='';
+    if(m.id){var sw=store.songwriters[m.id];
+      pr='<span class="tag '+(m.niveau==='doute'?'warn':'ok')+'">'+(m.niveau==='doute'?'doute':'probable')+'</span> '+
+        esc(sw?sw.nom:'')+' <span class="mut">'+esc(m.raison||'')+'</span>';}
+    else pr='<span class="mut">aucune fiche proche</span>';
+    h+='<tr><td class="l w">'+esc(ad.nom)+(ad.ipi?'<div class="mini">IPI '+esc(ad.ipi)+'</div>':'')+'</td>'+
+      '<td class="l mut num">'+esc(ad.coad||'—')+'</td><td class="num">'+ad.oeuvres+'</td>'+
+      '<td class="num">'+eur(ad.net)+'</td><td class="l">'+pr+'</td>'+
+      '<td class="l"><div class="rowline">'+
+        (m.id?'<button class="btn sm primary" data-ok="'+esc(ad.cle)+'" data-id="'+esc(m.id)+'">Confirmer</button>':'')+
+        '<button class="btn sm" data-lier="'+esc(ad.cle)+'">Rattacher à…</button>'+
+        '<button class="btn sm" data-fiche="'+esc(ad.cle)+'">Créer une fiche</button>'+
+        '<button class="btn sm" data-skip="'+esc(ad.cle)+'">Écarter</button>'+
+      '</div></td></tr>';});
+  if(!L.length)h+='<tr><td colspan="6" class="mut">Aucun ayant droit ne correspond.</td></tr>';
+  h+='</tbody></table></div>'+(L.length>n?'<div class="pbody rowline"><span class="mut">'+n+' premiers sur '+L.length+
+    '</span><button class="btn sm" id="ad-plus">Afficher 20 de plus</button></div>':'')+'</div>';
   return h;
 }
 /* ============================== imports ============================== */
@@ -1643,7 +1717,7 @@ function lireAdresse(){
   if(m[0]&&SOCIETES.some(function(x){return x.id===m[0];}))state.societe=m[0];
   if(m[1]==='sw'&&m[2]){state.vue={t:'sw',id:decodeURIComponent(m.slice(2).join('/'))};state.tab='songwriters';}
   else if(m[1]==='oeuvre'&&m[2]){state.vue={t:'oe',id:decodeURIComponent(m[2])};state.tab='oeuvres';}
-  else{state.vue=null;if(m[1]&&['apercu','songwriters','oeuvres','rappro','imports'].indexOf(m[1])>=0)state.tab=m[1];}
+  else{state.vue=null;if(m[1]&&['apercu','songwriters','oeuvres','repartitions','rappro','imports'].indexOf(m[1])>=0)state.tab=m[1];}
 }
 window.addEventListener('popstate',function(){lireAdresse();render();});
 
@@ -1826,21 +1900,21 @@ function pageSW(id){
   var mes=[];
   rows(soc).forEach(function(r){r.sw.forEach(function(x){if(x.id===id)mes.push({r:r,x:x});});});
   mes.sort(function(a,b){return b.x.net-a.x.net;});
-  var reps=Object.keys(A.reps).sort(),dern=reps.length?reps[reps.length-1]:null;
+  var reps=Object.keys(A.reps).filter(function(x){return A.reps[x];}).sort(),dern=reps.length?reps[reps.length-1]:null;
   var h=ariane('songwriters',sw.nom);
   h+='<div class="phead-page"><div><div class="eyebrow">Songwriter · '+
     (t==='roster'?'signé '+esc(socNom(soc)):t==='termine'?'contrat terminé':t==='artiste'?'artiste non signé':'externe')+'</div>'+
     '<h1 class="h-page">'+esc(sw.nom)+' '+origineTag(sw)+'</h1>'+
     '<div class="mini" style="font-size:12px;margin-top:4px">'+(identite(sw)||'identité Sacem à rattacher')+'</div></div>'+
-    '<div class="rowline"><button class="btn" data-edit="'+esc(id)+'">Modifier la fiche</button></div></div>';
+    '<div class="rowline"><button class="btn primary" data-edit="'+esc(id)+'">Modifier</button></div></div>';
   h+='<div class="kpis">'+
     kpi('lead','Revenus attribués',eur(A.net)+' €','sur '+mes.length+' œuvre'+(mes.length>1?'s':'')+' ventilée'+(mes.length>1?'s':''))+
+    kpi('','Dernière répartition',dern?eur(A.reps[dern])+' €':'—',dern?dern+' · '+repDate(dern).lbl:'aucune')+
     kpi('','Part cédée',sw.part!=null?pv(sw.part)+' %':'—','à '+esc(socNom(soc))+' par défaut')+
     kpi('','Phono moyen',pv(st.moyPh||0)+' %','sa part au dépôt, en moyenne')+
-    kpi('','Dernière répartition',dern?eur(A.reps[dern])+' €':'—',dern?dern+' · '+repDate(dern).lbl:'aucune')+
     '</div>';
   h+='<div class="grid3">'+
-    '<div class="panel"><div class="phead"><h2>Par répartition</h2></div><div class="pbody">'+tableReps(A.reps)+'</div></div>'+
+    '<div class="panel"><div class="phead"><h2>Par répartition</h2></div><div class="pbody">'+tableReps(A.reps,axeReps(soc))+'</div></div>'+
     '<div class="panel"><div class="phead"><h2>Par type d\'exploitation</h2></div><div class="pbody">'+
       barres(A.fam,{detail:A.famTyp,vide:'Aucun revenu détaillé.'})+couverture(A)+'</div></div>'+
     '<div class="panel"><div class="phead"><h2>Par territoire</h2></div><div class="pbody">'+
@@ -1857,7 +1931,7 @@ function pageSW(id){
         '<td class="num ph">'+pv(x.ecrPh||0)+' %</td><td class="num mut">'+pv(r.partSocPh)+' %</td>'+
         '<td class="num">'+pv(x.pt||0)+'</td><td class="num w">'+eur(x.net)+'</td>'+
         '<td class="num mut">'+eur(r.net)+'</td></tr>';}).join('')+'</tbody></table></div>'
-    :'<div class="pbody mut">Aucune œuvre ventilée sur cette fiche. Rattachez son profil Sacem depuis « Modifier la fiche ».</div>';
+    :'<div class="pbody mut">Aucune œuvre ventilée sur cette fiche. Rattachez son profil Sacem depuis « Modifier ».</div>';
   h+='</div>';
   var sorties=sortiesDe(sw);
   if(sorties.length)h+='<div class="panel"><div class="phead"><h2>Sorties au Planning</h2></div><div class="tscroll"><table><tbody>'+
@@ -1867,15 +1941,55 @@ function pageSW(id){
     '</tbody></table></div></div>';
   return h;
 }
-function tableReps(reps){
-  var k=Object.keys(reps||{}).filter(function(x){return /^\d+$/.test(x);}).sort(function(a,b){return a-b;});
+// Axe des répartitions de la société : les trimestres sans revenu comptent aussi (colonne à zéro)
+function axeReps(soc){
+  var l=repsSoc(soc);if(!l.length)return [];
+  var out=[];for(var n=l[0];n<=l[l.length-1];n++)out.push(n);
+  return out;
+}
+// Évolution par répartition : colonnes d'un seul ton, la dernière étiquetée, le détail au survol
+function courbeReps(reps,axe,opt){opt=opt||{};
+  var k=(axe&&axe.length?axe:Object.keys(reps||{}).filter(function(x){return /^\d+$/.test(x);})
+    .map(Number).sort(function(a,b){return a-b;})).slice(-16);
+  if(k.length<2)return '';
+  var v=k.map(function(n){return (reps||{})[n]||0;});
+  var mx=Math.max.apply(null,v.concat([0]));if(mx<=0)return '';
+  var pas=Math.pow(10,Math.floor(Math.log10(mx))),haut=Math.ceil(mx/pas)*pas;
+  if(haut/pas>5&&haut%(2*pas))haut=Math.ceil(mx/(2*pas))*2*pas;
+  var W=opt.W||340,H=opt.H||118,g=34,d=6,top=16,bas=H-18,band=(W-g-d)/k.length,bw=Math.min(22,band*0.62);
+  var y=function(x){return bas-(bas-top)*x/haut;};
+  var fk=function(x){return x>=1000?(Math.round(x/100)/10).toLocaleString('fr-FR')+' k':Math.round(x).toLocaleString('fr-FR');};
+  var svg='<svg class="evo" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Évolution des revenus par répartition">'+
+    '<line x1="'+g+'" x2="'+(W-d)+'" y1="'+y(haut)+'" y2="'+y(haut)+'" class="evo-grid"/>'+
+    '<line x1="'+g+'" x2="'+(W-d)+'" y1="'+y(haut/2)+'" y2="'+y(haut/2)+'" class="evo-grid"/>'+
+    '<text x="'+(g-6)+'" y="'+(y(haut)+3)+'" class="evo-ax" text-anchor="end">'+fk(haut)+'</text>'+
+    '<text x="'+(g-6)+'" y="'+(y(haut/2)+3)+'" class="evo-ax" text-anchor="end">'+fk(haut/2)+'</text>'+
+    '<text x="'+(g-6)+'" y="'+(bas+3)+'" class="evo-ax" text-anchor="end">0</text>';
+  k.forEach(function(n,i){
+    var cx=g+band*i+band/2,x0=cx-bw/2,h=Math.max(0,bas-y(v[i])),r=Math.min(4,h,bw/2);
+    var dern=i===k.length-1;
+    if(h>0.5)svg+='<path class="evo-col'+(dern?' dern':'')+'" d="M'+x0+','+bas+'V'+(bas-h+r)+
+      'Q'+x0+','+(bas-h)+' '+(x0+r)+','+(bas-h)+'H'+(x0+bw-r)+'Q'+(x0+bw)+','+(bas-h)+' '+(x0+bw)+','+(bas-h+r)+'V'+bas+'Z"/>';
+    if(dern&&v[i]>0)svg+='<text x="'+cx+'" y="'+(bas-h-5)+'" class="evo-v" text-anchor="'+(i>0?'end':'middle')+'" dx="'+(i>0?bw/2:0)+'">'+
+      eur(v[i],0)+' €</text>';
+    if(k.length<=12||i%2===k.length%2||dern)
+      svg+='<text x="'+cx+'" y="'+(H-4)+'" class="evo-ax" text-anchor="middle">'+n+'</text>';
+    svg+='<rect class="evo-hit" x="'+(g+band*i)+'" y="'+top+'" width="'+band+'" height="'+(bas-top+16)+'" tabindex="0" '+
+      'data-tip="'+esc('<b>Répartition '+n+'</b> · '+repDate(n).lbl+'<br>'+eur(v[i])+' €')+'"/>';
+  });
+  svg+='<line x1="'+g+'" x2="'+(W-d)+'" y1="'+bas+'" y2="'+bas+'" class="evo-base"/></svg>';
+  return svg;
+}
+// Tableau des répartitions : les plus récentes d'abord, regroupées par année
+function tableReps(reps,axe){
+  var k=Object.keys(reps||{}).filter(function(x){return /^\d+$/.test(x)&&reps[x];}).sort(function(a,b){return b-a;});
   if(!k.length)return '<div class="mut" style="font-size:12px">Aucune répartition.</div>';
-  var mx=Math.max.apply(null,k.map(function(x){return reps[x];}).concat([0.01])),parAn={};
-  k.forEach(function(x){var y=repDate(x).an;(parAn[y]||(parAn[y]=[])).push(x);});
-  return '<table><tbody>'+Object.keys(parAn).sort().map(function(y){
-    var ty=parAn[y].reduce(function(s2,x){return s2+reps[x];},0);
-    return '<tr class="yr"><td class="l w">'+y+'</td><td class="num w">'+eur(ty)+' €</td><td></td></tr>'+
-      parAn[y].map(function(x){return '<tr><td class="l mut" style="padding-left:16px">'+x+
+  var mx=Math.max.apply(null,k.map(function(x){return reps[x];}).concat([0.01])),parAn={},ordre=[];
+  k.forEach(function(x){var y2=repDate(x).an;if(!parAn[y2]){parAn[y2]=[];ordre.push(y2);}parAn[y2].push(x);});
+  return courbeReps(reps,axe)+'<table class="reps"><tbody>'+ordre.map(function(y2){
+    var ty=parAn[y2].reduce(function(s2,x){return s2+reps[x];},0);
+    return '<tr class="yr"><td class="l w">'+y2+'</td><td class="num w">'+eur(ty)+' €</td><td></td></tr>'+
+      parAn[y2].map(function(x){return '<tr><td class="l mut" style="padding-left:16px">'+x+
         ' <span class="mini">'+repDate(x).lbl+'</span></td><td class="num">'+eur(reps[x])+' €</td>'+
         '<td style="width:70px"><i class="bar" style="width:'+Math.max(3,Math.round(100*reps[x]/mx))+'%"></i></td></tr>';}).join('');
   }).join('')+'</tbody></table>';
@@ -1903,15 +2017,20 @@ function pageOeuvre(code){
       (o.iswc?'<span class="tag neutral">ISWC '+esc(o.iswc)+'</span>':'')+
       (o.depot?'<span class="tag neutral">déposée le '+frDate(o.depot)+'</span>':'')+
       (o.cat?'':'<span class="tag warn">hors catalogue</span>')+'</div></div></div>'+
-    '<div class="rowline"><button class="btn primary" data-code="'+esc(code)+'">Modifier · ventiler</button></div></div>';
+    '<div class="rowline"><button class="btn primary" data-code="'+esc(code)+'">Modifier</button></div></div>';
   h+='<div class="kpis">'+
     kpi('lead','Revenus perçus',eur(o.net||0)+' €',reps.length?'sur '+reps.length+' répartition'+(reps.length>1?'s':''):'aucune répartition')+
+    kpi('','Dernière répartition',dern?eur(o.reps[dern])+' €':'—',dern?dern+' · '+repDate(dern).lbl:'—')+
     kpi('','Notre part phono',pv(P.ph)+' %',pv(P.dep)+' % DEP · '+pv(P.dr)+' % DR')+
-    kpi('','Songwriters représentés',e0(r.sw.length),r.vstat==='attente'?'ventilation à valider':r.sw.length?'ventilation en place':'aucun')+
-    kpi('','Dernière répartition',dern?eur(o.reps[dern])+' €':'—',dern?dern+' · '+repDate(dern).lbl:'—')+'</div>';
+    kpi('','Songwriters représentés',e0(r.sw.length),r.vstat==='attente'?'ventilation à valider':r.sw.length?'ventilation en place':'aucun')+'</div>';
+  var CK=checkOeuvre(soc,r);
+  h+='<div class="ckbar">'+POINTS.map(function(p2){return '<span class="ckit'+(CK[p2[0]]===false?' manque':'')+'">'+
+    puce(CK[p2[0]],p2[1])+' '+p2[1]+'</span>';}).join('')+
+    (CK.manques.length?'<span class="mut" style="margin-left:auto;font-size:12px">'+CK.manques.length+' point'+
+      (CK.manques.length>1?'s':'')+' à compléter</span>':'<span class="tag ok" style="margin-left:auto">fiche vérifiée</span>')+'</div>';
   var A={net:o.net||0,detail:o.detail||0};
   h+='<div class="grid3">'+
-    '<div class="panel"><div class="phead"><h2>Par répartition</h2></div><div class="pbody">'+tableReps(o.reps)+'</div></div>'+
+    '<div class="panel"><div class="phead"><h2>Par répartition</h2></div><div class="pbody">'+tableReps(o.reps,axeReps(soc))+'</div></div>'+
     '<div class="panel"><div class="phead"><h2>Par type d\'exploitation</h2></div><div class="pbody">'+
       barres(o.fam,{detail:famTypOeuvre(o),vide:o.net?'Réimportez les répartitions pour le détail.':'Aucun revenu.'})+couverture(A)+'</div></div>'+
     '<div class="panel"><div class="phead"><h2>Par territoire</h2></div><div class="pbody">'+
@@ -1942,7 +2061,7 @@ function pageOeuvre(code){
           '<div class="mini">'+(identite(sw)||'')+'</div></td><td class="num">'+pv(x.pt||0)+' / '+pv(P.ph)+'</td>'+
           '<td class="num w">'+eur(x.net)+'</td></tr>';}).join('')+'</tbody></table></div>'
       :'<div class="pbody mut">Aucun songwriter de '+esc(socNom(soc))+' n\'est encore ventilé sur cette œuvre. '+
-       '<button class="btn sm" data-code="'+esc(code)+'">Ventiler</button></div>')+'</div></div>';
+       '<button class="btn sm" data-code="'+esc(code)+'">Modifier</button></div>')+'</div></div>';
   var notes=notesDe(e);
   if(notes.length)h+='<div class="panel"><div class="phead"><h2>Notes internes</h2></div><div class="pbody">'+
     notes.slice().reverse().map(function(n){return '<div class="note-it"><div class="mini">'+
@@ -1950,6 +2069,83 @@ function pageOeuvre(code){
   return h;
 }
 
+
+/* ============================== répartitions ============================== */
+// Une répartition à la fois, comparée à la précédente et au même trimestre de l'an passé.
+function detailRep(soc,n){
+  return memo('drep:'+soc+':'+n,function(){
+    var O=store.oeuvres[soc]||{},d={net:0,oeuvres:[],fam:{},famTyp:{},pays:{},sw:{},detail:0};
+    var parts={};rows(soc).forEach(function(r){parts[r.code]=r;});
+    Object.keys(O).forEach(function(c){var o=O[c],x=(o.r||{})[n];if(!x||!x.n)return;
+      d.net+=x.n;if(!o.na)d.oeuvres.push({code:c,titre:o.titre,v:x.n});
+      if(x.f){d.detail+=x.n;
+        Object.keys(x.f).forEach(function(k){d.fam[k]=(d.fam[k]||0)+x.f[k];});
+        Object.keys(x.p||{}).forEach(function(k){d.pays[k]=(d.pays[k]||0)+x.p[k];});
+        Object.keys(x.ft||{}).forEach(function(m){var i=m.indexOf('|'),f=m.slice(0,i),t=m.slice(i+1);
+          var z=d.famTyp[f]||(d.famTyp[f]={});z[t]=(z[t]||0)+x.ft[m];});}
+      var r=parts[c];
+      if(r&&o.net)r.sw.forEach(function(s2){var sw=store.songwriters[s2.id];if(!sw||!estBLZ(sw))return;
+        d.sw[sw.nom]=(d.sw[sw.nom]||0)+x.n*s2.net/o.net;});
+    });
+    d.oeuvres.sort(function(a,b){return b.v-a.v;});
+    return d;});
+}
+function ecart(v,ref){
+  if(!ref)return '<span class="mut">—</span>';
+  var e=v-ref,p2=100*e/ref;
+  return '<span class="delta">'+(e>=0?'▲ +':'▼ ')+eur(e,0)+' € <span class="mut">('+(e>=0?'+':'')+
+    p2.toLocaleString('fr-FR',{maximumFractionDigits:1})+' %)</span></span>';
+}
+function viewRepartitions(){
+  var soc=state.societe,axe=axeReps(soc);
+  if(!axe.length)return '<div class="panel"><div class="empty"><h2>Aucune répartition</h2>'+
+    '<p>Importez un relevé « Toutes œuvres » pour analyser vos répartitions.</p>'+
+    '<button class="btn primary" id="imp-new">Importer des données</button></div></div>';
+  var n=state.rep&&axe.indexOf(+state.rep)>=0?+state.rep:axe[axe.length-1];
+  var tot={};axe.forEach(function(x){tot[x]=detailRep(soc,x).net;});
+  var D=detailRep(soc,n),prec=tot[n-1],anp=tot[n-4];
+  var h='<div class="phead-page"><div><div class="eyebrow">Répartition analysée</div>'+
+    '<h1 class="h-page">'+n+' <span class="mut" style="font-weight:400">· '+repDate(n).lbl+'</span></h1></div>'+
+    '<div class="rowline"><label class="fl" style="margin:0">Choisir</label><select id="rep-sel">'+
+    axe.slice().reverse().map(function(x){return '<option value="'+x+'"'+(x===n?' selected':'')+'>'+x+' · '+repDate(x).lbl+
+      ' — '+eur(tot[x],0)+' €</option>';}).join('')+'</select></div></div>';
+  h+='<div class="kpis">'+
+    kpi('lead','Montant réparti',eur(D.net)+' €',D.oeuvres.length+' œuvre'+(D.oeuvres.length>1?'s':'')+' rémunérée'+(D.oeuvres.length>1?'s':''))+
+    '<div class="kpi"><div class="k">Face à la précédente</div><div class="v" style="font-size:16px">'+ecart(D.net,prec)+'</div>'+
+      '<div class="s">'+(prec!=null?'répartition '+(n-1)+' : '+eur(prec,0)+' €':'pas de répartition '+(n-1))+'</div></div>'+
+    '<div class="kpi"><div class="k">Face à l\'an passé</div><div class="v" style="font-size:16px">'+ecart(D.net,anp)+'</div>'+
+      '<div class="s">'+(anp!=null?'répartition '+(n-4)+' : '+eur(anp,0)+' €':'pas de répartition '+(n-4))+'</div></div>'+
+    kpi('','Première œuvre',D.oeuvres[0]?pct(100*D.oeuvres[0].v/(D.net||1)):'—',D.oeuvres[0]?esc(D.oeuvres[0].titre):'')+'</div>';
+  // l'historique, dernières d'abord ; un clic choisit la répartition
+  h+='<div class="split"><div class="panel"><div class="phead"><h2>Toutes les répartitions</h2>'+
+    '<span class="note">cliquez une ligne pour l\'analyser</span></div><div class="pbody">'+courbeReps(tot,axe,{W:700,H:170})+'</div>'+
+    '<div class="tscroll"><table><thead><tr><th class="l">Répartition</th><th class="num">Montant €</th>'+
+    '<th class="l">Face à la précédente</th><th class="num">Œuvres</th><th class="l">Première œuvre</th></tr></thead><tbody>'+
+    axe.slice().reverse().map(function(x){var d2=detailRep(soc,x);
+      return '<tr class="clickable'+(x===n?' sel':'')+'" data-rep="'+x+'"><td class="l w">'+x+' <span class="mini">'+repDate(x).lbl+'</span></td>'+
+        '<td class="num w">'+eur(d2.net)+'</td><td class="l">'+ecart(d2.net,tot[x-1])+'</td>'+
+        '<td class="num">'+d2.oeuvres.length+'</td><td class="l mut">'+(d2.oeuvres[0]?esc(d2.oeuvres[0].titre):'—')+'</td></tr>';}).join('')+
+    '</tbody></table></div></div>';
+  h+='<div class="panel"><div class="phead"><h2>Par songwriter signé</h2><span class="note">répartition '+n+'</span></div>'+
+    '<div class="pbody">'+barres(D.sw,{n:10,vide:'Aucun songwriter signé ventilé sur cette répartition.'})+'</div></div></div>';
+  h+='<div class="split"><div class="panel"><div class="phead"><h2>Par type d\'exploitation</h2><span class="note">survolez pour le détail</span></div>'+
+    '<div class="pbody">'+barres(D.fam,{detail:D.famTyp,vide:'Réimportez cette répartition pour son détail.'})+couverture(D)+'</div></div>'+
+    '<div class="panel"><div class="phead"><h2>Par territoire</h2></div><div class="pbody">'+
+    barres(D.pays,{casse:true,vide:'Réimportez cette répartition pour son détail.'})+'</div></div></div>';
+  // œuvres de la répartition, avec leur écart à la précédente
+  var avant={};detailRep(soc,n-1).oeuvres.forEach(function(x){avant[x.code]=x.v;});
+  h+='<div class="panel"><div class="phead"><h2>Œuvres de la répartition '+n+'</h2>'+
+    '<span class="note">'+D.oeuvres.length+' œuvres · classées par montant</span></div><div class="tscroll"><table>'+
+    '<thead><tr><th class="l">Œuvre</th><th class="num">Montant €</th><th class="num">Part</th>'+
+    '<th class="l">Face à la '+(n-1)+'</th></tr></thead><tbody>'+
+    D.oeuvres.slice(0,30).map(function(x){
+      return '<tr class="clickable" data-go-oe="'+esc(x.code)+'"><td class="l w"><span class="tt">'+vignette(artDe(soc,x.code))+
+        '<span>'+esc(x.titre)+'</span></span></td><td class="num w">'+eur(x.v)+'</td>'+
+        '<td class="num mut">'+pct(100*x.v/(D.net||1))+'</td><td class="l">'+
+        (avant[x.code]!=null?ecart(x.v,avant[x.code]):'<span class="tag neutral">nouvelle</span>')+'</td></tr>';}).join('')+
+    '</tbody></table></div>'+(D.oeuvres.length>30?'<div class="pbody mut">30 premières sur '+D.oeuvres.length+'.</div>':'')+'</div>';
+  return h;
+}
 
 /* ============================== rendu ============================== */
 function render(){
@@ -1959,6 +2155,7 @@ function render(){
   v.innerHTML=state.vue?(state.vue.t==='sw'?pageSW(state.vue.id):pageOeuvre(state.vue.id)):
               state.tab==='apercu'?viewApercu():state.tab==='oeuvres'?viewOeuvres():
               state.tab==='songwriters'?viewSongwriters():
+              state.tab==='repartitions'?viewRepartitions():
               state.tab==='rappro'?viewRappro():viewImports();
   var h=lienVue(state.vue);
   if(location.hash!==h){try{history.replaceState(null,'',h);}catch(e){}}
@@ -2044,6 +2241,15 @@ function render(){
   ['empty-import','imp-new','imp-new2'].forEach(function(i){var b=el(i);if(b)b.onclick=modalImport;});
   ['sw-new','sw-new2'].forEach(function(i){var b=el(i);if(b)b.onclick=function(){ficheSW(null);};});
   if(el('sw-reset'))el('sw-reset').onclick=modalReset;
+  v.querySelectorAll('[data-rep]').forEach(function(tr){tr.onclick=function(){state.rep=+this.dataset.rep;render();window.scrollTo(0,0);};});
+  if(el('rep-sel'))el('rep-sel').onchange=function(){state.rep=+this.value;render();};
+  v.querySelectorAll('[data-adf]').forEach(function(b){b.onclick=function(){state.adf=this.dataset.adf;state.adn=20;render();};});
+  if(el('ad-plus'))el('ad-plus').onclick=function(){state.adn+=20;render();};
+  v.querySelectorAll('[data-ckf]').forEach(function(b){b.onclick=function(){state.ckf=this.dataset.ckf;state.ckn=40;render();};});
+  if(el('ck-plus'))el('ck-plus').onclick=function(){state.ckn=(state.ckn||40)+40;render();};
+  [['adq','adq'],['fq','fq']].forEach(function(c){var inp=el(c[0]);if(!inp)return;
+    inp.oninput=function(){var pos=this.selectionStart;state[c[1]]=this.value;if(c[0]==='adq')state.adn=20;render();
+      var n=el(c[0]);if(n){n.focus();n.setSelectionRange(pos,pos);}};});
   v.querySelectorAll('[data-retab]').forEach(function(b){b.onclick=async function(){
     delete baseCfg().exclus[this.dataset.retab];
     try{await saveMeta();}catch(e){}
@@ -2140,6 +2346,8 @@ function ficheOeuvre(code){
     '<div class="field"><label class="fl">Lien YouTube</label>'+
       '<input type="url" id="f-youtube" value="'+esc(e.youtube||'')+'" placeholder="https://www.youtube.com/watch?v=…"></div>'+
     '<div class="hint" id="f-plan"></div>'+
+    '<label class="rowline" style="margin-top:8px;font-size:12.5px;cursor:pointer"><input type="checkbox" id="f-nonsorti"'+
+      (e.nonSorti?' checked':'')+'> Titre non commercialisé <span class="mut">— pas d\'artiste, de lien, de sortie ni de pochette attendus</span></label>'+
     /* --- l'œuvre déposée --- */
     '<div class="sep"></div><label class="fl">Œuvre déposée à la Sacem</label>'+
     '<div class="grid2"><div class="field"><label class="fl">Titre du dépôt</label>'+
@@ -2360,7 +2568,7 @@ function ficheOeuvre(code){
     var reste=el('f-note').value.trim();
     if(reste)notes.push({t:reste,d:new Date().toISOString()});
     ed.artiste=el('f-artiste').value.trim();ed.spotify=el('f-spotify').value.trim();
-    ed.youtube=el('f-youtube').value.trim();ed.sortie=el('f-sortie').value;
+    ed.youtube=el('f-youtube').value.trim();ed.sortie=el('f-sortie').value;ed.nonSorti=el('f-nonsorti').checked;
     ed.notes=notes.map(function(n){return {t:n.t,d:n.d||''};});
     ed.note=notes.length?notes[notes.length-1].t:'';      // compat affichage rapide
     ed.art=artUrl||'';ed.artKey=artKey(ed.spotify,ed.youtube);
