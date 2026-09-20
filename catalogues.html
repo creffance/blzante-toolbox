@@ -232,6 +232,21 @@ td.sec,th.sec{font-size:11.5px}
 .evo{width:100%;height:auto;display:block;margin:0 0 10px;overflow:visible}
 tr.sel td{background:var(--accent-soft)}
 .delta{white-space:nowrap;font-family:var(--mono);font-size:12px}
+.plan-box{display:flex;flex-direction:column;gap:6px}
+.nonsorti{display:flex;gap:8px;align-items:center;margin-top:10px;font-size:12.5px;cursor:pointer}
+.plan-carte{display:flex;gap:10px;align-items:center;min-width:0}
+.plan-choix{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:6px 8px;
+ border:1px solid var(--line);border-radius:4px}
+.pc-oe{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.pc-res{width:100%;display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.alerte{border-left:3px solid var(--accent);background:var(--accent-soft);padding:8px 10px;
+ font-size:12.5px;margin:4px 0 10px;border-radius:0 4px 4px 0}
+.pager{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.pager .mut{margin-right:8px;font-size:12px}
+.filtres{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;margin:0 0 14px}
+.filtres label{display:flex;gap:8px;align-items:center;font:600 10.5px/1 var(--sans);letter-spacing:.08em;
+ text-transform:uppercase;color:var(--ink-3)}
+.filtres select{min-width:200px;text-transform:none;letter-spacing:0;font-weight:400}
 .ck{display:inline-block;width:18px;text-align:center;font-weight:700}
 .ck.ok{color:var(--ink-3)}.ck.ko{color:var(--warn)}.ck.na{color:var(--line-2)}
 th.ckh{text-align:center;font-size:9.5px;padding-left:4px;padding-right:4px}
@@ -248,6 +263,7 @@ td.ckc{text-align:center;padding-left:4px;padding-right:4px}
 .evo-base{stroke:var(--line-2);stroke-width:1}
 .evo-ax{fill:var(--ink-3);font:10px var(--mono)}
 .evo-v{fill:var(--ink);font:600 10.5px var(--mono)}
+.evo-ax.per{font-size:9px;opacity:.75}
 .evo-hit{fill:transparent;cursor:default;outline:none}
 .evo-hit:hover,.evo-hit:focus{fill:rgba(255,255,255,.04)}
 .pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-2);border-radius:20px;
@@ -472,7 +488,7 @@ async function chargerPlanning(){
   if(!r.ok)return [];
   var d=await r.json();
   if(!d)return [];
-  return Object.keys(d).map(function(k){return d[k];}).map(function(x){
+  return Object.keys(d).map(function(k){var x=d[k]||{};x._key=k;return x;}).map(function(x){
     var sw=x.songwriters?(Array.isArray(x.songwriters)?x.songwriters:[x.songwriters]):[];
     x._sw=sw.map(function(n){return norm(SW_RENAME[n]||n);});
     return x;});
@@ -1120,8 +1136,8 @@ function rows0(soc){
       depot:o.depot||'',iswc:o.iswc||'',genre:o.genre||'',cat:!!o.cat,na:!!o.na,
       partSoc:(o.soc&&o.soc.dep)||0,partSocPh:(o.soc&&o.soc.ph)||0,partSocDr:(o.soc&&o.soc.dr)||0,
       de:o.de||0,dr:o.dr||0,ph:o.ph||0,nAut:auteurs(o).length,
-      artiste:e.artiste||((sortiePourOeuvre(o.titre)||{}).artist)||'',spotify:e.spotify||'',youtube:e.youtube||'',
-      sortie:e.sortie||(((sortiePourOeuvre(o.titre)||{}).dateSortable)||'').slice(0,10),
+      artiste:e.artiste||((sortieDe(soc,code)||{}).artist)||'',spotify:e.spotify||'',youtube:e.youtube||'',
+      sortie:e.sortie||(((sortieDe(soc,code)||{}).dateSortable)||'').slice(0,10),release:e.release||'',
       notes:notesDe(e),art:e.art||'',
       sw:v.list,swAuto:v.auto,vstat:ventStatut(soc,code,v.list)};
   });
@@ -1166,6 +1182,11 @@ function isCatalogue(head){
 // (famille d'exploitation, type d'utilisation, pays). Réimporter une répartition
 // remplace sa part au lieu de s'y ajouter ; les totaux s'en déduisent.
 function cleDB(k){return String(k==null?'':k).replace(/[.$#\[\]\/]/g,' ').replace(/\s+/g,' ').trim()||'—';}
+// Les œuvres chargées d'une base antérieure reçoivent leur découpage par répartition.
+function preparerOeuvres(){
+  Object.keys(store.oeuvres||{}).forEach(function(so){var O=store.oeuvres[so]||{};
+    Object.keys(O).forEach(function(c){if(O[c]&&!O[c].r)migrerRevenus(O[c]);});});
+}
 function migrerRevenus(o){
   if(o.r||!(o.net||o.de||o.dr||o.ph))return;
   o.r={};
@@ -1280,7 +1301,7 @@ function renderChrome(){
     return '<button class="chip" data-soc="'+s.id+'" aria-pressed="'+(state.societe===s.id)+'">'+esc(s.nom)+
       (m.oeuvres?' <span class="num mut">'+m.oeuvres+'</span>':'')+'</button>';}).join('');
   el('cats').querySelectorAll('[data-soc]').forEach(function(b){
-    b.onclick=function(){state.societe=this.dataset.soc;state.q='';aller(null);};});
+    b.onclick=function(){state.societe=this.dataset.soc;state.q='';state.fP='';state.fS='';aller(null);};});
   var m=store.meta[state.societe]||{},t=totals(state.societe),p=[];
   p.push('Catalogue : <b>'+(m.catalogueDate?frDate(m.catalogueDate):'aucun import')+'</b>');
   p.push('Dernière répartition : <b>'+(m.lastRep?(m.lastRep+' · '+repDate(m.lastRep).lbl):'aucune')+'</b>');
@@ -1305,69 +1326,163 @@ function renderChrome(){
 }
 
 /* ============================== aperçu ============================== */
+// ---------- filtres de la vue d'ensemble : période (tout, une année, une répartition) et songwriter ----------
+function periodeReps(soc,P){
+  if(!P)return null;
+  var axe=repsSoc(soc);
+  if(P.charAt(0)==='a'){var y=+P.slice(1);return axe.filter(function(n){return repDate(n).an===y;});}
+  if(P.charAt(0)==='r')return [+P.slice(1)];
+  return null;
+}
+function libPeriode(P){
+  if(!P)return 'toutes répartitions';
+  if(P.charAt(0)==='a')return 'année '+P.slice(1);
+  return 'répartition '+P.slice(1)+' · '+repDate(+P.slice(1)).lbl;
+}
+// Revenus d'une société vus à travers un filtre. Pour un songwriter, chaque œuvre ne compte
+// que pour la part qui lui revient ; reps garde toute la chronologie pour le graphique.
+function agregatFiltre(soc,P,S){
+  return memo('agf:'+soc+':'+P+':'+S,function(){
+    var O=store.oeuvres[soc]||{},set=periodeReps(soc,P),dans=null;
+    if(set){dans={};set.forEach(function(n){dans[n]=1;});}
+    var parts={};rows(soc).forEach(function(r){parts[r.code]=r;});
+    var a={net:0,detail:0,fam:{},famTyp:{},pays:{},reps:{},oe:{},sw:{},nOe:0,set:set};
+    Object.keys(O).forEach(function(c){
+      var o=O[c],r=parts[c],q=1;
+      if(S){var x=r&&r.sw.filter(function(y){return y.id===S;})[0];if(!x||!o.net)return;q=x.net/o.net;}
+      var tot=0;
+      Object.keys(o.r||{}).forEach(function(k){var z=o.r[k];if(!z)return;
+        if(/^\d+$/.test(k))a.reps[k]=(a.reps[k]||0)+(z.n||0)*q;
+        if(dans&&!dans[k])return;
+        var v=(z.n||0)*q;tot+=v;
+        if(z.f){a.detail+=v;
+          Object.keys(z.f).forEach(function(m){a.fam[m]=(a.fam[m]||0)+z.f[m]*q;});
+          Object.keys(z.p||{}).forEach(function(m){a.pays[m]=(a.pays[m]||0)+z.p[m]*q;});
+          Object.keys(z.ft||{}).forEach(function(m){var i=m.indexOf('|'),f=m.slice(0,i),t=m.slice(i+1);
+            var d=a.famTyp[f]||(a.famTyp[f]={});d[t]=(d[t]||0)+z.ft[m]*q;});}
+      });
+      if(Math.abs(tot)<0.005)return;
+      a.net+=tot;
+      if(!o.na){a.oe[c]=tot;a.nOe++;}
+      if(r&&o.net)r.sw.forEach(function(y){if(S&&y.id!==S)return;
+        a.sw[y.id]=(a.sw[y.id]||0)+(S?tot:tot*y.net/o.net);});
+    });
+    return a;});
+}
+function barreFiltres(soc){
+  var P=state.fP||'',S=state.fS||'',axe=repsSoc(soc),ans={};
+  axe.forEach(function(n){ans[repDate(n).an]=1;});
+  var grp=function(lib,l){return l.length?'<optgroup label="'+lib+'">'+l.map(function(x){
+    return '<option value="'+esc(x.id)+'"'+(S===x.id?' selected':'')+'>'+esc(x.nom)+'</option>';}).join('')+'</optgroup>':'';};
+  var L=swList(soc);
+  return '<div class="filtres"><label>Période <select id="f-per"><option value="">Toutes les répartitions</option>'+
+    '<optgroup label="Années">'+Object.keys(ans).sort().reverse().map(function(y){
+      return '<option value="a'+y+'"'+(P==='a'+y?' selected':'')+'>'+y+'</option>';}).join('')+'</optgroup>'+
+    '<optgroup label="Répartitions">'+axe.slice().reverse().map(function(n){
+      return '<option value="r'+n+'"'+(P==='r'+n?' selected':'')+'>'+n+' · '+repDate(n).lbl+'</option>';}).join('')+'</optgroup>'+
+    '</select></label>'+
+    '<label>Songwriter <select id="f-sw"><option value="">Tous</option>'+
+      grp('Signés',L.filter(estBLZ))+grp('Contrats terminés',L.filter(function(x){return typeSW(x)==='termine';}))+
+      grp('Externes',L.filter(function(x){return !estBLZ(x)&&typeSW(x)!=='termine';}))+'</select></label>'+
+    (P||S?'<button class="btn sm" id="f-raz">Tout afficher</button><span class="mut" style="font-size:12px">'+
+      esc(libPeriode(P))+(S&&store.songwriters[S]?' · '+esc(store.songwriters[S].nom):'')+'</span>':'')+'</div>';
+}
+function statutTag(sw){
+  var t=typeSW(sw);
+  return t==='roster'?'':t==='termine'?' <span class="tag neutral">contrat terminé</span>'
+    :t==='artiste'?' <span class="tag neutral">non signé</span>':' <span class="tag neutral">externe</span>';
+}
 function viewApercu(){
   var soc=state.societe,t=totals(soc),rs=rows(soc);
   if(!rs.length)return viewVide();
-  var ans=Object.keys(t.ans).sort();
-  var sws=swRows(soc).sort(function(a,b){return b.net-a.net;});
-  var top=rs.slice().sort(function(a,b){return b.net-a.net;}).slice(0,10);
+  var P=state.fP||'',S=state.fS||'';
+  if(S&&!store.songwriters[S]){S='';state.fS='';}
+  var F=agregatFiltre(soc,P,S),axe=axeReps(soc),set=F.set;
   var dep=rs.filter(function(r){return r.cat;}),AT=nbATraiter(soc);
-  var lr=(store.meta[soc]||{}).lastRep;
-  var h='<div class="kpis">'+
-    kpi('lead','Revenus du catalogue',eur(t.net)+' €',t.avecRev+' œuvres rémunérées')+
-    kpi('','Dernier trimestre',dernierRep(t),lr?'répartition '+lr+' · '+repDate(lr).lbl:'—')+
+  var cand=(set||axe).filter(function(n){return (F.reps[n]||0)>0.005;});
+  var dern=cand.length?cand[cand.length-1]:null,avant=dern!=null?F.reps[dern-1]:null;
+  var sws=swList(soc);
+  var h=barreFiltres(soc);
+  h+='<div class="kpis">'+
+    kpi('lead',S?'Revenus attribués':'Revenus du catalogue',eur(F.net)+' €',
+      F.nOe+' œuvre'+(F.nOe>1?'s':'')+' rémunérée'+(F.nOe>1?'s':'')+' · '+esc(libPeriode(P)))+
+    (P&&P.charAt(0)==='r'
+      ?'<div class="kpi"><div class="k">Face à la précédente</div><div class="v" style="font-size:16px">'+
+        ecart(F.reps[+P.slice(1)]||0,F.reps[+P.slice(1)-1])+'</div><div class="s">'+
+        (F.reps[+P.slice(1)-1]!=null?'répartition '+(+P.slice(1)-1)+' : '+eur(F.reps[+P.slice(1)-1],0)+' €':'pas de répartition précédente')+'</div></div>'
+      :kpi('','Dernier trimestre',dern!=null?eur(F.reps[dern])+' €':'—',
+        dern!=null?'répartition '+dern+' · '+repDate(dern).lbl+(avant?' · '+(F.reps[dern]>=avant?'▲':'▼')+' '+
+          (F.reps[dern]-avant>=0?'+':'')+eur(F.reps[dern]-avant,0)+' €':''):'—'))+
     kpi('','Œuvres déposées',e0(dep.length),t.nPart?pv(t.partSocPh/t.nPart)+' % de phono en moyenne':'—')+
     '<a class="kpi kpi-lien" href="#/'+soc+'/rappro" data-nav="rappro"><div class="k">Œuvres à traiter</div>'+
       '<div class="v">'+e0(AT.oeuvres)+'</div><div class="s">'+e0(AT.faites)+' sur '+e0(AT.total)+' vérifiées'+
       (AT.vent?' · '+AT.vent+' dissolution'+(AT.vent>1?'s':'')+' à valider':'')+'</div></a>'+
-    kpi('','Songwriters signés',e0(sws.filter(function(x){return estBLZ(x.sw);}).length),
-      e0(sws.filter(function(x){return estBLZ(x.sw)&&x.oeuvres>0;}).length)+' avec des œuvres ventilées')+
+    kpi('','Songwriters signés',e0(sws.filter(estBLZ).length),
+      (function(){var nt=sws.filter(function(x){return typeSW(x)==='termine';}).length,
+        ne=sws.filter(function(x){return !estBLZ(x)&&typeSW(x)!=='termine';}).length;
+        return nt+' contrat'+(nt>1?'s':'')+' terminé'+(nt>1?'s':'')+' · '+ne+' externe'+(ne>1?'s':'');})())+
     '</div>';
-  var AS=agregatSoc(soc);
+  // répartitions : toute la chronologie au graphique, la période choisie en évidence et au tableau
+  var repsP={};(set||axe).forEach(function(n){if(F.reps[n])repsP[n]=F.reps[n];});
+  var sel=null;if(set){sel={};set.forEach(function(n){sel[n]=1;});}
   h+='<div class="grid3">'+
-    '<div class="panel"><div class="phead"><h2>Par répartition</h2></div><div class="pbody">'+tableReps(AS.reps,axeReps(soc))+'</div></div>'+
+    '<div class="panel"><div class="phead"><h2>Par répartition</h2>'+(S?'<span class="note">part de '+esc(store.songwriters[S].nom)+'</span>':'')+
+      '</div><div class="pbody">'+courbeReps(F.reps,axe,{sel:sel})+tableReps(repsP,null,{sansCourbe:true})+'</div></div>'+
     '<div class="panel"><div class="phead"><h2>Par type d\'exploitation</h2><span class="note">survolez pour le détail</span></div>'+
-      '<div class="pbody">'+barres(AS.fam,{detail:AS.famTyp})+couverture(AS)+'</div></div>'+
+      '<div class="pbody">'+barres(F.fam,{detail:F.famTyp})+couverture(F)+'</div></div>'+
     '<div class="panel"><div class="phead"><h2>Par territoire</h2></div><div class="pbody">'+
-      barres(AS.pays,{casse:true})+'</div></div></div>'+
+      barres(F.pays,{casse:true})+'</div></div></div>'+
     '<div class="split">';
-  h+='<div class="panel"><div class="phead"><h2>Top œuvres</h2><span class="note">Revenus nets cumulés</span></div>'+
+  // top œuvres de la sélection
+  var parts={};rs.forEach(function(r){parts[r.code]=r;});
+  var top=Object.keys(F.oe).map(function(c){return {r:parts[c],v:F.oe[c]};}).filter(function(x){return x.r;})
+    .sort(function(a,b){return b.v-a.v;}).slice(0,12);
+  h+='<div class="panel"><div class="phead"><h2>Top œuvres</h2><span class="note">'+esc(libPeriode(P))+
+    (S?' · part de '+esc(store.songwriters[S].nom):'')+'</span></div>'+
     '<div class="tscroll"><table><thead><tr><th class="l">Œuvre</th><th class="l">Artiste</th>'+
-    '<th class="num">Notre phono</th>'+ans.map(function(a){return '<th class="num">'+a+'</th>';}).join('')+
-    '<th class="num">Total €</th><th class="l">Songwriters</th></tr></thead><tbody>';
-  top.forEach(function(r){
-    h+='<tr class="clickable" data-go-oe="'+esc(r.code)+'"><td class="l w"><span class="tt">'+
-      vignette(artDe(soc,r.code))+'<span>'+esc(r.titre)+'</span></span></td>'+
-      '<td class="l mut">'+(r.artiste?esc(r.artiste):'—')+'</td>'+
-      '<td class="num'+(r.partSocPh?' ph':' mut')+'">'+(r.partSocPh?pv(r.partSocPh)+' %':'·')+'</td>'+
-      ans.map(function(a){return '<td class="num'+(r.ans[a]?'':' mut')+'">'+(r.ans[a]?eur(r.ans[a]):'·')+'</td>';}).join('')+
-      '<td class="num w">'+eur(r.net)+'</td><td class="l">'+swTags(r)+'</td></tr>';});
-  h+='</tbody></table></div></div>';
-  var swBLZ=sws.filter(function(x){return estBLZ(x.sw);});
-  var swExt=sws.filter(function(x){return !estBLZ(x.sw);});
-  var netExt=swExt.reduce(function(s2,x){return s2+x.net;},0);
-  h+='<div class="panel"><div class="phead"><h2>Par songwriter signé</h2>'+
-    '<span class="note">'+(swExt.length?swExt.length+' songwriter'+(swExt.length>1?'s':'')+
-      ' externe'+(swExt.length>1?'s':'')+' à part, '+eur(netExt,0)+' € — onglet Songwriters'
-      :'Revenus attribués par la ventilation')+'</span></div><div class="tscroll"><table>'+
-    '<thead><tr><th class="l">Songwriter</th><th class="num">Part édito</th><th class="num">Œuvres</th>'+
-    '<th class="num">Revenus €</th><th class="l">Poids</th></tr></thead><tbody>';
-  var mx=swBLZ.length?Math.max(1,swBLZ[0].net):1;
-  if(!swBLZ.length)h+='<tr><td colspan="5" class="empty">Aucun songwriter signé.</td></tr>';
-  swBLZ.slice(0,12).forEach(function(x){
-    h+='<tr class="clickable" data-sw="'+esc(x.sw.id)+'"><td class="l w">'+esc(x.sw.nom)+'</td>'+
-      '<td class="num mut">'+(x.sw.part!=null?pv(x.sw.part)+' %':'—')+'</td><td class="num">'+x.oeuvres+'</td>'+
-      '<td class="num w">'+eur(x.net)+'</td>'+
-      '<td class="l" style="width:104px"><i class="bar" style="width:'+Math.max(2,100*x.net/mx)+'%"></i></td></tr>';});
-  h+='</tbody></table></div></div></div>';
+    '<th class="num">Notre phono</th><th class="num">Revenus €</th><th class="num">Part</th><th class="l">Songwriters</th></tr></thead><tbody>'+
+    (top.length?top.map(function(x){var r=x.r;
+      return '<tr class="clickable" data-go-oe="'+esc(r.code)+'"><td class="l w"><span class="tt">'+
+        vignette(artDe(soc,r.code))+'<span>'+esc(r.titre)+'</span></span></td>'+
+        '<td class="l mut">'+(r.artiste?esc(r.artiste):'—')+'</td>'+
+        '<td class="num'+(r.partSocPh?' ph':' mut')+'">'+(r.partSocPh?pv(r.partSocPh)+' %':'·')+'</td>'+
+        '<td class="num w">'+eur(x.v)+'</td><td class="num mut">'+pct(F.net?100*x.v/F.net:0)+'</td>'+
+        '<td class="l">'+swTags(r)+'</td></tr>';}).join('')
+      :'<tr><td colspan="6" class="mut">Aucun revenu sur cette sélection.</td></tr>')+
+    '</tbody></table></div></div>';
+  // top songwriters : signés, contrats terminés et externes, chacun repéré
+  var tsw=Object.keys(F.sw).map(function(id){return {sw:store.songwriters[id],v:F.sw[id]};})
+    .filter(function(x){return x.sw&&x.v>0.005;}).sort(function(a,b){return b.v-a.v;});
+  var mx=tsw.length?tsw[0].v:1,totSW=tsw.reduce(function(s2,x){return s2+x.v;},0);
+  h+='<div class="panel"><div class="phead"><h2>Top songwriters</h2><span class="note">'+esc(libPeriode(P))+
+    ' · '+eur(totSW,0)+' € ventilés sur '+eur(F.net,0)+' €</span></div><div class="tscroll"><table>'+
+    '<thead><tr><th class="l">Songwriter</th><th class="num">Revenus €</th><th class="l">Poids</th></tr></thead><tbody>'+
+    (tsw.length?tsw.slice(0,15).map(function(x){
+      return '<tr class="clickable" data-sw="'+esc(x.sw.id)+'"><td class="l w">'+esc(x.sw.nom)+statutTag(x.sw)+'</td>'+
+        '<td class="num w">'+eur(x.v)+'</td>'+
+        '<td class="l" style="width:110px"><i class="bar" style="width:'+Math.max(2,100*x.v/mx)+'%"></i></td></tr>';}).join('')
+      :'<tr><td colspan="3" class="mut">Aucun songwriter ventilé sur cette sélection.</td></tr>')+
+    '</tbody></table></div>'+(tsw.length>15?'<div class="pbody mut">15 premiers sur '+tsw.length+'.</div>':'')+'</div></div>';
   return h;
+}
+// Pages numérotées pour les longs tableaux : ‹ 1 2 3 … ›
+function pages(total,par,page,cle){
+  var nb=Math.ceil(total/par);if(nb<=1)return '';
+  var b=function(n,lib,on){return '<button class="btn sm'+(on?' primary':'')+'" data-pg="'+cle+':'+n+'"'+
+    (n<1||n>nb?' disabled':'')+'>'+lib+'</button>';};
+  var h='<div class="pbody pager"><span class="mut">'+((page-1)*par+1)+'–'+Math.min(total,page*par)+' sur '+total+'</span>'+
+    b(page-1,'‹',false);
+  for(var i=1;i<=nb;i++){
+    if(i===1||i===nb||Math.abs(i-page)<=2)h+=b(i,String(i),i===page);
+    else if(i===2||i===nb-1)h+='<span class="mut">…</span>';}
+  return h+b(page+1,'›',false)+'</div>';
 }
 // Six points à vérifier sur chaque œuvre. true = fait, false = manque, null = sans objet
 // (titre non commercialisé, ou aucune part de la société à dissoudre).
 var POINTS=[['artiste','Artiste'],['lien','Lien'],['sortie','Sortie'],['art','Artwork'],
             ['sw','Songwriters'],['vent','Dissolution']];
 function checkOeuvre(soc,r){
-  var e=(store.edits[soc]||{})[r.code]||{},rel=sortiePourOeuvre(r.titre),hs=!!e.nonSorti;
+  var e=(store.edits[soc]||{})[r.code]||{},rel=sortieDe(soc,r.code),hs=!!e.nonSorti;
   var c={
     artiste:hs?null:!!r.artiste,
     lien:hs?null:!!(r.spotify||r.youtube||(rel&&rel.link)),
@@ -1587,7 +1702,8 @@ function viewRappro(){
       '<div class="tscroll"><table><thead><tr><th class="l">Œuvre</th><th class="num">Part Phono</th>'+
       '<th class="num sec">DEP</th><th class="num">Revenus €</th>'+
       '<th class="l">Répartition proposée — points phono</th><th class="l"></th></tr></thead><tbody>';
-    vent.slice(0,40).forEach(function(r){
+    var pv2=Math.min(state.pgV||1,Math.max(1,Math.ceil(vent.length/40)));
+    vent.slice((pv2-1)*40,pv2*40).forEach(function(r){
       h+='<tr><td class="l w">'+esc(r.titre)+'<div class="mini">'+esc(r.code)+'</div></td>'+
         '<td class="num ph">'+(r.partSocPh?pv(r.partSocPh)+' %':'·')+'</td>'+
         '<td class="num mut sec">'+(r.partSoc?pv(r.partSoc)+' %':'·')+'</td>'+
@@ -1595,10 +1711,9 @@ function viewRappro(){
         r.sw.map(function(x){return '<span class="swtag">'+esc(x.nom)+
           ' <b>'+pv(x.pt)+'</b> · '+eur(x.net,0)+' €</span>';}).join('')+
         '</div></td><td class="l"><div class="rowline">'+
-        '<button class="btn sm primary" data-vok="'+esc(r.code)+'">Valider</button>'+
-        '<button class="btn sm" data-code="'+esc(r.code)+'">Modifier</button></div></td></tr>';
+        '<button class="btn sm primary" data-code="'+esc(r.code)+'">Vérifier</button></div></td></tr>';
     });
-    h+='</tbody></table></div>'+(vent.length>40?'<div class="pbody mut">40 premières sur '+vent.length+'.</div>':'')+'</div>';
+    h+='</tbody></table></div>'+pages(vent.length,40,pv2,'V')+'</div>';
   }
   var AT=nbATraiter(soc),filt=state.ckf||'';
   var comptes={};POINTS.forEach(function(p2){comptes[p2[0]]=fiches.filter(function(x){return x.c[p2[0]]===false;}).length;});
@@ -1606,7 +1721,7 @@ function viewRappro(){
   var fl=fiches.filter(function(x){
     if(filt&&x.c[filt]!==false)return false;
     return !q||norm(x.r.titre+' '+x.r.artiste+' '+x.r.code).indexOf(q)>=0;});
-  var n=state.ckn||40;
+  var n=40,pc=Math.min(state.pgC||1,Math.max(1,Math.ceil(fl.length/40)));
   h+='<div class="panel"><div class="phead"><div class="rowline"><h2>Vérification des œuvres</h2>'+
       '<span class="num">'+e0(AT.faites)+' / '+e0(AT.total)+'</span>'+
       '<span class="meter" title="'+pct(AT.total?100*AT.faites/AT.total:0)+' vérifiées"><i style="width:'+
@@ -1623,15 +1738,14 @@ function viewRappro(){
   if(fiches.length){
     h+='<div class="tscroll"><table><thead><tr><th class="l">Œuvre</th><th class="num">Revenus €</th>'+
       POINTS.map(function(p2){return '<th class="ckh">'+p2[1]+'</th>';}).join('')+'<th class="l"></th></tr></thead><tbody>'+
-      fl.slice(0,n).map(function(x){var r=x.r;
+      fl.slice((pc-1)*n,pc*n).map(function(x){var r=x.r;
         return '<tr class="clickable" data-go-oe="'+esc(r.code)+'"><td class="l w"><span class="tt">'+vignette(artDe(soc,r.code))+
           '<span>'+esc(r.titre)+'<div class="mini">'+(r.artiste?esc(r.artiste)+' · ':'')+esc(r.code)+'</div></span></span></td>'+
           '<td class="num'+(r.net?' w':' mut')+'">'+(r.net?eur(r.net):'—')+'</td>'+
           POINTS.map(function(p2){return '<td class="ckc">'+puce(x.c[p2[0]],p2[1])+'</td>';}).join('')+
           '<td class="l"><button class="btn sm" data-code="'+esc(r.code)+'">Modifier</button></td></tr>';}).join('')+
       (fl.length?'':'<tr><td colspan="9" class="mut">Aucune œuvre ne correspond.</td></tr>')+
-      '</tbody></table></div>'+(fl.length>n?'<div class="pbody rowline"><span class="mut">'+n+' premières sur '+fl.length+
-        ', classées par revenus</span><button class="btn sm" id="ck-plus">Afficher 40 de plus</button></div>':'');
+      '</tbody></table></div>'+pages(fl.length,n,pc,'C');
   }else h+='<div class="pbody">Toutes les œuvres sont vérifiées.</div>';
   h+='</div>';
   return h;
@@ -1728,18 +1842,61 @@ function titresSortie(r){
     if(Array.isArray(x))t=t.concat(x);else if(x)t=t.concat(String(x).split(/[,\n;]+/));});
   return t.map(norm).filter(Boolean);
 }
+var TYPES_SORTIE={Single:1,EP:1,Album:1};
+function isoVersFR(d){var m=String(d||'').match(/^(\d{4})-(\d{2})-(\d{2})/);return m?m[3]+'/'+m[2]+'/'+m[1]:'';}
+function titreSortie(r){
+  if(!r)return '';
+  if(r.type==='EP'||r.type==='Album')return r.project||r.title||r.artist||'';
+  return r.track||r.title||'';
+}
+function lignesTitres(t){return String(t||'').split(/\n|,|;/).map(function(x){return x.trim();}).filter(Boolean);}
+function lienPlanning(r){return 'release_create.html?edit='+encodeURIComponent(r.id!=null?r.id:r._key);}
+// Nom d'un songwriter tel que le Planning l'écrit
+function nomPlanning(sw){
+  var vus={};PLANNING.forEach(function(r){(r._sw||[]).forEach(function(n){vus[n]=1;});});
+  var c=[sw.nom].concat(sw.alias||[]).filter(function(n){return vus[norm(n)];})[0];
+  return c||sw.nom;
+}
+function carteSortie(r){
+  return '<div class="plan-carte">'+vignette(r.artwork||'',52)+'<div><div class="eyebrow">'+esc(r.type||'')+
+    (r.status?' · '+esc(r.status):'')+'</div><b>'+esc(titreSortie(r))+'</b>'+
+    '<div class="mini" style="font-size:11.5px">'+esc(r.artist||'')+(r.date?' · '+esc(r.date):'')+'</div>'+
+    ((r.type==='EP'||r.type==='Album')&&r.blzTrackNames?'<div class="mini">Titres BLZ : '+esc(lignesTitres(r.blzTrackNames).join(', '))+'</div>':'')+
+    '</div></div>';
+}
+async function ecrireSortie(r){
+  var c=Object.assign({},r);delete c._key;delete c._sw;
+  var cle=r._key||String(r.id);
+  var rep2=await dbFetch('/releases/'+encodeURIComponent(cle)+'.json',{method:'PUT',body:JSON.stringify(clean(c))});
+  if(!rep2.ok)throw new Error('écriture refusée sur /releases ('+(await fbMsg(rep2))+')');
+  r._key=cle;
+  r._sw=(r.songwriters||[]).map(function(n){return norm(SW_RENAME[n]||n);});
+  if(!PLANNING.some(function(x){return x===r;})){
+    PLANNING=PLANNING.filter(function(x){return String(x._key)!==String(cle);});PLANNING.push(r);}
+  invalide();snapSave();
+}
+function sortieParId(id){
+  if(id==null||id==='')return null;
+  return PLANNING.filter(function(r){return String(r.id)===String(id)||String(r._key)===String(id);})[0]||null;
+}
+function sortieDe(soc,code){
+  var e=(store.edits[soc]||{})[code]||{};
+  if(e.release){var r=sortieParId(e.release);if(r)return r;}
+  var o=(store.oeuvres[soc]||{})[code];
+  return o?sortiePourOeuvre(o.titre):null;
+}
 function sortiePourOeuvre(titre){
   if(!PLANNING.length||!titre)return null;
   var t=norm(titre);
   return memo('sortie:'+t,function(){
-    return PLANNING.filter(function(r){return titresSortie(r).indexOf(t)>=0;})
+    return PLANNING.filter(function(r){return TYPES_SORTIE[r.type]&&titresSortie(r).indexOf(t)>=0;})
       .sort(function(a,b){return (a.dateSortable||'').localeCompare(b.dateSortable||'');})[0]||null;});
 }
 function artDe(soc,code){
   var e=(store.edits[soc]||{})[code]||{};
   if(e.art)return e.art;
   var o=(store.oeuvres[soc]||{})[code];if(!o)return '';
-  var rel=sortiePourOeuvre(o.titre);
+  var rel=sortieDe(soc,code);
   return rel&&rel.artwork?rel.artwork:'';
 }
 function vignette(url,taille){
@@ -1956,7 +2113,9 @@ function courbeReps(reps,axe,opt){opt=opt||{};
   var mx=Math.max.apply(null,v.concat([0]));if(mx<=0)return '';
   var pas=Math.pow(10,Math.floor(Math.log10(mx))),haut=Math.ceil(mx/pas)*pas;
   if(haut/pas>5&&haut%(2*pas))haut=Math.ceil(mx/(2*pas))*2*pas;
-  var W=opt.W||340,H=opt.H||118,g=34,d=6,top=16,bas=H-18,band=(W-g-d)/k.length,bw=Math.min(22,band*0.62);
+  var W=opt.W||340,H=(opt.H||118)+12,g=34,d=6,top=16,bas=H-30,band=(W-g-d)/k.length,bw=Math.min(22,band*0.62);
+  var per=function(n){var q=((n-665)%4+4)%4,an=String(repDate(n).an).slice(2);
+    return band>=44?['janv.','avr.','juil.','oct.'][q]+' '+an:band>=24?['01','04','07','10'][q]+'/'+an:'';};
   var y=function(x){return bas-(bas-top)*x/haut;};
   var fk=function(x){return x>=1000?(Math.round(x/100)/10).toLocaleString('fr-FR')+' k':Math.round(x).toLocaleString('fr-FR');};
   var svg='<svg class="evo" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Évolution des revenus par répartition">'+
@@ -1967,13 +2126,15 @@ function courbeReps(reps,axe,opt){opt=opt||{};
     '<text x="'+(g-6)+'" y="'+(bas+3)+'" class="evo-ax" text-anchor="end">0</text>';
   k.forEach(function(n,i){
     var cx=g+band*i+band/2,x0=cx-bw/2,h=Math.max(0,bas-y(v[i])),r=Math.min(4,h,bw/2);
-    var dern=i===k.length-1;
+    var dern=opt.sel?!!opt.sel[n]:i===k.length-1;
+    var etiq=opt.sel?(dern&&!k.slice(i+1).some(function(m){return opt.sel[m];})):i===k.length-1;
     if(h>0.5)svg+='<path class="evo-col'+(dern?' dern':'')+'" d="M'+x0+','+bas+'V'+(bas-h+r)+
       'Q'+x0+','+(bas-h)+' '+(x0+r)+','+(bas-h)+'H'+(x0+bw-r)+'Q'+(x0+bw)+','+(bas-h)+' '+(x0+bw)+','+(bas-h+r)+'V'+bas+'Z"/>';
-    if(dern&&v[i]>0)svg+='<text x="'+cx+'" y="'+(bas-h-5)+'" class="evo-v" text-anchor="'+(i>0?'end':'middle')+'" dx="'+(i>0?bw/2:0)+'">'+
+    if(etiq&&v[i]>0)svg+='<text x="'+cx+'" y="'+(bas-h-5)+'" class="evo-v" text-anchor="'+(i>0?'end':'middle')+'" dx="'+(i>0?bw/2:0)+'">'+
       eur(v[i],0)+' €</text>';
-    if(k.length<=12||i%2===k.length%2||dern)
-      svg+='<text x="'+cx+'" y="'+(H-4)+'" class="evo-ax" text-anchor="middle">'+n+'</text>';
+    if(k.length<=12||i%2===k.length%2||etiq)
+      svg+='<text x="'+cx+'" y="'+(H-16)+'" class="evo-ax" text-anchor="middle">'+n+'</text>'+
+        '<text x="'+cx+'" y="'+(H-4)+'" class="evo-ax per" text-anchor="middle">'+per(n)+'</text>';
     svg+='<rect class="evo-hit" x="'+(g+band*i)+'" y="'+top+'" width="'+band+'" height="'+(bas-top+16)+'" tabindex="0" '+
       'data-tip="'+esc('<b>Répartition '+n+'</b> · '+repDate(n).lbl+'<br>'+eur(v[i])+' €')+'"/>';
   });
@@ -1981,12 +2142,12 @@ function courbeReps(reps,axe,opt){opt=opt||{};
   return svg;
 }
 // Tableau des répartitions : les plus récentes d'abord, regroupées par année
-function tableReps(reps,axe){
+function tableReps(reps,axe,opt){opt=opt||{};
   var k=Object.keys(reps||{}).filter(function(x){return /^\d+$/.test(x)&&reps[x];}).sort(function(a,b){return b-a;});
   if(!k.length)return '<div class="mut" style="font-size:12px">Aucune répartition.</div>';
   var mx=Math.max.apply(null,k.map(function(x){return reps[x];}).concat([0.01])),parAn={},ordre=[];
   k.forEach(function(x){var y2=repDate(x).an;if(!parAn[y2]){parAn[y2]=[];ordre.push(y2);}parAn[y2].push(x);});
-  return courbeReps(reps,axe)+'<table class="reps"><tbody>'+ordre.map(function(y2){
+  return (opt.sansCourbe?'':courbeReps(reps,axe))+'<table class="reps"><tbody>'+ordre.map(function(y2){
     var ty=parAn[y2].reduce(function(s2,x){return s2+reps[x];},0);
     return '<tr class="yr"><td class="l w">'+y2+'</td><td class="num w">'+eur(ty)+' €</td><td></td></tr>'+
       parAn[y2].map(function(x){return '<tr><td class="l mut" style="padding-left:16px">'+x+
@@ -2001,7 +2162,7 @@ function pageOeuvre(code){
   if(!o)return '<div class="empty"><h2>Œuvre introuvable</h2><p>Cette œuvre n\'est pas au catalogue de '+
     esc(socNom(soc))+'.</p><button class="btn" data-nav="oeuvres">Retour aux œuvres</button></div>';
   var r=rows(soc).filter(function(x){return x.code===code;})[0]||{sw:[]};
-  var e=(store.edits[soc]||{})[code]||{},art=artDe(soc,code),rel=sortiePourOeuvre(o.titre);
+  var e=(store.edits[soc]||{})[code]||{},art=artDe(soc,code),rel=sortieDe(soc,code);
   var artiste=e.artiste||(rel&&rel.artist)||'',sortie=e.sortie||(rel&&(rel.dateSortable||'').slice(0,10))||'';
   var P=socParts(o),reps=Object.keys(o.reps||{}).sort(),dern=reps.length?reps[reps.length-1]:null;
   var aut=auteurs(o),ix=swIndex(soc);
@@ -2013,6 +2174,11 @@ function pageOeuvre(code){
       (sortie?' <span class="mut">· sortie le '+frDate(sortie)+'</span>':'')+
       (e.spotify?' · <a href="'+esc(e.spotify)+'" target="_blank" rel="noopener">Spotify</a>':'')+
       (e.youtube?' · <a href="'+esc(e.youtube)+'" target="_blank" rel="noopener">YouTube</a>':'')+'</div>'+
+    '<div style="font-size:12px;margin-top:4px">'+(rel&&e.release
+      ?'Planning : <a href="'+esc(lienPlanning(rel))+'" target="_blank" rel="noopener">'+esc(rel.type)+' « '+esc(titreSortie(rel))+' » ↗</a>'+
+        (rel.status?' <span class="mut">· '+esc(rel.status)+'</span>':'')
+      :rel?'<span class="mut">Planning : correspondance de titre avec '+esc(rel.type)+' « '+esc(titreSortie(rel))+' », à lier dans « Modifier »</span>'
+      :'<span class="mut">Pas encore liée à une sortie du Planning</span>')+'</div>'+
     '<div class="rowline" style="margin-top:7px"><span class="tag neutral">code '+esc(code)+'</span>'+
       (o.iswc?'<span class="tag neutral">ISWC '+esc(o.iswc)+'</span>':'')+
       (o.depot?'<span class="tag neutral">déposée le '+frDate(o.depot)+'</span>':'')+
@@ -2134,15 +2300,17 @@ function viewRepartitions(){
     barres(D.pays,{casse:true,vide:'Réimportez cette répartition pour son détail.'})+'</div></div></div>';
   // œuvres de la répartition, avec leur écart à la précédente
   var avant={};detailRep(soc,n-1).oeuvres.forEach(function(x){avant[x.code]=x.v;});
+  var parts2={};rows(soc).forEach(function(r){parts2[r.code]=r;});
   h+='<div class="panel"><div class="phead"><h2>Œuvres de la répartition '+n+'</h2>'+
     '<span class="note">'+D.oeuvres.length+' œuvres · classées par montant</span></div><div class="tscroll"><table>'+
     '<thead><tr><th class="l">Œuvre</th><th class="num">Montant €</th><th class="num">Part</th>'+
-    '<th class="l">Face à la '+(n-1)+'</th></tr></thead><tbody>'+
+    '<th class="l">Face à la '+(n-1)+'</th><th class="l">Songwriters représentés</th></tr></thead><tbody>'+
     D.oeuvres.slice(0,30).map(function(x){
       return '<tr class="clickable" data-go-oe="'+esc(x.code)+'"><td class="l w"><span class="tt">'+vignette(artDe(soc,x.code))+
         '<span>'+esc(x.titre)+'</span></span></td><td class="num w">'+eur(x.v)+'</td>'+
         '<td class="num mut">'+pct(100*x.v/(D.net||1))+'</td><td class="l">'+
-        (avant[x.code]!=null?ecart(x.v,avant[x.code]):'<span class="tag neutral">nouvelle</span>')+'</td></tr>';}).join('')+
+        (avant[x.code]!=null?ecart(x.v,avant[x.code]):'<span class="tag neutral">nouvelle</span>')+'</td>'+
+        '<td class="l">'+(parts2[x.code]?swTags(parts2[x.code]):'')+'</td></tr>';}).join('')+
     '</tbody></table></div>'+(D.oeuvres.length>30?'<div class="pbody mut">30 premières sur '+D.oeuvres.length+'.</div>':'')+'</div>';
   return h;
 }
@@ -2243,12 +2411,18 @@ function render(){
   if(el('sw-reset'))el('sw-reset').onclick=modalReset;
   v.querySelectorAll('[data-rep]').forEach(function(tr){tr.onclick=function(){state.rep=+this.dataset.rep;render();window.scrollTo(0,0);};});
   if(el('rep-sel'))el('rep-sel').onchange=function(){state.rep=+this.value;render();};
+  if(el('f-per'))el('f-per').onchange=function(){state.fP=this.value;render();};
+  if(el('f-sw'))el('f-sw').onchange=function(){state.fS=this.value;render();};
+  if(el('f-raz'))el('f-raz').onclick=function(){state.fP='';state.fS='';render();};
   v.querySelectorAll('[data-adf]').forEach(function(b){b.onclick=function(){state.adf=this.dataset.adf;state.adn=20;render();};});
   if(el('ad-plus'))el('ad-plus').onclick=function(){state.adn+=20;render();};
-  v.querySelectorAll('[data-ckf]').forEach(function(b){b.onclick=function(){state.ckf=this.dataset.ckf;state.ckn=40;render();};});
-  if(el('ck-plus'))el('ck-plus').onclick=function(){state.ckn=(state.ckn||40)+40;render();};
+  v.querySelectorAll('[data-ckf]').forEach(function(b){b.onclick=function(){state.ckf=this.dataset.ckf;state.pgC=1;render();};});
+  v.querySelectorAll('[data-pg]').forEach(function(b){b.onclick=function(){
+    var x=this.dataset.pg.split(':');state['pg'+x[0]]=+x[1];render();
+    var t=this.closest('.panel');if(t)t.scrollIntoView({block:'start'});};});
   [['adq','adq'],['fq','fq']].forEach(function(c){var inp=el(c[0]);if(!inp)return;
-    inp.oninput=function(){var pos=this.selectionStart;state[c[1]]=this.value;if(c[0]==='adq')state.adn=20;render();
+    inp.oninput=function(){var pos=this.selectionStart;state[c[1]]=this.value;if(c[0]==='adq')state.adn=20;
+      if(c[0]==='fq')state.pgC=1;render();
       var n=el(c[0]);if(n){n.focus();n.setSelectionRange(pos,pos);}};});
   v.querySelectorAll('[data-retab]').forEach(function(b){b.onclick=async function(){
     delete baseCfg().exclus[this.dataset.retab];
@@ -2284,6 +2458,7 @@ function ficheOeuvre(code){
   var P=socParts(o),partDep=P.dep,partDr=P.dr,partPh=P.ph;
   var PIL=pilote(P),TOT=PIL==='ph'?partPh:partDep;
   var notes=notesDe(e),artUrl=e.art||'';
+  var aValider=(rows(soc).filter(function(x){return x.code===code;})[0]||{}).vstat==='attente';
   var lignes=aut.map(function(x,i){
     var swId=ix[String(x.coad)]||ix['n:'+norm(x.nom)]||'';
     var cur=a.list.filter(function(l){return l.id===swId;})[0];
@@ -2345,9 +2520,9 @@ function ficheOeuvre(code){
       '<input type="url" id="f-spotify" value="'+esc(e.spotify||'')+'" placeholder="https://open.spotify.com/track/…"></div>'+
     '<div class="field"><label class="fl">Lien YouTube</label>'+
       '<input type="url" id="f-youtube" value="'+esc(e.youtube||'')+'" placeholder="https://www.youtube.com/watch?v=…"></div>'+
-    '<div class="hint" id="f-plan"></div>'+
-    '<label class="rowline" style="margin-top:8px;font-size:12.5px;cursor:pointer"><input type="checkbox" id="f-nonsorti"'+
-      (e.nonSorti?' checked':'')+'> Titre non commercialisé <span class="mut">— pas d\'artiste, de lien, de sortie ni de pochette attendus</span></label>'+
+    '<label class="nonsorti"><input type="checkbox" id="f-nonsorti"'+(e.nonSorti?' checked':'')+'> Titre non commercialisé'+
+      '<span class="mut"> · rien à attendre côté sortie</span></label>'+
+    '<div class="sep"></div><label class="fl">Sortie au Planning</label><div id="f-plan" class="plan-box"></div>'+
     /* --- l'œuvre déposée --- */
     '<div class="sep"></div><label class="fl">Œuvre déposée à la Sacem</label>'+
     '<div class="grid2"><div class="field"><label class="fl">Titre du dépôt</label>'+
@@ -2377,11 +2552,13 @@ function ficheOeuvre(code){
       '<th class="num">Représenté</th><th class="num">Part</th></tr></thead>'+
       '<tbody id="aut-body"></tbody></table></div>'+
     '<div class="hint" id="vent-hint"></div>'+
-    '<div class="sep"></div><label class="fl">Ventilation de notre part phono</label><div id="vent"></div>'+
+    '<div class="sep"></div><label class="fl">Ventilation de notre part phono</label>'+
+    (aValider?'<div class="alerte">Dissolution à valider : relisez les points de chaque songwriter, '+
+      'corrigez-les si besoin, puis « Valider la dissolution ».</div>':'')+'<div id="vent"></div>'+
     '</div></div>';
   openModal('<div class="eyebrow">Œuvre</div><h2>'+esc(o.titre)+'</h2>',body,
     '<span class="left mut" id="f-state"></span><button class="btn" id="f-cancel">Annuler</button>'+
-    '<button class="btn primary" id="f-save">Enregistrer</button>','wide');
+    '<button class="btn primary" id="f-save">'+(aValider?'Valider la dissolution':'Enregistrer')+'</button>','wide');
 
   /* ---- notes horodatées ---- */
   function drawNotes(){
@@ -2550,18 +2727,137 @@ function ficheOeuvre(code){
       'Le phono commande la ventilation, DEP et DR suivent au prorata.';
   }
   drawNotes();drawAut();drawVent();majPochette(false);
-  var rel=sortiePourOeuvre(o.titre);
-  if(rel){
-    el('f-plan').innerHTML='Planning : <b>'+esc(rel.artist||'')+'</b>'+
-      (rel.date||rel.dateSortable?' · '+esc(rel.date||rel.dateSortable):'')+
-      ' <button class="btn sm" id="f-plan-ok" style="margin-left:6px">Reprendre</button>';
-    el('f-plan-ok').onclick=function(){
-      if(rel.artist)el('f-artiste').value=rel.artist;
-      var d=(rel.dateSortable||'').slice(0,10);
-      if(/^\d{4}-\d{2}-\d{2}$/.test(d))el('f-sortie').value=d;
-      if(rel.link&&!el('f-spotify').value&&/spotify/.test(rel.link)){el('f-spotify').value=rel.link;majPochette(true);}
-      this.remove();};
+  /* ---- sortie au Planning : lier un événement existant ou le créer ---- */
+  var relId=e.release||'',majSortie=null,creation=false,planQ='';
+  function reprendre(r){
+    if(r.artist)el('f-artiste').value=r.artist;
+    var d=(r.dateSortable||'').slice(0,10);if(/^\d{4}-\d{2}-\d{2}$/.test(d))el('f-sortie').value=d;
+    if(r.link){if(/spotify/.test(r.link)&&!el('f-spotify').value)el('f-spotify').value=r.link;
+      else if(/youtu/.test(r.link)&&!el('f-youtube').value)el('f-youtube').value=r.link;}
+    if(r.artwork&&!artUrl){artUrl=r.artwork;var cv=el('f-cover');if(cv)cv.innerHTML='<img src="'+esc(r.artwork)+'" alt="">';}
+    majPochette(false);
   }
+  function score(r){
+    var t=norm(o.titre),sc=0;
+    if(titresSortie(r).indexOf(t)>=0)sc+=3;
+    var a2=norm(el('f-artiste')?el('f-artiste').value:'');
+    if(a2&&norm(r.artist)===a2)sc+=1;
+    return sc;
+  }
+  function drawPlan(){
+    var box=el('f-plan');if(!box)return;
+    var lie=sortieParId(relId);
+    if(lie){
+      var dansProjet=(lie.type==='EP'||lie.type==='Album')?lignesTitres(lie.blzTrackNames).map(norm).indexOf(norm(o.titre))>=0:true;
+      box.innerHTML=carteSortie(lie)+
+        (!dansProjet?'<div class="hint">Ce titre sera ajouté aux titres BLZ du projet à l\'enregistrement.</div>':'')+
+        '<div class="rowline" style="margin-top:8px"><button class="btn sm" id="pl-rep">Reprendre les infos</button>'+
+        '<a class="btn sm" href="'+esc(lienPlanning(lie))+'" target="_blank" rel="noopener">Ouvrir dans le Planning ↗</a>'+
+        '<button class="btn sm" id="pl-del">Délier</button></div>';
+      if(!dansProjet){var lb=lignesTitres(lie.blzTrackNames);lb.push(o.titre);
+        majSortie={r:lie,blzTrackNames:lb.join('\n'),blzTrackCount:String(lb.length)};}
+      else majSortie=null;
+      el('pl-rep').onclick=function(){reprendre(lie);};
+      el('pl-del').onclick=function(){relId='';majSortie=null;drawPlan();};
+      return;
+    }
+    if(creation)return drawCreation(box);
+    var cands=PLANNING.filter(function(r){return TYPES_SORTIE[r.type];});
+    var q=norm(planQ);
+    var L=cands.map(function(r){return {r:r,sc:score(r)};})
+      .filter(function(x){return q?norm(titreSortie(x.r)+' '+x.r.artist+' '+(x.r.blzTrackNames||'')).indexOf(q)>=0:x.sc>0;})
+      .sort(function(a2,b2){return (b2.sc-a2.sc)||String(b2.r.dateSortable||'').localeCompare(String(a2.r.dateSortable||''));})
+      .slice(0,6);
+    box.innerHTML='<div class="mut" style="font-size:12px;margin-bottom:6px">Aucun événement lié.'+
+      (L.length&&!q?' Événements proposés :':'')+'</div>'+
+      L.map(function(x,i){return '<div class="plan-choix">'+carteSortie(x.r)+
+        '<button class="btn sm primary" data-plk="'+i+'">Lier</button></div>';}).join('')+
+      '<div class="rowline" style="margin-top:8px"><input type="search" id="pl-q" placeholder="Chercher un single, un EP, un album…" value="'+
+        esc(planQ)+'" style="flex:1;min-width:180px">'+
+      '<button class="btn sm" id="pl-new"'+(MODE==='firebase'?'':' disabled title="Disponible dans la Toolbox connectée"')+
+        '>Créer l\'événement</button></div>';
+    box.querySelectorAll('[data-plk]').forEach(function(bt){bt.onclick=function(){relId=L[+this.dataset.plk].r.id;
+      reprendre(sortieParId(relId));drawPlan();};});
+    var qi=el('pl-q');qi.oninput=function(){var pos=this.selectionStart;planQ=this.value;drawPlan();
+      var n2=el('pl-q');n2.focus();n2.setSelectionRange(pos,pos);};
+    el('pl-new').onclick=function(){creation=true;drawPlan();};
+  }
+  function drawCreation(box){
+    var art=el('f-artiste').value.trim(),dt=el('f-sortie').value,lk=el('f-spotify').value.trim()||el('f-youtube').value.trim();
+    var autres=rows(soc).filter(function(x){return !x.na&&x.code!==code;}).sort(function(a2,b2){return String(a2.titre).localeCompare(String(b2.titre),'fr');});
+    box.innerHTML='<div class="grid2">'+
+      '<div class="field"><label class="fl">Type</label><select id="pc-type"><option>Single</option><option>EP</option><option>Album</option></select></div>'+
+      '<div class="field"><label class="fl">Statut</label><select id="pc-st"><option>Confirmé</option><option>TBC</option></select></div>'+
+      '<div class="field"><label class="fl">Artiste</label><input type="text" id="pc-art" value="'+esc(art)+'"></div>'+
+      '<div class="field"><label class="fl">Date de sortie</label><input type="date" id="pc-date" value="'+esc(dt)+'"></div></div>'+
+      '<div class="field" id="pc-g-single"><label class="fl">Titre du single</label><input type="text" id="pc-track" value="'+esc(o.titre)+'"></div>'+
+      '<div id="pc-g-projet" hidden><div class="grid2">'+
+        '<div class="field"><label class="fl">Titre du projet</label><input type="text" id="pc-proj"></div>'+
+        '<div class="field"><label class="fl">Nombre de titres</label><input type="number" id="pc-nb" min="1" max="30"></div></div>'+
+        '<div class="field"><label class="fl">Titres du projet (un par ligne)</label><textarea id="pc-ep"></textarea></div>'+
+        '<div class="field"><label class="fl">Œuvres '+esc(socNom(soc))+' du projet</label>'+
+          '<input type="search" id="pc-q" placeholder="Ajouter une œuvre du catalogue…"><div id="pc-oe" class="pc-oe"></div></div></div>'+
+      '<div class="field"><label class="fl">Lien</label><input type="url" id="pc-lien" value="'+esc(lk)+'" placeholder="Spotify, YouTube…"></div>'+
+      '<div class="hint" id="pc-sw"></div>'+
+      '<div class="rowline" style="margin-top:8px"><button class="btn sm primary" id="pc-go">Créer dans le Planning</button>'+
+        '<button class="btn sm" id="pc-no">Annuler</button><span class="mut" id="pc-state" style="font-size:12px"></span></div>';
+    var choisis=[code];
+    function swDes(){var noms={};
+      choisis.forEach(function(c){var r=rows(soc).filter(function(x){return x.code===c;})[0];
+        (r?r.sw:[]).forEach(function(x){var sw=store.songwriters[x.id];if(sw)noms[nomPlanning(sw)]=1;});});
+      return Object.keys(noms);}
+    function majListe(){
+      var q=norm(el('pc-q').value);
+      el('pc-oe').innerHTML=choisis.map(function(c){var r=(store.oeuvres[soc]||{})[c]||{};
+          return '<span class="swtag">'+esc(r.titre||c)+(c===code?'':' <button class="x" data-rm="'+esc(c)+'" style="font-size:13px;padding:0 2px">×</button>')+'</span>';}).join(' ')+
+        (q?'<div class="pc-res">'+autres.filter(function(x){return choisis.indexOf(x.code)<0&&norm(x.titre).indexOf(q)>=0;}).slice(0,6)
+          .map(function(x){return '<button class="btn sm" data-add="'+esc(x.code)+'">+ '+esc(x.titre)+'</button>';}).join(' ')+'</div>':'');
+      el('pc-oe').querySelectorAll('[data-add]').forEach(function(bt){bt.onclick=function(){choisis.push(this.dataset.add);
+        var ti=((store.oeuvres[soc]||{})[this.dataset.add]||{}).titre||'',ta=el('pc-ep');
+        if(ti&&lignesTitres(ta.value).map(norm).indexOf(norm(ti))<0)ta.value=(ta.value?ta.value.replace(/\s*$/,'')+'\n':'')+ti;
+        el('pc-q').value='';majListe();};});
+      el('pc-oe').querySelectorAll('[data-rm]').forEach(function(bt){bt.onclick=function(){var c=this.dataset.rm;
+        choisis=choisis.filter(function(x){return x!==c;});majListe();};});
+      var n=swDes();
+      el('pc-sw').innerHTML=n.length?'Songwriters repris des œuvres : <b>'+n.map(esc).join(', ')+'</b>'
+        :'Aucun songwriter ventilé sur ces œuvres pour l\'instant.';
+    }
+    function majType(){var t=el('pc-type').value,pj=t==='EP'||t==='Album';
+      el('pc-g-single').hidden=pj;el('pc-g-projet').hidden=!pj;
+      if(pj&&!el('pc-ep').value)el('pc-ep').value=choisis.map(function(c){return ((store.oeuvres[soc]||{})[c]||{}).titre||'';}).join('\n');
+      if(!pj)choisis=[code];majListe();}
+    el('pc-type').onchange=majType;el('pc-q').oninput=majListe;majType();
+    el('pc-no').onclick=function(){creation=false;drawPlan();};
+    el('pc-go').onclick=async function(){
+      var t=el('pc-type').value,pj=t==='EP'||t==='Album',artiste=el('pc-art').value.trim(),d=el('pc-date').value;
+      if(!artiste){el('pc-state').textContent='Artiste requis';return;}
+      if(!d){el('pc-state').textContent='Date de sortie requise';return;}
+      var proj=el('pc-proj').value.trim(),nb=el('pc-nb').value.trim();
+      if(pj&&!proj){el('pc-state').textContent='Titre du projet requis';return;}
+      var ep=pj?lignesTitres(el('pc-ep').value):[];
+      var blz=pj?choisis.map(function(c){return ((store.oeuvres[soc]||{})[c]||{}).titre||'';}).filter(Boolean):[];
+      var track=pj?'':el('pc-track').value.trim();
+      var titre=pj?(proj||artiste)+((nb||ep.length)?' ('+(nb||ep.length)+' titres)':''):(track||artiste);
+      var r={id:Date.now(),date:isoVersFR(d),dateSortable:d,type:t,status:el('pc-st').value,artist:artiste,title:titre,
+        project:pj?proj:'',track:track,lieu:'',ville:'',certType:'',certLevel:'',
+        epTrackCount:pj?String(nb||ep.length||''):'',epTrackNames:pj?ep.join('\n'):'',
+        blzTrackCount:pj?String(blz.length):'',blzTrackNames:pj?blz.join('\n'):'',
+        country:'FR',actuDesc:'',link:el('pc-lien').value.trim(),artwork:artUrl||artDe(soc,code)||'',
+        songwriters:swDes(),createdAt:new Date().toISOString()};
+      this.disabled=true;el('pc-state').textContent='Création…';
+      try{
+        await ecrireSortie(r);
+        // chaque œuvre du projet est liée à l'événement
+        var E=store.edits[soc]||(store.edits[soc]={});
+        for(var i=0;i<choisis.length;i++){var c=choisis[i],ed2=E[c]||(E[c]={});ed2.release=r.id;
+          if(c!==code){if(!ed2.artiste)ed2.artiste=artiste;if(!ed2.sortie)ed2.sortie=d;await saveEdit(soc,c);}}
+        relId=r.id;creation=false;
+        await saveEdit(soc,code);
+        drawPlan();toast('Événement créé dans le Planning'+(choisis.length>1?' · '+choisis.length+' œuvres liées':''));
+      }catch(err){el('pc-state').textContent='Échec : '+((err&&err.message)||err);this.disabled=false;}
+    };
+  }
+  drawPlan();
   el('f-cancel').onclick=closeModal;
   el('f-save').onclick=async function(){
     var E=store.edits[soc]||(store.edits[soc]={}),ed=E[code]||(E[code]={});
@@ -2569,6 +2865,9 @@ function ficheOeuvre(code){
     if(reste)notes.push({t:reste,d:new Date().toISOString()});
     ed.artiste=el('f-artiste').value.trim();ed.spotify=el('f-spotify').value.trim();
     ed.youtube=el('f-youtube').value.trim();ed.sortie=el('f-sortie').value;ed.nonSorti=el('f-nonsorti').checked;
+    ed.release=relId||'';
+    if(majSortie&&MODE==='firebase'){try{majSortie.r.blzTrackNames=majSortie.blzTrackNames;
+      majSortie.r.blzTrackCount=majSortie.blzTrackCount;await ecrireSortie(majSortie.r);}catch(err){}}
     ed.notes=notes.map(function(n){return {t:n.t,d:n.d||''};});
     ed.note=notes.length?notes[notes.length-1].t:'';      // compat affichage rapide
     ed.art=artUrl||'';ed.artKey=artKey(ed.spotify,ed.youtube);
@@ -3141,11 +3440,12 @@ el('file-restore').onchange=function(){if(this.files&&this.files[0])importBase(t
   }
   SOCIETES.forEach(function(s2){store.oeuvres[s2.id]={};store.edits[s2.id]={};store.liens[s2.id]={};});
   lireAdresse();
-  if(location.protocol!=='file:'&&snapLoad()){SYNCHRO=true;}
+  if(location.protocol!=='file:'&&snapLoad()){SYNCHRO=true;preparerOeuvres();}
   render();
   await connect();
   try{await loadAll();}catch(e){toast('Base momentanément illisible — '+(e.message||e));}
   if(MODE!=='firebase')appliquerFusions();
+  preparerOeuvres();
   SYNCHRO=false;
   render();
   snapSave();
