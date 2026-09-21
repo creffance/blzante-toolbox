@@ -13,6 +13,26 @@
 body { font-family: 'Syne Mono', monospace; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
 body::before { content: ''; position: fixed; inset: 0; background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px); background-size: 60px 60px; opacity: 0.3; pointer-events: none; z-index: 0; }
 
+
+/* ---- passage d'un outil à l'autre ---- */
+nav{z-index:40}
+.tsw{position:relative}
+.tsw-btn{display:inline-flex;align-items:center;gap:7px;background:none;cursor:pointer;
+ border:1px solid var(--border);color:var(--text);font-family:'Syne Mono',monospace;font-size:.6rem;
+ letter-spacing:.1em;text-transform:uppercase;padding:5px 10px;transition:border-color .15s,color .15s}
+.tsw-btn:hover,.tsw-btn[aria-expanded="true"]{border-color:var(--accent);color:var(--accent)}
+.tsw-car{font-size:.55rem;opacity:.7}
+.tsw-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:50;backdrop-filter:blur(2px);min-width:230px;
+ background:var(--surface);border:1px solid var(--border);box-shadow:0 10px 30px rgba(0,0,0,.55);padding:5px}
+.tsw-menu[hidden]{display:none}
+.tsw-t{font-family:'Syne Mono',monospace;font-size:.5rem;letter-spacing:.12em;text-transform:uppercase;
+ color:var(--muted);padding:7px 9px 3px}
+.tsw-menu a{display:flex;align-items:center;justify-content:space-between;gap:10px;
+ padding:7px 9px;text-decoration:none;color:var(--text);font-size:.7rem;border-left:2px solid transparent}
+.tsw-menu a:hover{background:rgba(255,255,255,.055)}
+.tsw-menu a.on{border-left-color:var(--accent);color:var(--accent)}
+.tsw-menu a .k{font-family:'Syne Mono',monospace;font-size:.5rem;color:var(--muted);letter-spacing:.08em}
+
 nav { display: flex; align-items: center; justify-content: space-between; padding: 18px 40px; border-bottom: 1px solid var(--border); position: relative; z-index: 1; }
 .nav-logo { font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 800; color: #fff; text-decoration: none; letter-spacing: 0.08em; display: flex; align-items: center; gap: 10px; }
 .nav-logo-img { height: 28px; width: auto; display: block; }
@@ -202,7 +222,10 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
   <div class="nav-right"><button onclick="firebase.auth().signOut().then(()=>location.href='login.html')" style="background:none;border:1px solid var(--border);color:var(--muted);font-family:'Syne Mono',monospace;font-size:0.55rem;padding:4px 10px;cursor:pointer;letter-spacing:0.08em;text-transform:uppercase;transition:all 0.15s" onmouseover="this.style.borderColor='#555';this.style.color='#fff'" onmouseout="this.style.borderColor='';this.style.color=''">Déconnexion</button> 
     <a class="nav-back" href="index.html">&larr; Toolbox</a>
     <span class="nav-sep">/</span>
-    <span>Planning</span>
+    <div class="tsw" id="tsw">
+      <button class="tsw-btn" id="tswBtn" aria-expanded="false" aria-haspopup="true" title="Changer d'outil (touche O)">Planning <span class="tsw-car">&#9662;</span></button>
+      <div class="tsw-menu" id="tswMenu" hidden></div>
+    </div>
   </div>
 </nav>
 
@@ -274,6 +297,39 @@ if(!firebase.apps.length)firebase.initializeApp(FIREBASE_CONFIG);
 window._fbToken='';
 function dbFetch(path,opts){const sep=path.includes('?')?'&':'?';return fetch(DB+path+sep+'auth='+window._fbToken,opts);}
 function _waitAuth(){return new Promise((res,rej)=>{firebase.auth().onAuthStateChanged(async u=>{if(!u){window.location.href='login.html';rej();}else{window._fbToken=await u.getIdToken();document.body.style.visibility='visible';res(u);}});});}
+
+
+/* ---- passage d'un outil à l'autre, depuis n'importe quelle page ---- */
+(function(){
+  var OUTILS=[
+    ['Principaux',[['roster.html','Roster','R'],['release_planning.html','Planning','P'],
+      ['ig_generator.html','IG Content','I'],['catalogues.html','Catalogues','C']]],
+    ['Créer',[['roster_create.html','+ Fiche artiste',''],['release_create.html','+ Event planning',''],
+      ['sacem_depot.html','SACEM Dépôt','']]],
+    ['Admin',[['notes.html','Notes NDA / NDD',''],['onid_blzante.html','ONID BLZante',''],
+      ['infos_sacem.html','Infos Sacem',''],['infos_facturation.html','Infos facturation',''],
+      ['index.html','Toutes les pages','']]]
+  ];
+  var b=document.getElementById('tswBtn'),m=document.getElementById('tswMenu');
+  if(!b||!m)return;
+  var ici=(location.pathname.split('/').pop()||'index.html').toLowerCase();
+  m.innerHTML=OUTILS.map(function(g){
+    return '<div class="tsw-t">'+g[0]+'</div>'+g[1].map(function(o){
+      return '<a href="'+o[0]+'"'+(o[0].toLowerCase()===ici?' class="on"':'')+'>'+o[1]+
+        (o[2]?'<span class="k">'+o[2]+'</span>':'')+'</a>';}).join('');}).join('');
+  function ouvrir(v){m.hidden=!v;b.setAttribute('aria-expanded',v?'true':'false');}
+  b.addEventListener('click',function(e){e.stopPropagation();ouvrir(m.hidden);});
+  document.addEventListener('click',function(e){if(!m.hidden&&!m.contains(e.target))ouvrir(false);});
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape')return ouvrir(false);
+    var t=e.target&&e.target.tagName;
+    if(t==='INPUT'||t==='TEXTAREA'||t==='SELECT'||e.metaKey||e.ctrlKey||e.altKey)return;
+    var k=String(e.key||'').toUpperCase();
+    if(k==='O')return ouvrir(m.hidden);
+    var dest={R:'roster.html',P:'release_planning.html',I:'ig_generator.html',C:'catalogues.html'}[k];
+    if(dest&&dest.toLowerCase()!==ici)location.href=dest;
+  });
+})();
 
 const MONTHS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 

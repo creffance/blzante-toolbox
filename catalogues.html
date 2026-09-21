@@ -19,6 +19,25 @@
   --sans:'Syne',system-ui,sans-serif;
   --disp:'Syne',system-ui,sans-serif;
 }
+
+/* ---- passage d'un outil à l'autre ---- */
+nav{z-index:40 !important}
+.tsw{position:relative}
+.tsw-btn{display:inline-flex;align-items:center;gap:7px;background:none;cursor:pointer;
+ border:1px solid var(--line);color:var(--ink-2);font-family:'Syne Mono',monospace;font-size:.6rem;
+ letter-spacing:.1em;text-transform:uppercase;padding:5px 10px;transition:border-color .15s,color .15s}
+.tsw-btn:hover,.tsw-btn[aria-expanded="true"]{border-color:var(--accent);color:var(--accent)}
+.tsw-car{font-size:.55rem;opacity:.7}
+.tsw-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:50;backdrop-filter:blur(2px);min-width:230px;
+ background:var(--surface);border:1px solid var(--line);box-shadow:0 10px 30px rgba(0,0,0,.55);padding:5px}
+.tsw-menu[hidden]{display:none}
+.tsw-t{font-family:'Syne Mono',monospace;font-size:.5rem;letter-spacing:.12em;text-transform:uppercase;
+ color:var(--ink-3);padding:7px 9px 3px}
+.tsw-menu a{display:flex;align-items:center;justify-content:space-between;gap:10px;
+ padding:7px 9px;text-decoration:none;color:var(--ink-2);font-size:.7rem;border-left:2px solid transparent}
+.tsw-menu a:hover{background:rgba(255,255,255,.055)}
+.tsw-menu a.on{border-left-color:var(--accent);color:var(--accent)}
+.tsw-menu a .k{font-family:'Syne Mono',monospace;font-size:.5rem;color:var(--ink-3);letter-spacing:.08em}
 *{box-sizing:border-box}
 html,body{margin:0}
 body{background:var(--paper);color:var(--ink);font:14px/1.45 var(--sans);-webkit-font-smoothing:antialiased;
@@ -292,7 +311,11 @@ td.ckc{text-align:center;padding-left:4px;padding-right:4px}
      onerror="this.style.display='none'"><span>BLZante</span></a>
   <div class="nav-right">
     <button class="deco" onclick="try{localStorage.removeItem('blz-catalogues-snap-v1')}catch(e){}try{firebase.auth().signOut().then(function(){location.href='login.html'})}catch(e){}">Déconnexion</button>
-    <a href="index.html">&larr; Toolbox</a><span class="nav-sep">/</span><span>Catalogues</span>
+    <a href="index.html">&larr; Toolbox</a><span class="nav-sep">/</span>
+    <div class="tsw" id="tsw">
+      <button class="tsw-btn" id="tswBtn" aria-expanded="false" aria-haspopup="true" title="Changer d'outil (touche O)">Catalogues <span class="tsw-car">&#9662;</span></button>
+      <div class="tsw-menu" id="tswMenu" hidden></div>
+    </div>
   </div>
 </nav>
 <div class="wrap">
@@ -1010,18 +1033,47 @@ function societeGestion(sw){
   return '<span class="soc-diff" title="La société de gestion diffère entre droit d\'exécution et droit de reproduction">⚠ DE : '+
     esc(D.join(', ')||'—')+' · DR : '+esc(R.join(', ')||'—')+'</span>';
 }
-// identité civile d'une fiche : le premier ayant droit rattaché, sinon son COAD
+// identité civile d'une fiche : tous les ayants droit rattachés — un duo en compte deux
+function nomsAD(sw){
+  var vus={},out=[];
+  (sw.ads||[]).forEach(function(a){
+    var n=prenomNom(a.nf,a.nom||'');if(!n)return;
+    var k=norm(n);if(vus[k])return;vus[k]=1;out.push(n);});
+  return out;
+}
 function identite(sw){
-  var ad=(sw.ads||[])[0]||{};
-  var nom=prenomNom(ad.nf,ad.nom||'');
+  var noms=nomsAD(sw),ad=(sw.ads||[])[0]||{};
   var ipi=ad.ipi||(sw.ipis||[])[0]||sw.ipi||'';
   var coad=sw.coad||ad.coad||'';
   var p=[];
-  if(nom&&norm(nom)!==norm(sw.nom))p.push(esc(nom));
-  if(ipi)p.push('IPI '+esc(ipi));
-  if(coad)p.push('COAD '+esc(coad));
+  var civils=noms.length>1?noms:noms.filter(function(n){return norm(n)!==norm(sw.nom);});
+  if(civils.length)p.push(esc(civils.join(' + ')));
+  if(noms.length<2&&ipi)p.push('IPI '+esc(ipi));
+  if(noms.length<2&&coad)p.push('COAD '+esc(coad));
+  if(noms.length>1)p.push(noms.length+' ayants droit Sacem');
   var sg=societeGestion(sw);if(sg)p.push(sg);
   return p.join(' · ');
+}
+// Détail par ayant droit d'une fiche qui en regroupe plusieurs (un duo, un groupe)
+function membresSW(soc,sw){
+  if(!sw||(sw.ads||[]).length<2)return [];
+  return memo('mem:'+soc+':'+sw.id+':'+(sw.ads||[]).length,function(){
+    var par={},ordre=[];
+    (sw.ads||[]).forEach(function(a){var k=adKey(a);if(par[k])return;
+      par[k]={cle:k,nom:prenomNom(a.nf,a.nom||'')||a.nom||'—',coad:a.coad||'',ipi:a.ipi||'',
+        oeuvres:0,ph:0,dep:0,net:0};ordre.push(k);});
+    rows(soc).forEach(function(r){
+      var o=(store.oeuvres[soc]||{})[r.code];if(!o)return;
+      var mien=r.sw.filter(function(x){return x.id===sw.id;})[0];
+      var l=auteurs(o).filter(function(a){return par[adKey(a)];});
+      if(!l.length)return;
+      var tot=l.reduce(function(s2,a){return s2+(a.ph||0);},0);
+      l.forEach(function(a){var m=par[adKey(a)];
+        m.oeuvres++;m.ph+=a.ph||0;m.dep+=a.dep||0;
+        if(mien&&tot>0)m.net+=mien.net*(a.ph||0)/tot;});
+    });
+    return ordre.map(function(k){return par[k];}).sort(function(a,b){return (b.net-a.net)||(b.oeuvres-a.oeuvres);});
+  });
 }
 function big2(s){var o=[];for(var i=0;i<s.length-1;i++)o.push(s.slice(i,i+2));return o;}
 var SIMIL=new Map();
@@ -1389,6 +1441,38 @@ function importCatalogue(soc,head,rws,fichier){
   return {lignes:n,oeuvres:Object.keys(vus).length,nouvelles:nouvelles,coad:coad};
 }
 
+
+/* ---- passage d'un outil à l'autre, depuis n'importe quelle page ---- */
+(function(){
+  var OUTILS=[
+    ['Principaux',[['roster.html','Roster','R'],['release_planning.html','Planning','P'],
+      ['ig_generator.html','IG Content','I'],['catalogues.html','Catalogues','C']]],
+    ['Créer',[['roster_create.html','+ Fiche artiste',''],['release_create.html','+ Event planning',''],
+      ['sacem_depot.html','SACEM Dépôt','']]],
+    ['Admin',[['notes.html','Notes NDA / NDD',''],['onid_blzante.html','ONID BLZante',''],
+      ['infos_sacem.html','Infos Sacem',''],['infos_facturation.html','Infos facturation',''],
+      ['index.html','Toutes les pages','']]]
+  ];
+  var b=document.getElementById('tswBtn'),m=document.getElementById('tswMenu');
+  if(!b||!m)return;
+  var ici=(location.pathname.split('/').pop()||'index.html').toLowerCase();
+  m.innerHTML=OUTILS.map(function(g){
+    return '<div class="tsw-t">'+g[0]+'</div>'+g[1].map(function(o){
+      return '<a href="'+o[0]+'"'+(o[0].toLowerCase()===ici?' class="on"':'')+'>'+o[1]+
+        (o[2]?'<span class="k">'+o[2]+'</span>':'')+'</a>';}).join('');}).join('');
+  function ouvrir(v){m.hidden=!v;b.setAttribute('aria-expanded',v?'true':'false');}
+  b.addEventListener('click',function(e){e.stopPropagation();ouvrir(m.hidden);});
+  document.addEventListener('click',function(e){if(!m.hidden&&!m.contains(e.target))ouvrir(false);});
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape')return ouvrir(false);
+    var t=e.target&&e.target.tagName;
+    if(t==='INPUT'||t==='TEXTAREA'||t==='SELECT'||e.metaKey||e.ctrlKey||e.altKey)return;
+    var k=String(e.key||'').toUpperCase();
+    if(k==='O')return ouvrir(m.hidden);
+    var dest={R:'roster.html',P:'release_planning.html',I:'ig_generator.html',C:'catalogues.html'}[k];
+    if(dest&&dest.toLowerCase()!==ici)location.href=dest;
+  });
+})();
 /* ============================== cadre ============================== */
 function renderChrome(){
   el('cats').innerHTML=SOCIETES.map(function(s){
@@ -2307,6 +2391,23 @@ function pageSW(id){
       barres(A.fam,{detail:A.famTyp,vide:'Aucun revenu détaillé.'})+couverture(A)+'</div></div>'+
     '<div class="panel"><div class="phead"><h2>Par territoire</h2></div><div class="pbody">'+
       barres(A.pays,{casse:true,vide:'Aucun revenu détaillé.'})+'</div></div></div>';
+  // fiche qui regroupe plusieurs personnes : le détail par ayant droit, parts additionnées
+  var mem=membresSW(soc,sw);
+  if(mem.length>1){
+    var totM=mem.reduce(function(s2,m){return s2+m.net;},0);
+    h+='<div class="panel"><div class="phead"><h2>Ayants droit regroupés sur cette fiche</h2>'+
+      '<span class="note">'+mem.length+' personnes · leurs parts sont additionnées sur la fiche</span></div>'+
+      '<div class="tscroll"><table><thead><tr><th class="l">Ayant droit</th><th class="num">Œuvres</th>'+
+      '<th class="num">Écriture phono cumulée</th><th class="num">Revenus €</th></tr></thead><tbody>'+
+      mem.map(function(m){
+        return '<tr><td class="l w">'+esc(m.nom)+'<div class="mini">'+
+          (m.coad?'COAD '+esc(m.coad):'')+(m.ipi?(m.coad?' · ':'')+'IPI '+esc(m.ipi):'')+'</div></td>'+
+          '<td class="num">'+m.oeuvres+'</td><td class="num ph">'+pv(m.ph)+' %</td>'+
+          '<td class="num'+(m.net?' w':' mut')+'">'+(m.net?eur(m.net):'—')+'</td></tr>';}).join('')+
+      '</tbody><tfoot><tr><td class="l">Total de la fiche</td>'+
+        '<td class="num">'+mes.length+'</td><td class="num ph">'+pv(mem.reduce(function(s2,m){return s2+m.ph;},0))+' %</td>'+
+        '<td class="num">'+eur(totM)+'</td></tr></tfoot></table></div></div>';
+  }
   h+='<div class="panel"><div class="phead"><h2>Ses œuvres</h2><span class="note">Ses points sont sa part de '+
     'notre phono ; ses revenus en découlent. Cliquez une œuvre pour son détail.</span></div>';
   h+=mes.length?'<div class="tscroll"><table><thead><tr><th class="l">Œuvre</th><th class="l">Artiste</th>'+
@@ -2792,7 +2893,7 @@ function ficheOeuvre(code){
       '<input type="url" id="f-spotify" value="'+esc(e.spotify||'')+'" placeholder="https://open.spotify.com/track/…"></div>'+
     '<div class="field"><label class="fl">Lien YouTube</label>'+
       '<input type="url" id="f-youtube" value="'+esc(e.youtube||'')+'" placeholder="https://www.youtube.com/watch?v=…"></div>'+
-    '<label class="nonsorti"><input type="checkbox" id="f-nonsorti"'+(e.nonSorti?' checked':'')+'> Titre non commercialisé'+
+    '<label class="nonsorti"><input type="checkbox" id="f-nonsorti"'+(e.nonSorti?' checked':'')+'> Titre pas encore commercialisé'+
       '<span class="mut"> · rien à attendre côté sortie</span></label>'+
     '<div class="sep"></div><label class="fl">Sortie au Planning</label><div id="f-plan" class="plan-box"></div>'+
     /* --- l'œuvre déposée --- */
@@ -3115,7 +3216,9 @@ function ficheOeuvre(code){
   // Par défaut la fiche fait foi : on ne complète que les champs vides. Le bouton force la reprise.
   function reprendre(r,force){
     if(r.artist&&(force||!el('f-artiste').value.trim()))el('f-artiste').value=r.artist;
-    if(force&&r.type==='Single'&&titreSortie(r)&&norm(titreSortie(r))!==norm(o.titre))el('f-track').value=titreSortie(r);
+    // un single porte le nom commercialisé du titre : on le reprend dans la fiche
+    var ts=r.type==='Single'?titreSortie(r):'';
+    if(ts&&ts!==o.titre&&(force||!el('f-track').value.trim()))el('f-track').value=ts;
     var d=(r.dateSortable||'').slice(0,10);
     if(/^\d{4}-\d{2}-\d{2}$/.test(d)&&(force||!el('f-sortie').value))el('f-sortie').value=d;
     if(r.link){if(/spotify/.test(r.link)&&(force||!el('f-spotify').value))el('f-spotify').value=r.link;
