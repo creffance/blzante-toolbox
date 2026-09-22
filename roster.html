@@ -383,23 +383,57 @@ function rerenderRoster() {
   try { await _waitAuth(); } catch(e) { return; }
 
   try {
-    const res = await dbFetch('/roster.json');
-    const data = await res.json();
+    // ─── Affichage immédiat : la dernière version connue d'abord, la base ensuite ───
+    const CACHE = 'blz-roster-cache-v1';
+    const lireCache = () => { try { const r = localStorage.getItem(CACHE); return r ? JSON.parse(r) : null; } catch (e) { return null; } };
+    const ecrireCache = d => { try { localStorage.setItem(CACHE, JSON.stringify(d)); } catch (e) {} };
+    const enCours = dbFetch('/roster.json').then(r => r.json()).catch(() => null);
+    let data = lireCache();
+    if (!data) data = await enCours;
     const content = document.getElementById('rosterContent');
     if (!data) { content.innerHTML = `<div class="loading">${t('aucun_artiste')}<br><a href="roster_create.html" style="color:var(--accent)">${t('creer_fiche')}</a></div>`; return; }
-    const allArtists = Object.values(data).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-    const artistesInterpretes = allArtists.filter(a => {
-      const tp = a.types ? (Array.isArray(a.types) ? a.types : [a.types]) : [];
-      return tp.includes('Artiste Interprète');
-    });
-    const songwriters = allArtists.filter(a => {
-      const tp = a.types ? (Array.isArray(a.types) ? a.types : [a.types]) : [];
-      return tp.includes('Auteur') || tp.includes('Compositeur') || tp.includes('Topliner');
-    });
-
-    // Store artists for PDF
-    window._rosterArtists = {};
-    allArtists.forEach(a => { window._rosterArtists[a.id] = a; });
+    // Les artistes en featuring des sorties du Planning complètent les artistes placés
+    const normN = x => String(x == null ? '' : x).normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim();
+    window._featsParSw = {};
+    dbFetch('/releases.json').then(r => r.json()).then(d => {
+      const m = {};
+      Object.values(d || {}).forEach(r => {
+        const pile = [];
+        const glob = (r.songwriters ? (Array.isArray(r.songwriters) ? r.songwriters : [r.songwriters]) : []);
+        const fg = Array.isArray(r.featurings) ? r.featurings : [];
+        pile.push({ sw: glob, feats: fg });
+        (Array.isArray(r.blzTracks) ? r.blzTracks : []).forEach(t => {
+          if (t && (t.songwriters || t.featurings))
+            pile.push({ sw: t.songwriters || glob, feats: (t.featurings || []).concat(fg) });
+        });
+        pile.forEach(x => (x.sw || []).forEach(n => {
+          const k = normN(n); if (!k) return;
+          (x.feats || []).forEach(f => { if (!f) return;
+            (m[k] = m[k] || []).push(String(f).trim()); });
+        }));
+      });
+      Object.keys(m).forEach(k => { m[k] = [...new Set(m[k])]; });
+      window._featsParSw = m;
+      if (window._renderRoster) window._renderRoster();
+    }).catch(() => {});
+    // liste des artistes placés, enrichie des feats du Planning
+    window.placementsComplets = function (a, liste) {
+      const l = (liste || []).map(p => typeof p === 'string' ? p : (p && p.name) || '').filter(Boolean);
+      const vus = new Set(l.map(normN));
+      (window._featsParSw[normN(a.name)] || []).forEach(f => { if (!vus.has(normN(f))) { vus.add(normN(f)); l.push(f); } });
+      return l.sort((x, y) => x.localeCompare(y, undefined, { sensitivity: 'base' }));
+    };
+    let allArtists = [], artistesInterpretes = [], songwriters = [];
+    function classer(d) {
+      allArtists = Object.values(d).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      const a_ = a => a.types ? (Array.isArray(a.types) ? a.types : [a.types]) : [];
+      artistesInterpretes = allArtists.filter(a => a_(a).includes('Artiste Interprète'));
+      songwriters = allArtists.filter(a => a_(a).some(x => ['Auteur','Compositeur','Topliner'].includes(x)));
+      window._rosterArtists = {};
+      allArtists.forEach(a => { window._rosterArtists[a.id] = a; });
+    }
+    classer(data);
 
     function getBgSrc(a) {
       const bgs = a.bgImages ? (Array.isArray(a.bgImages) ? a.bgImages : Object.values(a.bgImages)) : [];
@@ -493,8 +527,9 @@ function rerenderRoster() {
         h += `</div>`;
       }
 
-      if (placements.length) {
-        const sorted = [...placements].map(p => typeof p === 'string' ? p : p.name || '').filter(Boolean).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+      const placesPlus = window.placementsComplets ? window.placementsComplets(a, placements) : [];
+      if (placesPlus.length) {
+        const sorted = placesPlus;
         h += `<div class="card-section-title">${t('artistes_places')}</div><div class="card-placements">`;
         sorted.forEach(n => { h += `<span class="pl-tag">${n}</span>`; });
         h += `</div>`;
@@ -579,6 +614,13 @@ function rerenderRoster() {
 
     renderAll();
     window._renderRoster = renderAll;
+    // la base répond : on ne redessine que si quelque chose a changé
+    enCours.then(d => {
+      if (!d) return;
+      ecrireCache(d);
+      if (JSON.stringify(d) === JSON.stringify(data)) return;
+      data = d; classer(d); renderAll();
+    });
 
     // Toggle & PDF clicks
     content.addEventListener('click', e => {
@@ -749,7 +791,12 @@ function openSpecialExport(a) {
     overlay.querySelectorAll('[data-se=cert]:checked').forEach(cb => selectedCertIdx.add(Number(cb.value)));
 
     // Filter arrays based on individual selections
-    const filteredPlacements = placements.filter((_, i) => selectedPlacementIdx.has(i));
+    let filteredPlacements = placements.filter((_, i) => selectedPlacementIdx.has(i));
+    // les feats venus du Planning suivent dans l'export
+    if (window.placementsComplets) {
+      const dejala = new Set(filteredPlacements.map(p => String(typeof p === 'string' ? p : p.name || '').toUpperCase()));
+      window.placementsComplets(a, placements).forEach(n => { if (!dejala.has(n.toUpperCase())) filteredPlacements.push(n); });
+    }
     const filteredMajors = majors.filter((_, i) => selectedMajorIdx.has(i));
     const filteredCerts = certs.filter((_, i) => selectedCertIdx.has(i));
 

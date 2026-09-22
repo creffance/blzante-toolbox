@@ -43,11 +43,19 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .filter-label { font-size: 0.55rem; color: #444; letter-spacing: 0.1em; text-transform: uppercase; margin-right: 4px; }
 
 /* Stats */
-.fbar { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; margin-bottom: 14px; }
+.fbar { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; margin-bottom: 10px; }
+.sw-filters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+.sw-chip { background: none; border: 1px solid var(--border); color: var(--muted); font-family: 'Syne Mono', monospace;
+  font-size: 0.55rem; letter-spacing: 0.08em; text-transform: uppercase; padding: 6px 10px; cursor: pointer; transition: all .15s;
+  display: inline-flex; align-items: center; gap: 6px; }
+.sw-chip:hover { color: #fff; border-color: #555; }
+.sw-chip.on { border-color: var(--accent); color: var(--accent); background: #1a1708; }
+.sw-chip .n { color: #666; font-size: 0.5rem; }
+.sw-chip.on .n { color: var(--accent); }
 .fsel { display: flex; flex-direction: column; gap: 5px; }
 .fsel > span { font-family: 'Syne Mono', monospace; font-size: 0.5rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
 .fsel select { background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: 'Syne Mono', monospace;
-  font-size: 0.62rem; padding: 8px 28px 8px 10px; width: 148px; cursor: pointer; appearance: none; -webkit-appearance: none;
+  font-size: 0.62rem; padding: 8px 26px 8px 9px; width: 132px; cursor: pointer; appearance: none; -webkit-appearance: none;
   background-image: linear-gradient(45deg, transparent 50%, #777 50%), linear-gradient(135deg, #777 50%, transparent 50%);
   background-position: calc(100% - 14px) 50%, calc(100% - 9px) 50%; background-size: 5px 5px; background-repeat: no-repeat; }
 .fsel select:focus { outline: none; border-color: var(--accent); }
@@ -152,6 +160,12 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .rel-sacem.a_lancer { color: #ff9f6b; border-color: #4a2e1a; }
 .rel-sacem.a_definir { color: #777; border-color: var(--border); }
 .rel-sacem.contrats_signes { color: #7aa7f0; border-color: #1f3350; }
+.rel-sacem.en_signature { color: #6f8fc0; border-color: #1b2a40; }
+.rel-insta { font-family: 'Syne Mono', monospace; font-size: 0.5rem; letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 2px 6px; border: 1px solid var(--border); white-space: nowrap; color: var(--muted); }
+.rel-insta.a_faire { color: #f1c40f; border-color: #4a3e10; }
+.rel-insta.poste { color: #4ade80; border-color: #1a3a1a; }
+.rel-insta.aucun { color: #666; }
 .rel-tracks .dot.contrats_signes { background: #7aa7f0; }
 .rel-sacem.non_editeur { color: #888; border-color: var(--border); font-style: italic; }
 .rel-tracks .dot.non_editeur { background: #555; }
@@ -277,6 +291,19 @@ nav{z-index:40 !important;gap:18px}
     </div>
   </div>
 
+  <div class="dashboard-wrap">
+    <div class="dashboard-header">
+      <div class="dashboard-title">BLZante — <span id="dashPeriodLabel">Last 6 Months</span></div>
+      <div class="period-btns">
+        <button class="period-btn active" data-period="6">6 mois</button>
+        <button class="period-btn" data-period="12">12 mois</button>
+        <button class="period-btn" data-period="all">All Time</button>
+        <button class="period-btn" data-period="upcoming">À venir</button>
+      </div>
+    </div>
+    <div id="dashboardRecap" class="dashboard-recap"></div>
+  </div>
+
   <div class="fbar" id="fbar">
     <label class="fsel"><span>Période</span>
       <select id="fPeriode"><option value="all">Tout</option><option value="passe">Passé</option><option value="avenir">À venir</option></select></label>
@@ -292,8 +319,9 @@ nav{z-index:40 !important;gap:18px}
         <option value="a_definir">À définir</option><option value="a_lancer">À lancer</option><option value="en_cours">En cours</option>
         <option value="contrats_signes">Contrats signés</option><option value="depose">Déposé à la Sacem</option>
         <option value="non_editeur">Non éditeur sur l'œuvre</option></select></label>
-    <label class="fsel"><span>Songwriter</span>
-      <select id="fSw"><option value="all">Tous</option></select></label>
+    <label class="fsel"><span>Post Insta</span>
+      <select id="fInsta"><option value="all">Tous</option><option value="a_faire">À faire</option>
+        <option value="poste">Posté</option><option value="aucun">Pas de post</option></select></label>
     <div class="fsel"><span>Dates</span><div class="date-range-row fdates">
     <label class="date-label">Du</label>
     <input type="date" class="date-input" id="dateFrom" />
@@ -304,6 +332,8 @@ nav{z-index:40 !important;gap:18px}
     <button type="button" class="freset" id="fReset" hidden>Réinitialiser</button>
   </div>
 
+  <div class="sw-filters" id="swFilters"></div>
+
 
 
 
@@ -311,19 +341,6 @@ nav{z-index:40 !important;gap:18px}
   <div class="stats" id="stats"></div>
 
   <!-- Dashboard recap with period toggle -->
-  <div class="dashboard-wrap">
-    <div class="dashboard-header">
-      <div class="dashboard-title">BLZante — <span id="dashPeriodLabel">Last 6 Months</span></div>
-      <div class="period-btns">
-        <button class="period-btn active" data-period="6">6 mois</button>
-        <button class="period-btn" data-period="12">12 mois</button>
-        <button class="period-btn" data-period="all">All Time</button>
-        <button class="period-btn" data-period="upcoming">À venir</button>
-      </div>
-    </div>
-    <div id="dashboardRecap" class="dashboard-recap"></div>
-  </div>
-
   <div id="planningContent"></div>
 </div>
 
@@ -345,7 +362,11 @@ const MONTHS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','A
 
 // ─── Statut Sacem des titres BLZante (posé par l'outil Catalogues ou la fiche event) ───
 const SACEM_LIB = { a_definir: 'À définir', a_lancer: 'À lancer', en_cours: 'En cours',
-  contrats_signes: 'Contrats signés', depose: 'Déposé à la Sacem', non_editeur: "Non éditeur sur l'œuvre" };
+  en_signature: 'En cours de signature', contrats_signes: 'Contrats signés',
+  depose: 'Déposé à la Sacem', non_editeur: "Non éditeur sur l'œuvre" };
+// Suivi du post Instagram
+const INSTA_LIB = { a_faire: 'Insta à faire', poste: 'Insta posté', aucun: 'Pas de post' };
+const instaDe = r => INSTA_LIB[r.insta] ? r.insta : 'a_faire';
 // rien à lancer de notre côté : déposé, contrats signés (l'œuvre arrive dans les prochains exports), non éditeur
 const SACEM_FAIT = { depose: 1, contrats_signes: 1, non_editeur: 1 };
 // Même normalisation que l'outil Catalogues : les clés doivent correspondre des deux côtés.
@@ -398,7 +419,7 @@ function mapSwName(name) { return SW_RENAME[name] || name; }
 
 let activeFilter = 'all';   // libellé des filtres actifs (sous-titre du PDF)
 let activeSw = 'all';
-const F = { periode: 'all', type: 'all', terr: 'all', sacem: 'all' };
+const F = { periode: 'all', type: 'all', terr: 'all', sacem: 'all', insta: 'all' };
 let dateFrom = '';
 let dateTo = '';
 let cachedReleases = [];
@@ -416,22 +437,37 @@ function applyDateFilter(releases) {
   });
 }
 
+// ─── Affichage immédiat : la dernière version connue d'abord, la base ensuite ───
+const CACHE_REL = 'blz-planning-cache-v1';
+const lireCache = () => { try { const r = localStorage.getItem(CACHE_REL); return r ? JSON.parse(r) : null; } catch (e) { return null; } };
+const ecrireCache = d => { try { localStorage.setItem(CACHE_REL, JSON.stringify(d)); } catch (e) {} };
+function adopterReleases(data) {
+  cachedReleases = data ? Object.values(data).sort((a, b) => (a.dateSortable || '').localeCompare(b.dateSortable || '')) : [];
+  cachedReleases.forEach(r => {
+    if (r.songwriters) {
+      const sw = Array.isArray(r.songwriters) ? r.songwriters : [r.songwriters];
+      r.songwriters = sw.map(mapSwName);
+    }
+  });
+}
+let brutReleases = null;
 async function fetchReleases() {
-  try {
-    const res = await dbFetch('/releases.json');
-    const data = await res.json();
-    if (!data) { cachedReleases = []; return; }
-    cachedReleases = Object.values(data).sort((a, b) => (a.dateSortable || '').localeCompare(b.dateSortable || ''));
-    // Apply songwriter renames to cached data
-    cachedReleases.forEach(r => {
-      if (r.songwriters) {
-        const sw = Array.isArray(r.songwriters) ? r.songwriters : [r.songwriters];
-        r.songwriters = sw.map(mapSwName);
-      }
-    });
-  } catch (err) {
-    document.getElementById('stats').textContent = '⚠ Erreur de connexion';
-  }
+  brutReleases = lireCache();
+  const enCours = dbFetch('/releases.json').then(r => r.json()).catch(() => undefined);
+  if (brutReleases) { adopterReleases(brutReleases); rafraichir(enCours); return; }
+  const d = await enCours;
+  if (d === undefined) { document.getElementById('stats').textContent = '⚠ Erreur de connexion'; return; }
+  brutReleases = d; ecrireCache(d); adopterReleases(d);
+}
+// la base répond : on ne redessine que si quelque chose a changé
+function rafraichir(enCours) {
+  enCours.then(d => {
+    if (d === undefined) return;
+    ecrireCache(d);
+    if (JSON.stringify(d) === JSON.stringify(brutReleases)) return;
+    brutReleases = d; adopterReleases(d);
+    buildSwFilters(); majFiltres(); buildDashboard(); render();
+  });
 }
 
 // Songwriters signés chez BLZante, publiés par l'outil Catalogues
@@ -448,13 +484,22 @@ function estSigne(nom) { return !SIGNES || !!SIGNES[normT(nom)]; }
 function canonSw(nom) { return (SIGNES && SIGNES[normT(nom)]) || nom; }
 function swDe(r) { return r.songwriters ? (Array.isArray(r.songwriters) ? r.songwriters : [r.songwriters]) : []; }
 function aLeSw(r, nom) { const c = normT(nom); return swDe(r).some(x => normT(canonSw(x)) === c || normT(x) === c); }
+// Songwriters signés : une pastille par nom, avec son nombre de sorties
 function buildSwFilters() {
-  const swSet = new Set();
-  cachedReleases.forEach(r => swDe(r).forEach(x => { if (estSigne(x)) swSet.add(canonSw(x)); }));
-  const sorted = [...swSet].sort((a, b) => a.localeCompare(b, 'fr'));
-  const sel = document.getElementById('fSw');
-  sel.innerHTML = '<option value="all">Tous</option>' +
-    sorted.map(n => `<option value="${String(n).replace(/"/g, '&quot;')}"${n === activeSw ? ' selected' : ''}>${n}</option>`).join('');
+  const n = {};
+  cachedReleases.forEach(r => {
+    const vus = {};
+    swDe(r).forEach(x => { if (!estSigne(x)) return; const c = canonSw(x); if (vus[c]) return; vus[c] = 1; n[c] = (n[c] || 0) + 1; });
+  });
+  const sorted = Object.keys(n).sort((a, b) => a.localeCompare(b, 'fr'));
+  const box = document.getElementById('swFilters');
+  box.innerHTML = `<button type="button" class="sw-chip${activeSw === 'all' ? ' on' : ''}" data-sw="all">Tous</button>` +
+    sorted.map(x => `<button type="button" class="sw-chip${x === activeSw ? ' on' : ''}" data-sw="${String(x).replace(/"/g, '&quot;')}">${x}<span class="n">${n[x]}</span></button>`).join('');
+  box.querySelectorAll('[data-sw]').forEach(b => b.addEventListener('click', function () {
+    activeSw = this.dataset.sw;
+    box.querySelectorAll('.sw-chip').forEach(z => z.classList.toggle('on', z === this));
+    majFiltres(); resetPagination(); buildDashboard(); render();
+  }));
 }
 
 // ─── Dashboard recap ───
@@ -579,6 +624,7 @@ function applyTypeFilter(releases) {
   else if (F.type !== 'all') result = result.filter(r => r.type === F.type);
   if (F.terr === 'France') result = result.filter(r => EST_SORTIE(r) && !HORS_FR(r));
   else if (F.terr === 'International') result = result.filter(r => EST_SORTIE(r) && HORS_FR(r));
+  if (F.insta !== 'all') result = result.filter(r => instaDe(r) === F.insta);
   if (F.sacem === 'afaire') result = result.filter(r => pistesSacem(r).some(p => !SACEM_FAIT[p.statut]));
   else if (F.sacem !== 'all') result = result.filter(r => pistesSacem(r).some(p => p.statut === F.sacem));
   return applyDateFilter(result);
@@ -587,7 +633,7 @@ function filtrerSw(list) { return activeSw === 'all' ? list : list.filter(r => a
 // libellé lisible des filtres actifs, pour l'export PDF
 function libFiltres() {
   const l = [];
-  ['fPeriode','fType','fTerr','fSacem'].forEach(id => { const e = document.getElementById(id);
+  ['fPeriode','fType','fTerr','fSacem','fInsta'].forEach(id => { const e = document.getElementById(id);
     if (e && e.value !== 'all') l.push(e.options[e.selectedIndex].text); });
   return l.join(' · ') || 'all';
 }
@@ -596,11 +642,12 @@ function majFiltres() {
   F.type = document.getElementById('fType').value;
   F.terr = document.getElementById('fTerr').value;
   F.sacem = document.getElementById('fSacem').value;
-  activeSw = document.getElementById('fSw').value;
+  F.insta = document.getElementById('fInsta').value;
   activeFilter = libFiltres();
   let actif = false;
-  ['fPeriode','fType','fTerr','fSacem','fSw'].forEach(id => { const e = document.getElementById(id);
-    e.classList.toggle('on', e.value !== 'all'); if (e.value !== 'all') actif = true; });
+  ['fPeriode','fType','fTerr','fSacem','fInsta'].forEach(id => { const e = document.getElementById(id);
+    if (!e) return; e.classList.toggle('on', e.value !== 'all'); if (e.value !== 'all') actif = true; });
+  if (activeSw !== 'all') actif = true;
   document.getElementById('fReset').hidden = !actif;
 }
 
@@ -670,6 +717,9 @@ function render() {
       html += `<span class="rel-status ${stClass}">${st}</span>`;
       const sacemR = sacemResume(r);
       if (sacemR) html += `<span class="rel-sacem ${sacemR.cls}" title="Statut Sacem des titres BLZante">${sacemR.lbl}</span>`;
+      const ins = instaDe(r);
+      if (['Single','EP','Album','Actu','Certification'].includes(r.type))
+        html += `<span class="rel-insta ${ins}" title="Suivi du post Instagram">${INSTA_LIB[ins]}</span>`;
       if (flagDisplay) html += `<span class="rel-flag">${flagDisplay}</span>`;
       html += `</div>`;
       html += `<div class="rel-info">`;
@@ -728,11 +778,12 @@ window.addEventListener('scroll', () => {
 });
 
 // Filtres : chaque liste se combine avec les autres
-['fPeriode','fType','fTerr','fSacem','fSw'].forEach(id => document.getElementById(id).addEventListener('change', () => {
+['fPeriode','fType','fTerr','fSacem','fInsta'].forEach(id => document.getElementById(id).addEventListener('change', () => {
   majFiltres(); resetPagination(); buildDashboard(); render();
 }));
 document.getElementById('fReset').addEventListener('click', () => {
-  ['fPeriode','fType','fTerr','fSacem','fSw'].forEach(id => { document.getElementById(id).value = 'all'; });
+  ['fPeriode','fType','fTerr','fSacem','fInsta'].forEach(id => { document.getElementById(id).value = 'all'; });
+  activeSw = 'all'; buildSwFilters();
   majFiltres(); resetPagination(); buildDashboard(); render();
 });
 
@@ -742,9 +793,12 @@ document.getElementById('fReset').addEventListener('click', () => {
 
   document.getElementById('stats').textContent = 'Chargement...';
   await Promise.all([fetchReleases(), chargerSignes()]);
+  majFiltres();
   buildSwFilters();
-  // Fetch roster for artist photos in export
-  try {
+  buildDashboard();
+  render();
+  // Les photos du roster servent à l'export : on les charge sans retarder l'affichage.
+  (async () => {  try {
     const rosterRes = await dbFetch('/roster.json');
     const rosterJson = await rosterRes.json();
     if (rosterJson) {
@@ -763,8 +817,7 @@ document.getElementById('fReset').addEventListener('click', () => {
       });
     }
   } catch(e) {}
-  buildDashboard();
-  render();
+  })();
 })();
 
 // ─── PDF Export ───
@@ -926,7 +979,7 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
         // Titres BLZante, avec featuring et statut de dépôt
         const pdfPistes = pistesSacem(r);
         if (pdfPistes.length) {
-          const cD = { depose: '#4ade80', contrats_signes: '#7aa7f0', en_cours: '#f1c40f', a_lancer: '#ff9f6b', a_definir: '#555', non_editeur: '#555' };
+          const cD = { depose: '#4ade80', contrats_signes: '#7aa7f0', en_signature: '#6f8fc0', en_cours: '#f1c40f', a_lancer: '#ff9f6b', a_definir: '#555', non_editeur: '#555' };
           h += `<div style="color:#555;font-size:0.54rem;font-family:Syne Mono,monospace;margin-top:1px">` +
             pdfPistes.map(p => `<span style="color:${cD[p.statut]}">•</span> <span style="color:#aaa">${p.titre}</span>` +
               (p.feat ? ' feat. ' + p.feat : '')).join(' &nbsp; ') + `</div>`;

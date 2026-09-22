@@ -60,7 +60,15 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .oe-lie { font-size: 0.62rem; color: var(--success); margin-top: 5px; }
 .oe-lie button { background: none; border: none; color: var(--muted); cursor: pointer; font-family: inherit; font-size: 0.62rem; text-decoration: underline; }
 .oe-nores { font-size: 0.62rem; color: var(--error); padding: 7px 10px; border: 1px solid var(--border); border-top: none; }
-.tk-row { display: grid; grid-template-columns: 22px minmax(180px,1fr) auto 26px; gap: 8px; align-items: center; margin-bottom: 6px; }
+.tk-sw { grid-column: 2 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 6px; }
+.tk-swl { font-family: 'Syne Mono', monospace; font-size: 0.55rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.tk-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.tk-sw .form-input { width: 200px; padding: 7px 9px; font-size: 0.66rem; }
+.sw-tag { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--border); padding: 3px 7px; font-size: 0.62rem; color: var(--text); }
+.sw-tag button { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.6rem; padding: 0; }
+.sw-tag button:hover { color: var(--error); }
+.tk-row { display: grid; grid-template-columns: 22px minmax(180px,1fr) auto 26px; gap: 8px; align-items: center;
+  margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); }
 .tk-n { font-family: 'Syne Mono', monospace; font-size: 0.6rem; color: var(--muted); text-align: right; }
 .tk-row .form-input { padding: 9px 10px; font-size: 0.72rem; }
 .oe-feat .form-input { font-size: 0.68rem; }
@@ -87,6 +95,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .oe-hint { font-size: 0.6rem; color: var(--muted); margin-top: 6px; line-height: 1.6; }
 .oe-empty { font-size: 0.68rem; color: #555; }
 .sacem-b.a_definir { border-color: var(--border); color: var(--muted); }
+.sacem-b.en_signature { border-color: rgba(122,167,240,0.25); color: #6f8fc0; }
 .sacem-b.contrats_signes { border-color: rgba(122,167,240,0.4); color: #7aa7f0; }
 .sacem-b.non_editeur { border-color: var(--border); color: #888; font-style: italic; }
 .sacem-badges { display: inline-flex; gap: 4px; flex-wrap: wrap; }
@@ -94,7 +103,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .sacem-b.depose { border-color: rgba(74,222,128,0.4); color: var(--success); }
 .sacem-b.en_cours { border-color: rgba(232,197,71,0.4); color: var(--accent); }
 .sacem-b.a_lancer { border-color: rgba(255,107,107,0.35); color: var(--error); }
-.form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.form-row-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
 
 /* Conditional fields */
 .conditional { display: none; }
@@ -289,6 +298,14 @@ nav{z-index:40 !important;gap:18px}
         <option value="Annulé" class="status-annule" id="optAnnule" style="display:none">Annulé</option>
       </select>
     </div>
+    <div class="form-group">
+      <label class="form-label">Post Insta</label>
+      <select class="form-select" id="instaSuivi">
+        <option value="a_faire">À faire</option>
+        <option value="poste">Posté</option>
+        <option value="aucun">Pas de post</option>
+      </select>
+    </div>
   </div>
 
   <div class="form-group conditional" id="countryGroup">
@@ -395,7 +412,7 @@ nav{z-index:40 !important;gap:18px}
     </div>
   </div>
 
-  <div class="form-group">
+  <div class="form-group" id="swGroup">
     <label class="form-label">Songwriters BLZante</label>
     <div class="sw-picker">
       <input type="text" class="sw-picker-input" id="swSearch" placeholder="Rechercher un songwriter..." autocomplete="off" />
@@ -493,7 +510,8 @@ const normT = s => String(s == null ? '' : s).replace(/œ/g, 'oe').replace(/Œ/g
   .toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim();
 const SOCS = [['blzante','BLZante'],['blz-publishing','BLZ Publishing'],['rossinante','Rossinante']];
 const STATUTS = [['a_definir','À définir'],['a_lancer','À lancer'],['en_cours','En cours'],
-  ['contrats_signes','Contrats signés'],['depose','Déposé à la Sacem'],['non_editeur',"Non éditeur sur l'œuvre"]];
+  ['en_signature','En cours de signature'],['contrats_signes','Contrats signés'],
+  ['depose','Déposé à la Sacem'],['non_editeur',"Non éditeur sur l'œuvre"]];
 const libStatut = v => (STATUTS.find(s => s[0] === v) || STATUTS[0])[1];
 let OEUVRES = [];            // {soc, code, t, tt, a, c, f, r}
 // Une ligne par track : son libellé vit indépendamment du titre saisi plus haut.
@@ -509,11 +527,36 @@ async function chargerOeuvres() {
   OEUVRES = [];
   res.forEach((d, i) => Object.keys(d || {}).forEach(code => {
     const x = d[code] || {};
-    OEUVRES.push({ soc: SOCS[i][0], code, t: x.t || '', tt: x.tt || '', a: x.a || '', c: x.c, r: x.r || '', f: x.f || '' });
+    OEUVRES.push({ soc: SOCS[i][0], code, t: x.t || '', tt: x.tt || '', a: x.a || '', c: x.c, r: x.r || '',
+      f: x.f || '', isrc: x.i || '', sw: Array.isArray(x.s2) ? x.s2 : (x.s2 ? String(x.s2).split('|') : []) });
   }));
   OEUVRES.sort((a, b) => (a.tt || a.t).localeCompare(b.tt || b.t, 'fr'));
   oeRows.forEach(l => { if (l.code && !l.titre) { const x = oeParCode(l); if (x) l.titre = x.t; } });
   semerLignes(); renderTracks(); renderOeuvres();
+}
+// ─── Songwriters : liste commune au sélecteur global et aux lignes de tracks ───
+function swNoms() {
+  const l = [...document.querySelectorAll('#swDropdown .sw-option')].map(o => o.dataset.name);
+  oeRows.forEach(r => (r.sw || []).forEach(n => { if (!l.includes(n)) l.push(n); }));
+  return l.sort((a, b) => a.localeCompare(b, 'fr'));
+}
+function swHTML(l) {
+  const id = l.id;
+  return `<div class="tk-sw"><span class="tk-swl">Songwriters</span>
+    <span class="tk-chips">${(l.sw || []).map((n, i) => `<span class="sw-tag">${esc(n)}<button type="button" data-swrm="${id}" data-i="${i}">✕</button></span>`).join('')}</span>
+    <input class="form-input" list="swListe" data-swadd="${id}" placeholder="Ajouter un songwriter BLZante…" autocomplete="off"></div>`;
+}
+function brancherSw(box, redessiner) {
+  box.querySelectorAll('[data-swadd]').forEach(i => i.addEventListener('change', function () {
+    const l = oeRows.find(z => String(z.id) === String(this.dataset.swadd)); if (!l) return;
+    const v = this.value.trim(); if (!v) return;
+    l.sw = l.sw || []; if (!l.sw.includes(v)) l.sw.push(v);
+    this.value = ''; redessiner();
+  }));
+  box.querySelectorAll('[data-swrm]').forEach(b => b.addEventListener('click', function () {
+    const l = oeRows.find(z => String(z.id) === String(this.dataset.swrm)); if (!l || !l.sw) return;
+    l.sw.splice(+this.dataset.i, 1); redessiner();
+  }));
 }
 // ─── Featuring : un bouton « + Feat » ouvre un champ par artiste invité ───
 let featsSingle = [];
@@ -562,35 +605,57 @@ function chercherOeuvre(titre) {
 function nouvelleLigne(track) {
   return { id: oeNext++, track: track || '', feats: [], statut: 'a_definir', q: '' };
 }
-// Une œuvre du catalogue porte le même titre : on la propose, l'utilisateur valide.
+// Œuvres qui peuvent correspondre : titre identique, titre proche, ou même artiste.
+function propositions(l) {
+  const k = normT(l.track), art = normT(document.getElementById('artistName').value);
+  if (!k && !art) return [];
+  const refus = l.refus || {};
+  const note = o => {
+    if (refus[o.soc + '|' + o.code]) return 0;
+    let n = 0;
+    const t1 = normT(o.tt), t2 = normT(o.t);
+    if (k && (t1 === k || t2 === k)) n += 10;
+    else if (k && k.length > 3 && (t1.includes(k) || t2.includes(k) || (t1 && k.includes(t1)) || (t2 && k.includes(t2)))) n += 5;
+    if (art && normT(o.a) === art) n += 3;
+    return n;
+  };
+  return OEUVRES.map(o => ({ o, n: note(o) })).filter(x => x.n >= 3)
+    .sort((a, b) => b.n - a.n || (a.o.t || '').localeCompare(b.o.t || '', 'fr'))
+    .slice(0, 2).map(x => x.o);
+}
 function rattacherAuto(l) {
-  if (l.code) { delete l.prop; return false; }
-  const x = chercherOeuvre(l.track);
-  const avant = l.prop ? l.prop.soc + '|' + l.prop.code : '';
-  if (x && l.refus && l.refus[x.soc + '|' + x.code]) { delete l.prop; return !!avant; }
-  if (x) l.prop = { soc: x.soc, code: x.code }; else delete l.prop;
-  return avant !== (l.prop ? l.prop.soc + '|' + l.prop.code : '');
+  if (l.code) { delete l.props; return false; }
+  const avant = (l.props || []).map(x => x.code).join(',');
+  const p = propositions(l);
+  if (p.length) l.props = p.map(o => ({ soc: o.soc, code: o.code })); else delete l.props;
+  return avant !== (l.props || []).map(x => x.code).join(',');
 }
 function lierLigne(l, o) {
   l.soc = o.soc; l.code = o.code; l.titre = o.t; l.open = false; l.q = ''; delete l.prop;
   if (o.c) l.statut = 'depose';
   if (o.f && !featsDe(l).some(Boolean)) l.feats = listeFeat(o.f);
   if (!l.track) l.track = o.tt || o.t;
+  // les songwriters BLZante de l'œuvre rejoignent le track et la sortie
+  l.sw = l.sw || [];
+  (o.sw || []).forEach(n => { if (n && !l.sw.includes(n)) l.sw.push(n); });
+  if (typeSelect.value === 'Single') (o.sw || []).forEach(n => ajouterSwGlobal(n));
+}
+function ajouterSwGlobal(n) {
+  if (!n || selectedSw.includes(n)) return;
+  selectedSw.push(n);
+  swOptions.forEach(opt => { if (opt.dataset.name === n) opt.classList.add('selected'); });
+  renderTags();
 }
 // Pour un single, le titre saisi plus haut donne la ligne ; pour un projet ce sont les lignes qui commandent.
 function semerLignes() {
   if (estProjet()) { if (!oeRows.length) oeRows.push(nouvelleLigne('')); oeSeed = ''; return; }
-  const titres = titresBLZ(), sig = titres.join('|');
-  if (sig === oeSeed) return;
-  oeSeed = sig;
-  titres.forEach(tr => {
-    const k = normT(tr);
-    if (oeRows.some(l => normT(l.track) === k)) return;
-    const vide = oeRows.find(l => !l.track && !l.code);
-    const l = vide || nouvelleLigne('');
-    l.track = tr; rattacherAuto(l);
-    if (!vide) oeRows.push(l);
-  });
+  // un single n'a qu'un titre : une seule ligne, mise à jour au fil de la saisie
+  const tr = (document.getElementById('trackName').value || '').trim();
+  if (!oeRows.length) oeRows.push(nouvelleLigne(''));
+  if (oeRows.length > 1) oeRows = [oeRows.find(l => l.code) || oeRows[0]];
+  const l = oeRows[0];
+  if (normT(l.track) !== normT(tr)) { l.track = tr; delete l.props; l.refus = {}; if (!l.code) rattacherAuto(l); }
+  oeSeed = tr;
 }
 // ─── Bloc « Titres BLZante du projet » : un titre et son featuring par ligne ───
 function renderTracks() {
@@ -603,8 +668,10 @@ function renderTracks() {
       <input class="form-input" data-tk="${l.id}" placeholder="Titre du track" value="${esc(l.track)}" autocomplete="off">
       <div class="feats">${featsHTML(l.id, l.feats)}</div>
       <button type="button" class="oe-x" data-tkrm="${l.id}" title="Retirer ce titre">✕</button>
-    </div>`).join('');
+      ${swHTML(l)}
+    </div>`).join('') + '<datalist id="swListe">' + swNoms().map(n => `<option value="${esc(n)}">`).join('') + '</datalist>';
   brancherFeats(box, () => { renderTracks(); renderOeuvres(); });
+  brancherSw(box, () => { renderTracks(); renderOeuvres(); });
   box.querySelectorAll('[data-tk]').forEach(i => {
     i.addEventListener('input', function () {
       const l = oeRows.find(z => z.id === +this.dataset.tk); if (!l) return;
@@ -634,7 +701,7 @@ function renderOeuvres() {
     const st = auCatalogue ? 'depose' : (l.statut || 'a_definir');
     const q = (l.q || '').trim(), nq = normT(q);
     const feat = (typeSelect.value === 'Single' ? featsSingle : featsDe(l)).filter(Boolean).join(', ');
-    const prop = !l.code && l.prop ? OEUVRES.find(o => o.soc === l.prop.soc && o.code === l.prop.code) : null;
+    const props = (!l.code && l.props ? l.props : []).map(x => OEUVRES.find(o => o.soc === x.soc && o.code === x.code)).filter(Boolean);
     let res = '';
     if (l.open && !l.code) {
       const trouves = nq ? OEUVRES.filter(o => normT(o.tt + ' ' + o.t + ' ' + o.a + ' ' + o.code).includes(nq)).slice(0, 8) : [];
@@ -654,11 +721,11 @@ function renderOeuvres() {
           ${STATUTS.map(s => `<option value="${s[0]}"${s[0] === st ? ' selected' : ''}>${s[1]}</option>`).join('')}
         </select>
       </div>
-      ${prop && !(l.q || '').trim() ? `<div class="oe-prop">Œuvre proposée : <b>${esc(libOe(prop))}</b>${prop.c ? ' · déposée' : ''}
-          <button type="button" class="oe-ok" data-okp="${l.id}">Valider</button>
-          <button type="button" class="oe-no" data-nop="${l.id}">Ce n'est pas elle</button></div>` : ''}
+      ${props.length && !(l.q || '').trim() ? props.map((o, n) => `<div class="oe-prop">${props.length > 1 ? 'Proposition ' + (n + 1) + ' : ' : 'Œuvre proposée : '}<b>${esc(libOe(o))}</b>${o.c ? ' · déposée' : ''}
+          <button type="button" class="oe-ok" data-okp="${l.id}" data-soc="${o.soc}" data-code="${o.code}">Valider</button>
+          <button type="button" class="oe-no" data-nop="${l.id}" data-soc="${o.soc}" data-code="${o.code}">Ce n'est pas elle</button></div>`).join('') : ''}
       ${res}
-      ${l.code || prop ? '' : `<div class="oe-lie" style="color:var(--muted)">Non rattachée au catalogue · ${esc(libStatut(st))}</div>`}
+      ${l.code || props.length ? '' : `<div class="oe-lie" style="color:var(--muted)">Non rattachée au catalogue · ${esc(libStatut(st))}</div>`}
     </div>`;
   }).join('');
   const maj = () => { renderOeuvres(); };
@@ -677,16 +744,17 @@ function renderOeuvres() {
     renderTracks(); maj();
   }));
   box.querySelectorAll('[data-okp]').forEach(b => b.addEventListener('click', function () {
-    const l = oeRows.find(z => z.id === +this.dataset.okp); if (!l || !l.prop) return;
-    const o = OEUVRES.find(z => z.soc === l.prop.soc && z.code === l.prop.code); if (o) lierLigne(l, o);
+    const l = oeRows.find(z => z.id === +this.dataset.okp); if (!l) return;
+    const o = OEUVRES.find(z => z.soc === this.dataset.soc && z.code === this.dataset.code); if (o) lierLigne(l, o);
     renderTracks(); maj(); }));
   box.querySelectorAll('[data-nop]').forEach(b => b.addEventListener('click', function () {
-    const l = oeRows.find(z => z.id === +this.dataset.nop); if (!l || !l.prop) return;
-    l.refus = l.refus || {}; l.refus[l.prop.soc + '|' + l.prop.code] = 1; delete l.prop; maj(); }));
+    const l = oeRows.find(z => z.id === +this.dataset.nop); if (!l) return;
+    l.refus = l.refus || {}; l.refus[this.dataset.soc + '|' + this.dataset.code] = 1;
+    rattacherAuto(l); maj(); }));
   box.querySelectorAll('[data-unl]').forEach(b => b.addEventListener('click', function () {
     const l = oeRows.find(z => z.id === +this.dataset.unl); if (!l) return;
     l.refus = l.refus || {}; if (l.code) l.refus[l.soc + '|' + l.code] = 1;
-    delete l.soc; delete l.code; delete l.titre; delete l.prop; l.open = true; l.q = '';
+    delete l.soc; delete l.code; delete l.titre; delete l.props; l.open = true; l.q = '';
     if (l.statut === 'depose') l.statut = 'a_definir';
     maj(); focusQ(l.id);
   }));
@@ -707,12 +775,21 @@ function oeuvresDuFormulaire() {
     const x = oeParCode(l);
     if (l.code) oeuvres[k] = { soc: l.soc, code: l.code, titre: l.titre || (x && x.t) || tr };
     sacem[k] = (x && x.c) ? 'depose' : (l.statut || 'a_definir');
-    blzTracks.push({ title: tr || (l.titre || ''), featurings: featsDe(l).map(f => f.trim()).filter(Boolean) });
+    blzTracks.push({ title: tr || (l.titre || ''), featurings: featsDe(l).map(f => f.trim()).filter(Boolean),
+      songwriters: (l.sw || []).slice() });
   });
   return { oeuvres, sacem, blzTracks };
 }
+// Songwriters de la sortie : ceux du sélecteur global plus ceux de chaque track
+function swDeLaSortie(tracks) {
+  const l = [...selectedSw];
+  (tracks || []).forEach(t => (t.songwriters || []).forEach(n => { if (n && !l.includes(n)) l.push(n); }));
+  return l;
+}
 const listeFeat = t => String(t || '').split(/\s*(?:,|&|\bet\b|\/)\s*/i).map(x => x.trim()).filter(Boolean);
 let oeT = null;
+document.getElementById('artistName').addEventListener('change', () => {
+  oeRows.forEach(l => { if (!l.code) rattacherAuto(l); }); renderOeuvres(); });
 document.getElementById('trackName').addEventListener('input', () => {
   clearTimeout(oeT); oeT = setTimeout(() => { semerLignes(); renderOeuvres(); }, 300); });
 document.getElementById('trackName').addEventListener('change', () => {
@@ -767,6 +844,9 @@ function updateConditionals() {
   document.getElementById('oeuvresGroup').classList.toggle('visible', ['Single','EP','Album'].includes(t));
   // le featuring d'un single se saisit à côté du nom du track, celui d'un projet track par track
   renderFeatsSingle();
+  // pour un EP ou un album, les songwriters se saisissent track par track
+  const gsw = document.getElementById('swGroup');
+  if (gsw) gsw.style.display = (t === 'EP' || t === 'Album') ? 'none' : '';
   semerLignes(); renderTracks(); renderOeuvres();
 }
 typeSelect.addEventListener('change', updateConditionals);
@@ -1040,6 +1120,7 @@ function enterEditMode(release) {
   dateInput.value = release.date;
   typeSelect.value = release.type;
   statusSelect.value = release.status || 'Confirmé';
+  document.getElementById('instaSuivi').value = release.insta || 'a_faire';
   document.getElementById('artistName').value = release.artist || '';
   document.getElementById('projectName').value = release.project || '';
   document.getElementById('trackName').value = release.track || '';
@@ -1068,7 +1149,9 @@ function enterEditMode(release) {
   (release.type === 'Single' ? [release.track || ''] : String(release.blzTrackNames || '').split(/\n|,|;/))
     .map(x => x.trim()).filter(Boolean).forEach(ligne);
   (Array.isArray(release.blzTracks) ? release.blzTracks : []).forEach(t => {
-    const l = ligne(t && t.title); if (l && t.featurings && t.featurings.length) l.feats = t.featurings.slice(); });
+    const l = ligne(t && t.title); if (!l) return;
+    if (t.featurings && t.featurings.length) l.feats = t.featurings.slice();
+    if (t.songwriters && t.songwriters.length) l.sw = t.songwriters.slice(); });
   Object.keys(release.sacem || {}).forEach(k => {
     const x = release.oeuvres && release.oeuvres[k];
     const l = ligne((x && x.titre) || k) || null;
@@ -1108,6 +1191,7 @@ function resetForm() {
   dateInput.value = '';
   typeSelect.value = '';
   statusSelect.value = 'Confirmé';
+  document.getElementById('instaSuivi').value = 'a_faire';
   document.getElementById('artistName').value = '';
   document.getElementById('projectName').value = '';
   document.getElementById('trackName').value = '';
@@ -1222,8 +1306,9 @@ submitBtn.addEventListener('click', async () => {
       country: ['Single','EP','Album'].includes(type) ? document.getElementById('releaseCountry').value : '',
       actuDesc: type === 'Actu' ? document.getElementById('actuDesc').value.trim() : '',
       link: document.getElementById('releaseLink').value.trim(),
+      insta: document.getElementById('instaSuivi').value,
       artwork: extractedArtwork,
-      songwriters: [...selectedSw], createdAt: precedent.createdAt || new Date().toISOString(),
+      songwriters: swDeLaSortie(liens.blzTracks), createdAt: precedent.createdAt || new Date().toISOString(),
       oeuvres: liens.oeuvres, sacem: liens.sacem,
       featurings: listeFeat(document.getElementById('featurings').value),
       blzTracks: (liens.blzTracks || []).filter(t => t.title),
