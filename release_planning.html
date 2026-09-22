@@ -14,24 +14,6 @@ body { font-family: 'Syne Mono', monospace; background: var(--bg); color: var(--
 body::before { content: ''; position: fixed; inset: 0; background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px); background-size: 60px 60px; opacity: 0.3; pointer-events: none; z-index: 0; }
 
 
-/* ---- passage d'un outil à l'autre ---- */
-nav{z-index:40}
-.tsw{position:relative}
-.tsw-btn{display:inline-flex;align-items:center;gap:7px;background:none;cursor:pointer;
- border:1px solid var(--border);color:var(--text);font-family:'Syne Mono',monospace;font-size:.6rem;
- letter-spacing:.1em;text-transform:uppercase;padding:5px 10px;transition:border-color .15s,color .15s}
-.tsw-btn:hover,.tsw-btn[aria-expanded="true"]{border-color:var(--accent);color:var(--accent)}
-.tsw-car{font-size:.55rem;opacity:.7}
-.tsw-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:50;backdrop-filter:blur(2px);min-width:230px;
- background:var(--surface);border:1px solid var(--border);box-shadow:0 10px 30px rgba(0,0,0,.55);padding:5px}
-.tsw-menu[hidden]{display:none}
-.tsw-t{font-family:'Syne Mono',monospace;font-size:.5rem;letter-spacing:.12em;text-transform:uppercase;
- color:var(--muted);padding:7px 9px 3px}
-.tsw-menu a{display:flex;align-items:center;justify-content:space-between;gap:10px;
- padding:7px 9px;text-decoration:none;color:var(--text);font-size:.7rem;border-left:2px solid transparent}
-.tsw-menu a:hover{background:rgba(255,255,255,.055)}
-.tsw-menu a.on{border-left-color:var(--accent);color:var(--accent)}
-.tsw-menu a .k{font-family:'Syne Mono',monospace;font-size:.5rem;color:var(--muted);letter-spacing:.08em}
 
 nav { display: flex; align-items: center; justify-content: space-between; padding: 18px 40px; border-bottom: 1px solid var(--border); position: relative; z-index: 1; }
 .nav-logo { font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 800; color: #fff; text-decoration: none; letter-spacing: 0.08em; display: flex; align-items: center; gap: 10px; }
@@ -61,6 +43,20 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .filter-label { font-size: 0.55rem; color: #444; letter-spacing: 0.1em; text-transform: uppercase; margin-right: 4px; }
 
 /* Stats */
+.fbar { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; margin-bottom: 14px; }
+.fsel { display: flex; flex-direction: column; gap: 5px; }
+.fsel > span { font-family: 'Syne Mono', monospace; font-size: 0.5rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+.fsel select { background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: 'Syne Mono', monospace;
+  font-size: 0.62rem; padding: 8px 28px 8px 10px; width: 148px; cursor: pointer; appearance: none; -webkit-appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, #777 50%), linear-gradient(135deg, #777 50%, transparent 50%);
+  background-position: calc(100% - 14px) 50%, calc(100% - 9px) 50%; background-size: 5px 5px; background-repeat: no-repeat; }
+.fsel select:focus { outline: none; border-color: var(--accent); }
+.fsel select.on { border-color: var(--accent); color: var(--accent); }
+.fdates { margin: 0 !important; }
+.fdates .date-label:first-child { display: none; }
+.freset { background: none; border: 1px solid var(--border); color: var(--muted); font-family: 'Syne Mono', monospace; font-size: 0.55rem;
+  letter-spacing: 0.1em; text-transform: uppercase; padding: 9px 12px; cursor: pointer; }
+.freset:hover { color: #fff; border-color: #555; }
 .stats { font-size: 0.62rem; color: var(--muted); letter-spacing: 0.1em; margin-bottom: 16px; }
 .date-range-row {
   display: flex; align-items: center; gap: 8px; margin-bottom: 14px;
@@ -155,6 +151,8 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .rel-sacem.en_cours { color: #f1c40f; border-color: #4a3e10; }
 .rel-sacem.a_lancer { color: #ff9f6b; border-color: #4a2e1a; }
 .rel-sacem.a_definir { color: #777; border-color: var(--border); }
+.rel-sacem.contrats_signes { color: #7aa7f0; border-color: #1f3350; }
+.rel-tracks .dot.contrats_signes { background: #7aa7f0; }
 .rel-sacem.non_editeur { color: #888; border-color: var(--border); font-style: italic; }
 .rel-tracks .dot.non_editeur { background: #555; }
 .rel-tracks { color: #666; font-size: 0.55rem; font-family: 'Syne Mono', monospace; display: flex; flex-wrap: wrap; gap: 4px 10px; }
@@ -214,18 +212,59 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
   .rel-date { font-size: 0.58rem; }
   .rel-type, .rel-status { font-size: 0.46rem; padding: 1px 4px; }
 }
+
+/* ---- barre d'outils de la Toolbox ---- */
+nav{z-index:40 !important;gap:18px}
+.tnav{display:flex;align-items:center;gap:26px;min-width:0}
+.tbar{display:flex;align-items:center;gap:2px;font-family:'Syne',system-ui,sans-serif}
+.tbar>a,.tbar-plus>button{position:relative;display:inline-flex;align-items:center;gap:6px;
+ padding:8px 12px;border:1px solid transparent;background:none;cursor:pointer;
+ color:#9a9a9a;font:700 .72rem/1 'Syne',system-ui,sans-serif;letter-spacing:.09em;text-transform:uppercase;
+ text-decoration:none;transition:color .15s,border-color .15s,background .15s}
+.tbar>a:hover,.tbar-plus>button:hover,.tbar-plus>button[aria-expanded="true"]{color:#fff;border-color:#2e2e2e;background:#151515}
+.tbar>a.on{color:#e8c547;border-color:#4a3f14;background:#1a1708}
+.tbar-sep{width:1px;height:18px;background:#2a2a2a;margin:0 8px}
+.tbar-plus{position:relative}
+.tbar-car{font-size:.55rem;opacity:.7}
+.tbar-menu{position:absolute;left:0;top:calc(100% + 6px);z-index:60;min-width:220px;background:#141414;
+ border:1px solid #2a2a2a;box-shadow:0 12px 32px rgba(0,0,0,.6);padding:5px}
+.tbar-menu[hidden]{display:none}
+.tbar-t{font-family:'Syne Mono',monospace;font-size:.5rem;letter-spacing:.12em;text-transform:uppercase;color:#666;padding:8px 10px 3px}
+.tbar-menu a{display:block;padding:8px 10px;text-decoration:none;color:#ddd;font-size:.72rem;border-left:2px solid transparent}
+.tbar-menu a:hover{background:rgba(255,255,255,.06)}
+.tbar-menu a.on{border-left-color:#e8c547;color:#e8c547}
+@media (max-width:900px){.tbar>a{padding:7px 8px;font-size:.62rem}.tnav{gap:12px}}
 </style>
 </head>
 <body style="visibility:hidden">
 <nav>
+  <div class="tnav">
   <a class="nav-logo" href="index.html"><img src="blzante_spiral_white.png" alt="BLZante" class="nav-logo-img" /><span>BLZante</span></a>
-  <div class="nav-right"><button onclick="firebase.auth().signOut().then(()=>location.href='login.html')" style="background:none;border:1px solid var(--border);color:var(--muted);font-family:'Syne Mono',monospace;font-size:0.55rem;padding:4px 10px;cursor:pointer;letter-spacing:0.08em;text-transform:uppercase;transition:all 0.15s" onmouseover="this.style.borderColor='#555';this.style.color='#fff'" onmouseout="this.style.borderColor='';this.style.color=''">Déconnexion</button> 
-    <a class="nav-back" href="index.html">&larr; Toolbox</a>
-    <span class="nav-sep">/</span>
-    <div class="tsw" id="tsw">
-      <button class="tsw-btn" id="tswBtn" aria-expanded="false" aria-haspopup="true" title="Changer d'outil (touche O)">Planning <span class="tsw-car">&#9662;</span></button>
-      <div class="tsw-menu" id="tswMenu" hidden></div>
+  <div class="tbar" id="tbar">
+    <a href="roster.html" data-t="roster.html roster_create.html">Roster</a>
+    <a href="release_planning.html" data-t="release_planning.html release_create.html">Planning</a>
+    <a href="ig_generator.html" data-t="ig_generator.html">IG Content</a>
+    <a href="catalogues.html" data-t="catalogues.html">Catalogues</a>
+    <span class="tbar-sep"></span>
+    <div class="tbar-plus">
+      <button type="button" id="tbarBtn" aria-expanded="false" aria-haspopup="true">Plus <span class="tbar-car">&#9662;</span></button>
+      <div class="tbar-menu" id="tbarMenu" hidden>
+        <div class="tbar-t">Créer</div>
+        <a href="roster_create.html">+ Fiche artiste</a>
+        <a href="release_create.html">+ Event planning</a>
+        <div class="tbar-t">Admin</div>
+        <a href="sacem_depot.html">SACEM Dépôt</a>
+        <a href="notes.html">Notes NDA / NDD</a>
+        <a href="onid_blzante.html">ONID BLZante</a>
+        <a href="infos_sacem.html">Infos Sacem</a>
+        <a href="infos_facturation.html">Infos facturation</a>
+        <a href="index.html">Toutes les pages</a>
+      </div>
     </div>
+  </div>
+  </div>
+  <div class="nav-right"><button onclick="firebase.auth().signOut().then(()=>location.href='login.html')" style="background:none;border:1px solid var(--border);color:var(--muted);font-family:'Syne Mono',monospace;font-size:0.55rem;padding:4px 10px;cursor:pointer;letter-spacing:0.08em;text-transform:uppercase;transition:all 0.15s" onmouseover="this.style.borderColor='#555';this.style.color='#fff'" onmouseout="this.style.borderColor='';this.style.color=''">Déconnexion</button>
+    
   </div>
 </nav>
 
@@ -238,34 +277,36 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
     </div>
   </div>
 
-  <div class="filters" id="filters">
-    <button class="filter-btn active" data-filter="all">Tout</button>
-    <button class="filter-btn" data-filter="Passé">Passé</button>
-    <button class="filter-btn" data-filter="À venir">À venir</button>
-    <button class="filter-btn" data-filter="Sorties">Sorties</button>
-    <button class="filter-btn" data-filter="Sacem">Sacem à faire</button>
-    <button class="filter-btn" data-filter="France">France</button>
-    <button class="filter-btn" data-filter="International">International</button>
-    <button class="filter-btn" data-filter="Live">Live</button>
-    <button class="filter-btn" data-filter="Certification">Certification</button>
-    <button class="filter-btn" data-filter="Synchro">Synchro</button>
-    <button class="filter-btn" data-filter="Actu">Actu</button>
-    <button class="filter-btn" data-filter="Single">Single</button>
-    <button class="filter-btn" data-filter="EP">EP</button>
-    <button class="filter-btn" data-filter="Album">Album</button>
-  </div>
-
-  <div class="date-range-row">
+  <div class="fbar" id="fbar">
+    <label class="fsel"><span>Période</span>
+      <select id="fPeriode"><option value="all">Tout</option><option value="passe">Passé</option><option value="avenir">À venir</option></select></label>
+    <label class="fsel"><span>Type</span>
+      <select id="fType"><option value="all">Tous</option><option value="Sorties">Sorties</option>
+        <option value="Single">Single</option><option value="EP">EP</option><option value="Album">Album</option>
+        <option value="Live">Live</option><option value="Certification">Certification</option>
+        <option value="Synchro">Synchro</option><option value="Actu">Actu</option></select></label>
+    <label class="fsel"><span>Territoire</span>
+      <select id="fTerr"><option value="all">Tous</option><option value="France">France</option><option value="International">International</option></select></label>
+    <label class="fsel"><span>Statut Sacem</span>
+      <select id="fSacem"><option value="all">Tous</option><option value="afaire">À faire</option>
+        <option value="a_definir">À définir</option><option value="a_lancer">À lancer</option><option value="en_cours">En cours</option>
+        <option value="contrats_signes">Contrats signés</option><option value="depose">Déposé à la Sacem</option>
+        <option value="non_editeur">Non éditeur sur l'œuvre</option></select></label>
+    <label class="fsel"><span>Songwriter</span>
+      <select id="fSw"><option value="all">Tous</option></select></label>
+    <div class="fsel"><span>Dates</span><div class="date-range-row fdates">
     <label class="date-label">Du</label>
     <input type="date" class="date-input" id="dateFrom" />
     <label class="date-label">au</label>
     <input type="date" class="date-input" id="dateTo" />
     <button class="date-clear" id="dateClear" title="Effacer les dates">✕</button>
+  </div></div>
+    <button type="button" class="freset" id="fReset" hidden>Réinitialiser</button>
   </div>
 
-  <div class="filters sw-filters" id="swFilters">
-    <button class="filter-btn active" data-sw="all">Tout</button>
-  </div>
+
+
+
 
   <div class="stats" id="stats"></div>
 
@@ -299,44 +340,14 @@ function dbFetch(path,opts){const sep=path.includes('?')?'&':'?';return fetch(DB
 function _waitAuth(){return new Promise((res,rej)=>{firebase.auth().onAuthStateChanged(async u=>{if(!u){window.location.href='login.html';rej();}else{window._fbToken=await u.getIdToken();document.body.style.visibility='visible';res(u);}});});}
 
 
-/* ---- passage d'un outil à l'autre, depuis n'importe quelle page ---- */
-(function(){
-  var OUTILS=[
-    ['Principaux',[['roster.html','Roster','R'],['release_planning.html','Planning','P'],
-      ['ig_generator.html','IG Content','I'],['catalogues.html','Catalogues','C']]],
-    ['Créer',[['roster_create.html','+ Fiche artiste',''],['release_create.html','+ Event planning',''],
-      ['sacem_depot.html','SACEM Dépôt','']]],
-    ['Admin',[['notes.html','Notes NDA / NDD',''],['onid_blzante.html','ONID BLZante',''],
-      ['infos_sacem.html','Infos Sacem',''],['infos_facturation.html','Infos facturation',''],
-      ['index.html','Toutes les pages','']]]
-  ];
-  var b=document.getElementById('tswBtn'),m=document.getElementById('tswMenu');
-  if(!b||!m)return;
-  var ici=(location.pathname.split('/').pop()||'index.html').toLowerCase();
-  m.innerHTML=OUTILS.map(function(g){
-    return '<div class="tsw-t">'+g[0]+'</div>'+g[1].map(function(o){
-      return '<a href="'+o[0]+'"'+(o[0].toLowerCase()===ici?' class="on"':'')+'>'+o[1]+
-        (o[2]?'<span class="k">'+o[2]+'</span>':'')+'</a>';}).join('');}).join('');
-  function ouvrir(v){m.hidden=!v;b.setAttribute('aria-expanded',v?'true':'false');}
-  b.addEventListener('click',function(e){e.stopPropagation();ouvrir(m.hidden);});
-  document.addEventListener('click',function(e){if(!m.hidden&&!m.contains(e.target))ouvrir(false);});
-  document.addEventListener('keydown',function(e){
-    if(e.key==='Escape')return ouvrir(false);
-    var t=e.target&&e.target.tagName;
-    if(t==='INPUT'||t==='TEXTAREA'||t==='SELECT'||e.metaKey||e.ctrlKey||e.altKey)return;
-    var k=String(e.key||'').toUpperCase();
-    if(k==='O')return ouvrir(m.hidden);
-    var dest={R:'roster.html',P:'release_planning.html',I:'ig_generator.html',C:'catalogues.html'}[k];
-    if(dest&&dest.toLowerCase()!==ici)location.href=dest;
-  });
-})();
 
 const MONTHS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 
 // ─── Statut Sacem des titres BLZante (posé par l'outil Catalogues ou la fiche event) ───
 const SACEM_LIB = { a_definir: 'À définir', a_lancer: 'À lancer', en_cours: 'En cours',
-  depose: 'Déposé à la Sacem', non_editeur: "Non éditeur sur l'œuvre" };
-const SACEM_FAIT = { depose: 1, non_editeur: 1 };   // rien à lancer sur ces deux-là
+  contrats_signes: 'Contrats signés', depose: 'Déposé à la Sacem', non_editeur: "Non éditeur sur l'œuvre" };
+// rien à lancer de notre côté : déposé, contrats signés (l'œuvre arrive dans les prochains exports), non éditeur
+const SACEM_FAIT = { depose: 1, contrats_signes: 1, non_editeur: 1 };
 // Même normalisation que l'outil Catalogues : les clés doivent correspondre des deux côtés.
 const normT = s => String(s == null ? '' : s).replace(/œ/g, 'oe').replace(/Œ/g, 'OE').replace(/æ/g, 'ae').replace(/Æ/g, 'AE')
   .replace(/ß/g, 'ss').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim();
@@ -370,6 +381,7 @@ function sacemResume(r) {
   const n = v => p.filter(x => x.statut === v).length;
   const faits = p.filter(x => SACEM_FAIT[x.statut]).length;
   if (n('non_editeur') === p.length) return { cls: 'non_editeur', lbl: 'Non éditeur' };
+  if (n('contrats_signes') && n('contrats_signes') + n('non_editeur') === p.length) return { cls: 'contrats_signes', lbl: 'Contrats signés' };
   if (faits === p.length) return { cls: 'depose', lbl: 'Sacem ✓' };
   const cls = n('a_definir') ? 'a_definir' : n('a_lancer') ? 'a_lancer' : 'en_cours';
   const lbl = n('a_definir') === p.length ? 'Sacem à définir' : 'Sacem ' + faits + '/' + p.length;
@@ -384,8 +396,9 @@ const SW_RENAME = {
 };
 function mapSwName(name) { return SW_RENAME[name] || name; }
 
-let activeFilter = 'all';
+let activeFilter = 'all';   // libellé des filtres actifs (sous-titre du PDF)
 let activeSw = 'all';
+const F = { periode: 'all', type: 'all', terr: 'all', sacem: 'all' };
 let dateFrom = '';
 let dateTo = '';
 let cachedReleases = [];
@@ -431,18 +444,17 @@ async function chargerSignes() {
   } catch (e) { SIGNES = null; }
 }
 function estSigne(nom) { return !SIGNES || !!SIGNES[normT(nom)]; }
+// nom de la fiche signée à laquelle un nom du planning se rattache (un membre → son duo)
+function canonSw(nom) { return (SIGNES && SIGNES[normT(nom)]) || nom; }
+function swDe(r) { return r.songwriters ? (Array.isArray(r.songwriters) ? r.songwriters : [r.songwriters]) : []; }
+function aLeSw(r, nom) { const c = normT(nom); return swDe(r).some(x => normT(canonSw(x)) === c || normT(x) === c); }
 function buildSwFilters() {
   const swSet = new Set();
-  cachedReleases.forEach(r => {
-    if (r.songwriters) {
-      const sw = Array.isArray(r.songwriters) ? r.songwriters : [r.songwriters];
-      sw.forEach(s => { if (estSigne(s)) swSet.add(s); });
-    }
-  });
-  const sorted = [...swSet].sort();
-  const container = document.getElementById('swFilters');
-  container.innerHTML = '<button class="filter-btn active" data-sw="all">Tout</button>' +
-    sorted.map(sw => `<button class="filter-btn" data-sw="${sw}">${sw}</button>`).join('');
+  cachedReleases.forEach(r => swDe(r).forEach(x => { if (estSigne(x)) swSet.add(canonSw(x)); }));
+  const sorted = [...swSet].sort((a, b) => a.localeCompare(b, 'fr'));
+  const sel = document.getElementById('fSw');
+  sel.innerHTML = '<option value="all">Tous</option>' +
+    sorted.map(n => `<option value="${String(n).replace(/"/g, '&quot;')}"${n === activeSw ? ' selected' : ''}>${n}</option>`).join('');
 }
 
 // ─── Dashboard recap ───
@@ -474,11 +486,7 @@ function buildDashboard() {
 
   // Apply songwriter filter to dashboard
   if (activeSw !== 'all') {
-    recent = recent.filter(r => {
-      if (!r.songwriters) return false;
-      const sw = Array.isArray(r.songwriters) ? r.songwriters : [r.songwriters];
-      return sw.includes(activeSw);
-    });
+    recent = recent.filter(r => aLeSw(r, activeSw));
   }
 
   const sorties = recent.filter(r => ['Single','EP','Album'].includes(r.type));
@@ -495,9 +503,9 @@ function buildDashboard() {
   // When a songwriter filter is active, only count tracks where that SW appears
   const countTracks = (list) => list.reduce((sum, r) => {
     if ((r.type === 'EP' || r.type === 'Album') && r.blzTrackCount && parseInt(r.blzTrackCount) > 0) {
-      if (activeSw !== 'all' && r.blzTracks && Array.isArray(r.blzTracks)) {
+      if (activeSw !== 'all' && Array.isArray(r.blzTracks) && r.blzTracks.some(t => t && Array.isArray(t.songwriters))) {
         // Count only tracks where this songwriter is credited
-        const swTracks = r.blzTracks.filter(t => t.songwriters && Array.isArray(t.songwriters) && t.songwriters.includes(activeSw));
+        const swTracks = r.blzTracks.filter(t => t.songwriters && Array.isArray(t.songwriters) && t.songwriters.some(x => normT(canonSw(x)) === normT(activeSw)));
         return sum + swTracks.length;
       }
       return sum + parseInt(r.blzTrackCount);
@@ -560,29 +568,44 @@ dateClearEl.addEventListener('click', () => {
   updateDateFilter();
 });
 
+const EST_SORTIE = r => ['Single','EP','Album'].includes(r.type);
+const HORS_FR = r => r.country && r.country.split(',').some(c => c && c !== 'FR');
 function applyTypeFilter(releases) {
   const today = new Date().toISOString().slice(0, 10);
-  let result;
-  if (activeFilter === 'all') result = releases;
-  else if (activeFilter === 'Passé') result = releases.filter(r => r.dateSortable <= today);
-  else if (activeFilter === 'À venir') result = releases.filter(r => r.dateSortable > today);
-  else if (activeFilter === 'Sorties') result = releases.filter(r => ['Single','EP','Album'].includes(r.type));
-  else if (activeFilter === 'Sacem') result = releases.filter(r => pistesSacem(r).some(p => !SACEM_FAIT[p.statut]));
-  else if (activeFilter === 'France') result = releases.filter(r => ['Single','EP','Album'].includes(r.type) && (!r.country || !r.country.split(',').some(c => c && c !== 'FR')));
-  else if (activeFilter === 'International') result = releases.filter(r => ['Single','EP','Album'].includes(r.type) && r.country && r.country.split(',').some(c => c && c !== 'FR'));
-  else result = releases.filter(r => r.type === activeFilter);
+  let result = releases;
+  if (F.periode === 'passe') result = result.filter(r => r.dateSortable <= today);
+  else if (F.periode === 'avenir') result = result.filter(r => r.dateSortable > today);
+  if (F.type === 'Sorties') result = result.filter(EST_SORTIE);
+  else if (F.type !== 'all') result = result.filter(r => r.type === F.type);
+  if (F.terr === 'France') result = result.filter(r => EST_SORTIE(r) && !HORS_FR(r));
+  else if (F.terr === 'International') result = result.filter(r => EST_SORTIE(r) && HORS_FR(r));
+  if (F.sacem === 'afaire') result = result.filter(r => pistesSacem(r).some(p => !SACEM_FAIT[p.statut]));
+  else if (F.sacem !== 'all') result = result.filter(r => pistesSacem(r).some(p => p.statut === F.sacem));
   return applyDateFilter(result);
+}
+function filtrerSw(list) { return activeSw === 'all' ? list : list.filter(r => aLeSw(r, activeSw)); }
+// libellé lisible des filtres actifs, pour l'export PDF
+function libFiltres() {
+  const l = [];
+  ['fPeriode','fType','fTerr','fSacem'].forEach(id => { const e = document.getElementById(id);
+    if (e && e.value !== 'all') l.push(e.options[e.selectedIndex].text); });
+  return l.join(' · ') || 'all';
+}
+function majFiltres() {
+  F.periode = document.getElementById('fPeriode').value;
+  F.type = document.getElementById('fType').value;
+  F.terr = document.getElementById('fTerr').value;
+  F.sacem = document.getElementById('fSacem').value;
+  activeSw = document.getElementById('fSw').value;
+  activeFilter = libFiltres();
+  let actif = false;
+  ['fPeriode','fType','fTerr','fSacem','fSw'].forEach(id => { const e = document.getElementById(id);
+    e.classList.toggle('on', e.value !== 'all'); if (e.value !== 'all') actif = true; });
+  document.getElementById('fReset').hidden = !actif;
 }
 
 function render() {
-  let filtered = applyTypeFilter(cachedReleases);
-  if (activeSw !== 'all') {
-    filtered = filtered.filter(r => {
-      if (!r.songwriters) return false;
-      const sw = Array.isArray(r.songwriters) ? r.songwriters : [r.songwriters];
-      return sw.includes(activeSw);
-    });
-  }
+  let filtered = filtrerSw(applyTypeFilter(cachedReleases));
   const content = document.getElementById('planningContent');
   const stats = document.getElementById('stats');
 
@@ -704,26 +727,13 @@ window.addEventListener('scroll', () => {
   }
 });
 
-// Filters
-document.getElementById('filters').addEventListener('click', (e) => {
-  const btn = e.target.closest('.filter-btn');
-  if (!btn) return;
-  document.querySelectorAll('#filters .filter-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  activeFilter = btn.dataset.filter;
-  resetPagination();
-  render();
-});
-
-document.getElementById('swFilters').addEventListener('click', (e) => {
-  const btn = e.target.closest('.filter-btn');
-  if (!btn) return;
-  document.querySelectorAll('#swFilters .filter-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  activeSw = btn.dataset.sw;
-  resetPagination();
-  buildDashboard();
-  render();
+// Filtres : chaque liste se combine avec les autres
+['fPeriode','fType','fTerr','fSacem','fSw'].forEach(id => document.getElementById(id).addEventListener('change', () => {
+  majFiltres(); resetPagination(); buildDashboard(); render();
+}));
+document.getElementById('fReset').addEventListener('click', () => {
+  ['fPeriode','fType','fTerr','fSacem','fSw'].forEach(id => { document.getElementById(id).value = 'all'; });
+  majFiltres(); resetPagination(); buildDashboard(); render();
 });
 
 // Init
@@ -767,14 +777,7 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
 
   try {
     // Get filtered data (same as what's displayed)
-    let filtered = applyTypeFilter(cachedReleases);
-    if (activeSw !== 'all') {
-      filtered = filtered.filter(r => {
-        if (!r.songwriters) return false;
-        const sw = Array.isArray(r.songwriters) ? r.songwriters : [r.songwriters];
-        return sw.includes(activeSw);
-      });
-    }
+    let filtered = filtrerSw(applyTypeFilter(cachedReleases));
     if (!filtered.length) { alert('Aucun event à exporter'); btn.textContent = '⚡ Export PDF'; btn.disabled = false; return; }
 
     // Group by month
@@ -923,7 +926,7 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
         // Titres BLZante, avec featuring et statut de dépôt
         const pdfPistes = pistesSacem(r);
         if (pdfPistes.length) {
-          const cD = { depose: '#4ade80', en_cours: '#f1c40f', a_lancer: '#ff9f6b', a_definir: '#555', non_editeur: '#555' };
+          const cD = { depose: '#4ade80', contrats_signes: '#7aa7f0', en_cours: '#f1c40f', a_lancer: '#ff9f6b', a_definir: '#555', non_editeur: '#555' };
           h += `<div style="color:#555;font-size:0.54rem;font-family:Syne Mono,monospace;margin-top:1px">` +
             pdfPistes.map(p => `<span style="color:${cD[p.statut]}">•</span> <span style="color:#aaa">${p.titre}</span>` +
               (p.feat ? ' feat. ' + p.feat : '')).join(' &nbsp; ') + `</div>`;
@@ -1030,6 +1033,23 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
     btn.disabled = false;
   }
 });
+</script>
+
+<script>
+/* ---- barre d'outils : outil courant repéré, menu « Plus » ---- */
+(function(){
+  var ici=(location.pathname.split('/').pop()||'index.html').toLowerCase();
+  document.querySelectorAll('#tbar>a').forEach(function(a){
+    if((a.getAttribute('data-t')||'').split(' ').indexOf(ici)>=0)a.classList.add('on');});
+  document.querySelectorAll('#tbarMenu a').forEach(function(a){
+    if(a.getAttribute('href').toLowerCase()===ici)a.classList.add('on');});
+  var b=document.getElementById('tbarBtn'),m=document.getElementById('tbarMenu');
+  if(!b||!m)return;
+  function ouvrir(v){m.hidden=!v;b.setAttribute('aria-expanded',v?'true':'false');}
+  b.addEventListener('click',function(e){e.stopPropagation();ouvrir(m.hidden);});
+  document.addEventListener('click',function(e){if(!m.hidden&&!m.contains(e.target))ouvrir(false);});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')ouvrir(false);});
+})();
 </script>
 </body>
 </html>

@@ -14,24 +14,6 @@ body { font-family: 'Syne Mono', monospace; background: var(--bg); color: var(--
 body::before { content: ''; position: fixed; inset: 0; background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px); background-size: 60px 60px; opacity: 0.3; pointer-events: none; z-index: 0; }
 
 
-/* ---- passage d'un outil à l'autre ---- */
-nav{z-index:40}
-.tsw{position:relative}
-.tsw-btn{display:inline-flex;align-items:center;gap:7px;background:none;cursor:pointer;
- border:1px solid var(--border);color:var(--text);font-family:'Syne Mono',monospace;font-size:.6rem;
- letter-spacing:.1em;text-transform:uppercase;padding:5px 10px;transition:border-color .15s,color .15s}
-.tsw-btn:hover,.tsw-btn[aria-expanded="true"]{border-color:var(--accent);color:var(--accent)}
-.tsw-car{font-size:.55rem;opacity:.7}
-.tsw-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:50;backdrop-filter:blur(2px);min-width:230px;
- background:var(--surface);border:1px solid var(--border);box-shadow:0 10px 30px rgba(0,0,0,.55);padding:5px}
-.tsw-menu[hidden]{display:none}
-.tsw-t{font-family:'Syne Mono',monospace;font-size:.5rem;letter-spacing:.12em;text-transform:uppercase;
- color:var(--muted);padding:7px 9px 3px}
-.tsw-menu a{display:flex;align-items:center;justify-content:space-between;gap:10px;
- padding:7px 9px;text-decoration:none;color:var(--text);font-size:.7rem;border-left:2px solid transparent}
-.tsw-menu a:hover{background:rgba(255,255,255,.055)}
-.tsw-menu a.on{border-left-color:var(--accent);color:var(--accent)}
-.tsw-menu a .k{font-family:'Syne Mono',monospace;font-size:.5rem;color:var(--muted);letter-spacing:.08em}
 
 nav { display: flex; align-items: center; justify-content: space-between; padding: 18px 40px; border-bottom: 1px solid var(--border); position: relative; z-index: 1; }
 .nav-logo { font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 800; color: #fff; text-decoration: none; letter-spacing: 0.08em; display: flex; align-items: center; gap: 10px; }
@@ -78,10 +60,26 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .oe-lie { font-size: 0.62rem; color: var(--success); margin-top: 5px; }
 .oe-lie button { background: none; border: none; color: var(--muted); cursor: pointer; font-family: inherit; font-size: 0.62rem; text-decoration: underline; }
 .oe-nores { font-size: 0.62rem; color: var(--error); padding: 7px 10px; border: 1px solid var(--border); border-top: none; }
-.tk-row { display: grid; grid-template-columns: 22px 1.2fr 1fr 26px; gap: 8px; align-items: center; margin-bottom: 6px; }
+.tk-row { display: grid; grid-template-columns: 22px minmax(180px,1fr) auto 26px; gap: 8px; align-items: center; margin-bottom: 6px; }
 .tk-n { font-family: 'Syne Mono', monospace; font-size: 0.6rem; color: var(--muted); text-align: right; }
 .tk-row .form-input { padding: 9px 10px; font-size: 0.72rem; }
 .oe-feat .form-input { font-size: 0.68rem; }
+.oe-prop { font-size: 0.64rem; color: var(--text); margin-top: 7px; padding: 7px 9px; border: 1px dashed rgba(232,197,71,0.45); background: rgba(232,197,71,0.05); display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.oe-prop b { font-weight: 400; color: var(--accent); }
+.oe-ok, .oe-no { background: none; font-family: inherit; font-size: 0.6rem; padding: 4px 9px; cursor: pointer; border: 1px solid var(--border); color: var(--muted); }
+.oe-ok { border-color: var(--accent); color: var(--accent); }
+.oe-ok:hover { background: var(--accent); color: #000; }
+.oe-no:hover { color: var(--text); border-color: #555; }
+.feats { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.feat-l { display: inline-flex; align-items: center; }
+.feat-l .form-input { width: 150px; padding: 8px 9px; font-size: 0.68rem; }
+.feat-x { background: none; border: 1px solid var(--border); border-left: none; color: var(--muted); font-family: inherit; font-size: 0.6rem; padding: 9px 7px; cursor: pointer; }
+.feat-x:hover { color: var(--error); }
+.feat-add { background: none; border: 1px dashed var(--border); color: var(--muted); font-family: 'Syne Mono', monospace; font-size: 0.6rem; letter-spacing: 0.06em; padding: 8px 10px; cursor: pointer; white-space: nowrap; }
+.feat-add:hover { color: var(--accent); border-color: var(--accent); }
+.tk-single { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.tk-single > .form-input { flex: 1; min-width: 220px; }
+.opt { color: var(--muted); text-transform: none; letter-spacing: 0.02em; font-size: 0.9em; }
 .oe-feat .oe-track { color: var(--muted); font-size: 0.6rem; letter-spacing: 0.08em; text-transform: uppercase; }
 .oe-add2 { background: none; border: 1px solid var(--border); color: var(--muted); font-family: inherit; font-size: 0.6rem; padding: 7px 6px; cursor: pointer; white-space: nowrap; }
 .oe-add2:hover { color: var(--accent); border-color: var(--accent); }
@@ -89,6 +87,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .oe-hint { font-size: 0.6rem; color: var(--muted); margin-top: 6px; line-height: 1.6; }
 .oe-empty { font-size: 0.68rem; color: #555; }
 .sacem-b.a_definir { border-color: var(--border); color: var(--muted); }
+.sacem-b.contrats_signes { border-color: rgba(122,167,240,0.4); color: #7aa7f0; }
 .sacem-b.non_editeur { border-color: var(--border); color: #888; font-style: italic; }
 .sacem-badges { display: inline-flex; gap: 4px; flex-wrap: wrap; }
 .sacem-b { font-size: 0.55rem; letter-spacing: 0.06em; padding: 2px 6px; border: 1px solid var(--border); color: var(--muted); white-space: nowrap; }
@@ -205,18 +204,59 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
   .form-row { grid-template-columns: 1fr; }
   .form-row-3 { grid-template-columns: 1fr; }
 }
+
+/* ---- barre d'outils de la Toolbox ---- */
+nav{z-index:40 !important;gap:18px}
+.tnav{display:flex;align-items:center;gap:26px;min-width:0}
+.tbar{display:flex;align-items:center;gap:2px;font-family:'Syne',system-ui,sans-serif}
+.tbar>a,.tbar-plus>button{position:relative;display:inline-flex;align-items:center;gap:6px;
+ padding:8px 12px;border:1px solid transparent;background:none;cursor:pointer;
+ color:#9a9a9a;font:700 .72rem/1 'Syne',system-ui,sans-serif;letter-spacing:.09em;text-transform:uppercase;
+ text-decoration:none;transition:color .15s,border-color .15s,background .15s}
+.tbar>a:hover,.tbar-plus>button:hover,.tbar-plus>button[aria-expanded="true"]{color:#fff;border-color:#2e2e2e;background:#151515}
+.tbar>a.on{color:#e8c547;border-color:#4a3f14;background:#1a1708}
+.tbar-sep{width:1px;height:18px;background:#2a2a2a;margin:0 8px}
+.tbar-plus{position:relative}
+.tbar-car{font-size:.55rem;opacity:.7}
+.tbar-menu{position:absolute;left:0;top:calc(100% + 6px);z-index:60;min-width:220px;background:#141414;
+ border:1px solid #2a2a2a;box-shadow:0 12px 32px rgba(0,0,0,.6);padding:5px}
+.tbar-menu[hidden]{display:none}
+.tbar-t{font-family:'Syne Mono',monospace;font-size:.5rem;letter-spacing:.12em;text-transform:uppercase;color:#666;padding:8px 10px 3px}
+.tbar-menu a{display:block;padding:8px 10px;text-decoration:none;color:#ddd;font-size:.72rem;border-left:2px solid transparent}
+.tbar-menu a:hover{background:rgba(255,255,255,.06)}
+.tbar-menu a.on{border-left-color:#e8c547;color:#e8c547}
+@media (max-width:900px){.tbar>a{padding:7px 8px;font-size:.62rem}.tnav{gap:12px}}
 </style>
 </head>
 <body style="visibility:hidden">
 <nav>
+  <div class="tnav">
   <a class="nav-logo" href="index.html"><img src="data:image/png;base64,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" alt="BLZante" class="nav-logo-img" /><span>BLZante</span></a>
-  <div class="nav-right"><button onclick="firebase.auth().signOut().then(()=>location.href='login.html')" style="background:none;border:1px solid var(--border);color:var(--muted);font-family:'Syne Mono',monospace;font-size:0.55rem;padding:4px 10px;cursor:pointer;letter-spacing:0.08em;text-transform:uppercase;transition:all 0.15s" onmouseover="this.style.borderColor='#555';this.style.color='#fff'" onmouseout="this.style.borderColor='';this.style.color=''">Déconnexion</button> 
-    <a class="nav-back" href="index.html">&larr; Toolbox</a>
-    <span class="nav-sep">/</span>
-    <div class="tsw" id="tsw">
-      <button class="tsw-btn" id="tswBtn" aria-expanded="false" aria-haspopup="true" title="Changer d'outil (touche O)">+ Event <span class="tsw-car">&#9662;</span></button>
-      <div class="tsw-menu" id="tswMenu" hidden></div>
+  <div class="tbar" id="tbar">
+    <a href="roster.html" data-t="roster.html roster_create.html">Roster</a>
+    <a href="release_planning.html" data-t="release_planning.html release_create.html">Planning</a>
+    <a href="ig_generator.html" data-t="ig_generator.html">IG Content</a>
+    <a href="catalogues.html" data-t="catalogues.html">Catalogues</a>
+    <span class="tbar-sep"></span>
+    <div class="tbar-plus">
+      <button type="button" id="tbarBtn" aria-expanded="false" aria-haspopup="true">Plus <span class="tbar-car">&#9662;</span></button>
+      <div class="tbar-menu" id="tbarMenu" hidden>
+        <div class="tbar-t">Créer</div>
+        <a href="roster_create.html">+ Fiche artiste</a>
+        <a href="release_create.html">+ Event planning</a>
+        <div class="tbar-t">Admin</div>
+        <a href="sacem_depot.html">SACEM Dépôt</a>
+        <a href="notes.html">Notes NDA / NDD</a>
+        <a href="onid_blzante.html">ONID BLZante</a>
+        <a href="infos_sacem.html">Infos Sacem</a>
+        <a href="infos_facturation.html">Infos facturation</a>
+        <a href="index.html">Toutes les pages</a>
+      </div>
     </div>
+  </div>
+  </div>
+  <div class="nav-right"><button onclick="firebase.auth().signOut().then(()=>location.href='login.html')" style="background:none;border:1px solid var(--border);color:var(--muted);font-family:'Syne Mono',monospace;font-size:0.55rem;padding:4px 10px;cursor:pointer;letter-spacing:0.08em;text-transform:uppercase;transition:all 0.15s" onmouseover="this.style.borderColor='#555';this.style.color='#fff'" onmouseout="this.style.borderColor='';this.style.color=''">Déconnexion</button>
+    
   </div>
 </nav>
 
@@ -290,15 +330,9 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
     </div>
   </div>
 
-  <div class="form-row">
-    <div class="form-group">
-      <label class="form-label">Nom Artiste</label>
-      <input type="text" class="form-input" id="artistName" placeholder="Nom de l'artiste" autocomplete="off" />
-    </div>
-    <div class="form-group" id="featGroup">
-      <label class="form-label">Featuring (séparés par une virgule)</label>
-      <input type="text" class="form-input" id="featurings" placeholder="Ex: Tiakola, Gazo" autocomplete="off" />
-    </div>
+  <div class="form-group">
+    <label class="form-label">Nom Artiste</label>
+    <input type="text" class="form-input" id="artistName" placeholder="Nom de l'artiste" autocomplete="off" />
   </div>
 
   <div class="form-group conditional" id="projectGroup">
@@ -328,8 +362,12 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
   </div>
 
   <div class="form-group conditional" id="trackGroup">
-    <label class="form-label">Nom du track</label>
-    <input type="text" class="form-input" id="trackName" placeholder="Titre du single" autocomplete="off" />
+    <label class="form-label">Nom du track <span class="opt" id="featLbl">· featuring optionnel</span></label>
+    <div class="tk-single">
+      <input type="text" class="form-input" id="trackName" placeholder="Titre du single" autocomplete="off" />
+      <div class="feats" id="singleFeats"></div>
+    </div>
+    <input type="hidden" id="featurings" />
   </div>
 
   <div class="form-group conditional" id="liveGroup">
@@ -343,13 +381,6 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
         <input type="text" class="form-input" id="liveVille" placeholder="Ville" autocomplete="off" />
       </div>
     </div>
-  </div>
-
-  <div class="form-group conditional" id="oeuvresGroup">
-    <label class="form-label">Œuvres du catalogue &amp; statut Sacem</label>
-    <div id="oeuvresRows"></div>
-    <div class="oe-hint">Une ligne par titre de la sortie : rattachez-la à son œuvre du catalogue éditorial.
-      Une œuvre déjà au catalogue Sacem est « Déposée » d'office ; sinon choisissez le statut du dépôt.</div>
   </div>
 
   <div class="form-group">
@@ -407,6 +438,13 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
     <div class="sw-tags" id="swTags"></div>
   </div>
 
+  <div class="form-group conditional" id="oeuvresGroup">
+    <label class="form-label">Œuvres du catalogue &amp; statut Sacem</label>
+    <div id="oeuvresRows"></div>
+    <div class="oe-hint">Une ligne par titre de la sortie : rattachez-la à son œuvre du catalogue éditorial.
+      Une œuvre déjà au catalogue Sacem est « Déposée » d'office ; sinon choisissez le statut du dépôt.</div>
+  </div>
+
   <button class="submit-btn" id="submitBtn">⚡ Ajouter</button>
   <button class="submit-btn cancel-btn" id="cancelBtn" style="display:none">Annuler la modification</button>
   <button class="submit-btn delete-btn" id="deleteBtn" style="display:none">🗑 Supprimer cet événement</button>
@@ -446,37 +484,6 @@ async function fbDelete(id) {
 // ─── State ───
 let selectedSw = [];
 
-/* ---- passage d'un outil à l'autre, depuis n'importe quelle page ---- */
-(function(){
-  var OUTILS=[
-    ['Principaux',[['roster.html','Roster','R'],['release_planning.html','Planning','P'],
-      ['ig_generator.html','IG Content','I'],['catalogues.html','Catalogues','C']]],
-    ['Créer',[['roster_create.html','+ Fiche artiste',''],['release_create.html','+ Event planning',''],
-      ['sacem_depot.html','SACEM Dépôt','']]],
-    ['Admin',[['notes.html','Notes NDA / NDD',''],['onid_blzante.html','ONID BLZante',''],
-      ['infos_sacem.html','Infos Sacem',''],['infos_facturation.html','Infos facturation',''],
-      ['index.html','Toutes les pages','']]]
-  ];
-  var b=document.getElementById('tswBtn'),m=document.getElementById('tswMenu');
-  if(!b||!m)return;
-  var ici=(location.pathname.split('/').pop()||'index.html').toLowerCase();
-  m.innerHTML=OUTILS.map(function(g){
-    return '<div class="tsw-t">'+g[0]+'</div>'+g[1].map(function(o){
-      return '<a href="'+o[0]+'"'+(o[0].toLowerCase()===ici?' class="on"':'')+'>'+o[1]+
-        (o[2]?'<span class="k">'+o[2]+'</span>':'')+'</a>';}).join('');}).join('');
-  function ouvrir(v){m.hidden=!v;b.setAttribute('aria-expanded',v?'true':'false');}
-  b.addEventListener('click',function(e){e.stopPropagation();ouvrir(m.hidden);});
-  document.addEventListener('click',function(e){if(!m.hidden&&!m.contains(e.target))ouvrir(false);});
-  document.addEventListener('keydown',function(e){
-    if(e.key==='Escape')return ouvrir(false);
-    var t=e.target&&e.target.tagName;
-    if(t==='INPUT'||t==='TEXTAREA'||t==='SELECT'||e.metaKey||e.ctrlKey||e.altKey)return;
-    var k=String(e.key||'').toUpperCase();
-    if(k==='O')return ouvrir(m.hidden);
-    var dest={R:'roster.html',P:'release_planning.html',I:'ig_generator.html',C:'catalogues.html'}[k];
-    if(dest&&dest.toLowerCase()!==ici)location.href=dest;
-  });
-})();
 
 let editId = null;
 
@@ -486,7 +493,7 @@ const normT = s => String(s == null ? '' : s).replace(/œ/g, 'oe').replace(/Œ/g
   .toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim();
 const SOCS = [['blzante','BLZante'],['blz-publishing','BLZ Publishing'],['rossinante','Rossinante']];
 const STATUTS = [['a_definir','À définir'],['a_lancer','À lancer'],['en_cours','En cours'],
-  ['depose','Déposé à la Sacem'],['non_editeur',"Non éditeur sur l'œuvre"]];
+  ['contrats_signes','Contrats signés'],['depose','Déposé à la Sacem'],['non_editeur',"Non éditeur sur l'œuvre"]];
 const libStatut = v => (STATUTS.find(s => s[0] === v) || STATUTS[0])[1];
 let OEUVRES = [];            // {soc, code, t, tt, a, c, f, r}
 // Une ligne par track : son libellé vit indépendamment du titre saisi plus haut.
@@ -508,6 +515,39 @@ async function chargerOeuvres() {
   oeRows.forEach(l => { if (l.code && !l.titre) { const x = oeParCode(l); if (x) l.titre = x.t; } });
   semerLignes(); renderTracks(); renderOeuvres();
 }
+// ─── Featuring : un bouton « + Feat » ouvre un champ par artiste invité ───
+let featsSingle = [];
+function featsHTML(cle, liste) {
+  return liste.map((f, i) => `<span class="feat-l"><input class="form-input" data-fw="${cle}" data-i="${i}" value="${esc(f)}" placeholder="Artiste invité" autocomplete="off"><button type="button" class="feat-x" data-fwx="${cle}" data-i="${i}" title="Retirer">✕</button></span>`).join('') +
+    `<button type="button" class="feat-add" data-fwadd="${cle}">+ Feat</button>`;
+}
+function listeDe(cle) {
+  if (cle === 'single') return featsSingle;
+  const l = oeRows.find(z => String(z.id) === String(cle)); if (!l) return null;
+  if (!Array.isArray(l.feats)) l.feats = [];
+  return l.feats;
+}
+function brancherFeats(box, redessiner) {
+  box.querySelectorAll('[data-fw]').forEach(i => i.addEventListener('input', function () {
+    const L = listeDe(this.dataset.fw); if (L) { L[+this.dataset.i] = this.value; syncFeatsSingle(); } }));
+  box.querySelectorAll('[data-fwx]').forEach(b => b.addEventListener('click', function () {
+    const L = listeDe(this.dataset.fwx); if (!L) return; L.splice(+this.dataset.i, 1); syncFeatsSingle(); redessiner(); }));
+  box.querySelectorAll('[data-fwadd]').forEach(b => b.addEventListener('click', function () {
+    const cle = this.dataset.fwadd, L = listeDe(cle); if (!L) return; L.push(''); redessiner();
+    const inp = document.querySelectorAll('[data-fw="' + cle + '"]'); if (inp.length) inp[inp.length - 1].focus(); }));
+}
+function syncFeatsSingle() {
+  document.getElementById('featurings').value = featsSingle.map(x => String(x).trim()).filter(Boolean).join(', ');
+}
+function renderFeatsSingle() {
+  const box = document.getElementById('singleFeats'); if (!box) return;
+  box.innerHTML = featsHTML('single', featsSingle);
+  brancherFeats(box, () => { renderFeatsSingle(); renderOeuvres(); });
+}
+function setFeatsSingle(v) {
+  featsSingle = Array.isArray(v) ? v.slice() : listeFeat(v);
+  syncFeatsSingle(); renderFeatsSingle();
+}
 function estProjet() { const t = typeSelect.value; return t === 'EP' || t === 'Album'; }
 function titresBLZ() {
   const t = typeSelect.value;
@@ -520,16 +560,22 @@ function chercherOeuvre(titre) {
   return OEUVRES.find(o => normT(o.tt) === k) || OEUVRES.find(o => normT(o.t) === k) || null;
 }
 function nouvelleLigne(track) {
-  return { id: oeNext++, track: track || '', feats: [''], statut: 'a_definir', q: '' };
+  return { id: oeNext++, track: track || '', feats: [], statut: 'a_definir', q: '' };
 }
-// Rattache une ligne à l'œuvre du catalogue qui porte le même titre
+// Une œuvre du catalogue porte le même titre : on la propose, l'utilisateur valide.
 function rattacherAuto(l) {
+  if (l.code) { delete l.prop; return false; }
   const x = chercherOeuvre(l.track);
-  if (!x || l.code) return false;
-  l.soc = x.soc; l.code = x.code; l.titre = x.t;
-  if (x.c) l.statut = 'depose';
-  if (x.f && !featsDe(l).some(Boolean)) l.feats = listeFeat(x.f);
-  return true;
+  const avant = l.prop ? l.prop.soc + '|' + l.prop.code : '';
+  if (x && l.refus && l.refus[x.soc + '|' + x.code]) { delete l.prop; return !!avant; }
+  if (x) l.prop = { soc: x.soc, code: x.code }; else delete l.prop;
+  return avant !== (l.prop ? l.prop.soc + '|' + l.prop.code : '');
+}
+function lierLigne(l, o) {
+  l.soc = o.soc; l.code = o.code; l.titre = o.t; l.open = false; l.q = ''; delete l.prop;
+  if (o.c) l.statut = 'depose';
+  if (o.f && !featsDe(l).some(Boolean)) l.feats = listeFeat(o.f);
+  if (!l.track) l.track = o.tt || o.t;
 }
 // Pour un single, le titre saisi plus haut donne la ligne ; pour un projet ce sont les lignes qui commandent.
 function semerLignes() {
@@ -551,12 +597,14 @@ function renderTracks() {
   const box = document.getElementById('trackRows'); if (!box) return;
   if (!estProjet()) { box.innerHTML = ''; return; }
   if (!oeRows.length) oeRows.push(nouvelleLigne(''));
+  oeRows.forEach(l => { if (!Array.isArray(l.feats)) l.feats = []; l.feats = l.feats.filter((f, i, a) => f || i === a.length - 1 && f === ''); });
   box.innerHTML = oeRows.map((l, n) => `<div class="tk-row">
       <span class="tk-n">${n + 1}</span>
       <input class="form-input" data-tk="${l.id}" placeholder="Titre du track" value="${esc(l.track)}" autocomplete="off">
-      <input class="form-input" data-tkf="${l.id}" placeholder="Featuring (optionnel)" value="${esc(featsDe(l).filter(Boolean).join(', '))}" autocomplete="off">
+      <div class="feats">${featsHTML(l.id, l.feats)}</div>
       <button type="button" class="oe-x" data-tkrm="${l.id}" title="Retirer ce titre">✕</button>
     </div>`).join('');
+  brancherFeats(box, () => { renderTracks(); renderOeuvres(); });
   box.querySelectorAll('[data-tk]').forEach(i => {
     i.addEventListener('input', function () {
       const l = oeRows.find(z => z.id === +this.dataset.tk); if (!l) return;
@@ -566,14 +614,12 @@ function renderTracks() {
       if (rattacherAuto(l)) { renderTracks(); }
       renderOeuvres(); });
   });
-  box.querySelectorAll('[data-tkf]').forEach(i => i.addEventListener('input', function () {
-    const l = oeRows.find(z => z.id === +this.dataset.tkf); if (l) l.feats = listeFeat(this.value); }));
   box.querySelectorAll('[data-tkrm]').forEach(b => b.addEventListener('click', function () {
     oeRows = oeRows.filter(z => z.id !== +this.dataset.tkrm);
     if (!oeRows.length) oeRows.push(nouvelleLigne(''));
     renderTracks(); renderOeuvres(); }));
 }
-function featsDe(l) { return Array.isArray(l.feats) && l.feats.length ? l.feats : ['']; }
+function featsDe(l) { return Array.isArray(l.feats) ? l.feats : []; }
 function renderOeuvres() {
   const box = document.getElementById('oeuvresRows');
   const lignes = oeRows.filter(l => (l.track || '').trim() || l.code);
@@ -587,7 +633,8 @@ function renderOeuvres() {
     const x = oeParCode(l), auCatalogue = !!(x && x.c);
     const st = auCatalogue ? 'depose' : (l.statut || 'a_definir');
     const q = (l.q || '').trim(), nq = normT(q);
-    const feat = featsDe(l).filter(Boolean).join(', ');
+    const feat = (typeSelect.value === 'Single' ? featsSingle : featsDe(l)).filter(Boolean).join(', ');
+    const prop = !l.code && l.prop ? OEUVRES.find(o => o.soc === l.prop.soc && o.code === l.prop.code) : null;
     let res = '';
     if (l.open && !l.code) {
       const trouves = nq ? OEUVRES.filter(o => normT(o.tt + ' ' + o.t + ' ' + o.a + ' ' + o.code).includes(nq)).slice(0, 8) : [];
@@ -607,8 +654,11 @@ function renderOeuvres() {
           ${STATUTS.map(s => `<option value="${s[0]}"${s[0] === st ? ' selected' : ''}>${s[1]}</option>`).join('')}
         </select>
       </div>
+      ${prop && !(l.q || '').trim() ? `<div class="oe-prop">Œuvre proposée : <b>${esc(libOe(prop))}</b>${prop.c ? ' · déposée' : ''}
+          <button type="button" class="oe-ok" data-okp="${l.id}">Valider</button>
+          <button type="button" class="oe-no" data-nop="${l.id}">Ce n'est pas elle</button></div>` : ''}
       ${res}
-      ${l.code ? '' : `<div class="oe-lie" style="color:var(--muted)">Non rattachée au catalogue · ${esc(libStatut(st))}</div>`}
+      ${l.code || prop ? '' : `<div class="oe-lie" style="color:var(--muted)">Non rattachée au catalogue · ${esc(libStatut(st))}</div>`}
     </div>`;
   }).join('');
   const maj = () => { renderOeuvres(); };
@@ -623,19 +673,25 @@ function renderOeuvres() {
     ev.preventDefault();
     const l = oeRows.find(z => z.id === +this.dataset.pick); if (!l) return;
     const o = OEUVRES.find(z => z.soc === this.dataset.soc && z.code === this.dataset.code);
-    l.soc = this.dataset.soc; l.code = this.dataset.code; l.titre = o ? o.t : ''; l.open = false; l.q = '';
-    if (o && o.c) l.statut = 'depose';
-    if (o && !l.track) { l.track = o.tt || o.t; renderTracks(); }
-    maj();
+    if (o) lierLigne(l, o);
+    renderTracks(); maj();
   }));
+  box.querySelectorAll('[data-okp]').forEach(b => b.addEventListener('click', function () {
+    const l = oeRows.find(z => z.id === +this.dataset.okp); if (!l || !l.prop) return;
+    const o = OEUVRES.find(z => z.soc === l.prop.soc && z.code === l.prop.code); if (o) lierLigne(l, o);
+    renderTracks(); maj(); }));
+  box.querySelectorAll('[data-nop]').forEach(b => b.addEventListener('click', function () {
+    const l = oeRows.find(z => z.id === +this.dataset.nop); if (!l || !l.prop) return;
+    l.refus = l.refus || {}; l.refus[l.prop.soc + '|' + l.prop.code] = 1; delete l.prop; maj(); }));
   box.querySelectorAll('[data-unl]').forEach(b => b.addEventListener('click', function () {
     const l = oeRows.find(z => z.id === +this.dataset.unl); if (!l) return;
-    delete l.soc; delete l.code; delete l.titre; l.open = true; l.q = '';
+    l.refus = l.refus || {}; if (l.code) l.refus[l.soc + '|' + l.code] = 1;
+    delete l.soc; delete l.code; delete l.titre; delete l.prop; l.open = true; l.q = '';
     if (l.statut === 'depose') l.statut = 'a_definir';
     maj(); focusQ(l.id);
   }));
   box.querySelectorAll('[data-st]').forEach(s => s.addEventListener('change', function () {
-    const l = oeRows.find(z => z.id === +this.dataset.st); if (l) l.statut = this.value; }));
+    const l = oeRows.find(z => z.id === +this.dataset.st); if (l) { l.statut = this.value; maj(); } }));
 }
 function focusQ(id, pos) {
   const i = document.querySelector('[data-q="' + id + '"]'); if (!i) return;
@@ -709,8 +765,8 @@ function updateConditionals() {
   countryGroup.classList.toggle('visible', ['Single','EP','Album'].includes(t));
   actuGroup.classList.toggle('visible', t === 'Actu');
   document.getElementById('oeuvresGroup').classList.toggle('visible', ['Single','EP','Album'].includes(t));
-  // le featuring d'un projet se saisit track par track, pas au niveau de la sortie
-  document.getElementById('featGroup').style.display = (t === 'EP' || t === 'Album') ? 'none' : '';
+  // le featuring d'un single se saisit à côté du nom du track, celui d'un projet track par track
+  renderFeatsSingle();
   semerLignes(); renderTracks(); renderOeuvres();
 }
 typeSelect.addEventListener('change', updateConditionals);
@@ -1000,13 +1056,13 @@ function enterEditMode(release) {
   document.getElementById('epTrackNames').value = release.epTrackNames || '';
   document.getElementById('blzTrackCount').value = release.blzTrackCount || '';
   document.getElementById('blzTrackNames').value = release.blzTrackNames || '';
-  document.getElementById('featurings').value = Array.isArray(release.featurings) ? release.featurings.join(', ') : (release.featurings || '');
+  setFeatsSingle(release.featurings || []);
   // une ligne par track connu : titres du projet, statuts Sacem, œuvres liées, featurings
   oeRows = []; oeNext = 1; oeSeed = '';
   const ligne = t => {
     const k = normT(t); if (!k) return null;
     let l = oeRows.find(z => normT(z.track) === k);
-    if (!l) { l = { id: oeNext++, track: t, feats: [''], statut: 'a_definir', q: '' }; oeRows.push(l); }
+    if (!l) { l = { id: oeNext++, track: t, feats: [], statut: 'a_definir', q: '' }; oeRows.push(l); }
     return l;
   };
   (release.type === 'Single' ? [release.track || ''] : String(release.blzTrackNames || '').split(/\n|,|;/))
@@ -1079,7 +1135,7 @@ function resetForm() {
   swOptions.forEach(o => o.classList.remove('selected'));
   renderTags();
   oeRows = []; oeSeed = ''; renderTracks(); renderOeuvres();
-  document.getElementById('featurings').value = '';
+  setFeatsSingle([]);
   document.getElementById('oeuvresGroup').classList.remove('visible');
 }
 
@@ -1220,6 +1276,23 @@ async function renderRecent() {
     </div>`;
   }).join('');
 }
+</script>
+
+<script>
+/* ---- barre d'outils : outil courant repéré, menu « Plus » ---- */
+(function(){
+  var ici=(location.pathname.split('/').pop()||'index.html').toLowerCase();
+  document.querySelectorAll('#tbar>a').forEach(function(a){
+    if((a.getAttribute('data-t')||'').split(' ').indexOf(ici)>=0)a.classList.add('on');});
+  document.querySelectorAll('#tbarMenu a').forEach(function(a){
+    if(a.getAttribute('href').toLowerCase()===ici)a.classList.add('on');});
+  var b=document.getElementById('tbarBtn'),m=document.getElementById('tbarMenu');
+  if(!b||!m)return;
+  function ouvrir(v){m.hidden=!v;b.setAttribute('aria-expanded',v?'true':'false');}
+  b.addEventListener('click',function(e){e.stopPropagation();ouvrir(m.hidden);});
+  document.addEventListener('click',function(e){if(!m.hidden&&!m.contains(e.target))ouvrir(false);});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')ouvrir(false);});
+})();
 </script>
 </body>
 </html>

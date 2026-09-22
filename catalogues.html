@@ -20,24 +20,6 @@
   --disp:'Syne',system-ui,sans-serif;
 }
 
-/* ---- passage d'un outil à l'autre ---- */
-nav{z-index:40 !important}
-.tsw{position:relative}
-.tsw-btn{display:inline-flex;align-items:center;gap:7px;background:none;cursor:pointer;
- border:1px solid var(--line);color:var(--ink-2);font-family:'Syne Mono',monospace;font-size:.6rem;
- letter-spacing:.1em;text-transform:uppercase;padding:5px 10px;transition:border-color .15s,color .15s}
-.tsw-btn:hover,.tsw-btn[aria-expanded="true"]{border-color:var(--accent);color:var(--accent)}
-.tsw-car{font-size:.55rem;opacity:.7}
-.tsw-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:50;backdrop-filter:blur(2px);min-width:230px;
- background:var(--surface);border:1px solid var(--line);box-shadow:0 10px 30px rgba(0,0,0,.55);padding:5px}
-.tsw-menu[hidden]{display:none}
-.tsw-t{font-family:'Syne Mono',monospace;font-size:.5rem;letter-spacing:.12em;text-transform:uppercase;
- color:var(--ink-3);padding:7px 9px 3px}
-.tsw-menu a{display:flex;align-items:center;justify-content:space-between;gap:10px;
- padding:7px 9px;text-decoration:none;color:var(--ink-2);font-size:.7rem;border-left:2px solid transparent}
-.tsw-menu a:hover{background:rgba(255,255,255,.055)}
-.tsw-menu a.on{border-left-color:var(--accent);color:var(--accent)}
-.tsw-menu a .k{font-family:'Syne Mono',monospace;font-size:.5rem;color:var(--ink-3);letter-spacing:.08em}
 *{box-sizing:border-box}
 html,body{margin:0}
 body{background:var(--paper);color:var(--ink);font:14px/1.45 var(--sans);-webkit-font-smoothing:antialiased;
@@ -203,6 +185,9 @@ input[type=checkbox]{width:15px;height:15px;accent-color:var(--accent);cursor:po
 tr.nous td{background:var(--accent-soft)}
 tr.nous td.ph{color:var(--accent);font-weight:600}
 tr.nous td.l{font-weight:600}
+.feats{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.feat-l{display:inline-flex;align-items:center;gap:2px}
+.feat-l input{width:170px}
 .rl{display:inline-block;min-width:34px;font:600 10.5px/1.5 var(--mono);letter-spacing:.04em;
  padding:1px 5px;border-radius:3px;background:var(--surface-3);color:var(--ink-2);text-align:center}
 .rl.arr{background:#2a1d3a;color:#c9a6f0;border:1px solid #4a3763}
@@ -302,21 +287,61 @@ td.ckc{text-align:center;padding-left:4px;padding-right:4px}
  padding:3px 10px;font-size:11.5px;background:var(--surface)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 @media print{.tabs,.top .btn,.chip,#toast{display:none!important}}
+
+/* ---- barre d'outils de la Toolbox ---- */
+nav{z-index:40 !important;gap:18px}
+.tnav{display:flex;align-items:center;gap:26px;min-width:0}
+.tbar{display:flex;align-items:center;gap:2px;font-family:'Syne',system-ui,sans-serif}
+.tbar>a,.tbar-plus>button{position:relative;display:inline-flex;align-items:center;gap:6px;
+ padding:8px 12px;border:1px solid transparent;background:none;cursor:pointer;
+ color:#9a9a9a;font:700 .72rem/1 'Syne',system-ui,sans-serif;letter-spacing:.09em;text-transform:uppercase;
+ text-decoration:none;transition:color .15s,border-color .15s,background .15s}
+.tbar>a:hover,.tbar-plus>button:hover,.tbar-plus>button[aria-expanded="true"]{color:#fff;border-color:#2e2e2e;background:#151515}
+.tbar>a.on{color:#e8c547;border-color:#4a3f14;background:#1a1708}
+.tbar-sep{width:1px;height:18px;background:#2a2a2a;margin:0 8px}
+.tbar-plus{position:relative}
+.tbar-car{font-size:.55rem;opacity:.7}
+.tbar-menu{position:absolute;left:0;top:calc(100% + 6px);z-index:60;min-width:220px;background:#141414;
+ border:1px solid #2a2a2a;box-shadow:0 12px 32px rgba(0,0,0,.6);padding:5px}
+.tbar-menu[hidden]{display:none}
+.tbar-t{font-family:'Syne Mono',monospace;font-size:.5rem;letter-spacing:.12em;text-transform:uppercase;color:#666;padding:8px 10px 3px}
+.tbar-menu a{display:block;padding:8px 10px;text-decoration:none;color:#ddd;font-size:.72rem;border-left:2px solid transparent}
+.tbar-menu a:hover{background:rgba(255,255,255,.06)}
+.tbar-menu a.on{border-left-color:#e8c547;color:#e8c547}
+@media (max-width:900px){.tbar>a{padding:7px 8px;font-size:.62rem}.tnav{gap:12px}}
 </style>
 </head>
 <body>
 
 <nav>
+  <div class="tnav">
   <a class="nav-logo" href="index.html"><img src="blzante_spiral_white.png" alt="" class="nav-logo-img"
      onerror="this.style.display='none'"><span>BLZante</span></a>
-  <div class="nav-right">
-    <button class="deco" onclick="try{localStorage.removeItem('blz-catalogues-snap-v1')}catch(e){}try{firebase.auth().signOut().then(function(){location.href='login.html'})}catch(e){}">Déconnexion</button>
-    <a href="index.html">&larr; Toolbox</a><span class="nav-sep">/</span>
-    <div class="tsw" id="tsw">
-      <button class="tsw-btn" id="tswBtn" aria-expanded="false" aria-haspopup="true" title="Changer d'outil (touche O)">Catalogues <span class="tsw-car">&#9662;</span></button>
-      <div class="tsw-menu" id="tswMenu" hidden></div>
+  <div class="tbar" id="tbar">
+    <a href="roster.html" data-t="roster.html roster_create.html">Roster</a>
+    <a href="release_planning.html" data-t="release_planning.html release_create.html">Planning</a>
+    <a href="ig_generator.html" data-t="ig_generator.html">IG Content</a>
+    <a href="catalogues.html" data-t="catalogues.html">Catalogues</a>
+    <span class="tbar-sep"></span>
+    <div class="tbar-plus">
+      <button type="button" id="tbarBtn" aria-expanded="false" aria-haspopup="true">Plus <span class="tbar-car">&#9662;</span></button>
+      <div class="tbar-menu" id="tbarMenu" hidden>
+        <div class="tbar-t">Créer</div>
+        <a href="roster_create.html">+ Fiche artiste</a>
+        <a href="release_create.html">+ Event planning</a>
+        <div class="tbar-t">Admin</div>
+        <a href="sacem_depot.html">SACEM Dépôt</a>
+        <a href="notes.html">Notes NDA / NDD</a>
+        <a href="onid_blzante.html">ONID BLZante</a>
+        <a href="infos_sacem.html">Infos Sacem</a>
+        <a href="infos_facturation.html">Infos facturation</a>
+        <a href="index.html">Toutes les pages</a>
+      </div>
     </div>
   </div>
+  </div>
+  <div class="nav-right">
+    <button class="deco" onclick="try{localStorage.removeItem('blz-catalogues-snap-v1')}catch(e){}try{firebase.auth().signOut().then(function(){location.href='login.html'})}catch(e){}">Déconnexion</button></div>
 </nav>
 <div class="wrap">
   <div class="top">
@@ -634,11 +659,33 @@ function fusionPlanning(){
 }
 // La base des songwriters de l'outil : Roster × Planning, moins les exclusions, plus les ajouts.
 // Réglage par défaut : le duo MAB est remplacé par Gabriel et Hadrien Mabilat, Malaka est ajouté.
-var BASE_DEFAUT={exclus:{'MAB':1},ajouts:{'MALAKA':{nom:'MALAKA'}}};
+// Les membres d'un duo signé sous un seul nom sont regroupés sur sa fiche (Sacha Moisa → Malaka).
+var BASE_DEFAUT={exclus:{'MAB':1},ajouts:{'MALAKA':{nom:'MALAKA'}},membres:{'MALAKA':['SACHA MOISA','SACHA MALAKA']}};
 function baseCfg(){
   if(!store.base)store.base=JSON.parse(JSON.stringify(BASE_DEFAUT));
   store.base.exclus=store.base.exclus||{};store.base.ajouts=store.base.ajouts||{};
+  // réglage ajouté après coup : complété sans toucher au reste
+  if(!store.base.membres)store.base.membres={};
+  Object.keys(BASE_DEFAUT.membres).forEach(function(g){
+    var l=store.base.membres[g]||(store.base.membres[g]=[]);
+    BASE_DEFAUT.membres[g].forEach(function(n){if(l.indexOf(n)<0)l.push(n);});});
   return store.base;
+}
+// Rattache chaque membre à la fiche de son groupe : son nom devient un pseudonyme du groupe,
+// ses profils Sacem y sont additionnés, et il ne compte plus comme songwriter signé à part.
+function appliquerMembres(){
+  var B=baseCfg(),M=B.membres||{};
+  store.fusions=store.fusions||{};
+  Object.keys(M).forEach(function(g){
+    var grp=null,tous=Object.keys(store.songwriters).map(function(k){return store.songwriters[k];});
+    tous.forEach(function(x){if(!grp&&x&&(norm(x.nom)===norm(g)||(x.alias||[]).some(function(a){return norm(a)===norm(g);})))grp=x;});
+    if(!grp)return;
+    (M[g]||[]).forEach(function(nm){
+      tous.forEach(function(x){
+        if(!x||x===grp||x.id===grp.id)return;
+        if(memePersonne(x.nom,nm)||(x.alias||[]).some(function(a){return memePersonne(a,nm);}))
+          store.fusions[x.id]=grp.id;});});
+  });
 }
 function appliquerBase(){
   var B=baseCfg();
@@ -658,7 +705,7 @@ function appliquerBase(){
   });
 }
 function construireBase(){
-  fusionRoster();nbPlanning=fusionPlanning();appliquerBase();appliquerFusions();
+  fusionRoster();nbPlanning=fusionPlanning();appliquerBase();appliquerMembres();appliquerFusions();
 }
 /* ---------- doublons entre Roster, Planning et fiches de l'outil ---------- */
 // store.fusions : { idAbsorbé : idConservé }. La fiche absorbée disparaît, son nom
@@ -1050,7 +1097,12 @@ function identite(sw){
   if(civils.length)p.push(esc(civils.join(' + ')));
   if(noms.length<2&&ipi)p.push('IPI '+esc(ipi));
   if(noms.length<2&&coad)p.push('COAD '+esc(coad));
-  if(noms.length>1)p.push(noms.length+' ayants droit Sacem');
+  if(noms.length>1){
+    // plusieurs profils rattachés : tous les COAD
+    var coads=[];(sw.ads||[]).forEach(function(a){if(a.coad&&coads.indexOf(String(a.coad))<0)coads.push(String(a.coad));});
+    if(sw.coad&&coads.indexOf(String(sw.coad))<0)coads.unshift(String(sw.coad));
+    if(coads.length)p.push('COAD '+coads.map(esc).join(' / '));
+  }
   var sg=societeGestion(sw);if(sg)p.push(sg);
   return p.join(' · ');
 }
@@ -1442,37 +1494,6 @@ function importCatalogue(soc,head,rws,fichier){
 }
 
 
-/* ---- passage d'un outil à l'autre, depuis n'importe quelle page ---- */
-(function(){
-  var OUTILS=[
-    ['Principaux',[['roster.html','Roster','R'],['release_planning.html','Planning','P'],
-      ['ig_generator.html','IG Content','I'],['catalogues.html','Catalogues','C']]],
-    ['Créer',[['roster_create.html','+ Fiche artiste',''],['release_create.html','+ Event planning',''],
-      ['sacem_depot.html','SACEM Dépôt','']]],
-    ['Admin',[['notes.html','Notes NDA / NDD',''],['onid_blzante.html','ONID BLZante',''],
-      ['infos_sacem.html','Infos Sacem',''],['infos_facturation.html','Infos facturation',''],
-      ['index.html','Toutes les pages','']]]
-  ];
-  var b=document.getElementById('tswBtn'),m=document.getElementById('tswMenu');
-  if(!b||!m)return;
-  var ici=(location.pathname.split('/').pop()||'index.html').toLowerCase();
-  m.innerHTML=OUTILS.map(function(g){
-    return '<div class="tsw-t">'+g[0]+'</div>'+g[1].map(function(o){
-      return '<a href="'+o[0]+'"'+(o[0].toLowerCase()===ici?' class="on"':'')+'>'+o[1]+
-        (o[2]?'<span class="k">'+o[2]+'</span>':'')+'</a>';}).join('');}).join('');
-  function ouvrir(v){m.hidden=!v;b.setAttribute('aria-expanded',v?'true':'false');}
-  b.addEventListener('click',function(e){e.stopPropagation();ouvrir(m.hidden);});
-  document.addEventListener('click',function(e){if(!m.hidden&&!m.contains(e.target))ouvrir(false);});
-  document.addEventListener('keydown',function(e){
-    if(e.key==='Escape')return ouvrir(false);
-    var t=e.target&&e.target.tagName;
-    if(t==='INPUT'||t==='TEXTAREA'||t==='SELECT'||e.metaKey||e.ctrlKey||e.altKey)return;
-    var k=String(e.key||'').toUpperCase();
-    if(k==='O')return ouvrir(m.hidden);
-    var dest={R:'roster.html',P:'release_planning.html',I:'ig_generator.html',C:'catalogues.html'}[k];
-    if(dest&&dest.toLowerCase()!==ici)location.href=dest;
-  });
-})();
 /* ============================== cadre ============================== */
 function renderChrome(){
   el('cats').innerHTML=SOCIETES.map(function(s){
@@ -2034,6 +2055,13 @@ function titreSortie(r){
   if(r.type==='EP'||r.type==='Album')return r.project||r.title||r.artist||'';
   return r.track||r.title||'';
 }
+// Titres d'un projet : les titres BLZante d'abord, puis le reste de la tracklist
+function pistesProjet(r){
+  var l=(Array.isArray(r.blzTracks)?r.blzTracks:[]).map(function(t){return t&&t.title;}).filter(Boolean);
+  lignesTitres(r.blzTrackNames).concat(lignesTitres(r.epTrackNames)).forEach(function(t){
+    if(l.map(norm).indexOf(norm(t))<0)l.push(t);});
+  return l;
+}
 function lignesTitres(t){return String(t||'').split(/\n|,|;/).map(function(x){return x.trim();}).filter(Boolean);}
 function lienPlanning(r){return 'release_create.html?edit='+encodeURIComponent(r.id!=null?r.id:r._key);}
 // Nom d'un songwriter tel que le Planning l'écrit
@@ -2144,15 +2172,19 @@ function oeuvresDeSortie(r){
   return out;
 }
 // Statut Sacem d'un track de sortie
+// « Contrats signés » : l'œuvre apparaîtra dans les prochains exports de nos catalogues
 var STATUTS_SACEM=[['a_definir','À définir'],['a_lancer','À lancer'],['en_cours','En cours'],
-  ['depose','Déposé à la Sacem'],['non_editeur','Non éditeur sur l\'œuvre']];
+  ['contrats_signes','Contrats signés'],['depose','Déposé à la Sacem'],['non_editeur','Non éditeur sur l\'œuvre']];
 function libSacem(v){var x=STATUTS_SACEM.filter(function(y){return y[0]===v;})[0];return x?x[1]:'À définir';}
-function tonSacem(v){return v==='depose'?'ok':v==='non_editeur'?'neutral':v==='en_cours'||v==='a_lancer'?'warn':'neutral';}
+function tonSacem(v){return v==='depose'||v==='contrats_signes'?'ok':v==='non_editeur'?'neutral':v==='en_cours'||v==='a_lancer'?'warn':'neutral';}
 // Écrit le lien œuvre ↔ sortie dans la sortie : œuvre, statut Sacem, titre BLZante, et ce qui manque à l'événement
 // C'est la fiche œuvre qui fait foi : son titre et son artiste sont écrits sur l'événement.
 function lierDansSortie(r,soc,code,info){
   var o=(store.oeuvres[soc]||{})[code]||{},t=info.track||o.titre,cle=norm(t),chg=false;
   r.oeuvres=r.oeuvres||{};r.sacem=r.sacem||{};
+  // l'œuvre ne pointe que vers un seul titre de la sortie
+  Object.keys(r.oeuvres).forEach(function(k){var x=r.oeuvres[k]||{};
+    if(k!==cle&&x.code===code&&x.soc===soc){delete r.oeuvres[k];if(r.sacem[k]==='depose')delete r.sacem[k];chg=true;}});
   var cur=r.oeuvres[cle]||{};
   if(cur.code!==code||cur.soc!==soc){r.oeuvres[cle]={soc:soc,code:code,titre:o.titre||t};chg=true;}
   var st=o.cat?'depose':(info.statut||r.sacem[cle]||'a_definir');
@@ -2505,10 +2537,6 @@ function pageOeuvre(code){
       (e.feat?' <span class="mut" style="font-weight:600">feat. '+esc(e.feat)+'</span>':'')+'</h1>'+
     (e.titreTrack&&norm(e.titreTrack)!==norm(o.titre)?'<div class="mini" style="font-size:11.5px">déposée sous « '+esc(o.titre)+' »</div>':'')+
     (o.sous?'<div class="mini" style="font-size:11.5px">sous-titre Sacem : '+esc(o.sous)+'</div>':'')+
-    '<div style="font-size:13px;margin-top:3px">'+(artiste?esc(artiste):'<span class="mut">artiste à renseigner</span>')+
-      (sortie?' <span class="mut">· sortie le '+frDate(sortie)+'</span>':'')+
-      (e.spotify?' · <a href="'+esc(e.spotify)+'" target="_blank" rel="noopener">Spotify</a>':'')+
-      (e.youtube?' · <a href="'+esc(e.youtube)+'" target="_blank" rel="noopener">YouTube</a>':'')+'</div>'+
     '<div style="font-size:12px;margin-top:4px">'+(sortieLiee(soc,code)
       ?'Planning : <a href="'+esc(lienPlanning(rel))+'" target="_blank" rel="noopener">'+esc(rel.type)+' « '+esc(titreSortie(rel))+' » ↗</a>'+
         (rel.status?' <span class="mut">· '+esc(rel.status)+'</span>':'')+
@@ -2516,6 +2544,10 @@ function pageOeuvre(code){
           return ' <span class="tag '+tonSacem(st)+'">'+esc(libSacem(st))+'</span>';})()
       :rel?'<span class="mut">Planning : correspondance de titre avec '+esc(rel.type)+' « '+esc(titreSortie(rel))+' », à lier dans « Modifier »</span>'
       :'<span class="mut">Pas encore liée à une sortie du Planning</span>')+'</div>'+
+    '<div style="font-size:13px;margin-top:3px">'+(artiste?esc(artiste):'<span class="mut">artiste à renseigner</span>')+
+      (sortie?' <span class="mut">· sortie le '+frDate(sortie)+'</span>':'')+
+      (e.spotify?' · <a href="'+esc(e.spotify)+'" target="_blank" rel="noopener">Spotify</a>':'')+
+      (e.youtube?' · <a href="'+esc(e.youtube)+'" target="_blank" rel="noopener">YouTube</a>':'')+'</div>'+
     (function(){var F=familleOeuvre(soc,code);
       if(F.origine!==code){var org=(store.oeuvres[soc]||{})[F.origine]||{};
         return '<div style="font-size:12px;margin-top:3px">'+esc(libVersion(e.versionType))+' de '+
@@ -2872,8 +2904,9 @@ function ficheOeuvre(code){
         eur(o.dr||0)+' € de droits de reproduction · '+eur(o.ph||0)+' € de phono.</div>':'');
 
   var body='<div class="split"><div>'+
-    /* --- le titre commercialisé --- */
-    '<label class="fl">Titre commercialisé</label>'+
+    /* --- la sortie au Planning d'abord, le titre commercialisé ensuite --- */
+    '<label class="fl">Sortie au Planning</label><div id="f-plan" class="plan-box"></div>'+
+    '<div class="sep"></div><label class="fl">Titre commercialisé</label>'+
     '<div class="track"><div class="cover" id="f-cover">'+
       ((artUrl||artDe(soc,code))?'<img src="'+esc(artUrl||artDe(soc,code))+'" alt="">':'<span class="mut">pochette</span>')+'</div>'+
       '<div class="trackf">'+
@@ -2881,9 +2914,8 @@ function ficheOeuvre(code){
           '<input type="text" id="f-track" value="'+esc(e.titreTrack||'')+'" placeholder="'+esc(o.titre)+'"></div>'+
         '<div class="field"><label class="fl">Artiste interprète</label>'+
           '<input type="text" id="f-artiste" value="'+esc(e.artiste||'')+'" placeholder="Nom de l\'artiste"></div>'+
-        '<div class="field"><label class="fl">Feat.</label>'+
-          '<input type="text" id="f-feat" value="'+esc(e.feat||'')+'" placeholder="'+
-          esc(featDuSous(o.sous)||'Artistes en featuring')+'"></div>'+
+        '<div class="field"><label class="fl">Featuring</label>'+
+          '<input type="hidden" id="f-feat" value="'+esc(e.feat||'')+'"><div id="f-feats" class="feats"></div></div>'+
         '<div class="field"><label class="fl">Date de sortie</label>'+
           '<input type="date" id="f-sortie" value="'+esc(e.sortie||'')+'"></div>'+
       '</div></div>'+
@@ -2893,9 +2925,8 @@ function ficheOeuvre(code){
       '<input type="url" id="f-spotify" value="'+esc(e.spotify||'')+'" placeholder="https://open.spotify.com/track/…"></div>'+
     '<div class="field"><label class="fl">Lien YouTube</label>'+
       '<input type="url" id="f-youtube" value="'+esc(e.youtube||'')+'" placeholder="https://www.youtube.com/watch?v=…"></div>'+
-    '<label class="nonsorti"><input type="checkbox" id="f-nonsorti"'+(e.nonSorti?' checked':'')+'> Titre pas encore commercialisé'+
-      '<span class="mut"> · rien à attendre côté sortie</span></label>'+
-    '<div class="sep"></div><label class="fl">Sortie au Planning</label><div id="f-plan" class="plan-box"></div>'+
+    '<label class="nonsorti"><input type="checkbox" id="f-nonsorti"'+(e.nonSorti?' checked':'')+'> Titre pas encore commercialisé</label>'+
+
     /* --- l'œuvre déposée --- */
     '<div class="sep"></div><label class="fl">Œuvre déposée à la Sacem</label>'+
     '<div class="grid2"><div class="field"><label class="fl">Titre du dépôt</label>'+
@@ -3140,7 +3171,22 @@ function ficheOeuvre(code){
       'Le phono commande la ventilation, DEP et DR suivent au prorata.';
   }
   drawNotes();drawAut();drawVent();majPochette(false);
-  if(el('f-feat-go'))el('f-feat-go').onclick=function(){el('f-feat').value=featDuSous(o.sous);this.parentNode.remove();};
+  /* ---- featuring : un champ par artiste invité, ouvert par « + Feat » ---- */
+  var featsOe=listeFeat(e.feat||'');
+  function syncFeat(){el('f-feat').value=featsOe.map(function(x){return String(x).trim();}).filter(Boolean).join(', ');}
+  function drawFeats(focusDernier){
+    var b=el('f-feats');if(!b)return;
+    b.innerHTML=featsOe.map(function(f,i){
+      return '<div class="feat-l"><input type="text" data-ft="'+i+'" value="'+esc(f)+'" placeholder="Artiste invité">'+
+        '<button type="button" class="x" data-ftx="'+i+'" title="Retirer">×</button></div>';}).join('')+
+      '<button type="button" class="btn sm" id="f-feat-add">+ Feat</button>';
+    b.querySelectorAll('[data-ft]').forEach(function(i2){i2.oninput=function(){featsOe[+this.dataset.ft]=this.value;syncFeat();};});
+    b.querySelectorAll('[data-ftx]').forEach(function(x){x.onclick=function(){featsOe.splice(+this.dataset.ftx,1);syncFeat();drawFeats();};});
+    el('f-feat-add').onclick=function(){featsOe.push('');drawFeats(true);};
+    if(focusDernier){var l=b.querySelectorAll('[data-ft]');if(l.length)l[l.length-1].focus();}
+  }
+  drawFeats();
+  if(el('f-feat-go'))el('f-feat-go').onclick=function(){featsOe=listeFeat(featDuSous(o.sous));syncFeat();drawFeats();this.parentNode.remove();};
   /* ---- versions : une œuvre principale et ses variantes live, remix, acoustique… ---- */
   var verDe=e.versionDe||'',verType=e.versionType||'live',verQ='',verRole=verDe?'ver':'org';
   var verAjouts={},verRetraits={};      // autres œuvres à rattacher / détacher, écrites à l'enregistrement
@@ -3212,7 +3258,7 @@ function ficheOeuvre(code){
   }
   drawVersions();
   /* ---- sortie au Planning : lier un événement existant ou le créer ---- */
-  var dejaLie=sortieLiee(soc,code),relId=e.release||(dejaLie?dejaLie.id:''),relAvant=relId,creation=false,planQ='',statutSel='';
+  var dejaLie=sortieLiee(soc,code),relId=e.release||(dejaLie?dejaLie.id:''),relAvant=relId,creation=false,planQ='',statutSel='',pisteSel=null;
   // Par défaut la fiche fait foi : on ne complète que les champs vides. Le bouton force la reprise.
   function reprendre(r,force){
     if(r.artist&&(force||!el('f-artiste').value.trim()))el('f-artiste').value=r.artist;
@@ -3241,9 +3287,15 @@ function ficheOeuvre(code){
     var box=el('f-plan');if(!box)return;
     var lie=sortieParId(relId);
     if(lie){
-      var dansProjet=(lie.type==='EP'||lie.type==='Album')?lignesTitres(lie.blzTrackNames).map(norm).indexOf(norm(trackCourant()))>=0:true;
+      var projet=lie.type==='EP'||lie.type==='Album';
       var autres2=oeuvresDeSortie(lie);delete autres2[soc+'|'+code];
-      var cle=norm(trackCourant());
+      // projet : l'œuvre correspond à l'un de ses titres, ou devient un nouveau titre
+      var pistes=projet?pistesProjet(lie):[];
+      if(projet&&pisteSel==null){
+        var deja=pistes.filter(function(t){var x=(lie.oeuvres||{})[norm(t)];return x&&x.code===code&&x.soc===soc;})[0];
+        var meme=pistes.filter(function(t){return norm(t)===norm(trackCourant())||norm(t)===norm(o.titre);})[0];
+        pisteSel=deja||meme||'';}
+      var cle=norm(projet&&pisteSel?pisteSel:trackCourant());
       if(o.cat)statutSel='depose';
       else if(!statutSel)statutSel=(lie.sacem||{})[cle]||'a_definir';
       box.innerHTML=carteSortie(lie)+
@@ -3256,14 +3308,25 @@ function ficheOeuvre(code){
         (Object.keys(autres2).length?'<div class="hint">Aussi liée à cette sortie : '+
           Object.keys(autres2).map(function(k){var c2=k.split('|')[1];
             return '« '+esc(autres2[k])+' »'+(memeFamille(soc,code,c2)?' <span class="tag neutral">même œuvre, autre version</span>':'');}).join(', ')+'</div>':'')+
-        (!dansProjet?'<div class="hint">Ce titre sera ajouté aux titres BLZante du projet à l\'enregistrement.</div>':'')+
+        (projet?'<div class="field" style="margin-top:8px"><label class="fl">Titre du projet correspondant</label>'+
+          '<select id="pl-piste">'+pistes.map(function(t){
+            var x=(lie.oeuvres||{})[norm(t)],autre=x&&x.code&&!(x.code===code&&x.soc===soc);
+            return '<option value="'+esc(t)+'"'+(t===pisteSel?' selected':'')+'>'+esc(t)+
+              (autre?' — déjà liée à « '+esc(x.titre||x.code)+' »':'')+'</option>';}).join('')+
+            '<option value=""'+(pisteSel===''?' selected':'')+'>+ Ajouter « '+esc(trackCourant())+' » comme nouveau titre</option>'+
+          '</select></div>':'')+
         '<div class="hint">Le titre et l\'artiste de cette fiche seront écrits sur l\'événement à l\'enregistrement.</div>'+
         '<div class="rowline" style="margin-top:8px"><button class="btn sm" id="pl-rep">Reprendre les infos de l\'événement</button>'+
         '<a class="btn sm" href="'+esc(lienPlanning(lie))+'" target="_blank" rel="noopener">Ouvrir dans le Planning ↗</a>'+
         '<button class="btn sm" id="pl-del">Délier</button></div>';
       if(el('pl-st'))el('pl-st').onchange=function(){statutSel=this.value;};
+      if(el('pl-piste'))el('pl-piste').onchange=function(){pisteSel=this.value;
+        // le titre du projet choisi est le titre commercialisé de l'œuvre
+        if(pisteSel&&pisteSel!==o.titre)el('f-track').value=pisteSel;
+        if(!o.cat)statutSel=(lie.sacem||{})[norm(pisteSel||trackCourant())]||'';
+        drawPlan();};
       el('pl-rep').onclick=function(){reprendre(lie,true);};
-      el('pl-del').onclick=function(){relId='';drawPlan();};
+      el('pl-del').onclick=function(){relId='';pisteSel=null;statutSel='';drawPlan();};
       return;
     }
     if(creation)return drawCreation(box);
@@ -3289,7 +3352,7 @@ function ficheOeuvre(code){
             n.map(function(k){return '« '+esc(au[k])+' »';}).join(', ')+'</div>':'')+'</div>'+
           '<button class="btn sm '+(alerte?'':'primary')+'" data-plk="'+i+'">'+(alerte?'Lier quand même':'Lier')+'</button></div>';}).join('');
     box.querySelectorAll('[data-plk]').forEach(function(bt){bt.onclick=function(){relId=L[+this.dataset.plk].r.id;
-      statutSel='';reprendre(sortieParId(relId));drawPlan();};});
+      statutSel='';pisteSel=null;reprendre(sortieParId(relId));drawPlan();};});
     var qi=el('pl-q');qi.oninput=function(){var pos=this.selectionStart;planQ=this.value;drawPlan();
       var n2=el('pl-q');n2.focus();n2.setSelectionRange(pos,pos);};
     el('pl-new').onclick=function(){creation=true;drawPlan();};
@@ -3388,6 +3451,13 @@ function ficheOeuvre(code){
         if(!ed2.sortie)ed2.sortie=d;
         try{await saveEdit(soc,c);}catch(err){rates.push(titreDuTrack(soc,c)||c);}
       }
+      // le titre commercialisé saisi pour l'événement devient celui de la fiche
+      var tnom=pj?'':track;
+      if(tnom){var edc=E[code]||(E[code]={});
+        if(tnom!==o.titre)edc.titreTrack=tnom;else delete edc.titreTrack;
+        if(el('f-track'))el('f-track').value=tnom!==o.titre?tnom:'';}
+      if(!el('f-artiste').value.trim())el('f-artiste').value=artiste;
+      if(!el('f-sortie').value)el('f-sortie').value=d;
       try{await saveEdit(soc,code);}catch(err){rates.push(titreDuTrack(soc,code)||code);}
       relId=r.id;creation=false;statutSel='';
       drawPlan();
@@ -3402,7 +3472,7 @@ function ficheOeuvre(code){
     var reste=el('f-note').value.trim();
     if(reste)notes.push({t:reste,d:new Date().toISOString()});
     ed.artiste=el('f-artiste').value.trim();ed.spotify=el('f-spotify').value.trim();
-    var tt=el('f-track').value.trim();if(tt&&norm(tt)!==norm(o.titre))ed.titreTrack=tt;else delete ed.titreTrack;
+    var tt=el('f-track').value.trim();if(tt&&tt!==o.titre)ed.titreTrack=tt;else delete ed.titreTrack;
     var ft=el('f-feat')?el('f-feat').value.trim():'';if(ft)ed.feat=ft;else delete ed.feat;
     ed.youtube=el('f-youtube').value.trim();ed.sortie=el('f-sortie').value;ed.nonSorti=el('f-nonsorti').checked;
     ed.release=relId||'';
@@ -3415,7 +3485,8 @@ function ficheOeuvre(code){
         if(relAvant&&String(relAvant)!==String(relId)){var ra=sortieParId(relAvant);
           if(ra&&delierDansSortie(ra,soc,code))await ecrireSortie(ra);}
         if(relId){var rn=sortieParId(relId);
-          if(rn&&lierDansSortie(rn,soc,code,{track:ed.titreTrack||o.titre,art:artUrl||'',feat:ed.feat||'',
+          var pj2=rn&&(rn.type==='EP'||rn.type==='Album');
+          if(rn&&lierDansSortie(rn,soc,code,{track:(pj2&&pisteSel)||ed.titreTrack||o.titre,art:artUrl||'',feat:ed.feat||'',
             lien:ed.spotify||ed.youtube||'',artiste:ed.artiste,statut:statutSel}))
             await ecrireSortie(rn);}
       }catch(err){toast('Lien avec le Planning non enregistré : '+((err&&err.message)||err),6000);}
@@ -4013,6 +4084,23 @@ el('file-restore').onchange=function(){if(this.files&&this.files[0])importBase(t
   render();
   snapSave();
 })();
+})();
+</script>
+
+<script>
+/* ---- barre d'outils : outil courant repéré, menu « Plus » ---- */
+(function(){
+  var ici=(location.pathname.split('/').pop()||'index.html').toLowerCase();
+  document.querySelectorAll('#tbar>a').forEach(function(a){
+    if((a.getAttribute('data-t')||'').split(' ').indexOf(ici)>=0)a.classList.add('on');});
+  document.querySelectorAll('#tbarMenu a').forEach(function(a){
+    if(a.getAttribute('href').toLowerCase()===ici)a.classList.add('on');});
+  var b=document.getElementById('tbarBtn'),m=document.getElementById('tbarMenu');
+  if(!b||!m)return;
+  function ouvrir(v){m.hidden=!v;b.setAttribute('aria-expanded',v?'true':'false');}
+  b.addEventListener('click',function(e){e.stopPropagation();ouvrir(m.hidden);});
+  document.addEventListener('click',function(e){if(!m.hidden&&!m.contains(e.target))ouvrir(false);});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')ouvrir(false);});
 })();
 </script>
 </body>
