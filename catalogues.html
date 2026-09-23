@@ -147,6 +147,7 @@ th.sortable:hover{color:var(--ink)}
 .tag.ok{background:var(--accent-soft);color:var(--accent)}
 .tag.warn{background:var(--warn-soft);color:var(--warn)}
 .tag.neutral{background:var(--surface-3);color:var(--ink-3)}
+.tag.ko{background:rgba(224,122,117,.16);color:var(--neg)}
 .swlist{display:flex;flex-wrap:wrap;gap:4px}
 .swtag{display:inline-flex;align-items:center;gap:5px;font:500 11px/1.7 var(--sans);padding:0 7px;border-radius:3px;
  background:var(--accent-soft);color:var(--accent);white-space:nowrap}
@@ -199,6 +200,7 @@ tr.nous td.ph{color:var(--accent);font-weight:600}
 tr.nous td.l{font-weight:600}
 .vent-faux{border:1px solid var(--neg);border-radius:4px;padding:8px;background:rgba(224,122,117,.06)}
 .alerte-ko{border-left-color:var(--neg);background:rgba(224,122,117,.1)}
+.lecture{padding:8px 10px;border:1px solid var(--line);border-radius:4px;background:var(--surface-2);color:var(--ink-2);font-size:13px}
 .feats{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .feat-l{display:inline-flex;align-items:center;gap:2px}
 .feat-l input{width:170px}
@@ -674,7 +676,7 @@ function fusionPlanning(){
 // La base des songwriters de l'outil : Roster × Planning, moins les exclusions, plus les ajouts.
 // Réglage par défaut : le duo MAB est remplacé par Gabriel et Hadrien Mabilat, Malaka est ajouté.
 // Les membres d'un duo signé sous un seul nom sont regroupés sur sa fiche (Sacha Moisa → Malaka).
-var BASE_DEFAUT={exclus:{'MAB':1},ajouts:{'MALAKA':{nom:'MALAKA'}},membres:{'MALAKA':['SACHA MOISA','SACHA MALAKA']}};
+var BASE_DEFAUT={exclus:{'MAB':1},ajouts:{'MALAKA':{nom:'MALAKA'}},membres:{'MALAKA':['SACHA MOISA','SACHA MALAKA','LAURINA MALAKA','LAURINA MOISA']}};
 function baseCfg(){
   if(!store.base)store.base=JSON.parse(JSON.stringify(BASE_DEFAUT));
   store.base.exclus=store.base.exclus||{};store.base.ajouts=store.base.ajouts||{};
@@ -781,7 +783,7 @@ function localSave(){
 }
 // Instantané de la dernière base Firebase, pour afficher tout de suite à l'ouverture
 // pendant que la connexion et la synchronisation se font. Effacé à la déconnexion.
-var SNAP='blz-catalogues-snap-v1',SYNCHRO=false,snapT=null,DERNIERE_ECRITURE=0;
+var SNAP='blz-catalogues-snap-v1',SYNCHRO=false,snapT=null,DERNIERE_ECRITURE=0,CACHE_LU=false;
 function snapSave(){
   if(MODE!=='firebase')return;
   clearTimeout(snapT);
@@ -810,6 +812,7 @@ function snapLoad(){
     var raw=localStorage.getItem(SNAP);if(!raw)return false;
     var d=JSON.parse(raw);if(!d||d.v!==1)return false;
     adopte(d);store.base=d.base||store.base;ROSTER=d.roster||[];PLANNING=d.planning||[];
+    CACHE_LU=true;
     return true;
   }catch(e){return false;}
 }
@@ -873,11 +876,20 @@ async function loadAll(){
     var sur=function(pr){return pr.then(null,function(e){console.warn(e);return null;});};
     var imports=dbFetch('/'+fbRoot()+'/imports.json?orderBy=%22%24key%22&limitToLast=60')
       .then(function(r){return r.ok?r.json():null;});
-    var R=await Promise.all([
-      rtGet('meta/state'),rtGet('songwriters'),sur(chargerRoster()),sur(chargerPlanning()),sur(imports)]
-      .concat(SOCIETES.map(function(x){return rtGet('bulk/'+x.id);}))
+    // Les catalogues pèsent lourd : on ne les retélécharge que si la base a bougé depuis le cache.
+    var metaAvant=store.meta||{},oeuvresCache=store.oeuvres,nS=SOCIETES.length;
+    var stPromise=rtGet('meta/state');
+    var autresP=Promise.all([rtGet('songwriters'),sur(chargerRoster()),sur(chargerPlanning()),sur(imports)]
       .concat(SOCIETES.map(function(x){return rtGet('edits/'+x.id);})));
-    var st=R[0],sw=R[1]||{},im=R[4]||{},nS=SOCIETES.length;
+    var st=await stPromise,socsSt=(st&&st.societes)||{};
+    var garde={};
+    SOCIETES.forEach(function(x){
+      var a=(metaAvant[x.id]||{}).bulkMaj,b=(socsSt[x.id]||{}).bulkMaj;
+      garde[x.id]=!!(CACHE_LU&&a&&b&&a===b&&Object.keys((oeuvresCache||{})[x.id]||{}).length);});
+    var bulksP=Promise.all(SOCIETES.map(function(x){return garde[x.id]?Promise.resolve(null):rtGet('bulk/'+x.id);}));
+    var A=await autresP,B=await bulksP;
+    var R=[st,A[0]].concat([A[1],A[2],A[3]]).concat(B).concat(A.slice(4));
+    var sw=R[1]||{},im=R[4]||{};
     if(st){store.meta=st.societes||{};store.liens=st.liens||{};
       store.fusions=st.fusions||{};store.ecartes=st.ecartes||{};store.base=st.base||store.base;}
     store.songwriters={};store.overlays={};
@@ -890,8 +902,12 @@ async function loadAll(){
     store.imports=Object.keys(im).map(function(k){var x=im[k];x.id=k;return x;})
       .sort(function(a,b){return (b.date||'').localeCompare(a.date||'');}).slice(0,60);
     SOCIETES.forEach(function(x,i){
-      var soc=x.id,blocs=R[5+i]||{},eds=R[5+nS+i]||{};
-      store.oeuvres[soc]={};store.edits[soc]={};store.liens[soc]=store.liens[soc]||{};
+      var soc=x.id,blocs=R[5+i],eds=R[5+nS+i]||{};
+      // catalogue inchangé : on garde celui du cache, rien n'a été retéléchargé
+      if(garde[soc]&&blocs===null)store.oeuvres[soc]=(oeuvresCache||{})[soc]||{};
+      else store.oeuvres[soc]={};
+      blocs=blocs||{};
+      store.edits[soc]={};store.liens[soc]=store.liens[soc]||{};
       Object.keys(blocs).forEach(function(b){var it=(blocs[b]||{}).items||{};
         Object.keys(it).forEach(function(c){store.oeuvres[soc][c]=it[c];});});
       Object.keys(eds).forEach(function(b){var it=(eds[b]||{}).items||{};
@@ -923,6 +939,7 @@ async function loadAll(){
 }
 async function saveOeuvres(soc){
   invalide();publierIndex(soc);snapSave();
+  store.meta[soc]=Object.assign({},store.meta[soc],{bulkMaj:new Date().toISOString()});
   var codes=Object.keys(store.oeuvres[soc]||{});
   var n=Math.max(1,Math.ceil(codes.length/CHUNK));
   var bloc=function(i){var items={};
@@ -963,15 +980,27 @@ function publierSignes(){
       var sw=store.songwriters[id];if(!sw||!estBLZ(sw))return;
       [sw.nom].concat(sw.alias||[],(sw.ads||[]).map(function(a){return a&&a.nom;}))
         .forEach(function(n){var k=norm(n);if(k)m[k]=sw.nom;});});
-    if(Object.keys(m).length)rtSet('signes',m).then(null,function(){});
+    if(!Object.keys(m).length)return;
+    var j=JSON.stringify(m);
+    try{if(localStorage.getItem('blz-signes')===sigCourte(j))return;}catch(e){}
+    rtSet('signes',m).then(function(){try{localStorage.setItem('blz-signes',sigCourte(j));}catch(e){}},function(){});
   },1800);
 }
 var indexT={};
+// L'index n'est réécrit que s'il a changé : inutile de le republier à chaque ouverture.
 function publierIndex(soc,tout){
   if(MODE!=='firebase')return;
   (tout?SOCIETES.map(function(x){return x.id;}):[soc]).forEach(function(so){
     clearTimeout(indexT[so]);
-    indexT[so]=setTimeout(function(){rtSet('index/'+so,indexSoc(so)).then(null,function(){});},1500);});
+    indexT[so]=setTimeout(function(){
+      var x=indexSoc(so),j=JSON.stringify(x),cle='blz-index-'+so;
+      try{if(localStorage.getItem(cle)===sigCourte(j))return;}catch(e){}
+      rtSet('index/'+so,x).then(function(){try{localStorage.setItem(cle,sigCourte(j));}catch(e){}},function(){});
+    },1500);});
+}
+function sigCourte(t){
+  var h=5381;for(var i=0;i<t.length;i++)h=((h<<5)+h+t.charCodeAt(i))|0;
+  return t.length+':'+h;
 }
 async function saveEdit(soc,code){
   invalide();DERNIERE_ECRITURE=Date.now();publierIndex(soc);snapSave();
@@ -1281,7 +1310,10 @@ function attach0(soc,code){
     if(L[k]==='-')return;
     var m=swMatch(soc,a2ad(a));
     if((m.niveau==='certain'||m.niveau==='valide')&&m.id&&!seen[m.id]){
-      seen[m.id]=1;var sw=store.songwriters[m.id];
+      var sw=store.songwriters[m.id];
+      // on ne coche d'office que nos songwriters signés : un externe se coche à la main
+      if(!sw||!estBLZ(sw))return;
+      seen[m.id]=1;
       out.push({id:m.id,part:(sw&&sw.part!=null)?sw.part:100});}
   });
   return {list:out,auto:true,aut:aut};
@@ -2208,9 +2240,9 @@ function oeuvresDeSortie(r){
 // « Contrats signés » : l'œuvre apparaîtra dans les prochains exports de nos catalogues
 var STATUTS_SACEM=[['a_definir','À définir'],['a_lancer','À lancer'],['en_cours','En cours'],
   ['en_signature','En cours de signature'],['contrats_signes','Contrats signés'],
-  ['depose','Déposé à la Sacem'],['non_editeur','Non éditeur sur l\'œuvre']];
+  ['depose','Déposé à la Sacem'],['bloque','Bloqué'],['non_editeur','Non éditeur sur l\'œuvre']];
 function libSacem(v){var x=STATUTS_SACEM.filter(function(y){return y[0]===v;})[0];return x?x[1]:'À définir';}
-function tonSacem(v){return v==='depose'||v==='contrats_signes'?'ok':v==='en_signature'?'warn':v==='non_editeur'?'neutral':v==='en_cours'||v==='a_lancer'?'warn':'neutral';}
+function tonSacem(v){return v==='depose'||v==='contrats_signes'?'ok':v==='bloque'?'ko':v==='en_signature'?'warn':v==='non_editeur'?'neutral':v==='en_cours'||v==='a_lancer'?'warn':'neutral';}
 // Écrit le lien œuvre ↔ sortie dans la sortie : œuvre, statut Sacem, titre BLZante, et ce qui manque à l'événement
 // C'est la fiche œuvre qui fait foi : son titre et son artiste sont écrits sur l'événement.
 function lierDansSortie(r,soc,code,info){
@@ -2953,7 +2985,9 @@ function ficheOeuvre(code){
   var body='<div class="split"><div>'+
     /* --- la sortie au Planning d'abord, le titre commercialisé ensuite --- */
     '<label class="fl">Sortie au Planning</label><div id="f-plan" class="plan-box"></div>'+
-    '<div class="sep"></div><label class="fl">Titre commercialisé</label>'+
+    '<div class="sep"></div><div class="rowline" style="justify-content:space-between;align-items:baseline">'+
+      '<label class="fl" style="margin:0">Titre commercialisé</label>'+
+      '<button class="btn sm" id="f-imp" hidden>Importer les infos de la sortie</button></div>'+
     '<div class="track"><div class="cover" id="f-cover">'+
       ((artUrl||artDe(soc,code))?'<img src="'+esc(artUrl||artDe(soc,code))+'" alt="">':'<span class="mut">pochette</span>')+'</div>'+
       '<div class="trackf">'+
@@ -2979,9 +3013,9 @@ function ficheOeuvre(code){
     /* --- l'œuvre déposée --- */
     '<div class="sep"></div><label class="fl">Œuvre déposée à la Sacem</label>'+
     '<div class="grid2"><div class="field"><label class="fl">Titre du dépôt</label>'+
-      '<input type="text" id="f-titre" value="'+esc(o.titre)+'"></div>'+
+      '<div class="lecture">'+esc(o.titre||'—')+'</div></div>'+
       '<div class="field"><label class="fl">Date de dépôt</label>'+
-      '<input type="date" id="f-depot" value="'+esc(o.depot||'')+'"></div></div>'+
+      '<div class="lecture">'+(o.depot?esc(frDate(o.depot)):'—')+'</div></div></div>'+
     '<div class="rowline"><span class="tag neutral">code '+esc(code)+'</span>'+
       (o.iswc?'<span class="tag neutral">ISWC '+esc(o.iswc)+'</span>':'')+
       (o.genre?'<span class="tag neutral">'+esc(o.genre)+'</span>':'')+
@@ -3032,21 +3066,25 @@ function ficheOeuvre(code){
     notes.push({t:t,d:new Date().toISOString()});el('f-note').value='';drawNotes();};
 
   /* ---- pochette ---- */
+  // rend une promesse : la création d'un événement attend la pochette avant d'écrire
   function majPochette(force){
-    var box=el('f-cover'),chs=el('f-spotify'),chy=el('f-youtube');
-    if(!box||!chs||!chy)return;                       // fiche refermée entre-temps
-    var sp=chs.value.trim(),yt=chy.value.trim();
-    if(!sp&&!yt){artUrl='';box.innerHTML='<span class="mut">pochette</span>';return;}
-    if(!force&&artUrl&&e.artKey===artKey(sp,yt))return;
-    box.innerHTML='<span class="mut">…</span>';
-    chercherPochette(sp,yt,function(u){
-      artUrl=u||'';
-      var b2=el('f-cover');if(!b2)return;
-      if(!u){b2.innerHTML='<span class="mut">pochette introuvable</span>';return;}
-      b2.innerHTML='<img src="'+esc(u)+'" alt="">';
-      var im=b2.querySelector('img');
-      im.onerror=function(){var b3=el('f-cover');
-        if(b3)b3.innerHTML='<span class="mut">pochette indisponible</span>';};});
+    return new Promise(function(fini){
+      var box=el('f-cover'),chs=el('f-spotify'),chy=el('f-youtube');
+      if(!box||!chs||!chy)return fini();              // fiche refermée entre-temps
+      var sp=chs.value.trim(),yt=chy.value.trim();
+      if(!sp&&!yt){artUrl='';box.innerHTML='<span class="mut">pochette</span>';return fini();}
+      if(!force&&artUrl&&e.artKey===artKey(sp,yt))return fini();
+      box.innerHTML='<span class="mut">…</span>';
+      chercherPochette(sp,yt,function(u){
+        artUrl=u||'';
+        var b2=el('f-cover');if(!b2)return fini();
+        if(!u){b2.innerHTML='<span class="mut">pochette introuvable</span>';return fini();}
+        b2.innerHTML='<img src="'+esc(u)+'" alt="">';
+        var im=b2.querySelector('img');
+        im.onerror=function(){var b3=el('f-cover');
+          if(b3)b3.innerHTML='<span class="mut">pochette indisponible</span>';};
+        fini();});
+    });
   }
   el('f-spotify').onchange=function(){majPochette(true);};
   el('f-youtube').onchange=function(){majPochette(true);};
@@ -3086,6 +3124,7 @@ function ficheOeuvre(code){
       var swL=l.swId?store.songwriters[l.swId]:null;
       return '<tr class="'+(l.coche||(swL&&estBLZ(swL))?'nous':'')+'"><td class="l">'+tagRole(l.roles)+'</td>'+
         '<td class="l'+(l.coche?' w':'')+'">'+esc(l.nom)+(l.swId?'':' <span class="tag warn">sans fiche</span>')+
+        (swL?(estBLZ(swL)?' <span class="tag ok">signé</span>':' <span class="tag neutral">externe</span>'):'')+
         (l.orphelin?' <span class="tag warn">rattachement Sacem à refaire</span>':'')+
         '<div class="mini">'+(l.swId&&store.songwriters[l.swId]&&norm(store.songwriters[l.swId].nom)!==norm(l.nom)
           ?esc(store.songwriters[l.swId].nom)+' · ':'')+esc(l.coad||'')+
@@ -3095,7 +3134,7 @@ function ficheOeuvre(code){
         '<td class="num mut sec">'+pv(l.ecr)+' %</td><td class="num mut sec">'+pv(l.ecrDr)+' %</td>'+
         '<td class="num"><input type="checkbox" data-c="'+l.i+'"'+(l.coche?' checked':'')+'></td>'+
         '<td class="num"><input type="number" step="1" min="0" max="100" data-d="'+l.i+'" value="'+
-          (l.deal!=null?l.deal:'')+'"'+(l.coche?'':' disabled')+' style="width:66px"></td></tr>';}).join('')
+          (l.coche?(l.deal!=null?l.deal:100):0)+'"'+(l.coche?'':' disabled')+' style="width:66px"></td></tr>';}).join('')
       :'<tr><td colspan="7" class="mut">Aucun auteur au dépôt — importez le catalogue.</td></tr>';
     var avecEd=eds.some(function(x){return (x.ecrPh||0)+(x.ecr||0)>0;});
     var aPh=somme(lignes.filter(function(l){return !l.orphelin;}),'ecrPh'),aDep=somme(lignes.filter(function(l){return !l.orphelin;}),'ecr'),
@@ -3123,9 +3162,12 @@ function ficheOeuvre(code){
         var i=+this.dataset.c;lignes[i].coche=this.checked;
         var inp=el('aut-body').querySelector('[data-d="'+i+'"]');
         if(inp){inp.disabled=!this.checked;
-          if(this.checked&&(inp.value===''||lignes[i].deal==null)){
-            var sw=lignes[i].swId?store.songwriters[lignes[i].swId]:null;
-            lignes[i].deal=(sw&&sw.part!=null)?sw.part:100;inp.value=lignes[i].deal;}}
+          if(this.checked){
+            if(lignes[i].deal==null||+inp.value===0){
+              var sw=lignes[i].swId?store.songwriters[lignes[i].swId]:null;
+              lignes[i].deal=(sw&&sw.part!=null)?sw.part:100;}
+            inp.value=lignes[i].deal;
+          }else inp.value=0;}
         var tr=this.closest('tr');if(tr&&tr.children[1])tr.children[1].classList.toggle('w',this.checked);
         proposer();drawVent();};});
     el('aut-body').querySelectorAll('[data-d]').forEach(function(c){
@@ -3173,7 +3215,7 @@ function ficheOeuvre(code){
   }
   function drawVent(){
     var G=groupes();
-    el('vent-hint').innerHTML=partLigne();
+    el('vent-hint').innerHTML='';
     if(!G.length){
       el('vent').innerHTML='<div class="mut" style="font-size:12px">Cochez les ayants droit que '+
         esc(socNom(soc))+' représente : leur part est reprise de leur fiche (100 % par défaut).</div>';return;}
@@ -3379,19 +3421,20 @@ function ficheOeuvre(code){
               (autre?' — déjà liée à « '+esc(x.titre||x.code)+' »':'')+'</option>';}).join('')+
             '<option value=""'+(pisteSel===''?' selected':'')+'>+ Ajouter « '+esc(trackCourant())+' » comme nouveau titre</option>'+
           '</select></div>':'')+
-        '<div class="rowline" style="margin-top:8px"><button class="btn sm" id="pl-rep">Reprendre les infos de l\'événement</button>'+
+        '<div class="rowline" style="margin-top:8px">'+
         '<a class="btn sm" href="'+esc(lienPlanning(lie))+'" target="_blank" rel="noopener">Ouvrir dans le Planning ↗</a>'+
         '<button class="btn sm" id="pl-del">Délier</button></div>';
       if(el('pl-st'))el('pl-st').onchange=function(){statutSel=this.value;};
+      if(el('f-imp')){el('f-imp').hidden=false;el('f-imp').onclick=function(){reprendre(lie,true);};}
       if(el('pl-piste'))el('pl-piste').onchange=function(){pisteSel=this.value;
         // le titre du projet choisi est le titre commercialisé de l'œuvre
         if(pisteSel&&pisteSel!==o.titre)el('f-track').value=pisteSel;
         if(!o.cat)statutSel=(lie.sacem||{})[norm(pisteSel||trackCourant())]||'';
         drawPlan();};
-      el('pl-rep').onclick=function(){reprendre(lie,true);};
       el('pl-del').onclick=function(){relId='';pisteSel=null;statutSel='';drawPlan();};
       return;
     }
+    if(el('f-imp'))el('f-imp').hidden=true;
     if(creation)return drawCreation(box);
     var cands=PLANNING.filter(function(r){return TYPES_SORTIE[r.type];});
     var q=norm(planQ);
@@ -3483,6 +3526,13 @@ function ficheOeuvre(code){
       if(!d)return manque('Date de sortie requise pour créer l\'événement.','pc-date');
       var proj=el('pc-proj').value.trim(),nb=el('pc-nb').value.trim();
       if(pj&&!proj)return manque('Titre du projet requis pour créer l\'événement.','pc-proj');
+      // le lien saisi ici alimente la fiche : pochette et lien Spotify / YouTube
+      var lienC=el('pc-lien').value.trim();
+      if(lienC){
+        if(/spotify/.test(lienC)&&!el('f-spotify').value.trim())el('f-spotify').value=lienC;
+        else if(/youtu/.test(lienC)&&!el('f-youtube').value.trim())el('f-youtube').value=lienC;
+        if(!artUrl){el('pc-state').textContent='Pochette…';try{await majPochette(true);}catch(e){}}
+      }
       var ep=pj?lignesTitres(el('pc-ep').value):[];
       var blz=pj?choisis.map(function(c){return c===code?trackCourant():titreDuTrack(soc,c);}).filter(Boolean):[];
       var track=pj?'':el('pc-track').value.trim();
@@ -3491,7 +3541,7 @@ function ficheOeuvre(code){
         project:pj?proj:'',track:track,lieu:'',ville:'',certType:'',certLevel:'',
         epTrackCount:pj?String(nb||ep.length||''):'',epTrackNames:pj?ep.join('\n'):'',
         blzTrackCount:pj?String(blz.length):'',blzTrackNames:pj?blz.join('\n'):'',
-        country:'FR',actuDesc:'',link:el('pc-lien').value.trim(),artwork:artUrl||artDe(soc,code)||'',
+        country:'FR',actuDesc:'',link:lienC,artwork:artUrl||artDe(soc,code)||'',
         songwriters:swDes(),createdAt:new Date().toISOString(),oeuvres:{},sacem:{},
         featurings:pj?[]:listeFeat(el('f-feat')?el('f-feat').value:''),blzTracks:[]};
       choisis.forEach(function(c){var ti=c===code?trackCourant():titreDuTrack(soc,c),k=norm(ti),oc=(store.oeuvres[soc]||{})[c]||{};
@@ -3521,6 +3571,7 @@ function ficheOeuvre(code){
         if(el('f-track'))el('f-track').value=tnom!==o.titre?tnom:'';}
       if(!el('f-artiste').value.trim())el('f-artiste').value=artiste;
       if(!el('f-sortie').value)el('f-sortie').value=d;
+      reprendre(r,false);
       try{await saveEdit(soc,code);}catch(err){rates.push(titreDuTrack(soc,code)||code);}
       relId=r.id;creation=false;statutSel='';
       drawPlan();
@@ -3576,8 +3627,6 @@ function ficheOeuvre(code){
     ed.vsig=vsig(ed.alloc);
     if(ed.alloc.length>=2)ed.vok=true;else delete ed.vok;
     ed.vdate=new Date().toISOString();
-    o.titre=el('f-titre').value.trim()||o.titre;
-    var dp=el('f-depot').value;if(dp)o.depot=dp;
     this.disabled=true;el('f-state').textContent='Enregistrement…';
     try{
       // les œuvres rattachées comme versions de celle-ci

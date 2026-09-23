@@ -63,7 +63,13 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .tk-sw { grid-column: 2 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 6px; }
 .tk-swl { font-family: 'Syne Mono', monospace; font-size: 0.55rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
 .tk-chips { display: flex; flex-wrap: wrap; gap: 4px; }
-.tk-sw .form-input { width: 200px; padding: 7px 9px; font-size: 0.66rem; }
+.tk-pick { position: relative; display: inline-block; }
+.tk-sw .form-input { width: 210px; padding: 7px 9px; font-size: 0.66rem; }
+.tk-res { position: absolute; left: 0; top: calc(100% + 2px); z-index: 30; min-width: 210px; max-height: 190px; overflow-y: auto;
+  background: var(--surface); border: 1px solid var(--border); box-shadow: 0 10px 26px rgba(0,0,0,.6); }
+.tk-res[hidden] { display: none; }
+.tk-opt { display: block; padding: 7px 10px; font-size: 0.68rem; color: var(--text); cursor: pointer; }
+.tk-opt:hover { background: rgba(255,255,255,0.07); color: var(--accent); }
 .sw-tag { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--border); padding: 3px 7px; font-size: 0.62rem; color: var(--text); }
 .sw-tag button { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.6rem; padding: 0; }
 .sw-tag button:hover { color: var(--error); }
@@ -95,6 +101,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .oe-hint { font-size: 0.6rem; color: var(--muted); margin-top: 6px; line-height: 1.6; }
 .oe-empty { font-size: 0.68rem; color: #555; }
 .sacem-b.a_definir { border-color: var(--border); color: var(--muted); }
+.sacem-b.bloque { border-color: rgba(255,107,107,0.5); color: var(--error); }
 .sacem-b.en_signature { border-color: rgba(122,167,240,0.25); color: #6f8fc0; }
 .sacem-b.contrats_signes { border-color: rgba(122,167,240,0.4); color: #7aa7f0; }
 .sacem-b.non_editeur { border-color: var(--border); color: #888; font-style: italic; }
@@ -207,11 +214,20 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .recent-delete:hover { color: var(--error); }
 .empty-msg { font-size: 0.7rem; color: #444; padding: 16px 0; }
 
-@media (max-width: 560px) {
+@media (max-width: 760px) {
   nav { padding: 16px 20px; }
   .container { padding: 28px 20px 40px; }
   .form-row { grid-template-columns: 1fr; }
   .form-row-3 { grid-template-columns: 1fr; }
+  /* sur mobile, chaque champ prend toute la largeur : la recherche d'œuvre reste utilisable */
+  .oe-line, .oe-line3 { grid-template-columns: 1fr; gap: 6px; }
+  .oe-line3 .oe-track { padding-bottom: 2px; }
+  .tk-row { grid-template-columns: 22px 1fr; }
+  .tk-row .feats, .tk-row .oe-x { grid-column: 2 / -1; justify-self: start; }
+  .tk-sw { grid-column: 1 / -1; }
+  .tk-sw .form-input, .tk-pick, .tk-res { width: 100%; min-width: 0; }
+  .feat-l .form-input { width: 100%; }
+  .feats { width: 100%; }
 }
 
 /* ---- barre d'outils de la Toolbox ---- */
@@ -511,7 +527,7 @@ const normT = s => String(s == null ? '' : s).replace(/œ/g, 'oe').replace(/Œ/g
 const SOCS = [['blzante','BLZante'],['blz-publishing','BLZ Publishing'],['rossinante','Rossinante']];
 const STATUTS = [['a_definir','À définir'],['a_lancer','À lancer'],['en_cours','En cours'],
   ['en_signature','En cours de signature'],['contrats_signes','Contrats signés'],
-  ['depose','Déposé à la Sacem'],['non_editeur',"Non éditeur sur l'œuvre"]];
+  ['depose','Déposé à la Sacem'],['bloque','Bloqué'],['non_editeur',"Non éditeur sur l'œuvre"]];
 const libStatut = v => (STATUTS.find(s => s[0] === v) || STATUTS[0])[1];
 let OEUVRES = [];            // {soc, code, t, tt, a, c, f, r}
 // Une ligne par track : son libellé vit indépendamment du titre saisi plus haut.
@@ -544,15 +560,41 @@ function swHTML(l) {
   const id = l.id;
   return `<div class="tk-sw"><span class="tk-swl">Songwriters</span>
     <span class="tk-chips">${(l.sw || []).map((n, i) => `<span class="sw-tag">${esc(n)}<button type="button" data-swrm="${id}" data-i="${i}">✕</button></span>`).join('')}</span>
-    <input class="form-input" list="swListe" data-swadd="${id}" placeholder="Ajouter un songwriter BLZante…" autocomplete="off"></div>`;
+    <span class="tk-pick"><input class="form-input" data-swadd="${id}" placeholder="Chercher un songwriter…" autocomplete="off">
+      <span class="tk-res" data-swres="${id}" hidden></span></span></div>`;
 }
 function brancherSw(box, redessiner) {
-  box.querySelectorAll('[data-swadd]').forEach(i => i.addEventListener('change', function () {
-    const l = oeRows.find(z => String(z.id) === String(this.dataset.swadd)); if (!l) return;
-    const v = this.value.trim(); if (!v) return;
-    l.sw = l.sw || []; if (!l.sw.includes(v)) l.sw.push(v);
-    this.value = ''; redessiner();
-  }));
+  const noms = swNoms();
+  box.querySelectorAll('[data-swadd]').forEach(inp => {
+    const id = inp.dataset.swadd;
+    const res = box.querySelector('[data-swres="' + id + '"]');
+    const l = () => oeRows.find(z => String(z.id) === String(id));
+    const fermer = () => { res.hidden = true; res.innerHTML = ''; };
+    const ajouter = n => {
+      const r = l(); if (!r) return;
+      r.sw = r.sw || []; if (!r.sw.includes(n)) r.sw.push(n);
+      inp.value = ''; fermer(); redessiner();
+      const suivant = document.querySelector('[data-swadd="' + id + '"]'); if (suivant) suivant.focus();
+    };
+    const proposer = () => {
+      const r = l(); if (!r) return;
+      const q = normT(inp.value);
+      const dispo = noms.filter(n => !(r.sw || []).includes(n) && (!q || normT(n).includes(q))).slice(0, 8);
+      if (!dispo.length) { fermer(); return; }
+      res.innerHTML = dispo.map(n => `<span class="tk-opt" data-n="${esc(n)}">${esc(n)}</span>`).join('');
+      res.hidden = false;
+      res.querySelectorAll('.tk-opt').forEach(o => o.addEventListener('mousedown', ev => { ev.preventDefault(); ajouter(o.dataset.n); }));
+    };
+    inp.addEventListener('focus', proposer);
+    inp.addEventListener('input', proposer);
+    inp.addEventListener('blur', () => setTimeout(fermer, 150));
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault();
+        const p = res.querySelector('.tk-opt'); if (p) ajouter(p.dataset.n);
+        else if (inp.value.trim()) ajouter(inp.value.trim()); }
+      if (e.key === 'Escape') fermer();
+    });
+  });
   box.querySelectorAll('[data-swrm]').forEach(b => b.addEventListener('click', function () {
     const l = oeRows.find(z => String(z.id) === String(this.dataset.swrm)); if (!l || !l.sw) return;
     l.sw.splice(+this.dataset.i, 1); redessiner();
@@ -610,18 +652,24 @@ function propositions(l) {
   const k = normT(l.track), art = normT(document.getElementById('artistName').value);
   if (!k && !art) return [];
   const refus = l.refus || {};
+  if (!k) return [];
+  // proche = même titre, ou l'un contient l'autre sans perdre plus d'un tiers du titre
+  const proche = t => {
+    if (!t) return 0;
+    if (t === k) return 10;
+    if (k.length < 4 || t.length < 4) return 0;
+    const court = t.length < k.length ? t : k, long = t.length < k.length ? k : t;
+    if (long.includes(court) && court.length / long.length >= 0.66) return 6;
+    return 0;
+  };
   const note = o => {
     if (refus[o.soc + '|' + o.code]) return 0;
-    let n = 0;
-    const t1 = normT(o.tt), t2 = normT(o.t);
-    if (k && (t1 === k || t2 === k)) n += 10;
-    else if (k && k.length > 3 && (t1.includes(k) || t2.includes(k) || (t1 && k.includes(t1)) || (t2 && k.includes(t2)))) n += 5;
-    if (art && normT(o.a) === art) n += 3;
-    return n;
+    const n = Math.max(proche(normT(o.tt)), proche(normT(o.t)));
+    return n ? n + (art && normT(o.a) === art ? 1 : 0) : 0;
   };
-  return OEUVRES.map(o => ({ o, n: note(o) })).filter(x => x.n >= 3)
+  return OEUVRES.map(o => ({ o, n: note(o) })).filter(x => x.n > 0)
     .sort((a, b) => b.n - a.n || (a.o.t || '').localeCompare(b.o.t || '', 'fr'))
-    .slice(0, 2).map(x => x.o);
+    .slice(0, 1).map(x => x.o);
 }
 function rattacherAuto(l) {
   if (l.code) { delete l.props; return false; }
@@ -669,7 +717,7 @@ function renderTracks() {
       <div class="feats">${featsHTML(l.id, l.feats)}</div>
       <button type="button" class="oe-x" data-tkrm="${l.id}" title="Retirer ce titre">✕</button>
       ${swHTML(l)}
-    </div>`).join('') + '<datalist id="swListe">' + swNoms().map(n => `<option value="${esc(n)}">`).join('') + '</datalist>';
+    </div>`).join('');
   brancherFeats(box, () => { renderTracks(); renderOeuvres(); });
   brancherSw(box, () => { renderTracks(); renderOeuvres(); });
   box.querySelectorAll('[data-tk]').forEach(i => {

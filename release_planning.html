@@ -23,7 +23,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .nav-back:hover { color: #fff; }
 .nav-sep { color: var(--border); }
 
-.container { max-width: 900px; margin: 0 auto; padding: 40px 40px 60px; position: relative; z-index: 1; flex: 1; width: 100%; }
+.container { max-width: 1180px; margin: 0 auto; padding: 40px 40px 60px; position: relative; z-index: 1; flex: 1; width: 100%; }
 
 .header-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; border-bottom: 1px solid var(--border); padding-bottom: 20px; }
 .header-row h1 { font-family: 'Syne', sans-serif; font-size: 1.3rem; font-weight: 800; color: var(--text); line-height: 1.3; }
@@ -54,8 +54,12 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .sw-chip.on .n { color: var(--accent); }
 .fsel { display: flex; flex-direction: column; gap: 5px; }
 .fsel > span { font-family: 'Syne Mono', monospace; font-size: 0.5rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+.fsel-q input { background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: 'Syne Mono', monospace;
+  font-size: 0.6rem; padding: 8px 10px; width: 168px; }
+.fsel-q input:focus { outline: none; border-color: var(--accent); }
+.fsel-q input.on { border-color: var(--accent); color: var(--accent); }
 .fsel select { background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: 'Syne Mono', monospace;
-  font-size: 0.62rem; padding: 8px 26px 8px 9px; width: 132px; cursor: pointer; appearance: none; -webkit-appearance: none;
+  font-size: 0.6rem; padding: 8px 24px 8px 9px; width: 124px; cursor: pointer; appearance: none; -webkit-appearance: none;
   background-image: linear-gradient(45deg, transparent 50%, #777 50%), linear-gradient(135deg, #777 50%, transparent 50%);
   background-position: calc(100% - 14px) 50%, calc(100% - 9px) 50%; background-size: 5px 5px; background-repeat: no-repeat; }
 .fsel select:focus { outline: none; border-color: var(--accent); }
@@ -73,6 +77,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
   font-family: 'Syne Mono', monospace; font-size: 0.6rem; color: var(--muted);
   letter-spacing: 0.06em; text-transform: uppercase;
 }
+.fdates .date-input { width: 112px; }
 .date-input {
   background: var(--bg); border: 1px solid var(--border); color: var(--text);
   font-family: 'Syne Mono', monospace; font-size: 0.65rem; padding: 5px 8px;
@@ -123,13 +128,14 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 /* Release items - cleaner grid */
 .release-list { display: flex; flex-direction: column; gap: 1px; background: var(--border); border: 1px solid var(--border); }
 .release-item {
-  display: grid; grid-template-columns: auto 1fr auto; gap: 0 14px;
+  display: grid; grid-template-columns: auto 1fr auto auto; gap: 0 14px;
   align-items: center; padding: 10px 14px; background: var(--bg); font-size: 0.72rem;
   transition: background 0.15s;
 }
 .release-item.has-art {
-  grid-template-columns: auto auto 1fr auto;
+  grid-template-columns: auto auto 1fr auto auto;
 }
+.rel-droite { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
 .release-item:hover { background: #111; }
 .release-item.annule { opacity: 0.3; text-decoration: line-through; }
 
@@ -152,20 +158,26 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .rel-status.annule { color: #ff6b6b; border: 1px solid #4a1a1a; }
 .rel-sacem {
   font-family: 'Syne Mono', monospace;
-  font-size: 0.5rem; letter-spacing: 0.08em; text-transform: uppercase;
-  padding: 2px 6px; border: 1px solid var(--border); color: var(--muted); white-space: nowrap;
+  font-size: 0.6rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 4px 9px; border: 1px solid var(--border); color: var(--muted); white-space: nowrap;
 }
 .rel-sacem.depose { color: #4ade80; border-color: #1a3a1a; }
 .rel-sacem.en_cours { color: #f1c40f; border-color: #4a3e10; }
 .rel-sacem.a_lancer { color: #ff9f6b; border-color: #4a2e1a; }
 .rel-sacem.a_definir { color: #777; border-color: var(--border); }
 .rel-sacem.contrats_signes { color: #7aa7f0; border-color: #1f3350; }
+.rel-sacem.bloque { color: #ff6b6b; border-color: #4a1a1a; }
+.rel-tracks .dot.bloque { background: #ff6b6b; }
 .rel-sacem.en_signature { color: #6f8fc0; border-color: #1b2a40; }
-.rel-insta { font-family: 'Syne Mono', monospace; font-size: 0.5rem; letter-spacing: 0.08em; text-transform: uppercase;
-  padding: 2px 6px; border: 1px solid var(--border); white-space: nowrap; color: var(--muted); }
-.rel-insta.a_faire { color: #f1c40f; border-color: #4a3e10; }
-.rel-insta.poste { color: #4ade80; border-color: #1a3a1a; }
-.rel-insta.aucun { color: #666; }
+.rel-insta { font-family: 'Syne Mono', monospace; font-size: 0.44rem; letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 0 2px; border: none; white-space: nowrap; color: #4a4a4a; }
+.rel-insta.a_faire { color: #8a7a2e; }
+.rel-insta.poste { color: #3d6b47; }
+.rel-insta.aucun { color: #3a3a3a; }
+@media (max-width: 720px) {
+  .release-item, .release-item.has-art { grid-template-columns: auto 1fr auto; }
+  .rel-droite { grid-column: 1 / -1; flex-direction: row; align-items: center; justify-content: flex-start; margin-top: 4px; }
+}
 .rel-tracks .dot.contrats_signes { background: #7aa7f0; }
 .rel-sacem.non_editeur { color: #888; border-color: var(--border); font-style: italic; }
 .rel-tracks .dot.non_editeur { background: #555; }
@@ -305,6 +317,8 @@ nav{z-index:40 !important;gap:18px}
   </div>
 
   <div class="fbar" id="fbar">
+    <label class="fsel fsel-q"><span>Recherche</span>
+      <input type="search" id="fQ" placeholder="Artiste, titre, track…" autocomplete="off"></label>
     <label class="fsel"><span>Période</span>
       <select id="fPeriode"><option value="all">Tout</option><option value="passe">Passé</option><option value="avenir">À venir</option></select></label>
     <label class="fsel"><span>Type</span>
@@ -317,11 +331,14 @@ nav{z-index:40 !important;gap:18px}
     <label class="fsel"><span>Statut Sacem</span>
       <select id="fSacem"><option value="all">Tous</option><option value="afaire">À faire</option>
         <option value="a_definir">À définir</option><option value="a_lancer">À lancer</option><option value="en_cours">En cours</option>
+        <option value="en_signature">En cours de signature</option>
         <option value="contrats_signes">Contrats signés</option><option value="depose">Déposé à la Sacem</option>
+        <option value="bloque">Bloqué</option>
         <option value="non_editeur">Non éditeur sur l'œuvre</option></select></label>
     <label class="fsel"><span>Post Insta</span>
       <select id="fInsta"><option value="all">Tous</option><option value="a_faire">À faire</option>
         <option value="poste">Posté</option><option value="aucun">Pas de post</option></select></label>
+
     <div class="fsel"><span>Dates</span><div class="date-range-row fdates">
     <label class="date-label">Du</label>
     <input type="date" class="date-input" id="dateFrom" />
@@ -363,7 +380,7 @@ const MONTHS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','A
 // ─── Statut Sacem des titres BLZante (posé par l'outil Catalogues ou la fiche event) ───
 const SACEM_LIB = { a_definir: 'À définir', a_lancer: 'À lancer', en_cours: 'En cours',
   en_signature: 'En cours de signature', contrats_signes: 'Contrats signés',
-  depose: 'Déposé à la Sacem', non_editeur: "Non éditeur sur l'œuvre" };
+  depose: 'Déposé à la Sacem', bloque: 'Bloqué', non_editeur: "Non éditeur sur l'œuvre" };
 // Suivi du post Instagram
 const INSTA_LIB = { a_faire: 'Insta à faire', poste: 'Insta posté', aucun: 'Pas de post' };
 const instaDe = r => INSTA_LIB[r.insta] ? r.insta : 'a_faire';
@@ -404,7 +421,7 @@ function sacemResume(r) {
   if (n('non_editeur') === p.length) return { cls: 'non_editeur', lbl: 'Non éditeur' };
   if (n('contrats_signes') && n('contrats_signes') + n('non_editeur') === p.length) return { cls: 'contrats_signes', lbl: 'Contrats signés' };
   if (faits === p.length) return { cls: 'depose', lbl: 'Sacem ✓' };
-  const cls = n('a_definir') ? 'a_definir' : n('a_lancer') ? 'a_lancer' : 'en_cours';
+  const cls = n('bloque') ? 'bloque' : n('a_definir') ? 'a_definir' : n('a_lancer') ? 'a_lancer' : 'en_cours';
   const lbl = n('a_definir') === p.length ? 'Sacem à définir' : 'Sacem ' + faits + '/' + p.length;
   return { cls, lbl };
 }
@@ -419,7 +436,7 @@ function mapSwName(name) { return SW_RENAME[name] || name; }
 
 let activeFilter = 'all';   // libellé des filtres actifs (sous-titre du PDF)
 let activeSw = 'all';
-const F = { periode: 'all', type: 'all', terr: 'all', sacem: 'all', insta: 'all' };
+const F = { periode: 'all', type: 'all', terr: 'all', sacem: 'all', insta: 'all', q: '' };
 let dateFrom = '';
 let dateTo = '';
 let cachedReleases = [];
@@ -625,6 +642,12 @@ function applyTypeFilter(releases) {
   if (F.terr === 'France') result = result.filter(r => EST_SORTIE(r) && !HORS_FR(r));
   else if (F.terr === 'International') result = result.filter(r => EST_SORTIE(r) && HORS_FR(r));
   if (F.insta !== 'all') result = result.filter(r => instaDe(r) === F.insta);
+  if (F.q) {
+    const q = normT(F.q);
+    result = result.filter(r => normT([r.artist, r.title, r.track, r.project, r.actuDesc, r.lieu, r.ville,
+      (r.featurings || []).join(' '), swDe(r).join(' '), r.blzTrackNames,
+      (Array.isArray(r.blzTracks) ? r.blzTracks : []).map(t => (t && t.title) || '').join(' ')].join(' ')).includes(q));
+  }
   if (F.sacem === 'afaire') result = result.filter(r => pistesSacem(r).some(p => !SACEM_FAIT[p.statut]));
   else if (F.sacem !== 'all') result = result.filter(r => pistesSacem(r).some(p => p.statut === F.sacem));
   return applyDateFilter(result);
@@ -635,6 +658,7 @@ function libFiltres() {
   const l = [];
   ['fPeriode','fType','fTerr','fSacem','fInsta'].forEach(id => { const e = document.getElementById(id);
     if (e && e.value !== 'all') l.push(e.options[e.selectedIndex].text); });
+  if (F.q) l.push('« ' + F.q + ' »');
   return l.join(' · ') || 'all';
 }
 function majFiltres() {
@@ -643,11 +667,13 @@ function majFiltres() {
   F.terr = document.getElementById('fTerr').value;
   F.sacem = document.getElementById('fSacem').value;
   F.insta = document.getElementById('fInsta').value;
+  F.q = document.getElementById('fQ').value.trim();
+  document.getElementById('fQ').classList.toggle('on', !!F.q);
   activeFilter = libFiltres();
   let actif = false;
   ['fPeriode','fType','fTerr','fSacem','fInsta'].forEach(id => { const e = document.getElementById(id);
     if (!e) return; e.classList.toggle('on', e.value !== 'all'); if (e.value !== 'all') actif = true; });
-  if (activeSw !== 'all') actif = true;
+  if (activeSw !== 'all' || F.q) actif = true;
   document.getElementById('fReset').hidden = !actif;
 }
 
@@ -715,11 +741,6 @@ function render() {
       html += `<span class="rel-date">${r.date}</span>`;
       html += `<span class="rel-type">${r.type}</span>`;
       html += `<span class="rel-status ${stClass}">${st}</span>`;
-      const sacemR = sacemResume(r);
-      if (sacemR) html += `<span class="rel-sacem ${sacemR.cls}" title="Statut Sacem des titres BLZante">${sacemR.lbl}</span>`;
-      const ins = instaDe(r);
-      if (['Single','EP','Album','Actu','Certification'].includes(r.type))
-        html += `<span class="rel-insta ${ins}" title="Suivi du post Instagram">${INSTA_LIB[ins]}</span>`;
       if (flagDisplay) html += `<span class="rel-flag">${flagDisplay}</span>`;
       html += `</div>`;
       html += `<div class="rel-info">`;
@@ -746,6 +767,16 @@ function render() {
       if (r.epTrackNames && !r.blzTrackNames && !pistes.length) html += `<span class="rel-sw">${r.epTrackNames.replace(/\n/g, ' · ')}</span>`;
       if (swText) html += `<span class="rel-sw">${swText}</span>`;
       html += `</div>`;
+      // à droite : le statut Sacem en évidence, le suivi Insta en retrait
+      const sacemR = sacemResume(r);
+      const ins = instaDe(r);
+      const montreInsta = ['Single','EP','Album','Actu','Certification'].includes(r.type);
+      if (sacemR || montreInsta) {
+        html += `<div class="rel-droite">`;
+        if (sacemR) html += `<span class="rel-sacem ${sacemR.cls}" title="Statut Sacem des titres BLZante">${sacemR.lbl}</span>`;
+        if (montreInsta) html += `<span class="rel-insta ${ins}" title="Suivi du post Instagram">${INSTA_LIB[ins]}</span>`;
+        html += `</div>`;
+      }
       html += `<a class="rel-edit" href="release_create.html?edit=${r.id}" title="Modifier">edit</a>`;
       html += `</div>`;
     });
@@ -781,8 +812,13 @@ window.addEventListener('scroll', () => {
 ['fPeriode','fType','fTerr','fSacem','fInsta'].forEach(id => document.getElementById(id).addEventListener('change', () => {
   majFiltres(); resetPagination(); buildDashboard(); render();
 }));
+let qT = null;
+document.getElementById('fQ').addEventListener('input', () => {
+  clearTimeout(qT); qT = setTimeout(() => { majFiltres(); resetPagination(); buildDashboard(); render(); }, 200);
+});
 document.getElementById('fReset').addEventListener('click', () => {
   ['fPeriode','fType','fTerr','fSacem','fInsta'].forEach(id => { document.getElementById(id).value = 'all'; });
+  document.getElementById('fQ').value = '';
   activeSw = 'all'; buildSwFilters();
   majFiltres(); resetPagination(); buildDashboard(); render();
 });
@@ -979,7 +1015,7 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
         // Titres BLZante, avec featuring et statut de dépôt
         const pdfPistes = pistesSacem(r);
         if (pdfPistes.length) {
-          const cD = { depose: '#4ade80', contrats_signes: '#7aa7f0', en_signature: '#6f8fc0', en_cours: '#f1c40f', a_lancer: '#ff9f6b', a_definir: '#555', non_editeur: '#555' };
+          const cD = { depose: '#4ade80', contrats_signes: '#7aa7f0', en_signature: '#6f8fc0', bloque: '#ff6b6b', en_cours: '#f1c40f', a_lancer: '#ff9f6b', a_definir: '#555', non_editeur: '#555' };
           h += `<div style="color:#555;font-size:0.54rem;font-family:Syne Mono,monospace;margin-top:1px">` +
             pdfPistes.map(p => `<span style="color:${cD[p.statut]}">•</span> <span style="color:#aaa">${p.titre}</span>` +
               (p.feat ? ' feat. ' + p.feat : '')).join(' &nbsp; ') + `</div>`;
