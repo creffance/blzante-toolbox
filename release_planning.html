@@ -393,6 +393,8 @@ const normT = s => String(s == null ? '' : s).replace(/œ/g, 'oe').replace(/Œ/g
 function pistesSacem(r) {
   if (!['Single', 'EP', 'Album'].includes(r.type)) return [];
   const sacem = r.sacem || {}, oeuvres = r.oeuvres || {};
+  // une piste peut porter plusieurs œuvres (même œuvre dans deux catalogues)
+  const oeuvreDe = k => { const v = oeuvres[k]; const l = Array.isArray(v) ? v : (v ? [v] : []); return l[0] || null; };
   const feats = {};
   (Array.isArray(r.blzTracks) ? r.blzTracks : []).forEach(t => {
     if (t && t.title) feats[normT(t.title)] = (t.featurings || []).join(', '); });
@@ -405,7 +407,7 @@ function pistesSacem(r) {
   // un titre connu seulement côté Sacem / œuvres (lien posé depuis le Catalogue)
   Object.keys(sacem).concat(Object.keys(oeuvres)).forEach(k => {
     if (vus[k]) return; vus[k] = 1;
-    titres.push((oeuvres[k] && oeuvres[k].titre) || k);
+    const x0 = oeuvreDe(k); titres.push((x0 && x0.titre) || k);
   });
   if (!titres.length) return [];
   return titres.map(t => {

@@ -533,6 +533,7 @@ let OEUVRES = [];            // {soc, code, t, tt, a, c, f, r}
 // Une ligne par track : son libellé vit indépendamment du titre saisi plus haut.
 let oeRows = [];             // {id, track, feat, soc, code, titre, statut, q, open}
 let oeSeed = '';             // état des titres déjà repris, pour ne pas écraser la saisie
+let autresOeuvres = {};      // œuvres d'un autre catalogue déjà posées sur une piste : on les conserve
 let oeNext = 1;
 const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const libOe = x => (x.tt || x.t) + (x.a ? ' — ' + x.a : '') + ' · ' + (SOCS.find(s => s[0] === x.soc) || [,''])[1] + ' · ' + x.code;
@@ -821,7 +822,11 @@ function oeuvresDuFormulaire() {
     if (!k) return;
     if (seul) l.feats = listeFeat(document.getElementById('featurings').value);
     const x = oeParCode(l);
-    if (l.code) oeuvres[k] = { soc: l.soc, code: l.code, titre: l.titre || (x && x.t) || tr };
+    if (l.code) {
+      const moi = { soc: l.soc, code: l.code, titre: l.titre || (x && x.t) || tr };
+      const autres = (autresOeuvres[k] || []).filter(a => a && a.code && !(a.code === moi.code && a.soc === moi.soc));
+      oeuvres[k] = autres.length ? [moi].concat(autres) : moi;
+    } else if ((autresOeuvres[k] || []).length) oeuvres[k] = autresOeuvres[k].length > 1 ? autresOeuvres[k] : autresOeuvres[k][0];
     sacem[k] = (x && x.c) ? 'depose' : (l.statut || 'a_definir');
     blzTracks.push({ title: tr || (l.titre || ''), featurings: featsDe(l).map(f => f.trim()).filter(Boolean),
       songwriters: (l.sw || []).slice() });
@@ -1187,7 +1192,7 @@ function enterEditMode(release) {
   document.getElementById('blzTrackNames').value = release.blzTrackNames || '';
   setFeatsSingle(release.featurings || []);
   // une ligne par track connu : titres du projet, statuts Sacem, œuvres liées, featurings
-  oeRows = []; oeNext = 1; oeSeed = '';
+  oeRows = []; oeNext = 1; oeSeed = ''; autresOeuvres = {};
   const ligne = t => {
     const k = normT(t); if (!k) return null;
     let l = oeRows.find(z => normT(z.track) === k);
@@ -1201,13 +1206,19 @@ function enterEditMode(release) {
     if (t.featurings && t.featurings.length) l.feats = t.featurings.slice();
     if (t.songwriters && t.songwriters.length) l.sw = t.songwriters.slice(); });
   Object.keys(release.sacem || {}).forEach(k => {
-    const x = release.oeuvres && release.oeuvres[k];
+    const v0 = release.oeuvres && release.oeuvres[k];
+    const x = Array.isArray(v0) ? v0[0] : v0;
     const l = ligne((x && x.titre) || k) || null;
     if (l) l.statut = release.sacem[k] || 'a_definir';
   });
+  // une piste peut porter plusieurs œuvres : on garde la liste, la ligne affiche la première
+  autresOeuvres = {};
   Object.keys(release.oeuvres || {}).forEach(k => {
-    const x = release.oeuvres[k] || {}, l = ligne(x.titre || k);
-    if (l && x.code) { l.soc = x.soc; l.code = x.code; l.titre = x.titre; }
+    const v = release.oeuvres[k], tous = (Array.isArray(v) ? v : [v]).filter(x => x && x.code);
+    if (!tous.length) return;
+    const x = tous[0], l = ligne(x.titre || k);
+    if (l) { l.soc = x.soc; l.code = x.code; l.titre = x.titre; }
+    if (tous.length > 1) autresOeuvres[normT((x.titre || k))] = tous.slice(1);
   });
   // liens posés depuis l'outil Catalogues (fiche œuvre → sortie)
   OEUVRES.filter(o => String(o.r) === String(release.id)).forEach(o => {
