@@ -161,14 +161,13 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
   font-size: 0.6rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
   padding: 4px 9px; border: 1px solid var(--border); color: var(--muted); white-space: nowrap;
 }
-.rel-sacem.depose { color: #4ade80; border-color: #1a3a1a; }
-.rel-sacem.en_cours { color: #f1c40f; border-color: #4a3e10; }
-.rel-sacem.a_lancer { color: #ff9f6b; border-color: #4a2e1a; }
-.rel-sacem.a_definir { color: #777; border-color: var(--border); }
-.rel-sacem.contrats_signes { color: #7aa7f0; border-color: #1f3350; }
-.rel-sacem.bloque { color: #ff6b6b; border-color: #4a1a1a; }
-.rel-tracks .dot.bloque { background: #ff6b6b; }
-.rel-sacem.en_signature { color: #6f8fc0; border-color: #1b2a40; }
+.rel-sacem.depose { color: #2f9e5f; border-color: #16321f; background: rgba(47,158,95,0.08); }
+.rel-sacem.contrats_signes { color: #86efac; border-color: #1d3a27; background: rgba(134,239,172,0.07); }
+.rel-sacem.en_signature { color: #c2d94a; border-color: #333a15; }
+.rel-sacem.en_cours { color: #eab308; border-color: #45390a; }
+.rel-sacem.a_lancer { color: #f59e0b; border-color: #4a3410; background: rgba(245,158,11,0.07); }
+.rel-sacem.bloque { color: #ff4d4d; border-color: #4a1616; background: rgba(255,77,77,0.08); }
+.rel-sacem.a_definir { color: #f59e0b; border-color: #4a3410; }
 .rel-insta { font-family: 'Syne Mono', monospace; font-size: 0.44rem; letter-spacing: 0.08em; text-transform: uppercase;
   padding: 0 2px; border: none; white-space: nowrap; color: #4a4a4a; }
 .rel-insta.a_faire { color: #8a7a2e; }
@@ -178,15 +177,17 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
   .release-item, .release-item.has-art { grid-template-columns: auto 1fr auto; }
   .rel-droite { grid-column: 1 / -1; flex-direction: row; align-items: center; justify-content: flex-start; margin-top: 4px; }
 }
-.rel-tracks .dot.contrats_signes { background: #7aa7f0; }
 .rel-sacem.non_editeur { color: #888; border-color: var(--border); font-style: italic; }
 .rel-tracks .dot.non_editeur { background: #555; }
 .rel-tracks { color: #666; font-size: 0.55rem; font-family: 'Syne Mono', monospace; display: flex; flex-wrap: wrap; gap: 4px 10px; }
 .rel-tracks .pt { display: inline-flex; align-items: center; gap: 4px; }
 .rel-tracks .dot { width: 5px; height: 5px; border-radius: 50%; background: #444; flex-shrink: 0; }
-.rel-tracks .dot.depose { background: #4ade80; }
-.rel-tracks .dot.en_cours { background: #f1c40f; }
-.rel-tracks .dot.a_lancer { background: #ff9f6b; }
+.rel-tracks .dot.depose { background: #2f9e5f; }
+.rel-tracks .dot.contrats_signes { background: #86efac; }
+.rel-tracks .dot.en_signature { background: #c2d94a; }
+.rel-tracks .dot.en_cours { background: #eab308; }
+.rel-tracks .dot.a_lancer { background: #f59e0b; }
+.rel-tracks .dot.bloque { background: #ff4d4d; }
 .rel-tracks .tt { color: #bbb; }
 .rel-flag { font-size: 0.65rem; flex-shrink: 0; white-space: nowrap; color: #999; }
 .rel-flag img { vertical-align: middle; margin-right: 2px; }
@@ -330,7 +331,7 @@ nav{z-index:40 !important;gap:18px}
       <select id="fTerr"><option value="all">Tous</option><option value="France">France</option><option value="International">International</option></select></label>
     <label class="fsel"><span>Statut Sacem</span>
       <select id="fSacem"><option value="all">Tous</option><option value="afaire">À faire</option>
-        <option value="a_definir">À définir</option><option value="a_lancer">À lancer</option><option value="en_cours">En cours</option>
+        <option value="a_lancer">À lancer</option><option value="en_cours">En cours</option>
         <option value="en_signature">En cours de signature</option>
         <option value="contrats_signes">Contrats signés</option><option value="depose">Déposé à la Sacem</option>
         <option value="bloque">Bloqué</option>
@@ -378,9 +379,14 @@ function _waitAuth(){return new Promise((res,rej)=>{firebase.auth().onAuthStateC
 const MONTHS_FR = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 
 // ─── Statut Sacem des titres BLZante (posé par l'outil Catalogues ou la fiche event) ───
-const SACEM_LIB = { a_definir: 'À définir', a_lancer: 'À lancer', en_cours: 'En cours',
+const SACEM_LIB = { a_lancer: 'À lancer', en_cours: 'En cours',
   en_signature: 'En cours de signature', contrats_signes: 'Contrats signés',
   depose: 'Déposé à la Sacem', bloque: 'Bloqué', non_editeur: "Non éditeur sur l'œuvre" };
+// « À définir » n'existe plus : les anciennes sorties se lisent « À lancer »
+const statutOk = v => (!v || v === 'a_definir') ? 'a_lancer' : v;
+// Dégradé : orange au départ, vert de plus en plus foncé à mesure que le dépôt avance, rouge si bloqué
+const SACEM_COUL = { a_lancer: '#f59e0b', en_cours: '#eab308', en_signature: '#c2d94a',
+  contrats_signes: '#86efac', depose: '#2f9e5f', bloque: '#ff4d4d', non_editeur: '#6b6b6b' };
 // Suivi du post Instagram
 const INSTA_LIB = { a_faire: 'Insta à faire', poste: 'Insta posté', aucun: 'Pas de post' };
 const instaDe = r => INSTA_LIB[r.insta] ? r.insta : 'a_faire';
@@ -412,7 +418,7 @@ function pistesSacem(r) {
   if (!titres.length) return [];
   return titres.map(t => {
     const k = normT(t);
-    return { titre: t, feat: feats[k] || '', statut: SACEM_LIB[sacem[k]] ? sacem[k] : 'a_definir' };
+    return { titre: t, feat: feats[k] || '', statut: SACEM_LIB[statutOk(sacem[k])] ? statutOk(sacem[k]) : 'a_lancer' };
   });
 }
 function sacemResume(r) {
@@ -423,8 +429,8 @@ function sacemResume(r) {
   if (n('non_editeur') === p.length) return { cls: 'non_editeur', lbl: 'Non éditeur' };
   if (n('contrats_signes') && n('contrats_signes') + n('non_editeur') === p.length) return { cls: 'contrats_signes', lbl: 'Contrats signés' };
   if (faits === p.length) return { cls: 'depose', lbl: 'Sacem ✓' };
-  const cls = n('bloque') ? 'bloque' : n('a_definir') ? 'a_definir' : n('a_lancer') ? 'a_lancer' : 'en_cours';
-  const lbl = n('a_definir') === p.length ? 'Sacem à définir' : 'Sacem ' + faits + '/' + p.length;
+  const cls = n('bloque') ? 'bloque' : n('a_lancer') ? 'a_lancer' : n('en_cours') ? 'en_cours' : 'en_signature';
+  const lbl = n('a_lancer') === p.length ? 'Sacem à lancer' : 'Sacem ' + faits + '/' + p.length;
   return { cls, lbl };
 }
 
@@ -499,16 +505,26 @@ async function chargerSignes() {
   } catch (e) { SIGNES = null; }
 }
 function estSigne(nom) { return !SIGNES || !!SIGNES[normT(nom)]; }
-// nom de la fiche signée à laquelle un nom du planning se rattache (un membre → son duo)
-function canonSw(nom) { return (SIGNES && SIGNES[normT(nom)]) || nom; }
+// Un nom du planning peut se lire comme une seule fiche (un membre → son duo)
+// ou comme plusieurs (MAB → Gabriel et Hadrien Mabilat).
+function nomsSignes(nom) {
+  const v = SIGNES && SIGNES[normT(nom)];
+  if (!v) return [nom];
+  return Array.isArray(v) ? v : [v];
+}
+function canonSw(nom) { return nomsSignes(nom)[0]; }
 function swDe(r) { return r.songwriters ? (Array.isArray(r.songwriters) ? r.songwriters : [r.songwriters]) : []; }
-function aLeSw(r, nom) { const c = normT(nom); return swDe(r).some(x => normT(canonSw(x)) === c || normT(x) === c); }
+function aLeSw(r, nom) {
+  const c = normT(nom);
+  return swDe(r).some(x => normT(x) === c || nomsSignes(x).some(n => normT(n) === c));
+}
 // Songwriters signés : une pastille par nom, avec son nombre de sorties
 function buildSwFilters() {
   const n = {};
   cachedReleases.forEach(r => {
     const vus = {};
-    swDe(r).forEach(x => { if (!estSigne(x)) return; const c = canonSw(x); if (vus[c]) return; vus[c] = 1; n[c] = (n[c] || 0) + 1; });
+    swDe(r).forEach(x => { if (!estSigne(x)) return;
+      nomsSignes(x).forEach(c => { if (vus[c]) return; vus[c] = 1; n[c] = (n[c] || 0) + 1; }); });
   });
   const sorted = Object.keys(n).sort((a, b) => a.localeCompare(b, 'fr'));
   const box = document.getElementById('swFilters');
@@ -569,7 +585,8 @@ function buildDashboard() {
     if ((r.type === 'EP' || r.type === 'Album') && r.blzTrackCount && parseInt(r.blzTrackCount) > 0) {
       if (activeSw !== 'all' && Array.isArray(r.blzTracks) && r.blzTracks.some(t => t && Array.isArray(t.songwriters))) {
         // Count only tracks where this songwriter is credited
-        const swTracks = r.blzTracks.filter(t => t.songwriters && Array.isArray(t.songwriters) && t.songwriters.some(x => normT(canonSw(x)) === normT(activeSw)));
+        const swTracks = r.blzTracks.filter(t => t.songwriters && Array.isArray(t.songwriters) &&
+          t.songwriters.some(x => nomsSignes(x).some(n => normT(n) === normT(activeSw))));
         return sum + swTracks.length;
       }
       return sum + parseInt(r.blzTrackCount);
@@ -728,8 +745,8 @@ function render() {
       const st = r.status || 'Confirmé';
       const stClass = st === 'TBC' ? 'tbc' : st === 'Annulé' ? 'annule' : 'confirme';
 
-      const COUNTRY_FLAGS = {FR:'🇫🇷',US:'🇺🇸',GB:'🇬🇧',DE:'🇩🇪',ES:'🇪🇸',IT:'🇮🇹',BE:'🇧🇪',CH:'🇨🇭',CA:'🇨🇦',JP:'🇯🇵',KR:'🇰🇷',BR:'🇧🇷',AR:'🇦🇷',MX:'🇲🇽',NG:'🇳🇬',CI:'🇨🇮',SN:'🇸🇳',MA:'🇲🇦',DZ:'🇩🇿',CM:'🇨🇲',GN:'🇬🇳',ML:'🇲🇱',CV:'🇨🇻',NL:'🇳🇱',GA:'🇬🇦',BJ:'🇧🇯',CD:'🇨🇩',INTL:'🌍'};
-      const COUNTRY_NAMES = {FR:'France',US:'USA',GB:'UK',DE:'Allemagne',ES:'Espagne',IT:'Italie',BE:'Belgique',CH:'Suisse',CA:'Canada',JP:'Japon',KR:'Corée du Sud',BR:'Brésil',AR:'Argentine',MX:'Mexique',NG:'Nigeria',CI:"Côte d'Ivoire",SN:'Sénégal',MA:'Maroc',DZ:'Algérie',CM:'Cameroun',GN:'Guinée',ML:'Mali',CD:'RD Congo',INTL:'International'};
+      const COUNTRY_FLAGS = {FR:'🇫🇷',US:'🇺🇸',GB:'🇬🇧',DE:'🇩🇪',ES:'🇪🇸',IT:'🇮🇹',BE:'🇧🇪',CH:'🇨🇭',CA:'🇨🇦',JP:'🇯🇵',KR:'🇰🇷',BR:'🇧🇷',AR:'🇦🇷',MX:'🇲🇽',NG:'🇳🇬',CI:'🇨🇮',SN:'🇸🇳',MA:'🇲🇦',DZ:'🇩🇿',CM:'🇨🇲',GN:'🇬🇳',GH:'🇬🇭',ML:'🇲🇱',CV:'🇨🇻',NL:'🇳🇱',GA:'🇬🇦',BJ:'🇧🇯',CD:'🇨🇩',INTL:'🌍'};
+      const COUNTRY_NAMES = {FR:'France',US:'USA',GB:'UK',DE:'Allemagne',ES:'Espagne',IT:'Italie',BE:'Belgique',CH:'Suisse',CA:'Canada',JP:'Japon',KR:'Corée du Sud',BR:'Brésil',AR:'Argentine',MX:'Mexique',NG:'Nigeria',CI:"Côte d'Ivoire",SN:'Sénégal',MA:'Maroc',DZ:'Algérie',CM:'Cameroun',GN:'Guinée',GH:'Ghana',ML:'Mali',CD:'RD Congo',INTL:'International'};
       const countryCodes = r.country ? r.country.split(',').filter(Boolean) : [];
       const flagParts = countryCodes.map(c => {
         const code = c === 'INTL' ? '' : c.toLowerCase();
@@ -966,7 +983,7 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
     }
 
     const PDF_FLAGS = {FR:'🇫🇷',US:'🇺🇸',GB:'🇬🇧',DE:'🇩🇪',ES:'🇪🇸',IT:'🇮🇹',BE:'🇧🇪',CH:'🇨🇭',CA:'🇨🇦',JP:'🇯🇵',KR:'🇰🇷',BR:'🇧🇷',AR:'🇦🇷',MX:'🇲🇽',NG:'🇳🇬',CI:'🇨🇮',SN:'🇸🇳',MA:'🇲🇦',DZ:'🇩🇿',CM:'🇨🇲',GN:'🇬🇳',ML:'🇲🇱',CV:'🇨🇻',NL:'🇳🇱',GA:'🇬🇦',BJ:'🇧🇯',CD:'🇨🇩',INTL:'🌍'};
-    const PDF_NAMES = {FR:'France',US:'USA',GB:'UK',DE:'Allemagne',ES:'Espagne',IT:'Italie',BE:'Belgique',CH:'Suisse',CA:'Canada',JP:'Japon',KR:'Corée du Sud',BR:'Brésil',AR:'Argentine',MX:'Mexique',NG:'Nigeria',CI:"Côte d'Ivoire",SN:'Sénégal',MA:'Maroc',DZ:'Algérie',CM:'Cameroun',GN:'Guinée',ML:'Mali',CD:'RD Congo',INTL:'International'};
+    const PDF_NAMES = {FR:'France',US:'USA',GB:'UK',DE:'Allemagne',ES:'Espagne',IT:'Italie',BE:'Belgique',CH:'Suisse',CA:'Canada',JP:'Japon',KR:'Corée du Sud',BR:'Brésil',AR:'Argentine',MX:'Mexique',NG:'Nigeria',CI:"Côte d'Ivoire",SN:'Sénégal',MA:'Maroc',DZ:'Algérie',CM:'Cameroun',GN:'Guinée',GH:'Ghana',ML:'Mali',CD:'RD Congo',INTL:'International'};
 
     // Months
     sortedKeys.forEach(key => {
@@ -1000,7 +1017,7 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
         // Statut Sacem
         const pdfSacem = sacemResume(r);
         if (pdfSacem) {
-          const cS = pdfSacem.cls === 'depose' ? '#4ade80' : pdfSacem.cls === 'en_cours' ? '#f1c40f' : pdfSacem.cls === 'a_lancer' ? '#ff9f6b' : '#777';
+          const cS = SACEM_COUL[pdfSacem.cls] || '#777';
           h += `<div style="font-family:Syne Mono,monospace;font-size:0.52rem;letter-spacing:0.06em;text-transform:uppercase;padding:2px 7px;border:1px solid rgba(255,255,255,0.12);color:${cS};white-space:nowrap;flex-shrink:0">${pdfSacem.lbl}</div>`;
         }
 
@@ -1017,7 +1034,7 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
         // Titres BLZante, avec featuring et statut de dépôt
         const pdfPistes = pistesSacem(r);
         if (pdfPistes.length) {
-          const cD = { depose: '#4ade80', contrats_signes: '#7aa7f0', en_signature: '#6f8fc0', bloque: '#ff6b6b', en_cours: '#f1c40f', a_lancer: '#ff9f6b', a_definir: '#555', non_editeur: '#555' };
+          const cD = SACEM_COUL;
           h += `<div style="color:#555;font-size:0.54rem;font-family:Syne Mono,monospace;margin-top:1px">` +
             pdfPistes.map(p => `<span style="color:${cD[p.statut]}">•</span> <span style="color:#aaa">${p.titre}</span>` +
               (p.feat ? ' feat. ' + p.feat : '')).join(' &nbsp; ') + `</div>`;

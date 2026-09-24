@@ -100,16 +100,15 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .oe-add { background: none; border: 1px dashed var(--border); color: var(--muted); font-family: inherit; font-size: 0.62rem; padding: 7px 12px; cursor: pointer; }
 .oe-hint { font-size: 0.6rem; color: var(--muted); margin-top: 6px; line-height: 1.6; }
 .oe-empty { font-size: 0.68rem; color: #555; }
-.sacem-b.a_definir { border-color: var(--border); color: var(--muted); }
-.sacem-b.bloque { border-color: rgba(255,107,107,0.5); color: var(--error); }
-.sacem-b.en_signature { border-color: rgba(122,167,240,0.25); color: #6f8fc0; }
-.sacem-b.contrats_signes { border-color: rgba(122,167,240,0.4); color: #7aa7f0; }
 .sacem-b.non_editeur { border-color: var(--border); color: #888; font-style: italic; }
 .sacem-badges { display: inline-flex; gap: 4px; flex-wrap: wrap; }
 .sacem-b { font-size: 0.55rem; letter-spacing: 0.06em; padding: 2px 6px; border: 1px solid var(--border); color: var(--muted); white-space: nowrap; }
-.sacem-b.depose { border-color: rgba(74,222,128,0.4); color: var(--success); }
-.sacem-b.en_cours { border-color: rgba(232,197,71,0.4); color: var(--accent); }
-.sacem-b.a_lancer { border-color: rgba(255,107,107,0.35); color: var(--error); }
+.sacem-b.depose { border-color: #16321f; color: #2f9e5f; }
+.sacem-b.contrats_signes { border-color: #1d3a27; color: #86efac; }
+.sacem-b.en_signature { border-color: #333a15; color: #c2d94a; }
+.sacem-b.en_cours { border-color: #45390a; color: #eab308; }
+.sacem-b.a_lancer { border-color: #4a3410; color: #f59e0b; }
+.sacem-b.bloque { border-color: #4a1616; color: #ff4d4d; }
 .form-row-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
 
 /* Conditional fields */
@@ -314,14 +313,6 @@ nav{z-index:40 !important;gap:18px}
         <option value="Annulé" class="status-annule" id="optAnnule" style="display:none">Annulé</option>
       </select>
     </div>
-    <div class="form-group">
-      <label class="form-label">Post Insta</label>
-      <select class="form-select" id="instaSuivi">
-        <option value="a_faire">À faire</option>
-        <option value="poste">Posté</option>
-        <option value="aucun">Pas de post</option>
-      </select>
-    </div>
   </div>
 
   <div class="form-group conditional" id="countryGroup">
@@ -478,6 +469,15 @@ nav{z-index:40 !important;gap:18px}
       Une œuvre déjà au catalogue Sacem est « Déposée » d'office ; sinon choisissez le statut du dépôt.</div>
   </div>
 
+  <div class="form-group">
+    <label class="form-label">Post Insta</label>
+    <select class="form-select" id="instaSuivi">
+      <option value="a_faire">À faire</option>
+      <option value="poste">Posté</option>
+      <option value="aucun">Pas de post</option>
+    </select>
+  </div>
+
   <button class="submit-btn" id="submitBtn">⚡ Ajouter</button>
   <button class="submit-btn cancel-btn" id="cancelBtn" style="display:none">Annuler la modification</button>
   <button class="submit-btn delete-btn" id="deleteBtn" style="display:none">🗑 Supprimer cet événement</button>
@@ -525,10 +525,12 @@ let editId = null;
 const normT = s => String(s == null ? '' : s).replace(/œ/g, 'oe').replace(/Œ/g, 'OE').replace(/æ/g, 'ae').replace(/Æ/g, 'AE').replace(/ß/g, 'ss').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
   .toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim();
 const SOCS = [['blzante','BLZante'],['blz-publishing','BLZ Publishing'],['rossinante','Rossinante']];
-const STATUTS = [['a_definir','À définir'],['a_lancer','À lancer'],['en_cours','En cours'],
+const STATUTS = [['a_lancer','À lancer'],['en_cours','En cours'],
   ['en_signature','En cours de signature'],['contrats_signes','Contrats signés'],
   ['depose','Déposé à la Sacem'],['bloque','Bloqué'],['non_editeur',"Non éditeur sur l'œuvre"]];
-const libStatut = v => (STATUTS.find(s => s[0] === v) || STATUTS[0])[1];
+// « À définir » a disparu : ce qui l'était devient « À lancer »
+const statutOk = v => (!v || v === 'a_definir') ? 'a_lancer' : v;
+const libStatut = v => (STATUTS.find(s => s[0] === statutOk(v)) || STATUTS[0])[1];
 let OEUVRES = [];            // {soc, code, t, tt, a, c, f, r}
 // Une ligne par track : son libellé vit indépendamment du titre saisi plus haut.
 let oeRows = [];             // {id, track, feat, soc, code, titre, statut, q, open}
@@ -646,7 +648,7 @@ function chercherOeuvre(titre) {
   return OEUVRES.find(o => normT(o.tt) === k) || OEUVRES.find(o => normT(o.t) === k) || null;
 }
 function nouvelleLigne(track) {
-  return { id: oeNext++, track: track || '', feats: [], statut: 'a_definir', q: '' };
+  return { id: oeNext++, track: track || '', feats: [], statut: 'a_lancer', q: '' };
 }
 // Œuvres qui peuvent correspondre : titre identique, titre proche, ou même artiste.
 function propositions(l) {
@@ -654,14 +656,22 @@ function propositions(l) {
   if (!k && !art) return [];
   const refus = l.refus || {};
   if (!k) return [];
-  // proche = même titre, ou l'un contient l'autre sans perdre plus d'un tiers du titre
+  // ressemblance de titre : identique, contenu, ou proche à la lettre près
+  const bigrammes = t => { const o = []; for (let i = 0; i < t.length - 1; i++) o.push(t.slice(i, i + 2)); return o; };
+  const dice = (a, b) => {
+    const ga = bigrammes(a), gb = bigrammes(b); if (!ga.length || !gb.length) return 0;
+    const pris = {}; let com = 0;
+    ga.forEach(g => { for (let i = 0; i < gb.length; i++) if (!pris[i] && gb[i] === g) { pris[i] = 1; com++; break; } });
+    return 2 * com / (ga.length + gb.length);
+  };
   const proche = t => {
     if (!t) return 0;
     if (t === k) return 10;
     if (k.length < 4 || t.length < 4) return 0;
     const court = t.length < k.length ? t : k, long = t.length < k.length ? k : t;
-    if (long.includes(court) && court.length / long.length >= 0.66) return 6;
-    return 0;
+    if (long.includes(court) && court.length / long.length >= 0.5) return 6;
+    const d = dice(k, t);
+    return d >= 0.62 ? 3 + d : 0;
   };
   const note = o => {
     if (refus[o.soc + '|' + o.code]) return 0;
@@ -747,7 +757,7 @@ function renderOeuvres() {
   }
   box.innerHTML = lignes.map(l => {
     const x = oeParCode(l), auCatalogue = !!(x && x.c);
-    const st = auCatalogue ? 'depose' : (l.statut || 'a_definir');
+    const st = auCatalogue ? 'depose' : statutOk(l.statut);
     const q = (l.q || '').trim(), nq = normT(q);
     const feat = (typeSelect.value === 'Single' ? featsSingle : featsDe(l)).filter(Boolean).join(', ');
     const props = (!l.code && l.props ? l.props : []).map(x => OEUVRES.find(o => o.soc === x.soc && o.code === x.code)).filter(Boolean);
@@ -804,7 +814,7 @@ function renderOeuvres() {
     const l = oeRows.find(z => z.id === +this.dataset.unl); if (!l) return;
     l.refus = l.refus || {}; if (l.code) l.refus[l.soc + '|' + l.code] = 1;
     delete l.soc; delete l.code; delete l.titre; delete l.props; l.open = true; l.q = '';
-    if (l.statut === 'depose') l.statut = 'a_definir';
+    if (l.statut === 'depose') l.statut = 'a_lancer';
     maj(); focusQ(l.id);
   }));
   box.querySelectorAll('[data-st]').forEach(s => s.addEventListener('change', function () {
@@ -827,7 +837,7 @@ function oeuvresDuFormulaire() {
       const autres = (autresOeuvres[k] || []).filter(a => a && a.code && !(a.code === moi.code && a.soc === moi.soc));
       oeuvres[k] = autres.length ? [moi].concat(autres) : moi;
     } else if ((autresOeuvres[k] || []).length) oeuvres[k] = autresOeuvres[k].length > 1 ? autresOeuvres[k] : autresOeuvres[k][0];
-    sacem[k] = (x && x.c) ? 'depose' : (l.statut || 'a_definir');
+    sacem[k] = (x && x.c) ? 'depose' : statutOk(l.statut);
     blzTracks.push({ title: tr || (l.titre || ''), featurings: featsDe(l).map(f => f.trim()).filter(Boolean),
       songwriters: (l.sw || []).slice() });
   });
@@ -1040,6 +1050,7 @@ const COUNTRIES = [
   { code: 'DZ', label: '🇩🇿 Algérie' },
   { code: 'CM', label: '🇨🇲 Cameroun' },
   { code: 'GN', label: '🇬🇳 Guinée (Conakry)' },
+  { code: 'GH', label: '🇬🇭 Ghana' },
   { code: 'ML', label: '🇲🇱 Mali' },
   { code: 'CV', label: '🇨🇻 Cap-Vert' },
   { code: 'NL', label: '🇳🇱 Pays-Bas' },
@@ -1196,7 +1207,7 @@ function enterEditMode(release) {
   const ligne = t => {
     const k = normT(t); if (!k) return null;
     let l = oeRows.find(z => normT(z.track) === k);
-    if (!l) { l = { id: oeNext++, track: t, feats: [], statut: 'a_definir', q: '' }; oeRows.push(l); }
+    if (!l) { l = { id: oeNext++, track: t, feats: [], statut: 'a_lancer', q: '' }; oeRows.push(l); }
     return l;
   };
   (release.type === 'Single' ? [release.track || ''] : String(release.blzTrackNames || '').split(/\n|,|;/))

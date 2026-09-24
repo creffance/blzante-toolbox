@@ -689,11 +689,14 @@ function fusionPlanning(){
 // La base des songwriters de l'outil : Roster × Planning, moins les exclusions, plus les ajouts.
 // Réglage par défaut : le duo MAB est remplacé par Gabriel et Hadrien Mabilat, Malaka est ajouté.
 // Les membres d'un duo signé sous un seul nom sont regroupés sur sa fiche (Sacha Moisa → Malaka).
-var BASE_DEFAUT={exclus:{'MAB':1},ajouts:{'MALAKA':{nom:'MALAKA'}},membres:{'MALAKA':['SACHA MOISA','SACHA MALAKA','LAURINA MALAKA','LAURINA MOISA']}};
+var BASE_DEFAUT={exclus:{'MAB':1},ajouts:{'MALAKA':{nom:'MALAKA'}},membres:{'MALAKA':['SACHA MOISA','SACHA MALAKA','LAURINA MALAKA','LAURINA MOISA']},
+  // à l'inverse, un nom collectif qui se lit comme ses deux membres
+  eclats:{'MAB':['GABRIEL MABILAT','HADRIEN MABILAT']}};
 function baseCfg(){
   if(!store.base)store.base=JSON.parse(JSON.stringify(BASE_DEFAUT));
   store.base.exclus=store.base.exclus||{};store.base.ajouts=store.base.ajouts||{};
   // réglage ajouté après coup : complété sans toucher au reste
+  if(!store.base.eclats)store.base.eclats=JSON.parse(JSON.stringify(BASE_DEFAUT.eclats));
   if(!store.base.membres)store.base.membres={};
   Object.keys(BASE_DEFAUT.membres).forEach(function(g){
     var l=store.base.membres[g]||(store.base.membres[g]=[]);
@@ -993,6 +996,11 @@ function publierSignes(){
       var sw=store.songwriters[id];if(!sw||!estBLZ(sw))return;
       [sw.nom].concat(sw.alias||[],(sw.ads||[]).map(function(a){return a&&a.nom;}))
         .forEach(function(n){var k=norm(n);if(k)m[k]=sw.nom;});});
+    // un nom collectif se lit comme ses membres : MAB → Gabriel et Hadrien Mabilat
+    var E=(baseCfg().eclats)||{};
+    Object.keys(E).forEach(function(g){
+      var l=(E[g]||[]).filter(Boolean);if(!l.length)return;
+      m[norm(g)]=l;});
     if(!Object.keys(m).length)return;
     var j=JSON.stringify(m);
     try{if(localStorage.getItem('blz-signes')===sigCourte(j))return;}catch(e){}
@@ -1695,11 +1703,13 @@ function viewApercu(){
         return nt+' contrat'+(nt>1?'s':'')+' terminé'+(nt>1?'s':'')+' · '+ne+' externe'+(ne>1?'s':'');})())+
     '</div>';
   // répartitions : toute la chronologie au graphique, la période choisie en évidence et au tableau
-  var repsP={};(set||axe).forEach(function(n){if(F.reps[n])repsP[n]=F.reps[n];});
   var sel=null;if(set){sel={};set.forEach(function(n){sel[n]=1;});}
-  h+='<div class="grid3">'+
-    '<div class="panel"><div class="phead"><h2>Par répartition</h2>'+(S?'<span class="note">part de '+esc(store.songwriters[S].nom)+'</span>':'')+
-      '</div><div class="pbody">'+courbeReps(F.reps,axe,{sel:sel})+tableReps(repsP,null,{sansCourbe:true})+'</div></div>'+
+  // L'historique occupe toute la largeur : rien que le graphique, avec la période sous chaque colonne.
+  h+='<div class="panel"><div class="phead"><h2>Par répartition</h2>'+
+      '<span class="note">'+(S?'part de '+esc(store.songwriters[S].nom)+' · ':'')+
+      'survolez une colonne pour le détail</span></div>'+
+    '<div class="pbody">'+courbeReps(F.reps,axe,{sel:sel,W:1180,H:210,max:28,bw:44})+'</div></div>'+
+    '<div class="split">'+
     '<div class="panel"><div class="phead"><h2>Par type d\'exploitation</h2><span class="note">survolez pour le détail</span></div>'+
       '<div class="pbody">'+barres(F.fam,{detail:F.famTyp})+couverture(F)+'</div></div>'+
     '<div class="panel"><div class="phead"><h2>Par territoire</h2></div><div class="pbody">'+
@@ -2288,10 +2298,12 @@ function oeuvresDeSortie(r){
 }
 // Statut Sacem d'un track de sortie
 // « Contrats signés » : l'œuvre apparaîtra dans les prochains exports de nos catalogues
-var STATUTS_SACEM=[['a_definir','À définir'],['a_lancer','À lancer'],['en_cours','En cours'],
+var STATUTS_SACEM=[['a_lancer','À lancer'],['en_cours','En cours'],
   ['en_signature','En cours de signature'],['contrats_signes','Contrats signés'],
   ['depose','Déposé à la Sacem'],['bloque','Bloqué'],['non_editeur','Non éditeur sur l\'œuvre']];
-function libSacem(v){var x=STATUTS_SACEM.filter(function(y){return y[0]===v;})[0];return x?x[1]:'À définir';}
+// « À définir » a disparu : les anciennes fiches basculent sur « À lancer »
+function statutOk(v){return v==='a_definir'||!v?'a_lancer':v;}
+function libSacem(v){var x=STATUTS_SACEM.filter(function(y){return y[0]===statutOk(v);})[0];return x?x[1]:'À lancer';}
 function tonSacem(v){return v==='depose'||v==='contrats_signes'?'ok':v==='bloque'?'ko':v==='en_signature'?'warn':v==='non_editeur'?'neutral':v==='en_cours'||v==='a_lancer'?'warn':'neutral';}
 // Écrit le lien œuvre ↔ sortie dans la sortie : œuvre, statut Sacem, titre BLZante, et ce qui manque à l'événement
 // C'est la fiche œuvre qui fait foi : son titre et son artiste sont écrits sur l'événement.
@@ -2313,7 +2325,7 @@ function lierDansSortie(r,soc,code,info){
   else if(deja.titre!==moi.titre||deja.iswc!==moi.iswc){
     liste=liste.map(function(x){return (x.code===code&&x.soc===soc)?moi:x;});chg=true;}
   if(chg)r.oeuvres[cle]=liste.length>1?liste:liste[0];
-  var st=o.cat?'depose':(info.statut||r.sacem[cle]||'a_definir');
+  var st=o.cat?'depose':statutOk(info.statut||r.sacem[cle]);
   if(r.sacem[cle]!==st){r.sacem[cle]=st;chg=true;}
   var seul=Object.keys(r.oeuvres).length<=1;
   if(r.type==='EP'||r.type==='Album'){
@@ -2348,9 +2360,9 @@ function lierDansSortie(r,soc,code,info){
 function statutSacem(soc,code,r){
   var o=(store.oeuvres[soc]||{})[code]||{};
   if(o.cat)return 'depose';
-  if(!r)return 'a_definir';
+  if(!r)return 'a_lancer';
   var k=norm(titreDuTrack(soc,code));
-  return (r.sacem||{})[k]||'a_definir';
+  return statutOk((r.sacem||{})[k]);
 }
 function delierDansSortie(r,soc,code){
   var chg=false;
@@ -2613,13 +2625,13 @@ function axeReps(soc){
 // Évolution par répartition : colonnes d'un seul ton, la dernière étiquetée, le détail au survol
 function courbeReps(reps,axe,opt){opt=opt||{};
   var k=(axe&&axe.length?axe:Object.keys(reps||{}).filter(function(x){return /^\d+$/.test(x);})
-    .map(Number).sort(function(a,b){return a-b;})).slice(-16);
+    .map(Number).sort(function(a,b){return a-b;})).slice(-(opt.max||16));
   if(k.length<2)return '';
   var v=k.map(function(n){return (reps||{})[n]||0;});
   var mx=Math.max.apply(null,v.concat([0]));if(mx<=0)return '';
   var pas=Math.pow(10,Math.floor(Math.log10(mx))),haut=Math.ceil(mx/pas)*pas;
   if(haut/pas>5&&haut%(2*pas))haut=Math.ceil(mx/(2*pas))*2*pas;
-  var W=opt.W||340,H=(opt.H||118)+12,g=34,d=6,top=16,bas=H-30,band=(W-g-d)/k.length,bw=Math.min(22,band*0.62);
+  var W=opt.W||340,H=(opt.H||118)+12,g=34,d=6,top=16,bas=H-30,band=(W-g-d)/k.length,bw=Math.min(opt.bw||22,band*0.62);
   var per=function(n){var q=((n-665)%4+4)%4,an=String(repDate(n).an).slice(2);
     return band>=44?['janv.','avr.','juil.','oct.'][q]+' '+an:band>=24?['01','04','07','10'][q]+'/'+an:'';};
   var y=function(x){return bas-(bas-top)*x/haut;};
@@ -3486,7 +3498,7 @@ function ficheOeuvre(code){
         pisteSel=deja||meme||'';}
       var cle=norm(projet&&pisteSel?pisteSel:trackCourant());
       if(o.cat)statutSel='depose';
-      else if(!statutSel)statutSel=(lie.sacem||{})[cle]||'a_definir';
+      else if(!statutSel)statutSel=statutOk((lie.sacem||{})[cle]);
       box.innerHTML=carteSortie(lie)+
         '<div class="rowline" style="font-size:12px;margin-top:6px"><span class="mut">Statut Sacem du track :</span> '+
           (o.cat?'<span class="tag ok">'+esc(libSacem('depose'))+'</span>'
@@ -3518,7 +3530,7 @@ function ficheOeuvre(code){
       if(el('pl-piste'))el('pl-piste').onchange=function(){pisteSel=this.value;
         // le titre du projet choisi est le titre commercialisé de l'œuvre
         if(pisteSel&&pisteSel!==o.titre)el('f-track').value=pisteSel;
-        if(!o.cat)statutSel=(lie.sacem||{})[norm(pisteSel||trackCourant())]||'';
+        if(!o.cat)statutSel=statutOk((lie.sacem||{})[norm(pisteSel||trackCourant())]);
         drawPlan();};
       el('pl-del').onclick=function(){relId='';pisteSel=null;statutSel='';drawPlan();};
       return;
@@ -3636,7 +3648,7 @@ function ficheOeuvre(code){
         songwriters:swDes(),createdAt:new Date().toISOString(),oeuvres:{},sacem:{},
         featurings:pj?[]:listeFeat(el('f-feat')?el('f-feat').value:''),blzTracks:[]};
       choisis.forEach(function(c){var ti=c===code?trackCourant():titreDuTrack(soc,c),k=norm(ti),oc=(store.oeuvres[soc]||{})[c]||{};
-        r.oeuvres[k]={soc:soc,code:c,titre:oc.titre||ti};r.sacem[k]=oc.cat?'depose':'a_definir';
+        r.oeuvres[k]={soc:soc,code:c,titre:oc.titre||ti};r.sacem[k]=oc.cat?'depose':'a_lancer';
         var ft=c===code?(el('f-feat')?el('f-feat').value:''):featDe(soc,c);
         if(pj)r.blzTracks.push({title:ti,featurings:listeFeat(ft)});});
       var bt=this;bt.disabled=true;el('pc-state').textContent='Création…';
