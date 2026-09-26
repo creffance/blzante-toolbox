@@ -470,6 +470,12 @@ nav{z-index:40 !important;gap:18px}
   </div>
 
   <div class="form-group">
+    <label class="form-label">Fiche Coda</label>
+    <input type="text" class="form-input" id="codaLink" placeholder="Coller le lien de la fiche Coda de la sortie" autocomplete="off" />
+    <div class="oe-hint" id="codaHint" style="display:none"></div>
+  </div>
+
+  <div class="form-group">
     <label class="form-label">Post Insta</label>
     <select class="form-select" id="instaSuivi">
       <option value="a_faire">À faire</option>
@@ -1027,6 +1033,24 @@ document.getElementById('releaseLink').addEventListener('input', function() {
   else clearArtwork();
 });
 
+// ─── Fiche Coda ───
+function majCoda() {
+  const u = (document.getElementById('codaLink').value || '').trim();
+  const h = document.getElementById('codaHint');
+  if (!h) return;
+  if (/^https?:\/\//i.test(u)) {
+    h.style.display = '';
+    h.innerHTML = '<a href="' + esc(u) + '" target="_blank" rel="noopener" style="color:#e8c547;text-decoration:none">↗ Ouvrir la fiche Coda</a>';
+  } else if (u) {
+    h.style.display = '';
+    h.textContent = 'Lien incomplet — collez l’URL complète de la fiche Coda (https://…).';
+  } else {
+    h.style.display = 'none';
+    h.textContent = '';
+  }
+}
+document.getElementById('codaLink').addEventListener('input', majCoda);
+
 // ─── Country searchable picker ───
 const COUNTRIES = [
   { code: 'FR', label: '🇫🇷 France' },
@@ -1196,6 +1220,8 @@ function enterEditMode(release) {
   setCountry(release.country || 'FR');
   document.getElementById('actuDesc').value = release.actuDesc || '';
   document.getElementById('releaseLink').value = release.link || '';
+  document.getElementById('codaLink').value = release.coda || '';
+  majCoda();
   if (release.artwork) showArtwork(release.artwork);
   document.getElementById('epTrackCount').value = release.epTrackCount || '';
   document.getElementById('epTrackNames').value = release.epTrackNames || '';
@@ -1284,6 +1310,8 @@ function resetForm() {
   setCountry('FR');
   document.getElementById('actuDesc').value = '';
   document.getElementById('releaseLink').value = '';
+  document.getElementById('codaLink').value = '';
+  majCoda();
   clearArtwork();
   selectedSw = [];
   swOptions.forEach(o => o.classList.remove('selected'));
@@ -1376,6 +1404,7 @@ submitBtn.addEventListener('click', async () => {
       country: ['Single','EP','Album'].includes(type) ? document.getElementById('releaseCountry').value : '',
       actuDesc: type === 'Actu' ? document.getElementById('actuDesc').value.trim() : '',
       link: document.getElementById('releaseLink').value.trim(),
+      coda: document.getElementById('codaLink').value.trim(),
       insta: document.getElementById('instaSuivi').value,
       artwork: extractedArtwork,
       songwriters: swDeLaSortie(liens.blzTracks), createdAt: precedent.createdAt || new Date().toISOString(),

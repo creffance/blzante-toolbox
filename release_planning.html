@@ -170,6 +170,9 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .rel-sacem.a_definir { color: #f59e0b; border-color: #4a3410; }
 .rel-insta { font-family: 'Syne Mono', monospace; font-size: 0.44rem; letter-spacing: 0.08em; text-transform: uppercase;
   padding: 0 2px; border: none; white-space: nowrap; color: #4a4a4a; }
+.rel-coda { font-family: 'Syne Mono', monospace; font-size: 0.44rem; letter-spacing: 0.08em; text-transform: uppercase;
+  color: #4a6b7a; text-decoration: none; white-space: nowrap; padding: 0 2px; }
+.rel-coda:hover { color: #8fc4dd; }
 .rel-insta.a_faire { color: #8a7a2e; }
 .rel-insta.poste { color: #3d6b47; }
 .rel-insta.aucun { color: #3a3a3a; }
@@ -790,10 +793,12 @@ function render() {
       const sacemR = sacemResume(r);
       const ins = instaDe(r);
       const montreInsta = ['Single','EP','Album','Actu','Certification'].includes(r.type);
-      if (sacemR || montreInsta) {
+      const coda = /^https?:\/\//i.test(r.coda || '') ? r.coda : '';
+      if (sacemR || montreInsta || coda) {
         html += `<div class="rel-droite">`;
         if (sacemR) html += `<span class="rel-sacem ${sacemR.cls}" title="Statut Sacem des titres BLZante">${sacemR.lbl}</span>`;
         if (montreInsta) html += `<span class="rel-insta ${ins}" title="Suivi du post Instagram">${INSTA_LIB[ins]}</span>`;
+        if (coda) html += `<a class="rel-coda" href="${coda.replace(/"/g, '&quot;')}" target="_blank" rel="noopener" title="Ouvrir la fiche Coda" onclick="event.stopPropagation()">↗ Coda</a>`;
         html += `</div>`;
       }
       html += `<a class="rel-edit" href="release_create.html?edit=${r.id}" title="Modifier">edit</a>`;
