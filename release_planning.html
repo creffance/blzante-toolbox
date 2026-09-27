@@ -170,6 +170,9 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .rel-sacem.a_definir { color: #f59e0b; border-color: #4a3410; }
 .rel-insta { font-family: 'Syne Mono', monospace; font-size: 0.44rem; letter-spacing: 0.08em; text-transform: uppercase;
   padding: 0 2px; border: none; white-space: nowrap; color: #4a4a4a; }
+/* la sortie que l'on vient de modifier : repérée une poignée de secondes au retour */
+.release-item.rel-retour { outline: 1px solid var(--accent); background: rgba(232,197,71,0.07); animation: relFlash 2.8s ease-out; }
+@keyframes relFlash { 0%,18% { background: rgba(232,197,71,0.20); } 100% { background: rgba(232,197,71,0.00); } }
 .rel-coda { font-family: 'Syne Mono', monospace; font-size: 0.44rem; letter-spacing: 0.08em; text-transform: uppercase;
   color: #4a6b7a; text-decoration: none; white-space: nowrap; padding: 0 2px; }
 .rel-coda:hover { color: #8fc4dd; }
@@ -184,6 +187,8 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .rel-tracks .dot.non_editeur { background: #555; }
 .rel-tracks { color: #666; font-size: 0.55rem; font-family: 'Syne Mono', monospace; display: flex; flex-wrap: wrap; gap: 4px 10px; }
 .rel-tracks .pt { display: inline-flex; align-items: center; gap: 4px; }
+.rel-tracks .pt-coda { color: #4a6b7a; text-decoration: none; letter-spacing: 0.06em; margin-left: 2px; }
+.rel-tracks .pt-coda:hover { color: #8fc4dd; }
 .rel-tracks .dot { width: 5px; height: 5px; border-radius: 50%; background: #444; flex-shrink: 0; }
 .rel-tracks .dot.depose { background: #2f9e5f; }
 .rel-tracks .dot.contrats_signes { background: #86efac; }
@@ -404,24 +409,41 @@ function pistesSacem(r) {
   const sacem = r.sacem || {}, oeuvres = r.oeuvres || {};
   // une piste peut porter plusieurs œuvres (même œuvre dans deux catalogues)
   const oeuvreDe = k => { const v = oeuvres[k]; const l = Array.isArray(v) ? v : (v ? [v] : []); return l[0] || null; };
-  const feats = {};
+  const feats = {}, codas = {};
   (Array.isArray(r.blzTracks) ? r.blzTracks : []).forEach(t => {
-    if (t && t.title) feats[normT(t.title)] = (t.featurings || []).join(', '); });
+    if (!t || !t.title) return;
+    feats[normT(t.title)] = (t.featurings || []).join(', ');
+    if (/^https?:\/\//i.test(t.coda || '')) codas[normT(t.title)] = t.coda; });
   let titres = (Array.isArray(r.blzTracks) ? r.blzTracks : []).map(t => t && t.title).filter(Boolean);
   if (!titres.length) titres = r.type === 'Single'
     ? [r.track || r.title || ''].filter(Boolean)
     : String(r.blzTrackNames || '').split(/\n|,|;/).map(x => x.trim()).filter(Boolean);
+  // chaque ligne garde le titre commercialisé affiché et la clé sous laquelle le dépôt est stocké
+  const lignes = titres.map(t => ({ titre: t, cle: normT(t) }));
   const vus = {};
-  titres.forEach(t => { vus[normT(t)] = 1; });
-  // un titre connu seulement côté Sacem / œuvres (lien posé depuis le Catalogue)
+  lignes.forEach(l => { vus[l.cle] = 1; });
+  // une clé connue seulement côté Sacem / œuvres : lien posé depuis le Catalogue
+  const orphelins = [];
   Object.keys(sacem).concat(Object.keys(oeuvres)).forEach(k => {
-    if (vus[k]) return; vus[k] = 1;
-    const x0 = oeuvreDe(k); titres.push((x0 && x0.titre) || k);
+    if (vus[k]) return; vus[k] = 1; orphelins.push(k);
   });
-  if (!titres.length) return [];
-  return titres.map(t => {
-    const k = normT(t);
-    return { titre: t, feat: feats[k] || '', statut: SACEM_LIB[statutOk(sacem[k])] ? statutOk(sacem[k]) : 'a_lancer' };
+  if (r.type === 'Single' && lignes.length === 1 && orphelins.length === 1) {
+    // un single ne porte qu'un titre commercialisé : le dépôt s'y rattache, on l'affiche lui et pas le titre du dépôt
+    lignes[0].cle = orphelins[0];
+  } else {
+    orphelins.forEach(k => {
+      const x0 = oeuvreDe(k);
+      // titre du track commercialisé si le Catalogue l'a enregistré, sinon le titre du dépôt
+      lignes.push({ titre: (x0 && (x0.track || x0.titre)) || k, cle: k });
+    });
+  }
+  if (!lignes.length) return [];
+  // fiche Coda de la sortie posée avant qu'elles ne passent par track : elle vaut pour le seul titre
+  const codaSeule = lignes.length === 1 && !Object.keys(codas).length && /^https?:\/\//i.test(r.coda || '') ? r.coda : '';
+  return lignes.map(l => {
+    const st = statutOk(sacem[l.cle]), k = normT(l.titre);
+    return { titre: l.titre, feat: feats[k] || '', statut: SACEM_LIB[st] ? st : 'a_lancer',
+      coda: codas[k] || codaSeule || '' };
   });
 }
 function sacemResume(r) {
@@ -495,6 +517,7 @@ function rafraichir(enCours) {
     if (JSON.stringify(d) === JSON.stringify(brutReleases)) return;
     brutReleases = d; adopterReleases(d);
     buildSwFilters(); majFiltres(); buildDashboard(); render();
+    if (retourEnAttente) revenirSurSortie(retourEnAttente);
   });
 }
 
@@ -748,8 +771,8 @@ function render() {
       const st = r.status || 'Confirmé';
       const stClass = st === 'TBC' ? 'tbc' : st === 'Annulé' ? 'annule' : 'confirme';
 
-      const COUNTRY_FLAGS = {FR:'🇫🇷',US:'🇺🇸',GB:'🇬🇧',DE:'🇩🇪',ES:'🇪🇸',IT:'🇮🇹',BE:'🇧🇪',CH:'🇨🇭',CA:'🇨🇦',JP:'🇯🇵',KR:'🇰🇷',BR:'🇧🇷',AR:'🇦🇷',MX:'🇲🇽',NG:'🇳🇬',CI:'🇨🇮',SN:'🇸🇳',MA:'🇲🇦',DZ:'🇩🇿',CM:'🇨🇲',GN:'🇬🇳',GH:'🇬🇭',ML:'🇲🇱',CV:'🇨🇻',NL:'🇳🇱',GA:'🇬🇦',BJ:'🇧🇯',CD:'🇨🇩',INTL:'🌍'};
-      const COUNTRY_NAMES = {FR:'France',US:'USA',GB:'UK',DE:'Allemagne',ES:'Espagne',IT:'Italie',BE:'Belgique',CH:'Suisse',CA:'Canada',JP:'Japon',KR:'Corée du Sud',BR:'Brésil',AR:'Argentine',MX:'Mexique',NG:'Nigeria',CI:"Côte d'Ivoire",SN:'Sénégal',MA:'Maroc',DZ:'Algérie',CM:'Cameroun',GN:'Guinée',GH:'Ghana',ML:'Mali',CD:'RD Congo',INTL:'International'};
+      const COUNTRY_FLAGS = {FR:'🇫🇷',US:'🇺🇸',GB:'🇬🇧',DE:'🇩🇪',ES:'🇪🇸',IT:'🇮🇹',BE:'🇧🇪',CH:'🇨🇭',CA:'🇨🇦',JP:'🇯🇵',KR:'🇰🇷',BR:'🇧🇷',AR:'🇦🇷',MX:'🇲🇽',NG:'🇳🇬',CI:'🇨🇮',SN:'🇸🇳',MA:'🇲🇦',DZ:'🇩🇿',CM:'🇨🇲',GN:'🇬🇳',GH:'🇬🇭',EC:'🇪🇨',ML:'🇲🇱',CV:'🇨🇻',NL:'🇳🇱',GA:'🇬🇦',BJ:'🇧🇯',CD:'🇨🇩',INTL:'🌍'};
+      const COUNTRY_NAMES = {FR:'France',US:'USA',GB:'UK',DE:'Allemagne',ES:'Espagne',IT:'Italie',BE:'Belgique',CH:'Suisse',CA:'Canada',JP:'Japon',KR:'Corée du Sud',BR:'Brésil',AR:'Argentine',MX:'Mexique',NG:'Nigeria',CI:"Côte d'Ivoire",SN:'Sénégal',MA:'Maroc',DZ:'Algérie',CM:'Cameroun',GN:'Guinée',GH:'Ghana',EC:'Équateur',ML:'Mali',CD:'RD Congo',INTL:'International'};
       const countryCodes = r.country ? r.country.split(',').filter(Boolean) : [];
       const flagParts = countryCodes.map(c => {
         const code = c === 'INTL' ? '' : c.toLowerCase();
@@ -782,7 +805,9 @@ function render() {
       if (pistes.length) {
         html += `<span class="rel-tracks">` + pistes.map(p =>
           `<span class="pt" title="Sacem : ${SACEM_LIB[p.statut]}"><i class="dot ${p.statut}"></i>` +
-          `<span class="tt">${p.titre}</span>${p.feat ? ' feat. ' + p.feat : ''}</span>`).join('') + `</span>`;
+          `<span class="tt">${p.titre}</span>${p.feat ? ' feat. ' + p.feat : ''}` +
+          (p.coda ? `<a class="pt-coda" href="${p.coda.replace(/"/g, '&quot;')}" target="_blank" rel="noopener" title="Fiche Coda du track">↗ Coda</a>` : '') +
+          `</span>`).join('') + `</span>`;
       } else if (r.blzTrackNames) {
         html += `<span class="rel-sw">${r.blzTrackNames.replace(/\n/g, ' · ')}</span>`;
       }
@@ -793,7 +818,8 @@ function render() {
       const sacemR = sacemResume(r);
       const ins = instaDe(r);
       const montreInsta = ['Single','EP','Album','Actu','Certification'].includes(r.type);
-      const coda = /^https?:\/\//i.test(r.coda || '') ? r.coda : '';
+      // les fiches Coda s'affichent titre par titre ; il n'en reste ici que si aucune piste n'est listée
+      const coda = !pistes.length && /^https?:\/\//i.test(r.coda || '') ? r.coda : '';
       if (sacemR || montreInsta || coda) {
         html += `<div class="rel-droite">`;
         if (sacemR) html += `<span class="rel-sacem ${sacemR.cls}" title="Statut Sacem des titres BLZante">${sacemR.lbl}</span>`;
@@ -801,7 +827,7 @@ function render() {
         if (coda) html += `<a class="rel-coda" href="${coda.replace(/"/g, '&quot;')}" target="_blank" rel="noopener" title="Ouvrir la fiche Coda" onclick="event.stopPropagation()">↗ Coda</a>`;
         html += `</div>`;
       }
-      html += `<a class="rel-edit" href="release_create.html?edit=${r.id}" title="Modifier">edit</a>`;
+      html += `<a class="rel-edit" href="release_create.html?edit=${r.id}&retour=planning" title="Modifier">edit</a>`;
       html += `</div>`;
     });
 
@@ -820,6 +846,68 @@ function render() {
 function resetPagination() {
   displayLimit = PAGE_INITIAL;
 }
+
+/* ─── Retour à l'endroit où l'on était après une modification ───
+   Le planning note la sortie éditée, la position et les filtres actifs ;
+   release_create.html renvoie ici avec ?focus=<id> après l'enregistrement. */
+const RETOUR_CLE = 'blz-planning-retour';
+function etatFiltres() {
+  const g = id => { const e = document.getElementById(id); return e ? e.value : ''; };
+  return { periode: g('fPeriode'), type: g('fType'), terr: g('fTerr'), sacem: g('fSacem'), insta: g('fInsta'),
+    q: g('fQ'), df: g('dateFrom'), dt: g('dateTo'), sw: activeSw, limit: displayLimit };
+}
+function memoriserRetour(id) {
+  try {
+    sessionStorage.setItem(RETOUR_CLE, JSON.stringify({
+      id: String(id), y: Math.round(window.scrollY), f: etatFiltres(), t: Date.now() }));
+  } catch(e) {}
+}
+function lireRetour() {
+  const focus = new URLSearchParams(location.search).get('focus');
+  let m = null;
+  try { m = JSON.parse(sessionStorage.getItem(RETOUR_CLE) || 'null'); } catch(e) {}
+  try { sessionStorage.removeItem(RETOUR_CLE); } catch(e) {}
+  if (!focus) return null;
+  const memeSortie = m && String(m.id) === String(focus);
+  return { id: String(focus), y: memeSortie ? m.y : null, f: memeSortie ? m.f : null };
+}
+// remet les filtres tels qu'ils étaient avant l'aller-retour vers la fiche
+function appliquerEtat(s) {
+  if (!s) return;
+  const p = (id, v) => { const e = document.getElementById(id); if (e && v != null && v !== '') e.value = v; };
+  p('fPeriode', s.periode); p('fType', s.type); p('fTerr', s.terr); p('fSacem', s.sacem); p('fInsta', s.insta);
+  p('fQ', s.q); p('dateFrom', s.df); p('dateTo', s.dt);
+  dateFrom = (s.df || ''); dateTo = (s.dt || '');
+  if (dateClearEl) dateClearEl.classList.toggle('visible', !!(dateFrom || dateTo));
+  if (s.sw) activeSw = s.sw;
+  if (s.limit && s.limit > displayLimit) displayLimit = s.limit;
+}
+function carteSortie(id) { return document.querySelector('.release-item[data-id="' + String(id).replace(/"/g, '\\"') + '"]'); }
+// la base peut répondre après le premier affichage : on se repositionne aussi après ce rafraîchissement
+let retourEnAttente = null;
+function revenirSurSortie(ret) {
+  if (!ret) return;
+  // on déroule la pagination jusqu'à ce que la sortie soit rendue
+  let garde = 0;
+  while (!carteSortie(ret.id) && displayLimit < totalFiltered && garde++ < 80) {
+    displayLimit += PAGE_INCREMENT; render();
+  }
+  const el = carteSortie(ret.id);
+  if (el) {
+    el.scrollIntoView({ block: 'center' });
+    el.classList.add('rel-retour');
+    setTimeout(() => el.classList.remove('rel-retour'), 2800);
+  } else if (ret.y != null) window.scrollTo(0, ret.y);
+  // l'URL redevient propre : un rafraîchissement ne rejoue pas le retour
+  try { history.replaceState(null, '', location.pathname); } catch(e) {}
+}
+// tout clic sur « edit » mémorise où l'on était
+document.addEventListener('click', ev => {
+  const a = ev.target && ev.target.closest && ev.target.closest('a.rel-edit');
+  if (!a) return;
+  const it = a.closest('.release-item');
+  if (it && it.dataset.id) memoriserRetour(it.dataset.id);
+});
 
 // Infinite scroll
 window.addEventListener('scroll', () => {
@@ -852,11 +940,16 @@ document.getElementById('fReset').addEventListener('click', () => {
   try { await _waitAuth(); } catch(e) { return; }
 
   document.getElementById('stats').textContent = 'Chargement...';
+  const retour = lireRetour();
+  retourEnAttente = retour;
+  if (retour) setTimeout(() => { retourEnAttente = null; }, 8000);
   await Promise.all([fetchReleases(), chargerSignes()]);
+  appliquerEtat(retour && retour.f);
   majFiltres();
   buildSwFilters();
   buildDashboard();
   render();
+  revenirSurSortie(retour);
   // Les photos du roster servent à l'export : on les charge sans retarder l'affichage.
   (async () => {  try {
     const rosterRes = await dbFetch('/roster.json');
@@ -988,7 +1081,7 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
     }
 
     const PDF_FLAGS = {FR:'🇫🇷',US:'🇺🇸',GB:'🇬🇧',DE:'🇩🇪',ES:'🇪🇸',IT:'🇮🇹',BE:'🇧🇪',CH:'🇨🇭',CA:'🇨🇦',JP:'🇯🇵',KR:'🇰🇷',BR:'🇧🇷',AR:'🇦🇷',MX:'🇲🇽',NG:'🇳🇬',CI:'🇨🇮',SN:'🇸🇳',MA:'🇲🇦',DZ:'🇩🇿',CM:'🇨🇲',GN:'🇬🇳',ML:'🇲🇱',CV:'🇨🇻',NL:'🇳🇱',GA:'🇬🇦',BJ:'🇧🇯',CD:'🇨🇩',INTL:'🌍'};
-    const PDF_NAMES = {FR:'France',US:'USA',GB:'UK',DE:'Allemagne',ES:'Espagne',IT:'Italie',BE:'Belgique',CH:'Suisse',CA:'Canada',JP:'Japon',KR:'Corée du Sud',BR:'Brésil',AR:'Argentine',MX:'Mexique',NG:'Nigeria',CI:"Côte d'Ivoire",SN:'Sénégal',MA:'Maroc',DZ:'Algérie',CM:'Cameroun',GN:'Guinée',GH:'Ghana',ML:'Mali',CD:'RD Congo',INTL:'International'};
+    const PDF_NAMES = {FR:'France',US:'USA',GB:'UK',DE:'Allemagne',ES:'Espagne',IT:'Italie',BE:'Belgique',CH:'Suisse',CA:'Canada',JP:'Japon',KR:'Corée du Sud',BR:'Brésil',AR:'Argentine',MX:'Mexique',NG:'Nigeria',CI:"Côte d'Ivoire",SN:'Sénégal',MA:'Maroc',DZ:'Algérie',CM:'Cameroun',GN:'Guinée',GH:'Ghana',EC:'Équateur',ML:'Mali',CD:'RD Congo',INTL:'International'};
 
     // Months
     sortedKeys.forEach(key => {

@@ -53,6 +53,14 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .oe-row .form-select:disabled { opacity: 0.7; cursor: default; }
 .oe-x { background: none; border: 1px solid var(--border); color: var(--muted); font-family: inherit; font-size: 0.7rem; cursor: pointer; padding: 6px 0; }
 .oe-x:hover { color: var(--error); border-color: rgba(255,107,107,0.4); }
+/* Fiches Coda : une ligne par titre */
+.cd-row { display: grid; grid-template-columns: minmax(110px,1fr) 1.6fr 60px; gap: 8px; align-items: center;
+  border: 1px solid var(--border); padding: 8px; margin-bottom: 8px; }
+.cd-track { font-size: 0.72rem; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cd-row .form-input { padding: 9px 10px; font-size: 0.72rem; }
+.cd-go { color: #e8c547; text-decoration: none; font-size: 0.8rem; text-align: center; }
+.cd-go:hover { text-decoration: underline; }
+.cd-ko { font-size: 0.58rem; color: var(--muted); text-align: center; }
 .oe-res { border: 1px solid var(--border); border-top: none; max-height: 168px; overflow-y: auto; }
 .oe-opt { padding: 7px 10px; font-size: 0.66rem; color: var(--muted); cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.05); }
 .oe-opt:hover { background: rgba(255,255,255,0.05); color: var(--text); }
@@ -220,6 +228,8 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
   .form-row-3 { grid-template-columns: 1fr; }
   /* sur mobile, chaque champ prend toute la largeur : la recherche d'œuvre reste utilisable */
   .oe-line, .oe-line3 { grid-template-columns: 1fr; gap: 6px; }
+  .cd-row { grid-template-columns: 1fr 44px; }
+  .cd-track { grid-column: 1 / -1; }
   .oe-line3 .oe-track { padding-bottom: 2px; }
   .tk-row { grid-template-columns: 22px 1fr; }
   .tk-row .feats, .tk-row .oe-x { grid-column: 2 / -1; justify-self: start; }
@@ -469,10 +479,10 @@ nav{z-index:40 !important;gap:18px}
       Une œuvre déjà au catalogue Sacem est « Déposée » d'office ; sinon choisissez le statut du dépôt.</div>
   </div>
 
-  <div class="form-group">
-    <label class="form-label">Fiche Coda</label>
-    <input type="text" class="form-input" id="codaLink" placeholder="Coller le lien de la fiche Coda de la sortie" autocomplete="off" />
-    <div class="oe-hint" id="codaHint" style="display:none"></div>
+  <div class="form-group conditional" id="codaGroup">
+    <label class="form-label">Fiches Coda</label>
+    <div id="codaRows"></div>
+    <div class="oe-hint">Un lien par titre : la fiche Coda du track, pas celle de la sortie.</div>
   </div>
 
   <div class="form-group">
@@ -654,7 +664,7 @@ function chercherOeuvre(titre) {
   return OEUVRES.find(o => normT(o.tt) === k) || OEUVRES.find(o => normT(o.t) === k) || null;
 }
 function nouvelleLigne(track) {
-  return { id: oeNext++, track: track || '', feats: [], statut: 'a_lancer', q: '' };
+  return { id: oeNext++, track: track || '', feats: [], statut: 'a_lancer', q: '', coda: '' };
 }
 // Œuvres qui peuvent correspondre : titre identique, titre proche, ou même artiste.
 function propositions(l) {
@@ -759,6 +769,7 @@ function renderOeuvres() {
     box.innerHTML = '<div class="oe-empty">' + (estProjet()
       ? 'Renseignez les titres BLZante du projet ci-dessus.'
       : 'Renseignez le nom du track ci-dessus.') + '</div>';
+    renderCoda();
     return;
   }
   box.innerHTML = lignes.map(l => {
@@ -825,6 +836,7 @@ function renderOeuvres() {
   }));
   box.querySelectorAll('[data-st]').forEach(s => s.addEventListener('change', function () {
     const l = oeRows.find(z => z.id === +this.dataset.st); if (l) { l.statut = this.value; maj(); } }));
+  renderCoda();
 }
 function focusQ(id, pos) {
   const i = document.querySelector('[data-q="' + id + '"]'); if (!i) return;
@@ -845,7 +857,7 @@ function oeuvresDuFormulaire() {
     } else if ((autresOeuvres[k] || []).length) oeuvres[k] = autresOeuvres[k].length > 1 ? autresOeuvres[k] : autresOeuvres[k][0];
     sacem[k] = (x && x.c) ? 'depose' : statutOk(l.statut);
     blzTracks.push({ title: tr || (l.titre || ''), featurings: featsDe(l).map(f => f.trim()).filter(Boolean),
-      songwriters: (l.sw || []).slice() });
+      songwriters: (l.sw || []).slice(), coda: (l.coda || '').trim() });
   });
   return { oeuvres, sacem, blzTracks };
 }
@@ -911,6 +923,7 @@ function updateConditionals() {
   countryGroup.classList.toggle('visible', ['Single','EP','Album'].includes(t));
   actuGroup.classList.toggle('visible', t === 'Actu');
   document.getElementById('oeuvresGroup').classList.toggle('visible', ['Single','EP','Album'].includes(t));
+  document.getElementById('codaGroup').classList.toggle('visible', ['Single','EP','Album'].includes(t));
   // le featuring d'un single se saisit à côté du nom du track, celui d'un projet track par track
   renderFeatsSingle();
   // pour un EP ou un album, les songwriters se saisissent track par track
@@ -1033,23 +1046,46 @@ document.getElementById('releaseLink').addEventListener('input', function() {
   else clearArtwork();
 });
 
-// ─── Fiche Coda ───
-function majCoda() {
-  const u = (document.getElementById('codaLink').value || '').trim();
-  const h = document.getElementById('codaHint');
-  if (!h) return;
-  if (/^https?:\/\//i.test(u)) {
-    h.style.display = '';
-    h.innerHTML = '<a href="' + esc(u) + '" target="_blank" rel="noopener" style="color:#e8c547;text-decoration:none">↗ Ouvrir la fiche Coda</a>';
-  } else if (u) {
-    h.style.display = '';
-    h.textContent = 'Lien incomplet — collez l’URL complète de la fiche Coda (https://…).';
-  } else {
-    h.style.display = 'none';
-    h.textContent = '';
+// ─── Fiches Coda : un lien par titre de la sortie ───
+let codaSig = null;
+function renderCoda() {
+  const box = document.getElementById('codaRows'); if (!box) return;
+  if (!['Single','EP','Album'].includes(typeSelect.value)) { box.innerHTML = ''; codaSig = null; return; }
+  const lignes = oeRows.filter(l => (l.track || '').trim() || l.titre);
+  // tant que les titres n'ont pas bougé, on ne reconstruit rien : les champs en cours de saisie restent en place
+  const sig = typeSelect.value + '#' + lignes.map(l => l.id + ':' + (l.track || l.titre || '')).join('|');
+  if (sig === codaSig) return;
+  if (document.activeElement && box.contains(document.activeElement)) return;
+  codaSig = sig;
+  if (!lignes.length) {
+    box.innerHTML = '<div class="oe-empty">' + (estProjet()
+      ? 'Renseignez les titres BLZante du projet ci-dessus.'
+      : 'Renseignez le nom du track pour lui rattacher sa fiche Coda.') + '</div>';
+    return;
   }
+  box.innerHTML = lignes.map(l => {
+    const u = (l.coda || '').trim(), bon = /^https?:\/\//i.test(u);
+    return `<div class="cd-row">
+      <span class="cd-track" title="${esc(l.track || l.titre)}">${esc(l.track || l.titre || '(sans titre)')}</span>
+      <input class="form-input" data-cd="${l.id}" value="${esc(u)}" placeholder="Lien de la fiche Coda du track" autocomplete="off">
+      ${bon ? `<a class="cd-go" href="${esc(u)}" target="_blank" rel="noopener" title="Ouvrir la fiche Coda">↗</a>`
+            : `<span class="cd-ko">${u ? 'lien incomplet' : ''}</span>`}
+    </div>`; }).join('');
+  box.querySelectorAll('[data-cd]').forEach(i => {
+    i.addEventListener('input', function () {
+      const l = oeRows.find(z => z.id === +this.dataset.cd); if (l) l.coda = this.value;
+      majLigneCoda(this.closest('.cd-row'), this.value); });
+  });
 }
-document.getElementById('codaLink').addEventListener('input', majCoda);
+// le raccourci « ↗ » se met à jour sans reconstruire la ligne, pour ne pas perdre le curseur
+function majLigneCoda(row, u) {
+  if (!row) return;
+  const fin = row.lastElementChild; if (!fin) return;
+  const v = (u || '').trim();
+  fin.outerHTML = /^https?:\/\//i.test(v)
+    ? `<a class="cd-go" href="${esc(v)}" target="_blank" rel="noopener" title="Ouvrir la fiche Coda">↗</a>`
+    : `<span class="cd-ko">${v ? 'lien incomplet' : ''}</span>`;
+}
 
 // ─── Country searchable picker ───
 const COUNTRIES = [
@@ -1075,6 +1111,7 @@ const COUNTRIES = [
   { code: 'CM', label: '🇨🇲 Cameroun' },
   { code: 'GN', label: '🇬🇳 Guinée (Conakry)' },
   { code: 'GH', label: '🇬🇭 Ghana' },
+  { code: 'EC', label: '🇪🇨 Équateur' },
   { code: 'ML', label: '🇲🇱 Mali' },
   { code: 'CV', label: '🇨🇻 Cap-Vert' },
   { code: 'NL', label: '🇳🇱 Pays-Bas' },
@@ -1220,8 +1257,6 @@ function enterEditMode(release) {
   setCountry(release.country || 'FR');
   document.getElementById('actuDesc').value = release.actuDesc || '';
   document.getElementById('releaseLink').value = release.link || '';
-  document.getElementById('codaLink').value = release.coda || '';
-  majCoda();
   if (release.artwork) showArtwork(release.artwork);
   document.getElementById('epTrackCount').value = release.epTrackCount || '';
   document.getElementById('epTrackNames').value = release.epTrackNames || '';
@@ -1230,6 +1265,7 @@ function enterEditMode(release) {
   setFeatsSingle(release.featurings || []);
   // une ligne par track connu : titres du projet, statuts Sacem, œuvres liées, featurings
   oeRows = []; oeNext = 1; oeSeed = ''; autresOeuvres = {};
+  codaSig = null;
   const ligne = t => {
     const k = normT(t); if (!k) return null;
     let l = oeRows.find(z => normT(z.track) === k);
@@ -1241,7 +1277,10 @@ function enterEditMode(release) {
   (Array.isArray(release.blzTracks) ? release.blzTracks : []).forEach(t => {
     const l = ligne(t && t.title); if (!l) return;
     if (t.featurings && t.featurings.length) l.feats = t.featurings.slice();
-    if (t.songwriters && t.songwriters.length) l.sw = t.songwriters.slice(); });
+    if (t.songwriters && t.songwriters.length) l.sw = t.songwriters.slice();
+    if (t.coda) l.coda = t.coda; });
+  // ancienne fiche Coda posée sur la sortie : on la rattache au premier titre
+  if (release.coda && oeRows.length && !oeRows.some(l => l.coda)) oeRows[0].coda = release.coda;
   Object.keys(release.sacem || {}).forEach(k => {
     const v0 = release.oeuvres && release.oeuvres[k];
     const x = Array.isArray(v0) ? v0[0] : v0;
@@ -1310,24 +1349,31 @@ function resetForm() {
   setCountry('FR');
   document.getElementById('actuDesc').value = '';
   document.getElementById('releaseLink').value = '';
-  document.getElementById('codaLink').value = '';
-  majCoda();
   clearArtwork();
   selectedSw = [];
   swOptions.forEach(o => o.classList.remove('selected'));
   renderTags();
-  oeRows = []; oeSeed = ''; renderTracks(); renderOeuvres();
+  oeRows = []; oeSeed = ''; codaSig = null; renderTracks(); renderOeuvres();
   setFeatsSingle([]);
   document.getElementById('oeuvresGroup').classList.remove('visible');
 }
 
-cancelBtn.addEventListener('click', exitEditMode);
+cancelBtn.addEventListener('click', () => {
+  // venu du planning : on y retourne à la même place plutôt que de rester sur un formulaire vide
+  if (editId && new URLSearchParams(window.location.search).get('retour') === 'planning') {
+    window.location.href = 'release_planning.html?focus=' + encodeURIComponent(editId);
+    return;
+  }
+  exitEditMode();
+});
 
 deleteBtn.addEventListener('click', async () => {
   if (!editId) return;
   if (!confirm('Supprimer définitivement cet événement ?')) return;
+  const cible = 'release_planning.html?focus=' + encodeURIComponent(editId);
   await fbDelete(editId);
-  window.location.href = 'release_planning.html';
+  // la sortie n'existe plus : le planning retombe sur la position mémorisée
+  window.location.href = cible;
 });
 
 // Check URL for edit param
@@ -1404,7 +1450,8 @@ submitBtn.addEventListener('click', async () => {
       country: ['Single','EP','Album'].includes(type) ? document.getElementById('releaseCountry').value : '',
       actuDesc: type === 'Actu' ? document.getElementById('actuDesc').value.trim() : '',
       link: document.getElementById('releaseLink').value.trim(),
-      coda: document.getElementById('codaLink').value.trim(),
+      // les fiches Coda vivent désormais sur chaque track (blzTracks[].coda)
+      coda: '',
       insta: document.getElementById('instaSuivi').value,
       artwork: extractedArtwork,
       songwriters: swDeLaSortie(liens.blzTracks), createdAt: precedent.createdAt || new Date().toISOString(),
@@ -1420,7 +1467,9 @@ submitBtn.addEventListener('click', async () => {
     setTimeout(() => { statusMsg.textContent = ''; statusMsg.className = 'status'; }, 3000);
 
     if (editId) {
-      setTimeout(() => { window.location.href = 'release_planning.html'; }, 800);
+      // on repart au planning exactement là où on était : ?focus= replace la vue sur cette sortie
+      const cible = 'release_planning.html?focus=' + encodeURIComponent(editId);
+      setTimeout(() => { window.location.href = cible; }, 800);
     } else {
       resetForm();
       renderRecent();
