@@ -148,6 +148,11 @@ th.sortable:hover{color:var(--ink)}
 .tag.warn{background:var(--warn-soft);color:var(--warn)}
 .tag.neutral{background:var(--surface-3);color:var(--ink-3)}
 .tag.ko{background:rgba(224,122,117,.16);color:var(--neg)}
+.tag.nonsortie{background:rgba(125,160,255,.16);color:#9ab6ff}
+tr.l-nonsortie>td:first-child{box-shadow:inset 2px 0 0 #9ab6ff}
+.lien-plan{font:600 10px/1.7 var(--sans);letter-spacing:.04em;text-transform:uppercase;text-decoration:none;
+ color:var(--ink-3);border:1px solid var(--line);border-radius:3px;padding:0 5px;white-space:nowrap}
+.lien-plan:hover{color:var(--accent);border-color:var(--accent)}
 .swlist{display:flex;flex-wrap:wrap;gap:4px}
 .swtag{display:inline-flex;align-items:center;gap:5px;font:500 11px/1.7 var(--sans);padding:0 7px;border-radius:3px;
  background:var(--accent-soft);color:var(--accent);white-space:nowrap}
@@ -1441,7 +1446,7 @@ function rows0(soc){
       de:o.de||0,dr:o.dr||0,ph:o.ph||0,nAut:auteurs(o).length,
       artiste:e.artiste||((sortieDe(soc,code)||{}).artist)||'',spotify:e.spotify||'',youtube:e.youtube||'',
       sortie:e.sortie||(((sortieDe(soc,code)||{}).dateSortable)||'').slice(0,10),release:e.release||'',releases:idsReleases(e),
-      notes:notesDe(e),art:e.art||'',
+      notes:notesDe(e),art:e.art||'',nonSorti:!!e.nonSorti,
       sw:v.list,swAuto:v.auto,vstat:ventStatut(soc,code,v.list)};
   });
 }
@@ -1825,6 +1830,9 @@ function checkOeuvre(soc,r){
   c.manques=POINTS.filter(function(p2){return c[p2[0]]===false;}).map(function(p2){return p2[0];});
   return c;
 }
+var LIB_MANQUE={artiste:'Artiste manquant',lien:'Lien manquant',sortie:'Sortie manquante',art:'Artwork manquant',
+  sw:'Songwriters manquants',vent:'Dissolution à valider',event:'Event du Planning manquant',
+  splits:'Splits à relire',part:'Notre part à 0',ecart:'Ventilation retouchée'};
 function puce(v,lib){
   return v===true?'<span class="ck ok" title="'+lib+' : fait">✓</span>'
     :v===false?'<span class="ck ko" title="'+lib+' : à faire">✕</span>'
@@ -1917,8 +1925,8 @@ function viewOeuvres(){
     if(r.feat)sous.push('feat. '+esc(r.feat));
     if(r.sous&&norm(r.sous)!==norm(r.titre))sous.push(esc(r.sous));
     sous.push(esc(r.code)+(r.cat?'':' · hors catalogue'));
-    h+='<tr class="clickable" data-go-oe="'+esc(r.code)+'">'+
-      '<td class="l w"><span class="tt">'+vignette(artDe(soc,r.code))+'<span>'+esc(r.titre)+
+    h+='<tr class="clickable'+(r.nonSorti?' l-nonsortie':'')+'" data-go-oe="'+esc(r.code)+'">'+
+      '<td class="l w"><span class="tt">'+vignette(artDe(soc,r.code))+'<span>'+esc(r.titre)+tagNonSorti(r)+
       '<div class="mini">'+sous.join(' · ')+'</div></span></span></td>'+
       '<td class="l mut">'+(r.sortie?frDate(r.sortie):'—')+'</td>'+
       '<td class="l mut">'+(r.depot?frDate(r.depot):'—')+'</td>'+
@@ -1936,7 +1944,16 @@ function liens(r){
   var o=[];
   if(r.spotify)o.push('<a href="'+esc(r.spotify)+'" target="_blank" rel="noopener" title="Spotify"><i class="ext sp"></i></a>');
   if(r.youtube)o.push('<a href="'+esc(r.youtube)+'" target="_blank" rel="noopener" title="YouTube"><i class="ext yt"></i></a>');
+  // la sortie au Planning, quand l'œuvre y est rattachée
+  var L=sortiesLiees(state.societe,r.code);
+  if(L.length)o.push('<a class="lien-plan" href="'+esc(lienPlanning(L[0]))+'" target="_blank" rel="noopener" title="'+
+    esc(L.map(function(x){return x.type+' « '+titreSortie(x)+' »'+(x.date?' · '+x.date:'');}).join(' · '))+
+    '">Planning'+(L.length>1?' ('+L.length+')':'')+' ↗</a>');
   return o.length?o.join(' '):'<span class="mut">—</span>';
+}
+// Un titre pas encore commercialisé : on le signale partout où l'œuvre apparaît
+function tagNonSorti(r){
+  return r&&r.nonSorti?' <span class="tag nonsortie">pas encore commercialisé</span>':'';
 }
 
 /* ============================== songwriters ============================== */
@@ -2059,6 +2076,13 @@ function viewRappro(){
   var fl=fiches.filter(function(x){
     if(filt&&x.c[filt]!==false)return false;
     return !q||norm(x.r.titre+' '+x.r.artiste+' '+x.r.code).indexOf(q)>=0;});
+  // tri : par nombre de points manquants, par revenus, par titre ou par date de sortie
+  var tri=state.ckTri||'manques';
+  fl=fl.slice().sort(function(a,b){
+    if(tri==='titre')return String(a.r.titreTrack||a.r.titre).localeCompare(String(b.r.titreTrack||b.r.titre),'fr');
+    if(tri==='sortie')return String(b.r.sortie||'').localeCompare(String(a.r.sortie||''));
+    if(tri==='net')return (b.r.net||0)-(a.r.net||0);
+    return (b.c.manques.length-a.c.manques.length)||((b.r.net||0)-(a.r.net||0));});
   var n=40,pc=Math.min(state.pgC||1,Math.max(1,Math.ceil(fl.length/40)));
   h+='<div class="panel"><div class="phead"><div class="rowline"><h2>Vérification des œuvres</h2>'+
       '<span class="num">'+e0(AT.faites)+' / '+e0(AT.total)+'</span>'+
@@ -2068,21 +2092,25 @@ function viewRappro(){
     'ses songwriters représentés et, s\'ils sont plusieurs, la dissolution de nos parts validée.</span></div>'+
     '<div class="pbody rowline" style="padding-bottom:0">'+
       '<button class="chip" data-ckf="" aria-pressed="'+(!filt)+'">Toutes <span class="num mut">'+fiches.length+'</span></button>'+
-      POINTS.map(function(p2){return '<button class="chip" data-ckf="'+p2[0]+'" aria-pressed="'+(filt===p2[0])+'">'+
-        ({artiste:'Artiste manquant',lien:'Lien manquant',sortie:'Sortie manquante',art:'Artwork manquant',
-          sw:'Songwriters manquants',vent:'Dissolution à valider'})[p2[0]]+' <span class="num mut">'+comptes[p2[0]]+'</span></button>';}).join('')+
-      '<input type="search" id="fq" placeholder="Titre, artiste, code…" value="'+esc(state.fq)+'" style="width:200px;margin-left:auto">'+
+      POINTS.map(function(p2){return comptes[p2[0]]?'<button class="chip" data-ckf="'+p2[0]+'" aria-pressed="'+(filt===p2[0])+'">'+
+        esc(LIB_MANQUE[p2[0]]||p2[1])+' <span class="num mut">'+comptes[p2[0]]+'</span></button>':'';}).join('')+
+      '<label class="mini" style="margin-left:auto;display:flex;gap:6px;align-items:center">Trier par '+
+        '<select id="ckTri">'+[['manques','éléments manquants'],['net','revenus'],['sortie','date de sortie'],['titre','titre']]
+          .map(function(t){return '<option value="'+t[0]+'"'+(tri===t[0]?' selected':'')+'>'+t[1]+'</option>';}).join('')+
+        '</select></label>'+
+      '<input type="search" id="fq" placeholder="Titre, artiste, code…" value="'+esc(state.fq)+'" style="width:200px">'+
     '</div>';
   if(fiches.length){
     h+='<div class="tscroll"><table><thead><tr><th class="l">Œuvre</th><th class="num">Revenus €</th>'+
       POINTS.map(function(p2){return '<th class="ckh">'+p2[1]+'</th>';}).join('')+'<th class="l"></th></tr></thead><tbody>'+
       fl.slice((pc-1)*n,pc*n).map(function(x){var r=x.r;
-        return '<tr class="clickable" data-go-oe="'+esc(r.code)+'"><td class="l w"><span class="tt">'+vignette(artDe(soc,r.code))+
-          '<span>'+esc(r.titreTrack||r.titre)+'<div class="mini">'+(r.artiste?esc(r.artiste)+' · ':'')+esc(r.code)+
+        return '<tr class="clickable'+(r.nonSorti?' l-nonsortie':'')+'" data-code="'+esc(r.code)+'" title="Ouvrir la fiche de modification">'+
+          '<td class="l w"><span class="tt">'+vignette(artDe(soc,r.code))+
+          '<span>'+esc(r.titreTrack||r.titre)+tagNonSorti(r)+'<div class="mini">'+(r.artiste?esc(r.artiste)+' · ':'')+esc(r.code)+
           (r.feat?' · feat. '+esc(r.feat):'')+'</div></span></span></td>'+
           '<td class="num'+(r.net?' w':' mut')+'">'+(r.net?eur(r.net):'—')+'</td>'+
           POINTS.map(function(p2){return '<td class="ckc">'+puce(x.c[p2[0]],p2[1])+'</td>';}).join('')+
-          '<td class="l"><button class="btn sm" data-code="'+esc(r.code)+'">Modifier</button></td></tr>';}).join('')+
+          '<td class="l"><a class="lien-plan" href="#/'+esc(soc)+'/oeuvre/'+encodeURIComponent(r.code)+'">Fiche ↗</a></td></tr>';}).join('')+
       (fl.length?'':'<tr><td colspan="9" class="mut">Aucune œuvre ne correspond.</td></tr>')+
       '</tbody></table></div>'+pages(fl.length,n,pc,'C');
   }else h+='<div class="pbody">Toutes les œuvres sont vérifiées.</div>';
@@ -2197,6 +2225,12 @@ function pistesProjet(r){
 }
 function lignesTitres(t){return String(t||'').split(/\n|,|;/).map(function(x){return x.trim();}).filter(Boolean);}
 function lienPlanning(r){return 'release_create.html?edit='+encodeURIComponent(r.id!=null?r.id:r._key);}
+// Songwriters de l'œuvre que nous représentons, sous le nom que le Planning utilise
+function swDeLOeuvre(soc,code){
+  var r=rows(soc).filter(function(x){return x.code===code;})[0],noms={};
+  (r?r.sw:[]).forEach(function(x){var sw=store.songwriters[x.id];if(sw)noms[nomPlanning(sw)]=1;});
+  return Object.keys(noms);
+}
 // Nom d'un songwriter tel que le Planning l'écrit
 function nomPlanning(sw){
   var vus={};PLANNING.forEach(function(r){(r._sw||[]).forEach(function(n){vus[n]=1;});});
@@ -2440,16 +2474,30 @@ function lierDansSortie(r,soc,code,info){
   if(info.artiste&&r.artist!==info.artiste&&seul){r.artist=info.artiste;chg=true;}
   else if(info.artiste&&!r.artist){r.artist=info.artiste;chg=true;}
   // le featuring de la fiche : sur la sortie pour un single, sur le track pour un projet
-  var fts=listeFeat(info.feat);
-  if(fts.length){
-    if(r.type==='EP'||r.type==='Album'){
-      var bt=Array.isArray(r.blzTracks)?r.blzTracks.slice():[];
-      var i2=-1;bt.forEach(function(z,j){if(norm(z&&z.title)===cle)i2=j;});
-      var ligne={title:t,featurings:fts};
-      if(i2<0){bt.push(ligne);chg=true;}
-      else if((bt[i2].featurings||[]).join('|')!==fts.join('|')){bt[i2]=ligne;chg=true;}
-      r.blzTracks=bt;
-    }else if(seul&&(r.featurings||[]).join('|')!==fts.join('|')){r.featurings=fts;chg=true;}
+  var fts=listeFeat(info.feat),sws=swDeLOeuvre(soc,code);
+  if(r.type==='EP'||r.type==='Album'){
+    // le titre commercialisé et les songwriters de l'œuvre alimentent la ligne du track
+    var bt=Array.isArray(r.blzTracks)?r.blzTracks.slice():[];
+    var i2=-1;bt.forEach(function(z,j){if(norm(z&&z.title)===cle)i2=j;});
+    var ligne=i2<0?{title:t,featurings:[],songwriters:[]}:Object.assign({},bt[i2]);
+    var avant=JSON.stringify([ligne.title,ligne.featurings||[],ligne.songwriters||[]]);
+    ligne.title=t;
+    if(fts.length)ligne.featurings=fts;
+    var swL=(ligne.songwriters||[]).slice();
+    sws.forEach(function(n){if(n&&swL.map(norm).indexOf(norm(n))<0)swL.push(n);});
+    ligne.songwriters=swL;
+    if(JSON.stringify([ligne.title,ligne.featurings||[],ligne.songwriters||[]])!==avant){
+      if(i2<0)bt.push(ligne);else bt[i2]=ligne;
+      r.blzTracks=bt;chg=true;}
+  }else{
+    if(fts.length&&seul&&(r.featurings||[]).join('|')!==fts.join('|')){r.featurings=fts;chg=true;}
+  }
+  // les songwriters de l'œuvre remontent aussi sur la sortie
+  if(sws.length){
+    var gl=Array.isArray(r.songwriters)?r.songwriters.slice():(r.songwriters?[r.songwriters]:[]);
+    var ajout=false;
+    sws.forEach(function(n){if(n&&gl.map(norm).indexOf(norm(n))<0){gl.push(n);ajout=true;}});
+    if(ajout){r.songwriters=gl;chg=true;}
   }
   if(!r.artwork&&info.art){r.artwork=info.art;chg=true;}
   if(!r.link&&info.lien){r.link=info.lien;chg=true;}
@@ -2810,7 +2858,8 @@ function pageOeuvre(code){
   h+='<div class="phead-page"><div class="tt" style="gap:16px">'+vignette(art,84)+
     '<div><div class="eyebrow">Œuvre'+(o.genre?' · '+esc(o.genre):'')+'</div>'+
     '<h1 class="h-page">'+esc(e.titreTrack||o.titre||'(sans titre)')+
-      (e.feat?' <span class="mut" style="font-weight:600">feat. '+esc(e.feat)+'</span>':'')+'</h1>'+
+      (e.feat?' <span class="mut" style="font-weight:600">feat. '+esc(e.feat)+'</span>':'')+
+      (e.nonSorti?' <span class="tag nonsortie" style="vertical-align:middle">pas encore commercialisé</span>':'')+'</h1>'+
     (e.titreTrack&&norm(e.titreTrack)!==norm(o.titre)?'<div class="mini" style="font-size:11.5px">déposée sous « '+esc(o.titre)+' »</div>':'')+
     (o.sous?'<div class="mini" style="font-size:11.5px">sous-titre Sacem : '+esc(o.sous)+'</div>':'')+
     // une œuvre peut ressortir : single, puis album, puis réédition — toutes les sorties sont listées
@@ -2821,6 +2870,7 @@ function pageOeuvre(code){
         return '<a href="'+esc(lienPlanning(x))+'" target="_blank" rel="noopener">'+esc(x.type)+' « '+esc(titreSortie(x))+' » ↗</a>'+
           (x.date?' <span class="mut">· '+esc(x.date)+'</span>':'')+
           ' <span class="tag '+tonSacem(st)+'">'+esc(libSacem(st))+'</span>';}).join('<span class="mut"> · </span>');
+      if(e.nonSorti)return '<span class="mut">Titre pas encore commercialisé : aucune sortie attendue au Planning.</span>';
       return rel?'<span class="mut">Planning : correspondance de titre avec '+esc(rel.type)+' « '+esc(titreSortie(rel))+' », à lier dans « Modifier »</span>'
         :'<span class="mut">Pas encore liée à une sortie du Planning</span>';})()+'</div>'+
     '<div style="font-size:13px;margin-top:3px">'+(artiste?esc(artiste):'<span class="mut">artiste à renseigner</span>')+
@@ -3011,6 +3061,7 @@ function render(){
   var h=lienVue(state.vue);
   if(location.hash!==h){try{history.replaceState(null,'',h);}catch(e){}}
   v.querySelectorAll('[data-code]').forEach(function(tr){tr.onclick=function(e){
+    if(e.target.closest('a'))return;
     e.stopPropagation();ficheOeuvre(this.dataset.code);};});
   v.querySelectorAll('[data-go-oe]').forEach(function(tr){tr.onclick=function(e){
     if(e.target.closest('a,button,input'))return;aller({t:'oe',id:this.dataset.goOe});};});
@@ -3088,6 +3139,7 @@ function render(){
     if(swBLZventile(r)&&!e.splitsOk)e.splitsOk=e.vdate;
     try{await saveEdit(soc,code);}catch(err){}
     render();toast('Ventilation validée');};});
+  if(el('ckTri'))el('ckTri').onchange=function(){state.ckTri=this.value;state.pgC=1;render();};
   var q=el('q');
   if(q)q.oninput=function(){var p=this.selectionStart;state.q=this.value;render();
     var n=el('q');if(n){n.focus();n.setSelectionRange(p,p);}};
@@ -3785,9 +3837,7 @@ function ficheOeuvre(code){
       '<div class="rowline" style="margin-top:8px"><button class="btn sm primary" id="pc-go">Créer dans le Planning</button>'+
         '<button class="btn sm" id="pc-no">Annuler</button><span class="mut" id="pc-state" style="font-size:12px"></span></div>';
     var choisis=[code];
-    function swDes(){var noms={},r=rows(soc).filter(function(x){return x.code===code;})[0];
-      (r?r.sw:[]).forEach(function(x){var sw=store.songwriters[x.id];if(sw)noms[nomPlanning(sw)]=1;});
-      return Object.keys(noms);}
+    function swDes(){return swDeLOeuvre(soc,code);}
     function majListe(){
       var q=norm(el('pc-q').value);
       el('pc-oe').innerHTML=choisis.map(function(c){var r=(store.oeuvres[soc]||{})[c]||{};

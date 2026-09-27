@@ -560,7 +560,8 @@ function aLeSw(r, nom) {
 // Songwriters signés : une pastille par nom, avec son nombre de sorties
 function buildSwFilters() {
   const n = {};
-  cachedReleases.forEach(r => {
+  // le compteur d'une puce = ses placements : une date de concert n'en est pas un
+  cachedReleases.filter(EST_PLACEMENT).forEach(r => {
     const vus = {};
     swDe(r).forEach(x => { if (!estSigne(x)) return;
       nomsSignes(x).forEach(c => { if (vus[c]) return; vus[c] = 1; n[c] = (n[c] || 0) + 1; }); });
@@ -568,7 +569,7 @@ function buildSwFilters() {
   const sorted = Object.keys(n).sort((a, b) => a.localeCompare(b, 'fr'));
   const box = document.getElementById('swFilters');
   box.innerHTML = `<button type="button" class="sw-chip${activeSw === 'all' ? ' on' : ''}" data-sw="all">Tous</button>` +
-    sorted.map(x => `<button type="button" class="sw-chip${x === activeSw ? ' on' : ''}" data-sw="${String(x).replace(/"/g, '&quot;')}">${x}<span class="n">${n[x]}</span></button>`).join('');
+    sorted.map(x => `<button type="button" class="sw-chip${x === activeSw ? ' on' : ''}" data-sw="${String(x).replace(/"/g, '&quot;')}" title="${n[x]} placement${n[x] > 1 ? 's' : ''} (hors lives)">${x}<span class="n">${n[x]}</span></button>`).join('');
   box.querySelectorAll('[data-sw]').forEach(b => b.addEventListener('click', function () {
     activeSw = this.dataset.sw;
     box.querySelectorAll('.sw-chip').forEach(z => z.classList.toggle('on', z === this));
@@ -689,6 +690,8 @@ dateClearEl.addEventListener('click', () => {
 });
 
 const EST_SORTIE = r => ['Single','EP','Album'].includes(r.type);
+// Un placement, ce sont les sorties et les synchros : les lives et les certifs n'en sont pas
+const EST_PLACEMENT = r => ['Single','EP','Album','Synchro'].includes(r.type) && r.status !== 'Annulé';
 const HORS_FR = r => r.country && r.country.split(',').some(c => c && c !== 'FR');
 function applyTypeFilter(releases) {
   const today = new Date().toISOString().slice(0, 10);
