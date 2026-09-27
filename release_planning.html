@@ -187,6 +187,8 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .rel-tracks .dot.non_editeur { background: #555; }
 .rel-tracks { color: #666; font-size: 0.55rem; font-family: 'Syne Mono', monospace; display: flex; flex-wrap: wrap; gap: 4px 10px; }
 .rel-tracks .pt { display: inline-flex; align-items: center; gap: 4px; }
+.rel-tracks .pt-oe { color: #555; font-style: italic; }
+.rel-tracks .pt-oe::before { content: '· '; }
 .rel-tracks .pt-coda { color: #4a6b7a; text-decoration: none; letter-spacing: 0.06em; margin-left: 2px; }
 .rel-tracks .pt-coda:hover { color: #8fc4dd; }
 .rel-tracks .dot { width: 5px; height: 5px; border-radius: 50%; background: #444; flex-shrink: 0; }
@@ -407,8 +409,9 @@ const normT = s => String(s == null ? '' : s).replace(/œ/g, 'oe').replace(/Œ/g
 function pistesSacem(r) {
   if (!['Single', 'EP', 'Album'].includes(r.type)) return [];
   const sacem = r.sacem || {}, oeuvres = r.oeuvres || {};
-  // une piste peut porter plusieurs œuvres (même œuvre dans deux catalogues)
-  const oeuvreDe = k => { const v = oeuvres[k]; const l = Array.isArray(v) ? v : (v ? [v] : []); return l[0] || null; };
+  // une piste peut porter plusieurs œuvres : la même dans deux catalogues, ou deux versions (studio et live)
+  const oeuvresDe = k => { const v = oeuvres[k]; return (Array.isArray(v) ? v : (v ? [v] : [])).filter(Boolean); };
+  const oeuvreDe = k => oeuvresDe(k)[0] || null;
   const feats = {}, codas = {};
   (Array.isArray(r.blzTracks) ? r.blzTracks : []).forEach(t => {
     if (!t || !t.title) return;
@@ -440,11 +443,21 @@ function pistesSacem(r) {
   if (!lignes.length) return [];
   // fiche Coda de la sortie posée avant qu'elles ne passent par track : elle vaut pour le seul titre
   const codaSeule = lignes.length === 1 && !Object.keys(codas).length && /^https?:\/\//i.test(r.coda || '') ? r.coda : '';
-  return lignes.map(l => {
-    const st = statutOk(sacem[l.cle]), k = normT(l.titre);
-    return { titre: l.titre, feat: feats[k] || '', statut: SACEM_LIB[st] ? st : 'a_lancer',
-      coda: codas[k] || codaSeule || '' };
+  const out = [];
+  lignes.forEach(l => {
+    const k = normT(l.titre), oes = oeuvresDe(l.cle).filter(x => x.code);
+    const base = { titre: l.titre, feat: feats[k] || '', coda: codas[k] || codaSeule || '' };
+    const lire = v => { const st = statutOk(v); return SACEM_LIB[st] ? st : 'a_lancer'; };
+    // deux œuvres sur un même titre (version studio, version live) : un statut de dépôt chacune
+    if (oes.length > 1) {
+      oes.forEach((x, i) => out.push(Object.assign({}, base, {
+        statut: lire(x.statut || sacem[l.cle]), oeuvre: x.titre || x.code,
+        coda: i === 0 ? base.coda : '' })));
+    } else {
+      out.push(Object.assign({}, base, { statut: lire((oes[0] && oes[0].statut) || sacem[l.cle]) }));
+    }
   });
+  return out;
 }
 function sacemResume(r) {
   const p = pistesSacem(r);
@@ -806,6 +819,7 @@ function render() {
         html += `<span class="rel-tracks">` + pistes.map(p =>
           `<span class="pt" title="Sacem : ${SACEM_LIB[p.statut]}"><i class="dot ${p.statut}"></i>` +
           `<span class="tt">${p.titre}</span>${p.feat ? ' feat. ' + p.feat : ''}` +
+          (p.oeuvre ? `<span class="pt-oe" title="Œuvre déposée">${p.oeuvre}</span>` : '') +
           (p.coda ? `<a class="pt-coda" href="${p.coda.replace(/"/g, '&quot;')}" target="_blank" rel="noopener" title="Fiche Coda du track">↗ Coda</a>` : '') +
           `</span>`).join('') + `</span>`;
       } else if (r.blzTrackNames) {
@@ -1135,7 +1149,8 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
           const cD = SACEM_COUL;
           h += `<div style="color:#555;font-size:0.54rem;font-family:Syne Mono,monospace;margin-top:1px">` +
             pdfPistes.map(p => `<span style="color:${cD[p.statut]}">•</span> <span style="color:#aaa">${p.titre}</span>` +
-              (p.feat ? ' feat. ' + p.feat : '')).join(' &nbsp; ') + `</div>`;
+              (p.feat ? ' feat. ' + p.feat : '') +
+              (p.oeuvre ? ` <span style="color:#666;font-style:italic">· ${p.oeuvre}</span>` : '')).join(' &nbsp; ') + `</div>`;
         } else if (r.blzTrackNames) {
           h += `<div style="color:#555;font-size:0.54rem;font-family:Syne Mono,monospace;margin-top:1px">${r.blzTrackNames.replace(/\n/g, ' · ')}</div>`;
         } else if (r.epTrackNames) {
