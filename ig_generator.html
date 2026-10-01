@@ -1230,62 +1230,19 @@ nav {
   top: 0;
   pointer-events: none;
 }
-
-/* ---- barre d'outils de la Toolbox ---- */
-nav{z-index:40 !important;gap:18px}
-.tnav{display:flex;align-items:center;gap:26px;min-width:0}
-.tbar{display:flex;align-items:center;gap:2px;font-family:'Syne',system-ui,sans-serif}
-.tbar>a,.tbar-plus>button{position:relative;display:inline-flex;align-items:center;gap:6px;
- padding:8px 12px;border:1px solid transparent;background:none;cursor:pointer;
- color:#9a9a9a;font:700 .72rem/1 'Syne',system-ui,sans-serif;letter-spacing:.09em;text-transform:uppercase;
- text-decoration:none;transition:color .15s,border-color .15s,background .15s}
-.tbar>a:hover,.tbar-plus>button:hover,.tbar-plus>button[aria-expanded="true"]{color:#fff;border-color:#2e2e2e;background:#151515}
-.tbar>a.on{color:#e8c547;border-color:#4a3f14;background:#1a1708}
-.tbar-sep{width:1px;height:18px;background:#2a2a2a;margin:0 8px}
-.tbar-plus{position:relative}
-.tbar-car{font-size:.55rem;opacity:.7}
-.tbar-menu{position:absolute;left:0;top:calc(100% + 6px);z-index:60;min-width:220px;background:#141414;
- border:1px solid #2a2a2a;box-shadow:0 12px 32px rgba(0,0,0,.6);padding:5px}
-.tbar-menu[hidden]{display:none}
-.tbar-t{font-family:'Syne Mono',monospace;font-size:.5rem;letter-spacing:.12em;text-transform:uppercase;color:#666;padding:8px 10px 3px}
-.tbar-menu a{display:block;padding:8px 10px;text-decoration:none;color:#ddd;font-size:.72rem;border-left:2px solid transparent}
-.tbar-menu a:hover{background:rgba(255,255,255,.06)}
-.tbar-menu a.on{border-left-color:#e8c547;color:#e8c547}
-@media (max-width:900px){.tbar>a{padding:7px 8px;font-size:.62rem}.tnav{gap:12px}}
 </style>
 </head>
 <body style="visibility:hidden">
 <nav>
-  <div class="tnav">
   <a class="nav-logo" href="index.html">
     <img src="blzante_spiral_white.png" alt="BLZante" class="nav-logo-img" />
     <span>BLZante</span>
   </a>
-  <div class="tbar" id="tbar">
-    <a href="roster.html" data-t="roster.html roster_create.html">Roster</a>
-    <a href="release_planning.html" data-t="release_planning.html release_create.html">Planning</a>
-    <a href="ig_generator.html" data-t="ig_generator.html">IG Content</a>
-    <a href="catalogues.html" data-t="catalogues.html">Catalogues</a>
-    <span class="tbar-sep"></span>
-    <div class="tbar-plus">
-      <button type="button" id="tbarBtn" aria-expanded="false" aria-haspopup="true">Plus <span class="tbar-car">&#9662;</span></button>
-      <div class="tbar-menu" id="tbarMenu" hidden>
-        <div class="tbar-t">Créer</div>
-        <a href="roster_create.html">+ Fiche artiste</a>
-        <a href="release_create.html">+ Event planning</a>
-        <div class="tbar-t">Admin</div>
-        <a href="sacem_depot.html">SACEM Dépôt</a>
-        <a href="notes.html">Notes NDA / NDD</a>
-        <a href="onid_blzante.html">ONID BLZante</a>
-        <a href="infos_sacem.html">Infos Sacem</a>
-        <a href="infos_facturation.html">Infos facturation</a>
-        <a href="index.html">Toutes les pages</a>
-      </div>
-    </div>
-  </div>
-  </div>
   <div class="nav-right">
     <button class="nav-signout" onclick="firebase.auth().signOut().then(()=>location.href='login.html')">Déconnexion</button>
+    <a class="nav-back" href="index.html">&larr; Toolbox</a>
+    <span class="nav-sep">/</span>
+    <span>IG Generator</span>
   </div>
 </nav>
 
@@ -1298,14 +1255,6 @@ nav{z-index:40 !important;gap:18px}
   <div class="main-grid">
     <!-- ========== LEFT : FORM ========== -->
     <div>
-      <!-- Import from planning -->
-      <div class="form-group" style="margin-bottom:16px;border:1px solid var(--border-hi);padding:12px;background:rgba(232,197,71,0.03)">
-        <label class="form-label" style="font-family:'Syne',sans-serif;font-size:0.72rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--accent)">⚡ Importer un event du planning</label>
-        <input type="text" class="form-input" id="igImportSearch" placeholder="Rechercher par artiste, titre, type..." style="font-size:0.72rem;margin-bottom:6px;border-color:var(--border-hi)" />
-        <div id="igImportResults" style="max-height:180px;overflow-y:auto;display:none"></div>
-        <input type="hidden" id="igImportSelected" />
-      </div>
-
       <div class="section-label">Type de post</div>
       <div class="type-grid">
         <button class="type-tile active" data-type="sortie">
@@ -1555,12 +1504,8 @@ nav{z-index:40 !important;gap:18px}
 
         <div class="form-group" id="artworkFormGroup">
           <label class="form-label">Artwork de la sortie</label>
-          <div style="display:flex;gap:6px;margin-bottom:6px">
-            <input type="text" class="form-input" id="artLinkInput" placeholder="Coller un lien Spotify / YouTube pour extraire l'artwork" style="flex:1;font-size:0.68rem" />
-            <button type="button" class="form-btn" id="artLinkBtn" style="font-size:0.65rem;padding:4px 10px;background:#1a1a1a;border:1px solid var(--border-hi);color:var(--accent);cursor:pointer;white-space:nowrap">Extraire</button>
-          </div>
           <label class="file-upload" id="artUploadLabel">
-            <span id="artUploadText">🎨 &nbsp;Ou uploader la cover (format carré)</span>
+            <span id="artUploadText">🎨 &nbsp;Uploader la cover (format carré)</span>
             <input type="file" id="artUpload" accept="image/*" />
           </label>
           <div class="media-controls" id="artControls">
@@ -2099,198 +2044,6 @@ document.getElementById('bgUpload').addEventListener('change', async (e) => {
   updateExportButtonLabel();
 });
 
-// ─── Artwork extraction from link ─────────────────────────────────
-function igExtractYouTubeId(url) {
-  const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{11})/);
-  return m ? m[1] : null;
-}
-async function igExtractArtwork(url) {
-  const ytId = igExtractYouTubeId(url);
-  if (ytId) {
-    for (const size of ['maxresdefault', 'sddefault', 'hqdefault']) {
-      const thumbUrl = `https://img.youtube.com/vi/${ytId}/${size}.jpg`;
-      try {
-        const img = new Image();
-        const loaded = await new Promise(r => { img.onload = () => r(img); img.onerror = () => r(null); img.src = thumbUrl; });
-        if (loaded && loaded.naturalWidth > 200) return thumbUrl;
-      } catch(e) {}
-    }
-    return `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
-  }
-  if (url.includes('open.spotify.com')) {
-    try {
-      const res = await fetch(`https://open.spotify.com/oembed?url=${encodeURIComponent(url)}`);
-      if (res.ok) {
-        const data = await res.json();
-        if (data.thumbnail_url) return data.thumbnail_url.replace('ab67616d00001e02', 'ab67616d0000b273');
-      }
-    } catch(e) {}
-  }
-  return null;
-}
-// ─── Import from planning ─────────────────────────────────
-async function loadPlanningForIG() {
-  try {
-    const user = await new Promise((res, rej) => {
-      firebase.auth().onAuthStateChanged(u => { if (u) res(u); });
-      setTimeout(() => rej('timeout'), 5000);
-    });
-    const token = await user.getIdToken();
-    const res = await fetch('https://blzante-toolbox-default-rtdb.europe-west1.firebasedatabase.app/releases.json?auth=' + token);
-    const data = await res.json();
-    if (!data) return;
-    window._igAllEvents = Object.entries(data)
-      .filter(([id, r]) => r.dateSortable)
-      .sort((a,b) => (b[1].dateSortable||'').localeCompare(a[1].dateSortable||''));
-    console.log('Loaded ' + window._igAllEvents.length + ' events for IG import');
-  } catch(e) { console.warn('Could not load planning for IG:', e); }
-}
-loadPlanningForIG();
-
-// Live search results
-document.getElementById('igImportSearch').addEventListener('focus', () => {
-  if (!document.getElementById('igImportSearch').value && window._igAllEvents) showIGResults('');
-});
-document.getElementById('igImportSearch').addEventListener('input', (e) => {
-  showIGResults(e.target.value);
-});
-function showIGResults(val) {
-  const q = (val||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  const results = document.getElementById('igImportResults');
-  if (!window._igAllEvents) { results.style.display = 'none'; return; }
-  const today = new Date().toISOString().slice(0,10);
-  const pastEvents = window._igAllEvents.filter(([id, r]) => r.dateSortable <= today);
-  const filtered = q
-    ? pastEvents.filter(([id, r]) => ((r.artist||'')+(r.title||'')+(r.type||'')+(r.date||'')).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(q)).slice(0, 15)
-    : pastEvents.slice(0, 15);
-  if (!filtered.length) { results.innerHTML = '<div style="padding:8px;color:#555;font-size:0.65rem">Aucun résultat</div>'; results.style.display = 'block'; return; }
-  results.innerHTML = filtered.map(([id, r]) => {
-    const j = JSON.stringify(r).replace(/'/g, "&#39;");
-    return '<div class="ig-result" data-json=\'' + j + "\' style=\"padding:8px 10px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.06);font-size:0.68rem;color:#ccc;transition:background 0.1s\">" +
-      '<span style="color:#888">' + (r.date||'') + '</span> · <span style="color:#e8c547">' + (r.type||'') + '</span> · <strong>' + (r.artist||'') + '</strong> · ' + (r.title||'') +
-      '<span style="float:right;color:#e8c547;font-weight:700">IMPORTER →</span></div>';
-  }).join('');
-  results.style.display = 'block';
-}
-
-// Click on result to import
-document.getElementById('igImportResults').addEventListener('click', (e) => {
-  const item = e.target.closest('.ig-result');
-  if (!item) return;
-  const r = JSON.parse(item.dataset.json);
-  document.getElementById('igImportResults').style.display = 'none';
-  document.getElementById('igImportSearch').value = (r.date||'') + ' · ' + (r.artist||'') + ' · ' + (r.title||'');
-
-  // Auto-detect and click the correct type tile
-  const typeMap = { 'Single': 'sortie', 'EP': 'sortie', 'Album': 'sortie', 'Certification': 'certif', 'Synchro': 'synchro', 'Actu': 'actu', 'Live': 'sortie' };
-  const detectedType = typeMap[r.type] || 'sortie';
-  // Click the type tile to switch template
-  const typeTile = document.querySelector('.type-tile[data-type="' + detectedType + '"]');
-  if (typeTile) typeTile.click();
-
-  setTimeout(() => {
-    // Fill artist name (common to sortie/certif)
-    const ai = document.getElementById('f_artist');
-    if (ai && r.artist) { ai.value = r.artist; ai.dispatchEvent(new Event('input')); }
-
-    // Fill based on detected type
-    if (detectedType === 'sortie') {
-      // Type de sortie (Single/EP/Album)
-      const tsel = document.getElementById('f_type');
-      if (tsel && r.type) { tsel.value = r.type; tsel.dispatchEvent(new Event('change')); }
-      // Titre du track/projet
-      const ti = document.getElementById('f_title');
-      if (ti && r.title) { ti.value = r.title; ti.dispatchEvent(new Event('input')); }
-    }
-
-    if (detectedType === 'certif') {
-      // Type de certif (Single/Album)
-      const ct = document.getElementById('f_cert_type');
-      if (ct && r.certType) { ct.value = r.certType; ct.dispatchEvent(new Event('change')); }
-      // Niveau (Or/Platine/Diamant...)
-      const cl = document.getElementById('f_cert_level');
-      if (cl && r.certLevel) { cl.value = r.certLevel; cl.dispatchEvent(new Event('change')); }
-      // Titre du track/projet
-      const cti = document.getElementById('f_cert_title');
-      if (cti && r.title) { cti.value = r.title; cti.dispatchEvent(new Event('input')); }
-    }
-
-    if (detectedType === 'actu') {
-      const at = document.getElementById('f_actu_title');
-      if (at && r.title) { at.value = r.title; at.dispatchEvent(new Event('input')); }
-      if (r.actuDesc) {
-        const ad = document.getElementById('f_actu_desc');
-        if (ad) { ad.innerHTML = r.actuDesc; ad.dispatchEvent(new Event('input')); }
-      }
-    }
-
-    if (detectedType === 'synchro') {
-      const st = document.getElementById('f_synchro_title');
-      if (st && r.title) { st.value = r.title; st.dispatchEvent(new Event('input')); }
-      const sa = document.getElementById('f_synchro_artist');
-      if (sa && r.artist) { sa.value = r.artist; sa.dispatchEvent(new Event('input')); }
-      const strk = document.getElementById('f_synchro_track');
-      if (strk && r.track) { strk.value = r.track; strk.dispatchEvent(new Event('input')); }
-    }
-
-    // Fill songwriter(s) - use the multi-select mechanism
-    if (r.songwriters) {
-      const swList = Array.isArray(r.songwriters) ? r.songwriters : [r.songwriters];
-      swList.forEach(name => {
-        if (!S.songwriters.includes(name)) {
-          S.songwriters.push(name);
-          const opt = document.querySelector('#swDropdown [data-name="' + name + '"]');
-          if (opt) opt.classList.add('selected');
-        }
-      });
-      renderTags();
-      updatePreview();
-    }
-
-    // Fill artwork
-    if (r.artwork) {
-      S.artworkSrc = r.artwork; S.artX = 0; S.artY = 0; S.artZoom = 1;
-      const img = document.getElementById('pvArt');
-      if (img) { img.src = r.artwork; img.style.display = 'block'; }
-      const ph = document.getElementById('artPlaceholder'); if (ph) ph.style.display = 'none';
-      const lbl = document.getElementById('artUploadLabel'); if (lbl) lbl.classList.add('has-file');
-      const txt = document.getElementById('artUploadText'); if (txt) txt.textContent = '✓ Artwork importé';
-      const ctrl = document.getElementById('artControls'); if (ctrl) ctrl.classList.add('visible');
-      previewFrame.classList.add('has-art');
-      applyStyleVars(previewFrame);
-    } else if (r.link) {
-      document.getElementById('artLinkInput').value = r.link;
-      document.getElementById('artLinkBtn').click();
-    }
-  }, 150);
-});
-
-document.getElementById('artLinkBtn').addEventListener('click', async () => {
-  const url = document.getElementById('artLinkInput').value.trim();
-  if (!url) return;
-  document.getElementById('artLinkBtn').textContent = '⏳';
-  const artUrl = await igExtractArtwork(url);
-  document.getElementById('artLinkBtn').textContent = 'Extraire';
-  if (artUrl) {
-    S.artworkSrc = artUrl;
-    S.artX = 0; S.artY = 0; S.artZoom = 1;
-    const img = document.getElementById('pvArt');
-    img.src = artUrl;
-    img.style.display = 'block';
-    img.onload = () => { if (S.type === 'synchro') requestAnimationFrame(repositionSynchroBottom); };
-    document.getElementById('artPlaceholder').style.display = 'none';
-    document.getElementById('artUploadLabel').classList.add('has-file');
-    document.getElementById('artUploadText').textContent = '✓ Artwork extrait';
-    document.getElementById('artControls').classList.add('visible');
-    document.getElementById('artZoom').value = 1;
-    document.getElementById('artZoomVal').textContent = '100%';
-    previewFrame.classList.add('has-art');
-    applyStyleVars(previewFrame);
-  } else {
-    alert('Impossible d\'extraire l\'artwork depuis ce lien');
-  }
-});
-
 document.getElementById('artUpload').addEventListener('change', async (e) => {
   const file = e.target.files[0];
   if (!file) return;
@@ -2496,14 +2249,14 @@ const UPPERCASE_NAMES = new Set(['MAB', 'BRÖ', 'CHERI', 'IVY', 'VJ', 'OZZY']);
 function titleCaseName(name) {
   if (UPPERCASE_NAMES.has(name.toUpperCase())) return name.toUpperCase();
   const LOWERCASE_WORDS = new Set(['in', 'of', 'the', 'a', 'an', 'de', 'du', 'et', 'le', 'la', 'les', 'des', 'au', 'aux', 'en']);
-  return name.split(/(\s+|-)/).map((token, idx) => {
+  let isFirst = true;
+  return name.split(/(\s+|-)/).map(token => {
     if (/^\s+$/.test(token) || token === '-') return token;
-    // First word is always capitalized
-    if (idx === 0) return token.charAt(0).toUpperCase() + token.slice(1).toLowerCase();
-    if (LOWERCASE_WORDS.has(token.toLowerCase())) return token.toLowerCase();
-    if (token.length === 1) return token;
-    if (token.length === 2 && /^[A-Z]+$/.test(token)) return token;
-    if (/^\d/.test(token)) return token;
+    if (LOWERCASE_WORDS.has(token.toLowerCase()) && !isFirst) return token.toLowerCase();
+    isFirst = false;
+    if (token.length === 1) return token;                  // X → X
+    if (token.length === 2 && /^[A-Z]+$/.test(token)) return token; // VJ → VJ
+    if (/^\d/.test(token)) return token;                   // 2B → 2B, 117 → 117
     return token.charAt(0).toUpperCase() + token.slice(1).toLowerCase();
   }).join('');
 }
@@ -2669,7 +2422,8 @@ function updatePreviewCertif() {
 }
 
 function updatePreviewSortie() {
-  pvType.textContent = 'NOUVEAU ' + (S.releaseType || 'SINGLE').toUpperCase();
+  const rType = (S.releaseType || 'SINGLE').toUpperCase();
+  pvType.textContent = (/^[AEIOUYÀÂÉÈÊËÏÎÔÙÛÜ]/i.test(rType) ? 'NOUVEL ' : 'NOUVEAU ') + rType;
   pvArtist.textContent = (S.artist || 'NOM ARTISTE').toUpperCase();
   // Le titre est automatiquement entouré de guillemets droits
   pvTitle.textContent = '"' + (S.title || 'Titre du track').toUpperCase() + '"';
@@ -3801,23 +3555,6 @@ async function waitForFonts() {
       updatePreview();
     });
   }
-})();
-</script>
-
-<script>
-/* ---- barre d'outils : outil courant repéré, menu « Plus » ---- */
-(function(){
-  var ici=(location.pathname.split('/').pop()||'index.html').toLowerCase();
-  document.querySelectorAll('#tbar>a').forEach(function(a){
-    if((a.getAttribute('data-t')||'').split(' ').indexOf(ici)>=0)a.classList.add('on');});
-  document.querySelectorAll('#tbarMenu a').forEach(function(a){
-    if(a.getAttribute('href').toLowerCase()===ici)a.classList.add('on');});
-  var b=document.getElementById('tbarBtn'),m=document.getElementById('tbarMenu');
-  if(!b||!m)return;
-  function ouvrir(v){m.hidden=!v;b.setAttribute('aria-expanded',v?'true':'false');}
-  b.addEventListener('click',function(e){e.stopPropagation();ouvrir(m.hidden);});
-  document.addEventListener('click',function(e){if(!m.hidden&&!m.contains(e.target))ouvrir(false);});
-  document.addEventListener('keydown',function(e){if(e.key==='Escape')ouvrir(false);});
 })();
 </script>
 </body>
