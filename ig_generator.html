@@ -2252,10 +2252,13 @@ function titleCaseName(name) {
   let isFirst = true;
   return name.split(/(\s+|-)/).map(token => {
     if (/^\s+$/.test(token) || token === '-') return token;
-    if (LOWERCASE_WORDS.has(token.toLowerCase()) && !isFirst) return token.toLowerCase();
+    const isLowWord = LOWERCASE_WORDS.has(token.toLowerCase());
+    if (isLowWord && !isFirst) return token.toLowerCase();
+    if (!isLowWord && !isFirst) {
+      if (token.length === 1) return token;                  // X → X
+      if (token.length === 2 && /^[A-Z]+$/.test(token)) return token; // VJ → VJ
+    }
     isFirst = false;
-    if (token.length === 1) return token;                  // X → X
-    if (token.length === 2 && /^[A-Z]+$/.test(token)) return token; // VJ → VJ
     if (/^\d/.test(token)) return token;                   // 2B → 2B, 117 → 117
     return token.charAt(0).toUpperCase() + token.slice(1).toLowerCase();
   }).join('');
