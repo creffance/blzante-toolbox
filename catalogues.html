@@ -281,6 +281,10 @@ tr.sel td{background:var(--accent-soft)}
 .plan-carte{display:flex;gap:10px;align-items:center;min-width:0}
 .plan-lien{border:1px solid var(--line);border-radius:4px;padding:8px 10px;background:var(--surface-2)}
 .plan-lien+.plan-lien{margin-top:6px}
+.tk-bloc{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;margin-top:8px}
+.graph-rep{margin:6px 0 10px;overflow-x:auto}
+.graph-rep svg{max-width:100%;height:auto}
+@media(max-width:700px){.tk-bloc{grid-template-columns:1fr}}
 .plan-choix.deja{border-color:var(--warn)}
 .plan-choix{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:6px 8px;
  border:1px solid var(--line);border-radius:4px}
@@ -1447,6 +1451,7 @@ function rows0(soc){
       artiste:e.artiste||((sortieDe(soc,code)||{}).artist)||'',spotify:e.spotify||'',youtube:e.youtube||'',
       sortie:e.sortie||(((sortieDe(soc,code)||{}).dateSortable)||'').slice(0,10),release:e.release||'',releases:idsReleases(e),
       notes:notesDe(e),art:e.art||'',nonSorti:!!e.nonSorti,
+      sacemErr:(e.sacemErr&&!e.sacemErr.regle)?e.sacemErr:null,
       sw:v.list,swAuto:v.auto,vstat:ventStatut(soc,code,v.list)};
   });
 }
@@ -1710,7 +1715,11 @@ function viewApercu(){
   var P=state.fP||'',S=state.fS||'';
   if(S&&!store.songwriters[S]){S='';state.fS='';}
   var F=agregatFiltre(soc,P,S),axe=axeReps(soc),set=F.set;
-  var dep=rs.filter(function(r){return r.cat;}),AT=nbATraiter(soc);
+  // le filtre songwriter s'applique aussi aux compteurs d'œuvres du récap
+  var rsF=S?rs.filter(function(r){return (r.sw||[]).some(function(x){return x.id===S;});}):rs;
+  var dep=rsF.filter(function(r){return r.cat;}),AT=nbATraiter(soc,S);
+  var phMoy=(function(){var n=0,t2=0;rsF.forEach(function(r){if(r.partSocPh||r.partSoc){t2+=r.partSocPh;n++;}});
+    return n?t2/n:0;})();
   var cand=(set||axe).filter(function(n){return (F.reps[n]||0)>0.005;});
   var dern=cand.length?cand[cand.length-1]:null,avant=dern!=null?F.reps[dern-1]:null;
   var sws=swList(soc);
@@ -1725,7 +1734,9 @@ function viewApercu(){
       :kpi('','Dernier trimestre',dern!=null?eur(F.reps[dern])+' €':'—',
         dern!=null?'répartition '+dern+' · '+repDate(dern).lbl+(avant?' · '+(F.reps[dern]>=avant?'▲':'▼')+' '+
           (F.reps[dern]-avant>=0?'+':'')+eur(F.reps[dern]-avant,0)+' €':''):'—'))+
-    kpi('','Œuvres déposées',e0(dep.length),t.nPart?pv(t.partSocPh/t.nPart)+' % de phono en moyenne':'—')+
+    kpi('','Œuvres déposées',e0(dep.length),
+      (S?'sur '+e0(rsF.length)+' œuvre'+(rsF.length>1?'s':'')+' de '+esc(store.songwriters[S].nom)+' · ':'')+
+      (phMoy?pv(phMoy)+' % de phono en moyenne':'—'))+
     '<a class="kpi kpi-lien" href="#/'+soc+'/rappro" data-nav="rappro"><div class="k">Œuvres à traiter</div>'+
       '<div class="v">'+e0(AT.oeuvres)+'</div><div class="s">'+e0(AT.faites)+' sur '+e0(AT.total)+' vérifiées'+
       (AT.vent?' · '+AT.vent+' dissolution'+(AT.vent>1?'s':'')+' à valider':'')+'</div></a>'+
@@ -1755,15 +1766,16 @@ function viewApercu(){
   h+='<div class="panel"><div class="phead"><h2>Top œuvres</h2><span class="note">'+esc(libPeriode(P))+
     (S?' · part de '+esc(store.songwriters[S].nom):'')+'</span></div>'+
     '<div class="tscroll"><table><thead><tr><th class="l">Œuvre</th><th class="l">Artiste</th>'+
-    '<th class="num">Notre phono</th><th class="num">Revenus €</th><th class="num">Part</th><th class="l">Songwriters</th></tr></thead><tbody>'+
+    '<th class="num">Notre phono</th><th class="num">Revenus €</th><th class="num">Part</th><th class="l">Songwriters</th>'+
+    '<th class="l">Sortie</th></tr></thead><tbody>'+
     (top.length?top.map(function(x,i){var r=x.r;
       return '<tr class="clickable" data-go-oe="'+esc(r.code)+'"><td class="l w"><span class="tt"><span class="rang">'+((pO-1)*15+i+1)+'</span>'+
         vignette(artDe(soc,r.code))+'<span>'+esc(r.titreTrack||r.titre)+sousLigne(r,false)+'</span></span></td>'+
         '<td class="l mut">'+(r.artiste?esc(r.artiste):'—')+'</td>'+
         '<td class="num'+(r.partSocPh?' ph':' mut')+'">'+(r.partSocPh?pv(r.partSocPh)+' %':'·')+'</td>'+
         '<td class="num w">'+eur(x.v)+'</td><td class="num mut">'+pct(F.net?100*x.v/F.net:0)+'</td>'+
-        '<td class="l">'+swTags(r)+'</td></tr>';}).join('')
-      :'<tr><td colspan="6" class="mut">Aucun revenu sur cette sélection.</td></tr>')+
+        '<td class="l">'+swTags(r)+'</td><td class="l">'+lienPlan(soc,r.code)+'</td></tr>';}).join('')
+      :'<tr><td colspan="7" class="mut">Aucun revenu sur cette sélection.</td></tr>')+
     '</tbody></table></div>'+pages(tous.length,15,pO,'O')+'</div>';
   // top songwriters : signés, contrats terminés et externes, ceux à zéro compris
   var tsw=sws.map(function(sw){return {sw:sw,v:F.sw[sw.id]||0};})
@@ -1800,7 +1812,7 @@ function pages(total,par,page,cle){
 // (titre non commercialisé, ou aucune part de la société à dissoudre).
 var POINTS=[['artiste','Artiste'],['lien','Lien'],['sortie','Sortie'],['art','Artwork'],
             ['sw','Songwriters'],['vent','Dissolution'],['event','Event'],['splits','Splits'],
-            ['part','Notre part'],['ecart','Calcul auto']];
+            ['part','Notre part'],['ecart','Calcul auto'],['sacem','Réclamation']];
 // Un songwriter signé chez nous est ventilé sur l'œuvre : les splits doivent avoir été relus.
 function swBLZventile(r){
   return (r.sw||[]).some(function(x){var s=store.songwriters[x.id];return !!(s&&estBLZ(s));});
@@ -1826,13 +1838,16 @@ function checkOeuvre(soc,r){
     // part de la société nulle au dépôt : rapprochement douteux, ou erreur de saisie à la Sacem
     part:(r.partSocPh>0||r.partSoc>0||r.partSocDr>0)?true:!!e.part0Ok,
     // la ventilation a dû être retouchée pour retomber sur notre part : à relire
-    ecart:ventRetouchee(soc,r.code)?!!e.splitsOk:null};
+    ecart:ventRetouchee(soc,r.code)?!!e.splitsOk:null,
+    // une erreur de dépôt signalée à la Sacem : l'œuvre reste en réclamation tant qu'elle n'est pas réglée
+    sacem:(e.sacemErr&&!e.sacemErr.regle)?false:null};
   c.manques=POINTS.filter(function(p2){return c[p2[0]]===false;}).map(function(p2){return p2[0];});
   return c;
 }
 var LIB_MANQUE={artiste:'Artiste manquant',lien:'Lien manquant',sortie:'Sortie manquante',art:'Artwork manquant',
   sw:'Songwriters manquants',vent:'Dissolution à valider',event:'Event du Planning manquant',
-  splits:'Splits à relire',part:'Notre part à 0',ecart:'Ventilation retouchée'};
+  splits:'Splits à relire',part:'Notre part à 0',ecart:'Ventilation retouchée',
+  sacem:'Erreur Sacem à réclamer'};
 function puce(v,lib){
   return v===true?'<span class="ck ok" title="'+lib+' : fait">✓</span>'
     :v===false?'<span class="ck ko" title="'+lib+' : à faire">✕</span>'
@@ -1846,8 +1861,13 @@ function fichesATraiter(soc){
       .filter(function(x){return x.c.manques.length;})
       .sort(function(a,b){return (b.r.net-a.r.net)||String(a.r.titre).localeCompare(String(b.r.titre),'fr');});});
 }
-function nbATraiter(soc){
-  var f=fichesATraiter(soc),tot=rows(soc).filter(function(r){return !r.na;}).length;
+function nbATraiter(soc,sw){
+  var f=fichesATraiter(soc),L=rows(soc).filter(function(r){return !r.na;});
+  if(sw){
+    var dedans=function(r){return (r.sw||[]).some(function(x){return x.id===sw;});};
+    f=f.filter(function(x){return dedans(x.r);});L=L.filter(dedans);
+  }
+  var tot=L.length;
   return {oeuvres:f.length,vent:ventilationsEnAttente(soc).length,fiches:f.length,total:tot,faites:tot-f.length};
 }
 function dernierRep(t){var k=Object.keys(t.reps);if(!k.length)return '—';
@@ -1945,15 +1965,26 @@ function liens(r){
   if(r.spotify)o.push('<a href="'+esc(r.spotify)+'" target="_blank" rel="noopener" title="Spotify"><i class="ext sp"></i></a>');
   if(r.youtube)o.push('<a href="'+esc(r.youtube)+'" target="_blank" rel="noopener" title="YouTube"><i class="ext yt"></i></a>');
   // la sortie au Planning, quand l'œuvre y est rattachée
-  var L=sortiesLiees(state.societe,r.code);
-  if(L.length)o.push('<a class="lien-plan" href="'+esc(lienPlanning(L[0]))+'" target="_blank" rel="noopener" title="'+
-    esc(L.map(function(x){return x.type+' « '+titreSortie(x)+' »'+(x.date?' · '+x.date:'');}).join(' · '))+
-    '">Planning'+(L.length>1?' ('+L.length+')':'')+' ↗</a>');
+  if(sortiesLiees(state.societe,r.code).length)o.push(lienPlan(state.societe,r.code));
   return o.length?o.join(' '):'<span class="mut">—</span>';
+}
+// Le raccourci vers la ou les sorties du Planning portant cette œuvre
+function lienPlan(soc,code){
+  var L=sortiesLiees(soc,code);
+  if(!L.length)return '<span class="mut">—</span>';
+  return '<a class="lien-plan" href="'+esc(lienPlanning(L[0]))+'" target="_blank" rel="noopener" title="'+
+    esc(L.map(function(x){return x.type+' « '+titreSortie(x)+' »'+(x.date?' · '+x.date:'');}).join(' · '))+
+    '">Planning'+(L.length>1?' ('+L.length+')':'')+' ↗</a>';
 }
 // Un titre pas encore commercialisé : on le signale partout où l'œuvre apparaît
 function tagNonSorti(r){
-  return r&&r.nonSorti?' <span class="tag nonsortie">pas encore commercialisé</span>':'';
+  return (r&&r.nonSorti?' <span class="tag nonsortie">pas encore commercialisé</span>':'')+
+    (r&&r.sacemErr?' <span class="tag ko" title="'+esc(r.sacemErr.t||'Erreur de dépôt signalée')+'">erreur Sacem</span>':'');
+}
+// Œuvres dont le dépôt Sacem est faux : la liste sert à préparer les réclamations
+function reclamations(soc){
+  return rows(soc).filter(function(r){return !!r.sacemErr;})
+    .sort(function(a,b){return String(a.sacemErr.d||'').localeCompare(String(b.sacemErr.d||''));});
 }
 
 /* ============================== songwriters ============================== */
@@ -2069,6 +2100,25 @@ function viewRappro(){
         '<button class="btn sm primary" data-code="'+esc(r.code)+'">Vérifier</button></div></td></tr>';
     });
     h+='</tbody></table></div>'+pages(vent.length,40,pv2,'V')+'</div>';
+  }
+  var recl=reclamations(soc);
+  if(recl.length){
+    h+='<div class="panel"><div class="phead"><h2>Réclamations Sacem</h2>'+
+      '<span class="note">'+recl.length+' œuvre'+(recl.length>1?'s':'')+' dont le dépôt est erroné — à réclamer à la Sacem</span>'+
+      '<button class="btn sm" id="recl-copy" style="margin-left:auto">Copier la liste</button></div>'+
+      '<div class="tscroll"><table><thead><tr><th class="l">Œuvre</th><th class="l">Code / ISWC</th>'+
+      '<th class="l">Ce qui est faux</th><th class="l">Sortie</th><th class="l">Signalée</th><th class="l"></th></tr></thead><tbody>'+
+      recl.map(function(r){
+        return '<tr class="clickable" data-code="'+esc(r.code)+'"><td class="l w"><span class="tt">'+vignette(artDe(soc,r.code))+
+          '<span>'+esc(r.titreTrack||r.titre)+'<div class="mini">'+(r.artiste?esc(r.artiste):'artiste à renseigner')+'</div></span></span></td>'+
+          '<td class="l mut">'+esc(r.code)+(r.iswc?'<div class="mini">'+esc(r.iswc)+'</div>':'')+'</td>'+
+          '<td class="l">'+(r.sacemErr.t?esc(r.sacemErr.t):'<span class="mut">à préciser</span>')+'</td>'+
+          '<td class="l">'+lienPlan(soc,r.code)+'</td>'+
+          '<td class="l mut">'+esc(frDate(r.sacemErr.d))+
+            (r.sacemErr.envoi?'<div class="mini">réclamée le '+esc(frDate(r.sacemErr.envoi))+'</div>'
+              :'<div class="mini"><span class="tag ko">à envoyer</span></div>')+'</td>'+
+          '<td class="l"><a class="lien-plan" href="#/'+esc(soc)+'/oeuvre/'+encodeURIComponent(r.code)+'">Fiche ↗</a></td></tr>';}).join('')+
+      '</tbody></table></div></div>';
   }
   var AT=nbATraiter(soc),filt=state.ckf||'';
   var comptes={};POINTS.forEach(function(p2){comptes[p2[0]]=fiches.filter(function(x){return x.c[p2[0]]===false;}).length;});
@@ -2404,6 +2454,8 @@ function oeuvresDeSortie(r){
 }
 // Statut Sacem d'un track de sortie
 // « Contrats signés » : l'œuvre apparaîtra dans les prochains exports de nos catalogues
+// Suivi du post Instagram d'une sortie, repris du Planning
+var INSTA_LIB={a_faire:'À faire',poste:'Posté',aucun:'Pas de post'};
 var STATUTS_SACEM=[['a_lancer','À lancer'],['en_cours','En cours'],
   ['en_signature','En cours de signature'],['contrats_signes','Contrats signés'],
   ['depose','Déposé à la Sacem'],['bloque','Bloqué'],['non_editeur','Non éditeur sur l\'œuvre']];
@@ -2473,25 +2525,26 @@ function lierDansSortie(r,soc,code,info){
   }
   if(info.artiste&&r.artist!==info.artiste&&seul){r.artist=info.artiste;chg=true;}
   else if(info.artiste&&!r.artist){r.artist=info.artiste;chg=true;}
-  // le featuring de la fiche : sur la sortie pour un single, sur le track pour un projet
+  // la ligne du track : titre commercialisé, featurings, songwriters et fiche Coda
   var fts=listeFeat(info.feat),sws=swDeLOeuvre(soc,code);
-  if(r.type==='EP'||r.type==='Album'){
-    // le titre commercialisé et les songwriters de l'œuvre alimentent la ligne du track
-    var bt=Array.isArray(r.blzTracks)?r.blzTracks.slice():[];
-    var i2=-1;bt.forEach(function(z,j){if(norm(z&&z.title)===cle)i2=j;});
-    var ligne=i2<0?{title:t,featurings:[],songwriters:[]}:Object.assign({},bt[i2]);
-    var avant=JSON.stringify([ligne.title,ligne.featurings||[],ligne.songwriters||[]]);
-    ligne.title=t;
-    if(fts.length)ligne.featurings=fts;
-    var swL=(ligne.songwriters||[]).slice();
-    sws.forEach(function(n){if(n&&swL.map(norm).indexOf(norm(n))<0)swL.push(n);});
-    ligne.songwriters=swL;
-    if(JSON.stringify([ligne.title,ligne.featurings||[],ligne.songwriters||[]])!==avant){
-      if(i2<0)bt.push(ligne);else bt[i2]=ligne;
-      r.blzTracks=bt;chg=true;}
-  }else{
-    if(fts.length&&seul&&(r.featurings||[]).join('|')!==fts.join('|')){r.featurings=fts;chg=true;}
-  }
+  var bt=Array.isArray(r.blzTracks)?r.blzTracks.slice():[];
+  var i2=-1;bt.forEach(function(z,j){if(norm(z&&z.title)===cle)i2=j;});
+  var ligne=i2<0?{title:t,featurings:[],songwriters:[],coda:''}:Object.assign({},bt[i2]);
+  var sig0=JSON.stringify([ligne.title,ligne.featurings||[],ligne.songwriters||[],ligne.coda||'']);
+  ligne.title=t;
+  if(info.feat!=null)ligne.featurings=fts;
+  if(info.coda!=null)ligne.coda=String(info.coda||'').trim();
+  var swL=(ligne.songwriters||[]).slice();
+  sws.forEach(function(n){if(n&&swL.map(norm).indexOf(norm(n))<0)swL.push(n);});
+  ligne.songwriters=swL;
+  if(JSON.stringify([ligne.title,ligne.featurings||[],ligne.songwriters||[],ligne.coda||''])!==sig0){
+    if(i2<0)bt.push(ligne);else bt[i2]=ligne;
+    r.blzTracks=bt;chg=true;}
+  // sur un single, le featuring porte aussi la sortie
+  if(r.type!=='EP'&&r.type!=='Album'&&fts.length&&seul&&(r.featurings||[]).join('|')!==fts.join('|')){
+    r.featurings=fts;chg=true;}
+  // suivi du post Instagram de la sortie
+  if(info.insta&&r.insta!==info.insta){r.insta=info.insta;chg=true;}
   // les songwriters de l'œuvre remontent aussi sur la sortie
   if(sws.length){
     var gl=Array.isArray(r.songwriters)?r.songwriters.slice():(r.songwriters?[r.songwriters]:[]);
@@ -2859,7 +2912,9 @@ function pageOeuvre(code){
     '<div><div class="eyebrow">Œuvre'+(o.genre?' · '+esc(o.genre):'')+'</div>'+
     '<h1 class="h-page">'+esc(e.titreTrack||o.titre||'(sans titre)')+
       (e.feat?' <span class="mut" style="font-weight:600">feat. '+esc(e.feat)+'</span>':'')+
-      (e.nonSorti?' <span class="tag nonsortie" style="vertical-align:middle">pas encore commercialisé</span>':'')+'</h1>'+
+      (e.nonSorti?' <span class="tag nonsortie" style="vertical-align:middle">pas encore commercialisé</span>':'')+
+      (e.sacemErr&&!e.sacemErr.regle?' <span class="tag ko" style="vertical-align:middle" title="'+
+        esc(e.sacemErr.t||'')+'">erreur Sacem · réclamation à faire</span>':'')+'</h1>'+
     (e.titreTrack&&norm(e.titreTrack)!==norm(o.titre)?'<div class="mini" style="font-size:11.5px">déposée sous « '+esc(o.titre)+' »</div>':'')+
     (o.sous?'<div class="mini" style="font-size:11.5px">sous-titre Sacem : '+esc(o.sous)+'</div>':'')+
     // une œuvre peut ressortir : single, puis album, puis réédition — toutes les sorties sont listées
@@ -3140,6 +3195,21 @@ function render(){
     try{await saveEdit(soc,code);}catch(err){}
     render();toast('Ventilation validée');};});
   if(el('ckTri'))el('ckTri').onchange=function(){state.ckTri=this.value;state.pgC=1;render();};
+  if(el('recl-copy'))el('recl-copy').onclick=function(){
+    var soc=state.societe;
+    var txt=reclamations(soc).map(function(r){
+      var L=sortiesLiees(soc,r.code);
+      return [r.titreTrack||r.titre,r.code,r.iswc||'—',r.artiste||'—',
+        L.length?L[0].type+' « '+titreSortie(L[0])+' » '+(L[0].date||''):'pas de sortie liée',
+        (r.sacemErr.t||'à préciser')].join('\t');}).join('\n');
+    var ent=['Titre','Code œuvre','ISWC','Artiste','Sortie','Erreur constatée'].join('\t');
+    var tout=ent+'\n'+txt;
+    try{navigator.clipboard.writeText(tout);toast('Liste des réclamations copiée');}
+    catch(err){
+      var ta=document.createElement('textarea');ta.value=tout;document.body.appendChild(ta);
+      ta.select();try{document.execCommand('copy');toast('Liste des réclamations copiée');}catch(e2){toast('Copie impossible',4000);}
+      ta.remove();}
+  };
   var q=el('q');
   if(q)q.oninput=function(){var p=this.selectionStart;state.q=this.value;render();
     var n=el('q');if(n){n.focus();n.setSelectionRange(p,p);}};
@@ -3225,6 +3295,11 @@ function ficheOeuvre(code){
   var toutes=repsSoc(soc),parAn={};
   toutes.forEach(function(n){var y=repDate(n).an;(parAn[y]||(parAn[y]=[])).push(n);});
   var anneesDispo=Object.keys(parAn).sort();
+  // courbe des revenus par répartition : la même que dans la vue d'ensemble, au format de la modale
+  var graphRevenus=(function(){
+    var g=courbeReps(o.reps||{},toutes,{W:560,H:150,max:16,bw:26});
+    return g?'<div class="graph-rep">'+g+'</div>':'';
+  })();
   var blocRevenus=!toutes.length
     ? '<div class="mut" style="font-size:12px">Aucune répartition importée pour '+esc(socNom(soc))+'.</div>'
     : '<div class="tscroll"><table><tbody>'+anneesDispo.map(function(y){
@@ -3284,7 +3359,8 @@ function ficheOeuvre(code){
     /* --- versions live, remix… --- */
     '<div class="sep"></div><label class="fl">Versions de l\'œuvre</label><div id="f-vers"></div>'+
     /* --- revenus --- */
-    '<div class="sep"></div><label class="fl">Revenus perçus par '+esc(socNom(soc))+'</label>'+blocRevenus+
+    '<div class="sep"></div><label class="fl">Revenus perçus par '+esc(socNom(soc))+'</label>'+
+      graphRevenus+blocRevenus+
     /* --- notes --- */
     '<div class="sep"></div><label class="fl">Notes internes</label><div id="f-notes"></div>'+
     '<div class="field" style="margin-top:8px"><textarea id="f-note" placeholder="Ajouter une note — elle sera datée"></textarea>'+
@@ -3539,8 +3615,9 @@ function ficheOeuvre(code){
       '<b>'+pv(partDep)+' %</b> en DEP · <b>'+pv(partDr)+' %</b> en DR. '+
       'Le phono commande la ventilation, DEP et DR suivent au prorata.';
   }
-  /* ---- contrôles : relecture des splits, part nulle au dépôt ---- */
+  /* ---- contrôles : relecture des splits, part nulle au dépôt, erreur de dépôt ---- */
   var splitsOk=e.splitsOk||'',part0Ok=e.part0Ok||'';
+  var sacemErr=e.sacemErr?Object.assign({},e.sacemErr):null,errOuvre=!!(sacemErr&&!sacemErr.regle);
   // les points saisis s'écartent-ils du calcul « écriture × part représentée » ?
   function ecartCalcul(){
     return groupes().some(function(x){return Math.abs(ptsCalcules(x)-(+pts[x.k]||0))>0.02;});
@@ -3575,12 +3652,37 @@ function ficheOeuvre(code){
         '<div class="mini">Soit le rapprochement est faux et l\'œuvre n\'est pas la nôtre, soit le dépôt Sacem est mal saisi. '+
         'Cochez une fois le cas tranché.</div></span></label></div>';
     }
+    // la Sacem se trompe parfois : on note l'erreur ici, elle ressort ensuite pour la réclamation
+    h+='<div class="ctrl'+(errOuvre?' vent-faux':'')+'" style="margin-top:8px">'+
+      (errOuvre
+        ?'<div><b>Erreur Sacem signalée</b> <span class="tag ko">réclamation à faire</span>'+
+          '<span class="mut" style="font-size:11.5px"> · le '+esc(frDate(sacemErr.d))+
+          (sacemErr.envoi?' · réclamation envoyée le '+esc(frDate(sacemErr.envoi)):'')+'</span>'+
+          '<div class="field" style="margin-top:6px"><label class="fl">Ce qui est faux au dépôt</label>'+
+          '<textarea id="f-errnote" rows="2" placeholder="Parts, ayants droit, titre, ISWC…">'+esc(sacemErr.t||'')+'</textarea></div>'+
+          '<div class="rowline" style="margin-top:6px">'+
+            '<button type="button" class="btn sm" id="f-errsend">'+(sacemErr.envoi?'Réclamation renvoyée':'Réclamation envoyée')+'</button>'+
+            '<button type="button" class="btn sm" id="f-errok">Corrigé par la Sacem</button>'+
+            '<button type="button" class="btn sm" id="f-errno">Annuler le signalement</button></div></div>'
+        :'<div class="rowline"><button type="button" class="btn sm" id="f-erradd">Signaler une erreur Sacem</button>'+
+          '<span class="mut" style="font-size:11.5px">Dépôt erroné côté Sacem : parts, ayants droit, titre…'+
+          (sacemErr&&sacemErr.regle?' Dernière erreur corrigée le '+esc(frDate(sacemErr.regle))+'.':'')+'</span></div>')+
+      '</div>';
     b.innerHTML=h;
     b.style.marginTop=h?'10px':'0';
     if(el('f-splitsok'))el('f-splitsok').onchange=function(){
       splitsOk=this.checked?(e.splitsOk||new Date().toISOString()):'';drawSplitsOk();};
     if(el('f-part0'))el('f-part0').onchange=function(){
       part0Ok=this.checked?(e.part0Ok||new Date().toISOString()):'';drawSplitsOk();};
+    if(el('f-erradd'))el('f-erradd').onclick=function(){
+      sacemErr={d:new Date().toISOString(),t:''};errOuvre=true;drawSplitsOk();
+      if(el('f-errnote'))el('f-errnote').focus();};
+    if(el('f-errnote'))el('f-errnote').oninput=function(){if(sacemErr)sacemErr.t=this.value;};
+    if(el('f-errsend'))el('f-errsend').onclick=function(){
+      if(sacemErr)sacemErr.envoi=new Date().toISOString();drawSplitsOk();};
+    if(el('f-errok'))el('f-errok').onclick=function(){
+      if(sacemErr)sacemErr.regle=new Date().toISOString();errOuvre=false;drawSplitsOk();};
+    if(el('f-errno'))el('f-errno').onclick=function(){sacemErr=null;errOuvre=false;drawSplitsOk();};
   }
   drawNotes();drawAut();drawVent();drawSplitsOk();majPochette(false);
   /* ---- featuring : un champ par artiste invité, ouvert par « + Feat » ---- */
@@ -3673,11 +3775,18 @@ function ficheOeuvre(code){
   // une œuvre peut sortir plusieurs fois : single, puis album, puis réédition
   var liens=sortiesLiees(soc,code).map(function(r){
     var t=entreeDansSortie(r,soc,code);
+    var nom=(t&&(t.x.track||t.cle))||null;
+    var bt=(Array.isArray(r.blzTracks)?r.blzTracks:[]).filter(function(z){
+      return z&&nom&&norm(z.title)===norm(nom);})[0]||null;
     return {id:String(r.id),
-      piste:(t&&(t.x.track||t.cle))||null,
+      piste:nom,
+      libre:'',
+      feats:bt&&Array.isArray(bt.featurings)?bt.featurings.slice():null,
+      coda:bt&&bt.coda?bt.coda:'',
+      insta:INSTA_LIB[r.insta]?r.insta:'a_faire',
       statut:o.cat?'depose':statutOk((t&&t.x.statut)||(t&&(r.sacem||{})[t.cle])||'')};});
   var liensAvant=liens.map(function(x){return x.id;});
-  var creation=false,planQ='';
+  var creation=false,planQ='',ajout=false;   // ajout : la recherche d'une sortie supplémentaire est ouverte
   function lienDe(id){return liens.filter(function(x){return x.id===String(id);})[0]||null;}
   function estLie(id){return !!lienDe(id);}
   // Par défaut la fiche fait foi : on ne complète que les champs vides. Le bouton force la reprise.
@@ -3743,13 +3852,35 @@ function ficheOeuvre(code){
             :'<select data-plst="'+i+'">'+STATUTS_SACEM.map(function(s2){
               return '<option value="'+s2[0]+'"'+(s2[0]===L.statut?' selected':'')+'>'+s2[1]+'</option>';}).join('')+'</select>')+
         '</div>'+
-        (projet?'<div class="field" style="margin-top:8px"><label class="fl">Titre du projet correspondant</label>'+
-          '<select data-plpiste="'+i+'">'+pistes.map(function(t){
-            var l2=oeuvresDuTrack(lie,norm(t)).filter(function(x){return !(x.code===code&&x.soc===soc);});
-            return '<option value="'+esc(t)+'"'+(t===L.piste?' selected':'')+'>'+esc(t)+
-              (l2.length?' — porte déjà « '+esc(l2[0].titre||l2[0].code)+' »':'')+'</option>';}).join('')+
-            '<option value=""'+(L.piste===''?' selected':'')+'>+ Ajouter « '+esc(trackCourant())+' » comme nouveau titre</option>'+
-          '</select></div>':'')+
+        // le track : son titre commercialisé, ses featurings et sa fiche Coda — comme dans la fiche event
+        '<div class="tk-bloc">'+
+          '<div class="field"><label class="fl">Titre du track'+(projet?' dans le projet':'')+'</label>'+
+          (projet
+            ?'<select data-plpiste="'+i+'">'+pistes.map(function(t){
+                var l2=oeuvresDuTrack(lie,norm(t)).filter(function(x){return !(x.code===code&&x.soc===soc);});
+                return '<option value="'+esc(t)+'"'+(t===L.piste?' selected':'')+'>'+esc(t)+
+                  (l2.length?' — porte déjà « '+esc(l2[0].titre||l2[0].code)+' »':'')+'</option>';}).join('')+
+                '<option value="">+ Ajouter un titre au projet</option></select>'+
+              (L.piste===''?'<input type="text" data-pllibre="'+i+'" value="'+esc(L.libre||trackCourant())+
+                '" placeholder="Titre du nouveau track" style="margin-top:6px">':'')
+            :'<input type="text" data-pllibre="'+i+'" value="'+esc(L.piste!=null?L.piste:trackCourant())+
+              '" placeholder="Titre commercialisé">')+
+          '</div>'+
+          '<div class="field"><label class="fl">Featurings du track</label>'+
+            '<div class="feats" data-plfeats="'+i+'">'+
+            (L.feats||[]).map(function(f,j){
+              return '<div class="feat-l"><input type="text" data-plft="'+i+':'+j+'" value="'+esc(f)+'" placeholder="Artiste invité">'+
+                '<button type="button" class="x" data-plftx="'+i+':'+j+'" title="Retirer">×</button></div>';}).join('')+
+            '<button type="button" class="btn sm" data-plftadd="'+i+'">+ Feat</button></div></div>'+
+          '<div class="field"><label class="fl">Fiche Coda du track</label>'+
+            '<input type="url" data-plcoda="'+i+'" value="'+esc(L.coda||'')+'" placeholder="Lien de la fiche Coda">'+
+            (/^https?:\/\//i.test(L.coda||'')?'<div class="mini"><a href="'+esc(L.coda)+'" target="_blank" rel="noopener">↗ Ouvrir la fiche Coda</a></div>':'')+
+          '</div>'+
+          '<div class="field"><label class="fl">Post Insta de la sortie</label>'+
+            '<select data-plinsta="'+i+'">'+Object.keys(INSTA_LIB).map(function(k){
+              return '<option value="'+k+'"'+(L.insta===k?' selected':'')+'>'+INSTA_LIB[k]+'</option>';}).join('')+
+            '</select></div>'+
+        '</div>'+
         // deux versions d'une même chanson sur un même titre : c'est normal, on l'indique
         (versions.length?'<div class="hint">Ce titre porte aussi '+
           versions.map(function(x){return '« '+esc(x.titre||x.code)+' » '+quiEst((x.soc||'')+'|'+x.code);}).join(', ')+
@@ -3768,17 +3899,27 @@ function ficheOeuvre(code){
     // ---- ajouter une sortie ----
     var cands=PLANNING.filter(function(r){return TYPES_SORTIE[r.type]&&!estLie(r.id);});
     var q=norm(planQ);
-    var L2=cands.map(function(r){return {r:r,sc:score(r)};})
+    // une œuvre déjà rattachée ne reçoit plus de propositions : il faut chercher pour en ajouter une autre
+    var L2=(liens.length&&!q)?[]:cands.map(function(r){return {r:r,sc:score(r)};})
       .filter(function(x){return q?norm(titreSortie(x.r)+' '+x.r.artist+' '+(x.r.blzTrackNames||'')).indexOf(q)>=0:x.sc>0;})
       .sort(function(a2,b2){return (b2.sc-a2.sc)||String(b2.r.dateSortable||'').localeCompare(String(a2.r.dateSortable||''));})
       .slice(0,6);
+    // déjà liée : on ne propose plus rien, mais le bouton ouvre la recherche pour en lier une autre
+    if(liens.length&&!ajout){
+      h+='<div class="rowline" style="margin-top:10px">'+
+        '<button class="btn sm" id="pl-plus">+ Lier une autre sortie</button>'+
+        '<span class="mut" style="font-size:11.5px">Un même titre peut ressortir sur un album ou une réédition.</span></div>';
+      box.innerHTML=h;brancherPlan(box,L2);return;
+    }
     h+='<div class="rowline" style="margin:'+(liens.length?'10px 0 8px':'0 0 8px')+'"><input type="search" id="pl-q" placeholder="'+
-        (liens.length?'Lier une autre sortie (album, réédition…)':'Chercher un single, un EP, un album…')+'" value="'+
+        (liens.length?'Chercher la sortie à ajouter (album, réédition…)':'Chercher un single, un EP, un album…')+'" value="'+
         esc(planQ)+'" style="flex:1;min-width:180px">'+
       '<button class="btn sm" id="pl-new"'+(MODE==='firebase'?'':' disabled title="Disponible dans la Toolbox connectée"')+
-        '>Créer l\'événement</button></div>'+
+        '>Créer l\'événement</button>'+
+      (liens.length?'<button class="btn sm" id="pl-moins">Annuler</button>':'')+'</div>'+
       '<div class="mut" style="font-size:12px;margin-bottom:6px">'+
-      (liens.length?'Le même titre peut ressortir sur un album ou une réédition.':'Aucun événement lié.')+
+      (liens.length?'Tapez le nom de la sortie à rattacher à cette œuvre.'
+        :'Aucun événement lié.')+
       (L2.length?(q?' Résultats :':' Événements proposés :'):q?' Aucun événement ne correspond.':'')+'</div>'+
       L2.map(function(x,i){var au=oeuvresDeSortie(x.r);delete au[soc+'|'+code];var n=Object.keys(au);
         // une autre version de la même œuvre sur la même sortie, c'est normal : pas d'alerte
@@ -3792,6 +3933,10 @@ function ficheOeuvre(code){
             n.map(function(k){return '« '+esc(au[k])+' »';}).join(', ')+'</div>':'')+'</div>'+
           '<button class="btn sm '+(alerte?'':'primary')+'" data-plk="'+i+'">'+(alerte?'Lier quand même':'Lier')+'</button></div>';}).join('');
     box.innerHTML=h;
+    brancherPlan(box,L2);
+  }
+  // branchement des contrôles du bloc Planning, commun aux deux sorties de drawPlan
+  function brancherPlan(box,L2){
     if(el('f-imp')){
       el('f-imp').hidden=!liens.length;
       el('f-imp').onclick=function(){var r0=liens.length&&sortieParId(liens[0].id);if(r0)reprendre(r0,true);};}
@@ -3804,17 +3949,40 @@ function ficheOeuvre(code){
       if(L3.piste&&L3.piste!==o.titre&&!el('f-track').value.trim())el('f-track').value=L3.piste;
       if(!o.cat&&lie)L3.statut=statutOk(((lie.sacem||{})[norm(L3.piste||trackCourant())])||L3.statut);
       drawPlan();};});
+    // titre libre, featurings, fiche Coda et suivi Insta du track
+    box.querySelectorAll('[data-pllibre]').forEach(function(i3){i3.oninput=function(){
+      var L3=liens[+this.dataset.pllibre];
+      if(L3.piste==='')L3.libre=this.value;else L3.piste=this.value;};});
+    box.querySelectorAll('[data-plft]').forEach(function(i3){i3.oninput=function(){
+      var a2=this.dataset.plft.split(':'),L3=liens[+a2[0]];
+      L3.feats=L3.feats||[];L3.feats[+a2[1]]=this.value;};});
+    box.querySelectorAll('[data-plftx]').forEach(function(b){b.onclick=function(){
+      var a2=this.dataset.plftx.split(':'),L3=liens[+a2[0]];
+      (L3.feats||[]).splice(+a2[1],1);drawPlan();};});
+    box.querySelectorAll('[data-plftadd]').forEach(function(b){b.onclick=function(){
+      var L3=liens[+this.dataset.plftadd];L3.feats=(L3.feats||[]).concat(['']);drawPlan();
+      var l4=box.querySelectorAll('[data-plft^="'+this.dataset.plftadd+':"]');
+      if(l4.length)l4[l4.length-1].focus();};});
+    box.querySelectorAll('[data-plcoda]').forEach(function(i3){i3.oninput=function(){
+      liens[+this.dataset.plcoda].coda=this.value;};
+      i3.onchange=function(){drawPlan();};});
+    box.querySelectorAll('[data-plinsta]').forEach(function(s3){s3.onchange=function(){
+      liens[+this.dataset.plinsta].insta=this.value;};});
     box.querySelectorAll('[data-plimp]').forEach(function(b){b.onclick=function(){
       var r0=sortieParId(liens[+this.dataset.plimp].id);if(r0)reprendre(r0,true);};});
     box.querySelectorAll('[data-pldel]').forEach(function(b){b.onclick=function(){
       liens.splice(+this.dataset.pldel,1);drawPlan();};});
     box.querySelectorAll('[data-plk]').forEach(function(bt){bt.onclick=function(){
       var r0=L2[+this.dataset.plk].r;
-      liens.push({id:String(r0.id),piste:null,statut:o.cat?'depose':'a_lancer'});
-      planQ='';reprendre(r0,false);drawPlan();};});
+      liens.push({id:String(r0.id),piste:null,libre:'',feats:null,coda:'',
+        insta:INSTA_LIB[r0.insta]?r0.insta:'a_faire',statut:o.cat?'depose':'a_lancer'});
+      planQ='';ajout=false;reprendre(r0,false);drawPlan();};});
     var qi=el('pl-q');if(qi)qi.oninput=function(){var pos=this.selectionStart;planQ=this.value;drawPlan();
       var n2=el('pl-q');if(n2){n2.focus();n2.setSelectionRange(pos,pos);}};
     if(el('pl-new'))el('pl-new').onclick=function(){creation=true;drawPlan();};
+    if(el('pl-plus'))el('pl-plus').onclick=function(){ajout=true;planQ='';drawPlan();
+      var n3=el('pl-q');if(n3)n3.focus();};
+    if(el('pl-moins'))el('pl-moins').onclick=function(){ajout=false;planQ='';drawPlan();};
   }
   function drawCreation(box){
     var art=el('f-artiste').value.trim(),dt=el('f-sortie').value,lk=el('f-spotify').value.trim()||el('f-youtube').value.trim();
@@ -3924,7 +4092,8 @@ function ficheOeuvre(code){
       if(!el('f-sortie').value)el('f-sortie').value=d;
       reprendre(r,false);
       try{await saveEdit(soc,code);}catch(err){rates.push(titreDuTrack(soc,code)||code);}
-      if(!estLie(r.id))liens.push({id:String(r.id),piste:null,statut:o.cat?'depose':'a_lancer'});
+      if(!estLie(r.id))liens.push({id:String(r.id),piste:null,libre:'',feats:null,coda:'',
+        insta:INSTA_LIB[r.insta]?r.insta:'a_faire',statut:o.cat?'depose':'a_lancer'});
       creation=false;
       drawPlan();
       if(rates.length)toast('Événement créé, mais le lien n\'a pas été enregistré pour : '+rates.join(', '),7000);
@@ -3963,8 +4132,10 @@ function ficheOeuvre(code){
         // puis chaque sortie liée, avec sa piste et son statut propres
         for(var ib=0;ib<liens.length;ib++){
           var L4=liens[ib],rn=sortieParId(L4.id);if(!rn)continue;
-          var pj2=rn.type==='EP'||rn.type==='Album';
-          if(lierDansSortie(rn,soc,code,{track:(pj2&&L4.piste)||L4.piste||ed.titreTrack||'',art:artUrl||'',feat:ed.feat||'',
+          var nomTrack=(L4.piste===''?(L4.libre||'').trim():String(L4.piste||'').trim())||ed.titreTrack||'';
+          if(lierDansSortie(rn,soc,code,{track:nomTrack,art:artUrl||'',
+            feat:L4.feats?L4.feats.join(', '):(ed.feat||''),
+            coda:L4.coda!=null?L4.coda:null,insta:L4.insta||'',
             lien:ed.spotify||ed.youtube||'',artiste:ed.artiste,statut:L4.statut}))
             await ecrireSortie(rn);
         }
@@ -3993,6 +4164,7 @@ function ficheOeuvre(code){
     // relecture des splits : ne vaut que si la case a été cochée à la main sur la fiche
     if(splitsOk)ed.splitsOk=splitsOk;else delete ed.splitsOk;
     if(part0Ok)ed.part0Ok=part0Ok;else delete ed.part0Ok;
+    if(sacemErr)ed.sacemErr=sacemErr;else delete ed.sacemErr;
     this.disabled=true;el('f-state').textContent='Enregistrement…';
     try{
       // les œuvres rattachées comme versions de celle-ci
