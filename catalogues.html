@@ -1998,6 +1998,7 @@ function viewOeuvres(){
     if(state.filtre==='fiche'&&!((checksSoc(soc)[r.code]||{manques:[]}).manques.length))return false;
     if(state.filtre==='ok'&&(checksSoc(soc)[r.code]||{manques:[1]}).manques.length)return false;
     if(state.filtre==='sacem'&&!r.sacemErr)return false;
+    if(state.filtre==='doublon'&&!((doublonsSoc(soc)[r.code]||{}).iswc||[]).length)return false;
     if(state.filtre==='nonsorti'&&!r.nonSorti)return false;
     if(!q)return true;
     return (r.titre+' '+r.code+' '+r.artiste+' '+r.iswc+' '+r.sous+' '+r.titreTrack).toLowerCase().indexOf(q)>=0;});
@@ -2017,6 +2018,8 @@ function viewOeuvres(){
   var nKo=rs.filter(function(r){return (CK[r.code]||{manques:[]}).manques.length;}).length;
   var f=[['tous','Toutes'],['ok','Vérifiées '+(rs.length-nKo)],['fiche','À compléter '+nKo],
     ['rev','Avec revenus'],['ratt','Rattachées'],['nonratt','Non rattachées']];
+  var nDbl=rs.filter(function(r){return ((doublonsSoc(soc)[r.code]||{}).iswc||[]).length;}).length;
+  if(nDbl)f.push(['doublon','Doublons de dépôt '+nDbl]);
   if(nErr)f.push(['sacem','Erreur Sacem '+nErr]);
   if(nNS)f.push(['nonsorti','Pas encore commercialisées '+nNS]);
   var h='<div class="panel"><div class="phead">'+
@@ -2039,6 +2042,7 @@ function viewOeuvres(){
     if(r.feat)sous.push('feat. '+esc(r.feat));
     if(r.sous&&norm(r.sous)!==norm(r.titre))sous.push(esc(r.sous));
     sous.push(esc(r.code)+(r.cat?'':' · hors catalogue'));
+    if((doublonsSoc(soc)[r.code]||{}).titre&&r.iswc)sous.push('ISWC '+esc(r.iswc));
     h+='<tr class="clickable'+(r.nonSorti?' l-nonsortie':'')+'" data-go-oe="'+esc(r.code)+'">'+
       '<td class="l w"><span class="tt">'+vignette(artDe(soc,r.code))+'<span>'+esc(r.titre)+tagNonSorti(r)+
       '<div class="mini">'+sous.join(' · ')+'</div></span></span></td>'+
@@ -2050,7 +2054,8 @@ function viewOeuvres(){
       '<td class="l">'+swTags(r)+'</td>'+
       ans.map(function(a){return '<td class="num'+(r.ans[a]?'':' mut')+'">'+(r.ans[a]?eur(r.ans[a]):'·')+'</td>';}).join('')+
       '<td class="num w">'+eur(r.net)+'</td>'+
-      '<td class="l">'+tagCheck(soc,r.code)+tagAutresCat(soc,r.code)+'</td><td class="l">'+liens(r)+'</td></tr>';});
+      '<td class="l">'+tagCheck(soc,r.code)+tagDoublon(soc,r.code)+tagAutresCat(soc,r.code)+'</td>'+
+      '<td class="l">'+liens(r)+'</td></tr>';});
   h+='</tbody></table></div>'+pages(list.length,nOe,pgOe,'Oe');
   return h+'</div>';
 }
@@ -2069,6 +2074,58 @@ function lienPlan(soc,code){
   return '<a class="lien-plan" href="'+esc(lienPlanning(L[0]))+'" target="_blank" rel="noopener" title="'+
     esc(L.map(function(x){return x.type+' « '+titreSortie(x)+' »'+(x.date?' · '+x.date:'');}).join(' · '))+
     '">Planning'+(L.length>1?' ('+L.length+')':'')+' ↗</a>';
+}
+// Deux dépôts pour la même œuvre dans un même catalogue : même ISWC = doublon certain,
+// même titre avec des ISWC différents = simples homonymes, qu'il faut pouvoir distinguer.
+function doublonsSoc(soc){
+  return memo('dbl:'+soc,function(){
+    var O=store.oeuvres[soc]||{},parI={},parT={},out={};
+    Object.keys(O).forEach(function(c){
+      var o=O[c];if(o.na)return;
+      var i=normISWC(o.iswc);
+      if(i)(parI[i]||(parI[i]=[])).push(c);
+      var t=norm(o.titre||'');
+      if(t)(parT[t]||(parT[t]=[])).push(c);
+    });
+    Object.keys(parI).forEach(function(i){
+      var l=parI[i];if(l.length<2)return;
+      l.forEach(function(c){
+        out[c]=out[c]||{iswc:[],titre:[]};
+        out[c].iswc=l.filter(function(z){return z!==c;});});});
+    Object.keys(parT).forEach(function(t){
+      var l=parT[t];if(l.length<2)return;
+      l.forEach(function(c){
+        var autres=l.filter(function(z){
+          if(z===c)return false;
+          // déjà signalé comme doublon certain : on ne le recompte pas en homonyme
+          return !((out[c]||{}).iswc||[]).some(function(y){return y===z;});});
+        if(!autres.length)return;
+        out[c]=out[c]||{iswc:[],titre:[]};
+        out[c].titre=autres;});});
+    return out;});
+}
+function tagDoublon(soc,code){
+  var d=(doublonsSoc(soc)||{})[code];
+  if(!d)return '';
+  var O=store.oeuvres[soc]||{},lib=function(l){return l.map(function(c){
+    return (O[c]||{}).titre+' · code '+c;}).join(' · ');};
+  var h='';
+  if(d.iswc&&d.iswc.length)h+=' <span class="tag ko" title="Même ISWC que : '+esc(lib(d.iswc))+
+    '">doublon de dépôt</span>';
+  if(d.titre&&d.titre.length)h+=' <span class="tag neutral" title="Même titre, ISWC différent : '+esc(lib(d.titre))+
+    '">homonyme</span>';
+  return h;
+}
+// Toutes les œuvres déposées deux fois dans le même catalogue
+function doublonsListe(soc){
+  var D=doublonsSoc(soc),O=store.oeuvres[soc]||{},vus={},out=[];
+  Object.keys(D).forEach(function(c){
+    if(!(D[c].iswc||[]).length)return;
+    var grp=[c].concat(D[c].iswc).sort();
+    var cle=grp.join('|');if(vus[cle])return;vus[cle]=1;
+    out.push({iswc:(O[c]||{}).iswc||'',codes:grp});});
+  return out.sort(function(a,b){return String((O[a.codes[0]]||{}).titre||'')
+    .localeCompare(String((O[b.codes[0]]||{}).titre||''),'fr');});
 }
 // La même œuvre déposée dans un autre de nos catalogues
 function tagAutresCat(soc,code){
@@ -2205,6 +2262,25 @@ function viewRappro(){
         '<button class="btn sm primary" data-code="'+esc(r.code)+'">Vérifier</button></div></td></tr>';
     });
     h+='</tbody></table></div>'+pages(vent.length,40,pv2,'V')+'</div>';
+  }
+  var dbl=doublonsListe(soc);
+  if(dbl.length){
+    var O2=store.oeuvres[soc]||{};
+    h+='<div class="panel"><div class="phead"><h2>Doublons de dépôt</h2>'+
+      '<span class="note">'+dbl.length+' œuvre'+(dbl.length>1?'s':'')+' déposée'+(dbl.length>1?'s':'')+
+      ' deux fois à la Sacem (même ISWC) — à faire fusionner</span></div>'+
+      '<div class="tscroll"><table><thead><tr><th class="l">Œuvre</th><th class="l">ISWC</th>'+
+      '<th class="l">Dépôts</th><th class="num">Revenus €</th></tr></thead><tbody>'+
+      dbl.map(function(g){
+        var tot=g.codes.reduce(function(a,c){return a+((O2[c]||{}).net||0);},0);
+        return '<tr><td class="l w"><span class="tt">'+vignette(artDe(soc,g.codes[0]))+
+          '<span>'+esc((O2[g.codes[0]]||{}).titre||g.codes[0])+'</span></span></td>'+
+          '<td class="l mut">'+esc(g.iswc||'—')+'</td>'+
+          '<td class="l">'+g.codes.map(function(c){
+            return '<a class="lien-plan" href="#/'+esc(soc)+'/oeuvre/'+encodeURIComponent(c)+'">'+esc(c)+
+              ' <span class="mut">'+(((O2[c]||{}).depot)?frDate(O2[c].depot):'—')+'</span></a>';}).join(' ')+'</td>'+
+          '<td class="num'+(tot?' w':' mut')+'">'+(tot?eur(tot):'—')+'</td></tr>';}).join('')+
+      '</tbody></table></div></div>';
   }
   var recl=reclamations(soc);
   if(recl.length){
@@ -3050,6 +3126,15 @@ function pageOeuvre(code){
       (sortie?' <span class="mut">· sortie le '+frDate(sortie)+'</span>':'')+
       (e.spotify?' · <a href="'+esc(e.spotify)+'" target="_blank" rel="noopener">Spotify</a>':'')+
       (e.youtube?' · <a href="'+esc(e.youtube)+'" target="_blank" rel="noopener">YouTube</a>':'')+'</div>'+
+    (function(){var d=doublonsSoc(soc)[code],O2=store.oeuvres[soc]||{};
+      if(!d)return '';
+      var bl=function(l,lib,cls){
+        return l&&l.length?'<div class="'+cls+'" style="font-size:12px;margin-top:3px">'+lib+' '+
+          l.map(function(c){return '<a href="#/'+soc+'/oeuvre/'+encodeURIComponent(c)+'" data-go-oe="'+esc(c)+'">« '+
+            esc((O2[c]||{}).titre||c)+' » <span class="mut">code '+esc(c)+
+            ((O2[c]||{}).depot?' · déposée le '+frDate(O2[c].depot):'')+'</span></a>';}).join(', ')+'</div>':'';};
+      return bl(d.iswc,'<b>Doublon de dépôt</b> — même ISWC que','soc-diff')+
+        bl(d.titre,'Même titre, œuvre différente :','mut');})()+
     (function(){var M=memesCatalogues(soc,code);
       if(!M.length)return '';
       return '<div style="font-size:12px;margin-top:3px">Aussi au catalogue de '+
@@ -3638,11 +3723,15 @@ function ficheOeuvre(code){
             inp.value=lignes[i].deal;
           }else inp.value=0;}
         var tr=this.closest('tr');if(tr&&tr.children[1])tr.children[1].classList.toggle('w',this.checked);
-        proposer();tout();};});
+        // une ligne qu'on vient de cocher part de son calcul ; les points déjà posés ne bougent pas
+        if(this.checked)amorcer(lignes[i]);
+        tout();};});
     el('aut-body').querySelectorAll('[data-d]').forEach(function(c){
-      c.oninput=function(){lignes[+this.dataset.d].deal=this.value===''?null:+this.value;
-        // dilution recalculée en direct dès qu'une part représentée bouge
-        proposer();tout();};});
+      c.oninput=function(){
+        var l=lignes[+this.dataset.d];l.deal=this.value===''?null:+this.value;
+        // la part change : les points suivent tant qu'ils n'ont pas été saisis à la main
+        if(!manuel)amorcer(l,true);
+        tout();};});
   }
   /* ---- points de notre part phono ---- */
   var A0=alloc(soc,code),pts={};
@@ -3676,6 +3765,14 @@ function ficheOeuvre(code){
   function ptsNetsCalcules(x){
     var b=ptsCalcules(x);
     return Math.round(b*(100-tauxCede(x)))/100;
+  }
+  // Pose les points d'une seule ligne depuis son calcul. force : on remplace même s'ils existent.
+  function amorcer(l,force){
+    if(!l||!l.coche)return;
+    var k=l.swId||('tmp'+l.i);
+    if(!force&&pts[k]!=null&&+pts[k]!==0)return;
+    var x=groupes().filter(function(z){return z.k===k;})[0];
+    if(x)pts[k]=ptsCalcules(x);
   }
   function proposer(){
     groupes().forEach(function(x){pts[x.k]=ptsCalcules(x);});
@@ -3747,8 +3844,9 @@ function ficheOeuvre(code){
     var b=el('vent-maj');if(!b)return;
     b.innerHTML='<div class="rowline"><button class="btn sm'+(manuel?' primary':'')+'" id="v-prop">Mettre à jour la dilution</button>'+
       '<span class="mut" style="font-size:11.5px">'+(manuel
-        ?'Points saisis à la main — le bouton les recalcule depuis écriture phono × part représentée.'
-        :'Points = écriture phono × part représentée, recalculés à chaque changement.')+'</span></div>';
+        ?'Points saisis à la main : seul ce bouton les remplace par écriture phono × part représentée.'
+        :'Vos points ne sont jamais recalculés tout seuls : ce bouton les repose sur écriture phono × part représentée.')+
+      '</span></div>';
     el('v-prop').onclick=function(){proposer();tout();};
   }
   // un seul point d'entrée pour tout rafraîchir
@@ -3845,11 +3943,14 @@ function ficheOeuvre(code){
   }
   // ce qu'un songwriter cède, utilisé par la ventilation
   function cedeDe(k){var C=calculRevers();return (C.parSW[k]||{cede:0,net:0,noms:[]});}
-  function texteAvert(C){
-    return 'La part de nos auteurs ne retombe pas sur les <b>'+pv(TOT)+' %</b> de '+esc(socNom(soc))+
-      ' : elle fait <b>'+pv(C.net)+' %</b>'+(C.rendu?' après '+pv(C.rendu)+' pt reversés':'')+'. '+
-      (revers.length?'Vérifiez le reversement ou les points de la ventilation.'
-        :'L\'écart vient probablement d\'un reversement à un coéditeur : saisissez-le ici.');
+  function texteAvert(C,theo,okTheo){
+    if(!okTheo)
+      return 'Écriture phono × part représentée donne <b>'+pv(theo)+' %</b> alors que '+esc(socNom(soc))+
+        ' détient <b>'+pv(TOT)+' %</b> sur ce dépôt. '+
+        (revers.length?'Vérifiez le reversement saisi.'
+          :'L\'écart vient probablement d\'un reversement à un coéditeur : saisissez-le ici.');
+    return 'Après reversement il reste <b>'+pv(C.net)+' %</b> alors que '+esc(socNom(soc))+
+      ' détient <b>'+pv(TOT)+' %</b> sur ce dépôt. Vérifiez le reversement ou les points de la ventilation.';
   }
   function drawRevers(){
     var b=el('revers');if(!b)return;
@@ -3866,12 +3967,15 @@ function ficheOeuvre(code){
         co.map(function(n){return '<option value="'+esc(n)+'"'+(norm(n)===norm(v)?' selected':'')+'>'+esc(n)+'</option>';}).join('')+
         '<option value="__autre"'+(v&&!dedans?' selected':'')+'>Autre éditeur…</option>';};
     // le total net doit retomber sur notre part : dès qu'un reversement est saisi, c'est le premier suspect
-    // l'écart sur notre part vient le plus souvent d'un reversement : on encadre le bloc dans tous les cas
-    var faux=!etatTotal(C.net).ok;
+    // ce que donne le calcul : écriture phono × part représentée, avant tout reversement
+    var theo=Math.round(groupes().reduce(function(a,x){return a+ptsCalcules(x);},0)*100)/100;
+    var okTheo=Math.abs(theo-TOT)<0.02;
+    // l'écart vient le plus souvent d'un reversement : on alerte avant même qu'il soit saisi
+    var faux=groupes().length>0&&(!okTheo||!etatTotal(C.net).ok);
     var ti=el('rv-titre');if(ti)ti.className='fl'+(faux?' fl-ko':'');
     var h='';
     h+='<div class="rv-box'+(faux?' rv-ko':'')+'">';
-    if(faux)h+='<div class="rv-avert">'+texteAvert(C)+'</div>';
+    if(faux)h+='<div class="rv-avert">'+texteAvert(C,theo,okTheo)+'</div>';
     if(!revers.length){
       h+='<div class="rv-vide"><span class="mut">Aucun reversement — '+esc(socNom(soc))+' garde la totalité : <b>'+
         pv(C.tot)+' pt</b>.</span></div>';
@@ -3941,14 +4045,17 @@ function ficheOeuvre(code){
     if(su)su.textContent=pv(C.rendu)+' pt';
     if(ne)ne.textContent=pv(C.net)+' pt';
     // l'alerte suit le total net en direct
-    var faux=!etatTotal(C.net).ok,bx=b.querySelector('.rv-box'),ti=el('rv-titre');
+    var theo=Math.round(groupes().reduce(function(a,x){return a+ptsCalcules(x);},0)*100)/100;
+    var okTheo=Math.abs(theo-TOT)<0.02;
+    var faux=groupes().length>0&&(!okTheo||!etatTotal(C.net).ok);
+    var bx=b.querySelector('.rv-box'),ti=el('rv-titre');
     if(ti)ti.className='fl'+(faux?' fl-ko':'');
     if(bx){
       bx.classList.toggle('rv-ko',faux);
       var av=bx.querySelector('.rv-avert');
       if(faux){
-        if(av)av.innerHTML=texteAvert(C);
-        else{av=document.createElement('div');av.className='rv-avert';av.innerHTML=texteAvert(C);
+        if(av)av.innerHTML=texteAvert(C,theo,okTheo);
+        else{av=document.createElement('div');av.className='rv-avert';av.innerHTML=texteAvert(C,theo,okTheo);
           bx.insertBefore(av,bx.firstChild);}
       }else if(av)av.remove();
     }
