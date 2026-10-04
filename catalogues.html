@@ -284,6 +284,32 @@ tr.sel td{background:var(--accent-soft)}
 .plan-lien{border:1px solid var(--line);border-radius:4px;padding:8px 10px;background:var(--surface-2)}
 .plan-lien+.plan-lien{margin-top:6px}
 .tk-bloc{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;margin-top:8px}
+.rv-box{border:1px solid var(--line);border-radius:5px;padding:10px;background:var(--surface-2)}
+.rv-vide{font-size:12px}
+.rv-lignes{display:flex;flex-direction:column;gap:8px}
+.rv-l{display:grid;grid-template-columns:minmax(150px,1.3fr) 110px minmax(150px,1.2fr) 120px 26px;
+ gap:8px;align-items:end;padding:8px;border:1px solid var(--line);border-radius:4px;background:var(--surface)}
+.rv-l .field{margin:0;min-width:0}
+.rv-l select,.rv-l input{width:100%}
+.rv-libre{display:flex;align-items:center;gap:4px}
+.rv-libre input{flex:1;min-width:0}
+.rv-libre .x{background:none;border:none;color:var(--ink-3);cursor:pointer;font-size:13px;padding:0 2px}
+.rv-libre .x:hover{color:var(--accent)}
+.rv-pc{display:flex;align-items:center;gap:4px}
+.rv-pc input{width:100%}
+.rv-pt{font:600 13px/1.3 var(--mono);text-align:right;padding-bottom:2px}
+.rv-pt .mini{display:block;font-weight:400}
+.rv-x{align-self:center;background:none;border:none;color:var(--ink-3);font-size:16px;cursor:pointer;padding:0}
+.rv-x:hover{color:var(--neg)}
+.rv-tot{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;margin-top:10px;padding-top:9px;border-top:1px solid var(--line)}
+.rv-chips{display:flex;flex-wrap:wrap;gap:5px;flex:1;min-width:140px}
+.rv-som{display:flex;gap:7px;align-items:baseline;font-size:12px;white-space:nowrap}
+.rv-som b{font:600 14px var(--mono)}
+.rv-net b{color:var(--accent)}
+td.ced,.num.ced{color:var(--warn)}
+td.ced .mini{white-space:normal;line-height:1.3;max-width:130px;margin-left:auto}
+@media(max-width:760px){.rv-l{grid-template-columns:1fr 1fr;align-items:start}
+ .rv-l .field:first-child{grid-column:1/-1}.rv-x{position:absolute;right:10px}}
 .ver-res{display:flex;flex-direction:column;gap:4px;margin-top:4px}
 .ver-prop{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px;align-items:center;
  padding:4px 6px;border:1px solid var(--line);border-radius:4px}
@@ -1863,6 +1889,17 @@ function puce(v,lib){
 }
 // Fiches œuvres à compléter : œuvres qui rapportent, où l'on a une part mais aucun songwriter
 // ventilé, ou dont on ne connaît pas l'artiste interprète.
+function checksSoc(soc){
+  return memo('ck:'+soc,function(){var m={};
+    rows(soc).forEach(function(r){m[r.code]=checkOeuvre(soc,r);});return m;});
+}
+function tagCheck(soc,code){
+  var c=(checksSoc(soc)||{})[code];
+  if(!c)return '';
+  if(!c.manques.length)return '<span class="tag ok">vérifiée</span>';
+  var lib=c.manques.map(function(k){return LIB_MANQUE[k]||k;}).join(', ');
+  return '<span class="tag warn" title="'+esc(lib)+'">'+c.manques.length+' à compléter</span>';
+}
 function fichesATraiter(soc){
   return memo('fat:'+soc,function(){
     return rows(soc).filter(function(r){return !r.na;}).map(function(r){return {r:r,c:checkOeuvre(soc,r)};})
@@ -1920,7 +1957,8 @@ function viewOeuvres(){
     if(state.filtre==='rev'&&!(r.net>0))return false;
     if(state.filtre==='ratt'&&!r.sw.length)return false;
     if(state.filtre==='nonratt'&&r.sw.length)return false;
-    if(state.filtre==='fiche'&&(r.artiste&&r.sortie&&r.spotify))return false;
+    if(state.filtre==='fiche'&&!((checksSoc(soc)[r.code]||{manques:[]}).manques.length))return false;
+    if(state.filtre==='ok'&&(checksSoc(soc)[r.code]||{manques:[1]}).manques.length)return false;
     if(state.filtre==='sacem'&&!r.sacemErr)return false;
     if(state.filtre==='nonsorti'&&!r.nonSorti)return false;
     if(!q)return true;
@@ -1937,7 +1975,10 @@ function viewOeuvres(){
     (k===key?' <span class="car">'+(d<0?'▼':'▲')+'</span>':'')+'</th>';};
   var nErr=rs.filter(function(r){return !!r.sacemErr;}).length;
   var nNS=rs.filter(function(r){return r.nonSorti;}).length;
-  var f=[['tous','Toutes'],['rev','Avec revenus'],['ratt','Rattachées'],['nonratt','Non rattachées'],['fiche','Fiche à compléter']];
+  var CK=checksSoc(soc);
+  var nKo=rs.filter(function(r){return (CK[r.code]||{manques:[]}).manques.length;}).length;
+  var f=[['tous','Toutes'],['ok','Vérifiées '+(rs.length-nKo)],['fiche','À compléter '+nKo],
+    ['rev','Avec revenus'],['ratt','Rattachées'],['nonratt','Non rattachées']];
   if(nErr)f.push(['sacem','Erreur Sacem '+nErr]);
   if(nNS)f.push(['nonsorti','Pas encore commercialisées '+nNS]);
   var h='<div class="panel"><div class="phead">'+
@@ -1950,8 +1991,8 @@ function viewOeuvres(){
     th('partSocPh','Notre phono')+th('nAut','AD')+
     '<th class="l">Songwriters représentés</th>'+
     ans.map(function(a){return th('@'+a,a);}).join('')+th('net','Total €')+
-    '<th class="l">Liens</th></tr></thead><tbody>';
-  if(!list.length)h+='<tr><td colspan="10" class="empty">Aucune œuvre ne correspond.</td></tr>';
+    '<th class="l">Check</th><th class="l">Liens</th></tr></thead><tbody>';
+  if(!list.length)h+='<tr><td colspan="11" class="empty">Aucune œuvre ne correspond.</td></tr>';
   list.slice(0,300).forEach(function(r){
     var sous=[];
     if(r.artiste)sous.push(esc(r.artiste));
@@ -1969,7 +2010,8 @@ function viewOeuvres(){
       '<td class="num mut">'+(r.nAut||'·')+'</td>'+
       '<td class="l">'+swTags(r)+'</td>'+
       ans.map(function(a){return '<td class="num'+(r.ans[a]?'':' mut')+'">'+(r.ans[a]?eur(r.ans[a]):'·')+'</td>';}).join('')+
-      '<td class="num w">'+eur(r.net)+'</td><td class="l">'+liens(r)+'</td></tr>';});
+      '<td class="num w">'+eur(r.net)+'</td>'+
+      '<td class="l">'+tagCheck(soc,r.code)+'</td><td class="l">'+liens(r)+'</td></tr>';});
   h+='</tbody></table></div>';
   if(list.length>300)h+='<div class="pbody mut">300 premières lignes affichées — affinez la recherche.</div>';
   return h+'</div>';
@@ -3397,10 +3439,10 @@ function ficheOeuvre(code){
       '<th class="num">Représenté</th><th class="num">Part</th></tr></thead>'+
       '<tbody id="aut-body"></tbody></table></div>'+
     '<div class="hint" id="vent-hint"></div>'+
-    '<div class="sep"></div><label class="fl">Ventilation des parts éditoriales</label>'+
-    '<div id="vent"></div>'+
     '<div class="sep"></div><label class="fl">Reversements à des coéditeurs</label>'+
     '<div id="revers"></div>'+
+    '<div class="sep"></div><label class="fl">Ventilation des parts éditoriales</label>'+
+    '<div id="vent"></div>'+
     '<div id="splits-ok"></div>'+
     '</div></div>';
   openModal('<div class="eyebrow">Œuvre</div><h2>'+esc(o.titre)+'</h2>',body,
@@ -3584,30 +3626,39 @@ function ficheOeuvre(code){
     el('vent').className=E.ok?'':'vent-faux';
     el('vent').innerHTML=
       '<div class="alerte alerte-ko" id="vent-ko"'+(E.ok?' hidden':'')+'>'+texteEcart(t)+'</div>'+
-      '<div class="tscroll"><table><thead><tr><th class="l">Songwriter</th><th class="num">Écriture phono</th>'+
-      '<th class="num">Part représentée</th><th class="num">Points '+nom+'</th>'+
+      '<div class="tscroll"><table><thead><tr><th class="l">Songwriter</th>'+
+      '<th class="num">Points '+nom+'</th>'+
+      '<th class="num">Part cédée</th><th class="num">Points nets</th>'+
       '<th class="num sec">→ DEP</th><th class="num sec">→ DR</th><th class="num">Revenus €</th></tr></thead><tbody>'+
-      G.map(function(x){
-        var l=x.l,p=+pts[x.k]||0,r=TOT>0?p/TOT:0,fi=l.swId?store.songwriters[l.swId]:null;
+      (function(){var C=calculRevers();
+      return G.map(function(x){
+        var l=x.l,p=+pts[x.k]||0,fi=l.swId?store.songwriters[l.swId]:null;
+        var cs=C.parSW[x.k]||{cede:0,net:p,noms:[]},r=TOT>0?cs.net/TOT:0;
         var calc=ptsCalcules(x),ecart=Math.abs(calc-p)>0.02;
         return '<tr><td class="l w">'+esc(fi?fi.nom:l.nom)+
           '<div class="mini">'+x.noms.map(function(z){return esc(prenomNom(z.nf,z.nom))+(z.coad?' · COAD '+esc(z.coad):'');}).join('<br>')+'</div></td>'+
-          '<td class="num mut">'+pv(x.ecrPh)+' %</td><td class="num mut">'+pv(l.deal==null?0:l.deal)+' %</td>'+
           '<td class="num"><input type="number" step="0.01" min="0" data-pt="'+esc(x.k)+'" value="'+
             (Math.round(p*100)/100)+'" style="width:82px">'+
           '<div class="mini">'+pv(x.ecrPh)+' % × '+pv(l.deal==null?0:l.deal)+' % = '+pv(calc)+' pt'+
             (ecart?' <span class="tag warn">modifié</span>':'')+'</div></td>'+
+          '<td class="num'+(cs.cede?' ced':' mut')+'" data-ced="'+esc(x.k)+'">'+(cs.cede?'− '+pv(cs.cede)+' pt':'·')+
+            (cs.noms.length?'<div class="mini">'+esc(cs.noms.join(' · '))+'</div>':'')+'</td>'+
+          '<td class="num w" data-net="'+esc(x.k)+'">'+pv(cs.net)+' pt</td>'+
           '<td class="num mut sec">'+pv(partDep*r)+' %</td><td class="num mut sec">'+pv(partDr*r)+' %</td>'+
-          '<td class="num w">'+eur(eurDe(p,t))+'</td></tr>';}).join('')+
-      '</tbody><tfoot><tr class="'+(E.ok?'':'tot-faux')+'"><td class="l">Total des parts représentées</td><td></td><td></td>'+
+          '<td class="num w">'+eur(eurDe(cs.net,t))+'</td></tr>';}).join('');})()+
+      '</tbody><tfoot><tr class="'+(E.ok?'':'tot-faux')+'"><td class="l">Total des parts représentées</td>'+
       '<td class="num">'+E.html+'</td>'+
-      '<td class="num sec">'+pv(TOT>0?partDep*t/TOT:0)+' %</td><td class="num sec">'+pv(TOT>0?partDr*t/TOT:0)+' %</td>'+
-      '<td class="num">'+eur(o.net||0)+'</td></tr></tfoot></table></div>'+
+      (function(){var C=calculRevers();
+        return '<td class="num'+(C.rendu?' ced':' mut')+'">'+(C.rendu?'− '+pv(C.rendu)+' pt':'·')+'</td>'+
+          '<td class="num">'+pv(C.net)+' pt</td>'+
+          '<td class="num sec">'+pv(TOT>0?partDep*C.net/TOT:0)+' %</td><td class="num sec">'+pv(TOT>0?partDr*C.net/TOT:0)+' %</td>'+
+          '<td class="num">'+eur(t>0?(o.net||0)*C.net/t:(o.net||0))+'</td>';})()+
+      '</tr></tfoot></table></div>'+
       '<div class="rowline" style="margin-top:8px"><button class="btn sm" id="v-prop">Recalculer depuis les parts</button>'+
       '<span class="mut" style="font-size:11.5px">'+(manuel?'Points saisis à la main.':
         'Points = écriture phono × part représentée.')+'</span></div>';
     el('vent').querySelectorAll('[data-pt]').forEach(function(i2){
-      i2.oninput=function(){pts[this.dataset.pt]=this.value===''?0:+this.value;manuel=true;majTotaux();};});
+      i2.oninput=function(){pts[this.dataset.pt]=this.value===''?0:+this.value;manuel=true;majTout();};});
     el('v-prop').onclick=function(){proposer();drawVent();
       if(typeof drawRevers==='function')drawRevers();
       if(typeof drawSplitsOk==='function')drawSplitsOk();};
@@ -3616,24 +3667,34 @@ function ficheOeuvre(code){
     // recalcul des totaux et des euros sans reconstruire les champs de saisie
     var G=groupes(),t=0;
     G.forEach(function(x){t+=+pts[x.k]||0;});
-    var tb=el('vent').querySelector('tbody'),tf=el('vent').querySelector('tfoot tr');
+    var vb=el('vent');if(!vb)return;
+    var tb=vb.querySelector('tbody'),tf=vb.querySelector('tfoot tr');
+    if(!tb)return;
+    var C=calculRevers();
     G.forEach(function(x,idx){
-      var p=+pts[x.k]||0,r=TOT>0?p/TOT:0,tr=tb.children[idx];
+      var cs=C.parSW[x.k]||{cede:0,net:+pts[x.k]||0,noms:[]},r=TOT>0?cs.net/TOT:0,tr=tb.children[idx];
       if(!tr)return;
+      tr.children[2].className='num'+(cs.cede?' ced':' mut');
+      tr.children[2].innerHTML=(cs.cede?'− '+pv(cs.cede)+' pt':'·')+
+        (cs.noms.length?'<div class="mini">'+esc(cs.noms.join(' · '))+'</div>':'');
+      tr.children[3].textContent=pv(cs.net)+' pt';
       tr.children[4].textContent=pv(partDep*r)+' %';
       tr.children[5].textContent=pv(partDr*r)+' %';
-      tr.children[6].textContent=eur(eurDe(p,t));});
+      tr.children[6].textContent=eur(eurDe(cs.net,t));});
     if(tf){
       var E=etatTotal(t);
-      el('vent').className=E.ok?'':'vent-faux';
+      vb.className=E.ok?'':'vent-faux';
       var al=el('vent-ko');
       if(al){al.hidden=E.ok;if(!E.ok)al.innerHTML=texteEcart(t);}
       tf.className=E.ok?'':'tot-faux';
-      tf.children[3].innerHTML=E.html;
-      tf.children[4].textContent=pv(TOT>0?partDep*t/TOT:0)+' %';
-      tf.children[5].textContent=pv(TOT>0?partDr*t/TOT:0)+' %';
+      tf.children[1].innerHTML=E.html;
+      tf.children[2].className='num'+(C.rendu?' ced':' mut');
+      tf.children[2].textContent=C.rendu?'− '+pv(C.rendu)+' pt':'·';
+      tf.children[3].textContent=pv(C.net)+' pt';
+      tf.children[4].textContent=pv(TOT>0?partDep*C.net/TOT:0)+' %';
+      tf.children[5].textContent=pv(TOT>0?partDr*C.net/TOT:0)+' %';
+      tf.children[6].textContent=eur(t>0?(o.net||0)*C.net/t:(o.net||0));
     }
-    if(typeof drawRevers==='function')majRevers();
     if(typeof drawSplitsOk==='function')drawSplitsOk();
   }
   function partLigne(){
@@ -3656,72 +3717,120 @@ function ficheOeuvre(code){
       id:x.l.swId||'',pt:+pts[x.k]||0};});
     return m;
   }
-  // points repris par chaque coéditeur, et ce qu'il nous reste
+  // points repris par chaque coéditeur, ce qu'il nous reste, et le détail par songwriter
   function calculRevers(){
-    var m=ptsParSW(),cles=Object.keys(m),tot=0,par={},detail=[];
-    cles.forEach(function(k){tot+=m[k].pt;});
+    var m=ptsParSW(),cles=Object.keys(m),tot=0,par={},detail=[],parSW={};
+    cles.forEach(function(k){tot+=m[k].pt;parSW[k]={cede:0,noms:[]};});
     revers.forEach(function(r,i){
-      var p2=Math.max(0,Math.min(100,+r.p||0)),base=0;
+      var p2=Math.max(0,Math.min(100,+r.p||0)),base=0,v=0;
       cles.forEach(function(k){
         if(r.sw&&String(m[k].id)!==String(r.sw))return;
-        base+=m[k].pt;});
-      var v=Math.round(base*p2)/100;
+        base+=m[k].pt;
+        var part=Math.round(m[k].pt*p2)/100;
+        v+=part;
+        if(part>0.001){parSW[k].cede+=part;
+          var lib=r.e+'\u00a0'+pv(p2)+'\u00a0%';
+          if(r.e&&parSW[k].noms.indexOf(lib)<0)parSW[k].noms.push(lib);}
+      });
+      v=Math.round(v*100)/100;
       detail[i]={base:base,pt:v};
-      if(r.e)par[r.e]=(par[r.e]||0)+v;
+      if(r.e)par[r.e]=Math.round(((par[r.e]||0)+v)*100)/100;
     });
-    var rendu=detail.reduce(function(a,x){return a+(x?x.pt:0);},0);
-    return {m:m,cles:cles,tot:tot,par:par,detail:detail,rendu:rendu,net:Math.round((tot-rendu)*100)/100};
+    cles.forEach(function(k){parSW[k].cede=Math.round(parSW[k].cede*100)/100;
+      parSW[k].net=Math.round((m[k].pt-parSW[k].cede)*100)/100;});
+    var rendu=Math.round(detail.reduce(function(a,x){return a+(x?x.pt:0);},0)*100)/100;
+    return {m:m,cles:cles,tot:Math.round(tot*100)/100,par:par,detail:detail,parSW:parSW,
+      rendu:rendu,net:Math.round((tot-rendu)*100)/100};
   }
+  // ce qu'un songwriter cède, utilisé par la ventilation
+  function cedeDe(k){var C=calculRevers();return (C.parSW[k]||{cede:0,net:0,noms:[]});}
   function drawRevers(){
     var b=el('revers');if(!b)return;
     var C=calculRevers(),co=coediteurs(),G=Object.keys(C.m);
     var opts=function(sel){
-      return '<option value=""'+(sel?'':' selected')+'>toute notre part</option>'+
+      return '<option value=""'+(sel?'':' selected')+'>Toute notre part</option>'+
         G.map(function(k){var x=C.m[k];
           return '<option value="'+esc(x.id)+'"'+(String(sel)===String(x.id)?' selected':'')+'>'+
             esc(x.nom)+' · '+pv(x.pt)+' pt</option>';}).join('');};
-    var h='<datalist id="co-list">'+co.map(function(n){return '<option value="'+esc(n)+'">';}).join('')+'</datalist>';
+    // le coéditeur se choisit dans la liste du dépôt ; « Autre » ouvre la saisie libre
+    var optsCo=function(v){
+      var dedans=co.some(function(n){return norm(n)===norm(v);});
+      return '<option value=""'+(v?'':' selected')+'>Choisir un coéditeur…</option>'+
+        co.map(function(n){return '<option value="'+esc(n)+'"'+(norm(n)===norm(v)?' selected':'')+'>'+esc(n)+'</option>';}).join('')+
+        '<option value="__autre"'+(v&&!dedans?' selected':'')+'>Autre éditeur…</option>';};
+    var h='';
+    h+='<div class="rv-box">';
     if(!revers.length){
-      h+='<div class="mut" style="font-size:12px">Aucun reversement : '+esc(socNom(soc))+' garde '+pv(C.tot)+' pt.</div>';
+      h+='<div class="rv-vide"><span class="mut">Aucun reversement — '+esc(socNom(soc))+' garde la totalité : <b>'+
+        pv(C.tot)+' pt</b>.</span></div>';
     }else{
-      h+='<div class="tscroll"><table><thead><tr><th class="l">Coéditeur</th><th class="num">Reversement</th>'+
-        '<th class="l">Sur</th><th class="num">Points cédés</th><th class="l"></th></tr></thead><tbody>'+
-        revers.map(function(r,i){
-          var d=C.detail[i]||{base:0,pt:0};
-          return '<tr><td class="l w"><input type="text" list="co-list" data-rve="'+i+'" value="'+esc(r.e)+
-              '" placeholder="Nom du coéditeur" style="width:100%"></td>'+
-            '<td class="num"><input type="number" step="0.01" min="0" max="100" data-rvp="'+i+'" value="'+
-              (r.p!=null?r.p:50)+'" style="width:78px"> %</td>'+
-            '<td class="l"><select data-rvsw="'+i+'">'+opts(r.sw)+'</select></td>'+
-            '<td class="num'+(d.pt?' w':' mut')+'">'+pv(d.pt)+' pt<div class="mini">sur '+pv(d.base)+' pt</div></td>'+
-            '<td class="l"><button type="button" class="btn sm" data-rvx="'+i+'">Retirer</button></td></tr>';}).join('')+
-        '</tbody><tfoot><tr><td class="l">Reste à '+esc(socNom(soc))+'</td><td></td><td class="l mut">'+
-          Object.keys(C.par).map(function(n){return esc(n)+' '+pv(C.par[n])+' pt';}).join(' · ')+
-          '</td><td class="num">'+pv(C.net)+' pt</td><td></td></tr></tfoot></table></div>';
+      h+='<div class="rv-lignes">'+revers.map(function(r,i){
+        var d=C.detail[i]||{base:0,pt:0};
+        var dedans=co.some(function(n){return norm(n)===norm(r.e);});
+        return '<div class="rv-l">'+
+          '<div class="field"><label class="fl">Coéditeur</label>'+
+            (((r.e&&!dedans)||r.libre)
+              ?'<div class="rv-libre"><input type="text" data-rve="'+i+'" value="'+esc(r.e)+
+                 '" placeholder="Nom du coéditeur">'+
+                 '<button type="button" class="x" data-rvret="'+i+'" title="Revenir à la liste">↩</button></div>'
+              :'<select data-rvco="'+i+'">'+optsCo(r.e)+'</select>')+'</div>'+
+          '<div class="field"><label class="fl">Reversement</label>'+
+            '<div class="rv-pc"><input type="number" step="0.01" min="0" max="100" data-rvp="'+i+'" value="'+
+              (r.p!=null?r.p:50)+'"><span>%</span></div></div>'+
+          '<div class="field"><label class="fl">Sur</label><select data-rvsw="'+i+'">'+opts(r.sw)+'</select></div>'+
+          '<div class="field"><label class="fl">Points cédés</label>'+
+            '<div class="rv-pt" data-rvout="'+i+'"><b>'+pv(d.pt)+' pt</b><span class="mini">sur '+pv(d.base)+' pt</span></div></div>'+
+          '<button type="button" class="x rv-x" data-rvx="'+i+'" title="Retirer ce reversement">×</button>'+
+        '</div>';}).join('')+'</div>';
+      // total cédé, puis ce qui reste à la société
+      h+='<div class="rv-tot">'+
+        '<div class="rv-chips">'+(Object.keys(C.par).length
+          ?Object.keys(C.par).map(function(n){return '<span class="swtag">'+esc(n)+' <b>'+pv(C.par[n])+' pt</b></span>';}).join('')
+          :'<span class="mut">—</span>')+'</div>'+
+        '<div class="rv-som"><span class="mut">Total cédé</span><b data-rvsum>'+pv(C.rendu)+' pt</b></div>'+
+        '<div class="rv-som rv-net"><span class="mut">Reste à '+esc(socNom(soc))+'</span><b data-rvnet>'+pv(C.net)+' pt</b></div>'+
+      '</div>';
     }
-    h+='<div class="rowline" style="margin-top:6px"><button type="button" class="btn sm" id="rv-add">+ Ajouter un reversement</button>'+
+    h+='<div class="rowline" style="margin-top:8px"><button type="button" class="btn sm" id="rv-add">+ Ajouter un reversement</button>'+
       '<span class="mut" style="font-size:11.5px">Un reversement peut viser toute notre part ou un seul songwriter.</span></div>';
+    h+='</div>';
     b.innerHTML=h;
+    b.querySelectorAll('[data-rvco]').forEach(function(s3){s3.onchange=function(){
+      var r=revers[+this.dataset.rvco];
+      if(this.value==='__autre'){r.libre=true;r.e='';}
+      else{r.libre=false;r.e=this.value;}
+      drawRevers();majTotaux();
+      if(r.libre){var inp=b.querySelector('[data-rve="'+this.dataset.rvco+'"]');if(inp)inp.focus();}};});
     b.querySelectorAll('[data-rve]').forEach(function(i2){i2.oninput=function(){
-      revers[+this.dataset.rve].e=this.value;majRevers();};});
+      revers[+this.dataset.rve].e=this.value;majTout();};});
+    b.querySelectorAll('[data-rvret]').forEach(function(x){x.onclick=function(){
+      var r=revers[+this.dataset.rvret];r.libre=false;r.e='';drawRevers();majTotaux();};});
     b.querySelectorAll('[data-rvp]').forEach(function(i2){i2.oninput=function(){
-      revers[+this.dataset.rvp].p=this.value===''?0:+this.value;majRevers();};});
+      revers[+this.dataset.rvp].p=this.value===''?0:+this.value;majTout();};});
     b.querySelectorAll('[data-rvsw]').forEach(function(i2){i2.onchange=function(){
-      revers[+this.dataset.rvsw].sw=this.value;drawRevers();};});
+      revers[+this.dataset.rvsw].sw=this.value;majTout();};});
     b.querySelectorAll('[data-rvx]').forEach(function(x){x.onclick=function(){
-      revers.splice(+this.dataset.rvx,1);drawRevers();};});
-    el('rv-add').onclick=function(){revers.push({e:'',p:50,sw:''});drawRevers();
-      var l=b.querySelectorAll('[data-rve]');if(l.length)l[l.length-1].focus();};
+      revers.splice(+this.dataset.rvx,1);drawRevers();majTotaux();};});
+    el('rv-add').onclick=function(){revers.push({e:'',p:50,sw:''});drawRevers();majTotaux();
+      var l=b.querySelectorAll('[data-rvco]');if(l.length)l[l.length-1].focus();};
   }
   // mise à jour des chiffres sans reconstruire les champs en cours de saisie
   function majRevers(){
     var b=el('revers');if(!b)return;
-    var C=calculRevers(),tb=b.querySelector('tbody'),tf=b.querySelector('tfoot tr');
-    if(tb)revers.forEach(function(r,i){var tr=tb.children[i],d=C.detail[i]||{base:0,pt:0};
-      if(tr)tr.children[3].innerHTML=pv(d.pt)+' pt<div class="mini">sur '+pv(d.base)+' pt</div>';});
-    if(tf){tf.children[2].innerHTML=Object.keys(C.par).map(function(n){return esc(n)+' '+pv(C.par[n])+' pt';}).join(' · ');
-      tf.children[3].textContent=pv(C.net)+' pt';}
+    var C=calculRevers();
+    revers.forEach(function(r,i){
+      var o2=b.querySelector('[data-rvout="'+i+'"]'),d=C.detail[i]||{base:0,pt:0};
+      if(o2)o2.innerHTML='<b>'+pv(d.pt)+' pt</b><span class="mini">sur '+pv(d.base)+' pt</span>';});
+    var ch=b.querySelector('.rv-chips');
+    if(ch)ch.innerHTML=Object.keys(C.par).length
+      ?Object.keys(C.par).map(function(n){return '<span class="swtag">'+esc(n)+' <b>'+pv(C.par[n])+' pt</b></span>';}).join('')
+      :'<span class="mut">—</span>';
+    var su=b.querySelector('[data-rvsum]'),ne=b.querySelector('[data-rvnet]');
+    if(su)su.textContent=pv(C.rendu)+' pt';
+    if(ne)ne.textContent=pv(C.net)+' pt';
   }
+  // reversements et ventilation se lisent ensemble : on rafraîchit les deux d'un coup
+  function majTout(){majRevers();majTotaux();}
   /* ---- contrôles : relecture des splits, part nulle au dépôt, erreur de dépôt ---- */
   var splitsOk=e.splitsOk||'',part0Ok=e.part0Ok||'';
   var sacemErr=e.sacemErr?Object.assign({},e.sacemErr):null,errOuvre=!!(sacemErr&&!sacemErr.regle);
@@ -3794,7 +3903,7 @@ function ficheOeuvre(code){
       errOuvre=!sacemErr.regle;drawSplitsOk();};
     if(el('f-errno'))el('f-errno').onclick=function(){sacemErr=null;errOuvre=false;drawSplitsOk();};
   }
-  drawNotes();drawAut();drawVent();drawRevers();drawSplitsOk();majPochette(false);
+  drawNotes();drawAut();drawRevers();drawVent();drawSplitsOk();majPochette(false);
   /* ---- featuring : un champ par artiste invité, ouvert par « + Feat » ---- */
   var featsOe=listeFeat(e.feat||'');
   function syncFeat(){el('f-feat').value=featsOe.map(function(x){return String(x).trim();}).filter(Boolean).join(', ');}
