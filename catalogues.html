@@ -1162,6 +1162,38 @@ function swList0(soc){
     .filter(function(s){return !s.societe||s.societe===soc;})
     .sort(function(a,b){return (a.nom||'').localeCompare(b.nom||'','fr');});
 }
+// Clés d'identité d'un songwriter : COAD, IPI, nom et alias — elles servent à le
+// retrouver dans les autres catalogues, sans jamais mélanger ses œuvres.
+function clesSW(s){
+  var k={};
+  if(!s)return k;
+  if(s.coad)k['c:'+String(s.coad).trim()]=1;
+  (s.ipis||[]).forEach(function(i){if(i)k['i:'+String(i).trim()]=1;});
+  (s.ads||[]).forEach(function(a){
+    if(a&&a.coad)k['c:'+String(a.coad).trim()]=1;
+    if(a&&a.ipi)k['i:'+String(a.ipi).trim()]=1;});
+  if(s.nom)k['n:'+norm(s.nom)]=1;
+  (s.alias||[]).forEach(function(a){if(a)k['n:'+norm(a)]=1;});
+  return k;
+}
+// Le même songwriter dans les autres catalogues : une fiche par société, œuvres séparées
+function memesSW(soc,id){
+  var s=store.songwriters[id];if(!s)return [];
+  return memo('msw:'+soc+':'+id,function(){
+    var mes=clesSW(s),out=[];
+    SOCIETES.forEach(function(x){
+      if(x.id===soc)return;
+      swList(x.id).forEach(function(b){
+        if(b.id===id||b.societe!==x.id)return;
+        var k2=clesSW(b),par='';
+        Object.keys(k2).forEach(function(k){
+          if(!mes[k]||par)return;
+          par=k.charAt(0)==='c'?'même COAD':k.charAt(0)==='i'?'même IPI':'même nom';});
+        if(!par)return;
+        var st=swRows(x.id).filter(function(z){return z.sw.id===b.id;})[0]||{net:0,oeuvres:0};
+        out.push({soc:x.id,nom:x.nom,id:b.id,sw:b,par:par,net:st.net,oeuvres:st.oeuvres});});});
+    return out;});
+}
 function swIndex(soc){return memo('ix:'+soc,function(){return swIndex0(soc);});}
 function swIndex0(soc){
   // index des correspondances sûres : COAD, IPI, ayants droit déjà rattachés, alias, nom
@@ -1999,7 +2031,8 @@ function viewOeuvres(){
     ans.map(function(a){return th('@'+a,a);}).join('')+th('net','Total €')+
     '<th class="l">Check</th><th class="l">Liens</th></tr></thead><tbody>';
   if(!list.length)h+='<tr><td colspan="11" class="empty">Aucune œuvre ne correspond.</td></tr>';
-  list.slice(0,300).forEach(function(r){
+  var nOe=40,pgOe=Math.min(state.pgOe||1,Math.max(1,Math.ceil(list.length/nOe)));
+  list.slice((pgOe-1)*nOe,pgOe*nOe).forEach(function(r){
     var sous=[];
     if(r.artiste)sous.push(esc(r.artiste));
     if(r.titreTrack&&norm(r.titreTrack)!==norm(r.titre))sous.push('« '+esc(r.titreTrack)+' »');
@@ -2017,9 +2050,8 @@ function viewOeuvres(){
       '<td class="l">'+swTags(r)+'</td>'+
       ans.map(function(a){return '<td class="num'+(r.ans[a]?'':' mut')+'">'+(r.ans[a]?eur(r.ans[a]):'·')+'</td>';}).join('')+
       '<td class="num w">'+eur(r.net)+'</td>'+
-      '<td class="l">'+tagCheck(soc,r.code)+'</td><td class="l">'+liens(r)+'</td></tr>';});
-  h+='</tbody></table></div>';
-  if(list.length>300)h+='<div class="pbody mut">300 premières lignes affichées — affinez la recherche.</div>';
+      '<td class="l">'+tagCheck(soc,r.code)+tagAutresCat(soc,r.code)+'</td><td class="l">'+liens(r)+'</td></tr>';});
+  h+='</tbody></table></div>'+pages(list.length,nOe,pgOe,'Oe');
   return h+'</div>';
 }
 function liens(r){
@@ -2037,6 +2069,14 @@ function lienPlan(soc,code){
   return '<a class="lien-plan" href="'+esc(lienPlanning(L[0]))+'" target="_blank" rel="noopener" title="'+
     esc(L.map(function(x){return x.type+' « '+titreSortie(x)+' »'+(x.date?' · '+x.date:'');}).join(' · '))+
     '">Planning'+(L.length>1?' ('+L.length+')':'')+' ↗</a>';
+}
+// La même œuvre déposée dans un autre de nos catalogues
+function tagAutresCat(soc,code){
+  var M=memesCatalogues(soc,code);
+  if(!M.length)return '';
+  return ' <span class="tag neutral" title="'+esc(M.map(function(x){
+    return x.nom+' · '+pv(x.ph)+' % phono'+(x.parCode?'':' · même ISWC');}).join(' · '))+
+    '">aussi '+esc(M.map(function(x){return x.nom;}).join(', '))+'</span>';
 }
 // Un titre pas encore commercialisé : on le signale partout où l'œuvre apparaît
 function tagNonSorti(r){
@@ -2073,6 +2113,9 @@ function viewSongwriters(){
         ' '+origineTag(x.sw)+
         (t==='artiste'?' <span class="tag warn">non signé</span>'
          :'')+
+        (function(){var M=memesSW(soc,x.sw.id);
+          return M.length?' <span class="tag neutral" title="Aussi signé chez '+
+            esc(M.map(function(z){return z.nom;}).join(', '))+'">+'+M.length+' catalogue'+(M.length>1?'s':'')+'</span>':'';})()+
         '<div class="mini">'+(ident||'identité Sacem à rattacher')+'</div></td>'+
         '<td class="num">'+(x.sw.part!=null?pv(x.sw.part)+' %':'<span class="mut">—</span>')+'</td>'+
         '<td class="num">'+x.oeuvres+(x.auto?' <span class="tag neutral">auto</span>':'')+'</td>'+
@@ -2832,7 +2875,13 @@ function pageSW(id){
   h+='<div class="phead-page"><div><div class="eyebrow">Songwriter · '+
     (t==='roster'?'signé '+esc(socNom(soc)):t==='termine'?'contrat terminé':t==='artiste'?'artiste non signé':'externe')+'</div>'+
     '<h1 class="h-page">'+esc(sw.nom)+' '+origineTag(sw)+'</h1>'+
-    '<div class="mini" style="font-size:12px;margin-top:4px">'+(identite(sw)||'identité Sacem à rattacher')+'</div></div>'+
+    '<div class="mini" style="font-size:12px;margin-top:4px">'+(identite(sw)||'identité Sacem à rattacher')+'</div>'+
+    (function(){var M=memesSW(soc,id);
+      if(!M.length)return '';
+      return '<div style="font-size:12px;margin-top:4px">Aussi signé chez '+
+        M.map(function(x){return '<a href="#/'+x.soc+'/sw/'+encodeURIComponent(x.id)+'">'+esc(x.nom)+'</a>'+
+          ' <span class="mut">('+x.oeuvres+' œuvre'+(x.oeuvres>1?'s':'')+' · '+eur(x.net,0)+' € · '+esc(x.par)+')</span>';}).join(', ')+
+        ' <span class="mut">— les œuvres restent propres à chaque catalogue.</span></div>';})()+'</div>'+
     '<div class="rowline"><button class="btn primary" data-edit="'+esc(id)+'">Modifier</button></div></div>';
   // œuvres déposées à la Sacem où ce songwriter est ventilé, et celles déposées sur les 12 derniers mois
   var deps=mes.filter(function(m){return m.r.cat;});
@@ -3206,13 +3255,13 @@ function render(){
     var key=this.dataset.k;
     if(state.sort.k===key)state.sort.d=-state.sort.d;
     else{state.sort.k=key;state.sort.d=(key==='titre'||key==='artiste')?1:-1;}
-    render();};});
+    state.pgOe=1;render();};});
   v.querySelectorAll('[data-sk]').forEach(function(t){t.onclick=function(){
     var key=this.dataset.sk;
     if(state.swSort.k===key)state.swSort.d=-state.swSort.d;
     else{state.swSort.k=key;state.swSort.d=(key==='nom')?1:-1;}
     render();};});
-  v.querySelectorAll('[data-f]').forEach(function(b){b.onclick=function(){state.filtre=this.dataset.f;render();};});
+  v.querySelectorAll('[data-f]').forEach(function(b){b.onclick=function(){state.filtre=this.dataset.f;state.pgOe=1;render();};});
   v.querySelectorAll('[data-rf]').forEach(function(b){
     b.onclick=function(){state.rfiltre=this.dataset.rf;render();};});
   v.querySelectorAll('[data-ok]').forEach(function(b){b.onclick=async function(){
@@ -3280,7 +3329,7 @@ function render(){
       ta.remove();}
   };
   var q=el('q');
-  if(q)q.oninput=function(){var p=this.selectionStart;state.q=this.value;render();
+  if(q)q.oninput=function(){var p=this.selectionStart;state.q=this.value;state.pgOe=1;render();
     var n=el('q');if(n){n.focus();n.setSelectionRange(p,p);}};
   ['empty-import','imp-new','imp-new2'].forEach(function(i){var b=el(i);if(b)b.onclick=modalImport;});
   ['sw-new','sw-new2'].forEach(function(i){var b=el(i);if(b)b.onclick=function(){ficheSW(null);};});
@@ -3458,6 +3507,7 @@ function ficheOeuvre(code){
       '<th class="num">Représenté</th><th class="num">Part</th></tr></thead>'+
       '<tbody id="aut-body"></tbody></table></div>'+
     '<div class="hint" id="vent-hint"></div>'+
+    '<div id="vent-maj" style="margin-top:8px"></div>'+
     '<div class="sep"></div><label class="fl" id="rv-titre">Reversements à des coéditeurs</label>'+
     '<div id="revers"></div>'+
     '<div class="sep"></div><label class="fl">Ventilation des parts éditoriales</label>'+
@@ -3588,12 +3638,11 @@ function ficheOeuvre(code){
             inp.value=lignes[i].deal;
           }else inp.value=0;}
         var tr=this.closest('tr');if(tr&&tr.children[1])tr.children[1].classList.toggle('w',this.checked);
-        proposer();drawVent();
-        if(typeof drawRevers==='function')drawRevers();
-        if(typeof drawSplitsOk==='function')drawSplitsOk();};});
+        proposer();tout();};});
     el('aut-body').querySelectorAll('[data-d]').forEach(function(c){
       c.oninput=function(){lignes[+this.dataset.d].deal=this.value===''?null:+this.value;
-        proposer();drawVent();};});
+        // dilution recalculée en direct dès qu'une part représentée bouge
+        proposer();tout();};});
   }
   /* ---- points de notre part phono ---- */
   var A0=alloc(soc,code),pts={};
@@ -3688,15 +3737,26 @@ function ficheOeuvre(code){
       '<td class="num">'+E.html+'</td>'+
       '<td class="num sec">'+pv(TOT>0?partDep*C0.net/TOT:0)+' %</td><td class="num sec">'+pv(TOT>0?partDr*C0.net/TOT:0)+' %</td>'+
       '<td class="num">'+eur(t>0?(o.net||0)*C0.net/t:(o.net||0))+'</td>'+
-      '</tr></tfoot></table></div>'+
-      '<div class="rowline" style="margin-top:8px"><button class="btn sm" id="v-prop">Recalculer depuis les parts</button>'+
-      '<span class="mut" style="font-size:11.5px">'+(manuel?'Points saisis à la main.':
-        'Points = écriture phono × part représentée.')+'</span></div>';
+      '</tr></tfoot></table></div>';
     el('vent').querySelectorAll('[data-pt]').forEach(function(i2){
       i2.oninput=function(){pts[this.dataset.pt]=this.value===''?0:+this.value;manuel=true;majTout();};});
-    el('v-prop').onclick=function(){proposer();drawVent();
-      if(typeof drawRevers==='function')drawRevers();
-      if(typeof drawSplitsOk==='function')drawSplitsOk();};
+    drawMaj();
+  }
+  // Recalcul de la dilution : le bouton vit au-dessus des reversements, là où on en a besoin
+  function drawMaj(){
+    var b=el('vent-maj');if(!b)return;
+    b.innerHTML='<div class="rowline"><button class="btn sm'+(manuel?' primary':'')+'" id="v-prop">Mettre à jour la dilution</button>'+
+      '<span class="mut" style="font-size:11.5px">'+(manuel
+        ?'Points saisis à la main — le bouton les recalcule depuis écriture phono × part représentée.'
+        :'Points = écriture phono × part représentée, recalculés à chaque changement.')+'</span></div>';
+    el('v-prop').onclick=function(){proposer();tout();};
+  }
+  // un seul point d'entrée pour tout rafraîchir
+  function tout(){
+    drawVent();
+    if(typeof drawRevers==='function')drawRevers();
+    drawMaj();
+    if(typeof drawSplitsOk==='function')drawSplitsOk();
   }
   function majTotaux(){
     // recalcul des totaux et des euros sans reconstruire les champs de saisie
@@ -3967,7 +4027,7 @@ function ficheOeuvre(code){
       errOuvre=!sacemErr.regle;drawSplitsOk();};
     if(el('f-errno'))el('f-errno').onclick=function(){sacemErr=null;errOuvre=false;drawSplitsOk();};
   }
-  drawNotes();drawAut();drawRevers();drawVent();drawSplitsOk();majPochette(false);
+  drawNotes();drawAut();drawRevers();drawVent();drawMaj();drawSplitsOk();majPochette(false);
   /* ---- featuring : un champ par artiste invité, ouvert par « + Feat » ---- */
   var featsOe=listeFeat(e.feat||'');
   function syncFeat(){el('f-feat').value=featsOe.map(function(x){return String(x).trim();}).filter(Boolean).join(', ');}
