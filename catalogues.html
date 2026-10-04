@@ -285,6 +285,9 @@ tr.sel td{background:var(--accent-soft)}
 .plan-lien+.plan-lien{margin-top:6px}
 .tk-bloc{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;margin-top:8px}
 .rv-box{border:1px solid var(--line);border-radius:5px;padding:10px;background:var(--surface-2)}
+.rv-box.rv-ko{border-color:var(--warn);background:rgba(232,160,60,.07)}
+.rv-avert{font-size:12px;color:var(--warn);border-left:3px solid var(--warn);padding:4px 0 4px 8px;margin-bottom:9px}
+.fl.fl-ko{color:var(--warn)}
 .rv-vide{font-size:12px}
 .rv-lignes{display:flex;flex-direction:column;gap:8px}
 .rv-l{display:grid;grid-template-columns:minmax(150px,1.3fr) 110px minmax(150px,1.2fr) 120px 26px;
@@ -3361,19 +3364,30 @@ function ficheOeuvre(code){
     var g=courbeReps(o.reps||{},toutes,{W:560,H:150,max:16,bw:26});
     return g?'<div class="graph-rep">'+g+'</div>':'';
   })();
+  // on ne liste que les répartitions qui ont rapporté : les zéros n'apprennent rien
+  var payantes=toutes.filter(function(n){return ((o.reps||{})[n]||0)>0.005;});
+  var mxRep=Math.max.apply(null,payantes.map(function(z){return (o.reps||{})[z]||0;}).concat([0.01]));
+  var annees2=anneesDispo.filter(function(y){
+    return parAn[y].some(function(n){return ((o.reps||{})[n]||0)>0.005;});});
   var blocRevenus=!toutes.length
     ? '<div class="mut" style="font-size:12px">Aucune répartition importée pour '+esc(socNom(soc))+'.</div>'
-    : '<div class="tscroll"><table><tbody>'+anneesDispo.map(function(y){
-        var ta=parAn[y].reduce(function(s2,n){return s2+((o.reps||{})[n]||0);},0);
+    : !payantes.length
+    ? '<div class="mut" style="font-size:12px">Aucun revenu sur les '+toutes.length+' répartition'+
+      (toutes.length>1?'s':'')+' importée'+(toutes.length>1?'s':'')+'.</div>'
+    : '<div class="tscroll"><table><tbody>'+annees2.map(function(y){
+        var lignes2=parAn[y].filter(function(n){return ((o.reps||{})[n]||0)>0.005;});
+        var ta=lignes2.reduce(function(s2,n){return s2+((o.reps||{})[n]||0);},0);
         return '<tr class="yr"><td class="l w">'+y+'</td><td class="num w">'+eur(ta)+' €</td><td></td></tr>'+
-          parAn[y].map(function(n){
-            var v=(o.reps||{})[n]||0,mx=Math.max.apply(null,toutes.map(function(z){return (o.reps||{})[z]||0;}).concat([0.01]));
+          lignes2.map(function(n){
+            var v=(o.reps||{})[n]||0;
             return '<tr><td class="l mut" style="padding-left:18px">'+n+' <span class="mini">'+repDate(n).lbl+'</span></td>'+
-              '<td class="num'+(v?'':' mut')+'">'+(v?eur(v)+' €':'—')+'</td>'+
-              '<td style="width:88px">'+(v>0?'<i class="bar" style="width:'+Math.max(3,Math.round(100*v/mx))+'%"></i>':'')+'</td></tr>';
+              '<td class="num">'+eur(v)+' €</td>'+
+              '<td style="width:88px"><i class="bar" style="width:'+Math.max(3,Math.round(100*v/mxRep))+'%"></i></td></tr>';
           }).join('');}).join('')+
-      '</tbody><tfoot><tr><td class="l">Total sur '+toutes.length+' répartition'+(toutes.length>1?'s':'')+
-        ' ('+toutes[0]+'–'+toutes[toutes.length-1]+')</td>'+
+      '</tbody><tfoot><tr><td class="l">Total sur '+payantes.length+' répartition'+(payantes.length>1?'s':'')+
+        ' rémunératrice'+(payantes.length>1?'s':'')+' ('+payantes[0]+'–'+payantes[payantes.length-1]+')'+
+        (payantes.length<toutes.length?' <span class="mut">· '+(toutes.length-payantes.length)+' à 0 masquée'+
+          (toutes.length-payantes.length>1?'s':'')+'</span>':'')+'</td>'+
         '<td class="num">'+eur(o.net||0)+' €</td><td></td></tr></tfoot></table></div>'+
       (o.de||o.dr||o.ph?'<div class="hint">Dont '+eur(o.de||0)+' € de droit d\'exécution · '+
         eur(o.dr||0)+' € de droits de reproduction · '+eur(o.ph||0)+' € de phono.</div>':'');
@@ -3439,7 +3453,7 @@ function ficheOeuvre(code){
       '<th class="num">Représenté</th><th class="num">Part</th></tr></thead>'+
       '<tbody id="aut-body"></tbody></table></div>'+
     '<div class="hint" id="vent-hint"></div>'+
-    '<div class="sep"></div><label class="fl">Reversements à des coéditeurs</label>'+
+    '<div class="sep"></div><label class="fl" id="rv-titre">Reversements à des coéditeurs</label>'+
     '<div id="revers"></div>'+
     '<div class="sep"></div><label class="fl">Ventilation des parts éditoriales</label>'+
     '<div id="vent"></div>'+
@@ -3596,6 +3610,19 @@ function ficheOeuvre(code){
     var d=x.l.deal==null?0:x.l.deal;
     return Math.round((PIL==='ph'?x.ecrPh:x.ecr)*d)/100;
   }
+  // part reversée à un coéditeur sur un songwriter, en pourcentage cumulé
+  function tauxCede(x){
+    var id=x.l.swId||'',t2=0;
+    revers.forEach(function(r){
+      if(r.sw&&String(r.sw)!==String(id))return;
+      t2+=Math.max(0,Math.min(100,+r.p||0));});
+    return Math.min(100,t2);
+  }
+  // ce que la ligne doit peser une fois le reversement déduit : écriture × part − part cédée
+  function ptsNetsCalcules(x){
+    var b=ptsCalcules(x);
+    return Math.round(b*(100-tauxCede(x)))/100;
+  }
   function proposer(){
     groupes().forEach(function(x){pts[x.k]=ptsCalcules(x);});
     manuel=false;
@@ -3608,12 +3635,14 @@ function ficheOeuvre(code){
     return {ok:false,html:'<span class="tot-ko">'+pv(t)+' %</span> <span class="tag warn">'+
       (e2<0?'il manque '+pv(-e2)+' pt':pv(e2)+' pt de trop')+' · dépôt '+pv(TOT)+' %</span>'};
   }
-  function texteEcart(t){
+  // t est le total NET : c'est lui qui doit retomber sur notre part au dépôt
+  function texteEcart(t,rendu){
     var nom=PIL==='ph'?'phono':'DEP';
-    return 'Le total des lignes fait <b>'+pv(t)+' %</b> alors que '+esc(socNom(soc))+' détient <b>'+
+    return 'Le total '+(rendu?'<b>net</b> ':'')+'des lignes fait <b>'+pv(t)+' %</b>'+
+      (rendu?' (après '+pv(rendu)+' pt reversés)':'')+' alors que '+esc(socNom(soc))+' détient <b>'+
       pv(TOT)+' %</b> en '+nom+' sur ce dépôt : '+
       (t<TOT?'il manque <b>'+pv(TOT-t)+' pt</b>.':'<b>'+pv(t-TOT)+' pt</b> en trop.')+
-      ' Corrigez les parts représentées ou les points ci-dessous.';
+      ' Corrigez les parts représentées, les points, ou le reversement ci-dessus.';
   }
   function drawVent(){
     var G=groupes();
@@ -3622,10 +3651,11 @@ function ficheOeuvre(code){
       el('vent').innerHTML='<div class="mut" style="font-size:12px">Cochez les ayants droit que '+
         esc(socNom(soc))+' représente : leur part est reprise de leur fiche (100 % par défaut).</div>';return;}
     var t=0;G.forEach(function(x){t+=+pts[x.k]||0;});
-    var E=etatTotal(t),nom=PIL==='ph'?'phono':'DEP';
+    var C0=calculRevers();
+    var E=etatTotal(C0.net),nom=PIL==='ph'?'phono':'DEP';
     el('vent').className=E.ok?'':'vent-faux';
     el('vent').innerHTML=
-      '<div class="alerte alerte-ko" id="vent-ko"'+(E.ok?' hidden':'')+'>'+texteEcart(t)+'</div>'+
+      '<div class="alerte alerte-ko" id="vent-ko"'+(E.ok?' hidden':'')+'>'+texteEcart(C0.net,C0.rendu)+'</div>'+
       '<div class="tscroll"><table><thead><tr><th class="l">Songwriter</th>'+
       '<th class="num">Points '+nom+'</th>'+
       '<th class="num">Part cédée</th><th class="num">Points nets</th>'+
@@ -3640,6 +3670,7 @@ function ficheOeuvre(code){
           '<td class="num"><input type="number" step="0.01" min="0" data-pt="'+esc(x.k)+'" value="'+
             (Math.round(p*100)/100)+'" style="width:82px">'+
           '<div class="mini">'+pv(x.ecrPh)+' % × '+pv(l.deal==null?0:l.deal)+' % = '+pv(calc)+' pt'+
+            (tauxCede(x)?' − '+pv(tauxCede(x))+'\u00a0% = '+pv(ptsNetsCalcules(x))+' pt nets':'')+
             (ecart?' <span class="tag warn">modifié</span>':'')+'</div></td>'+
           '<td class="num'+(cs.cede?' ced':' mut')+'" data-ced="'+esc(x.k)+'">'+(cs.cede?'− '+pv(cs.cede)+' pt':'·')+
             (cs.noms.length?'<div class="mini">'+esc(cs.noms.join(' · '))+'</div>':'')+'</td>'+
@@ -3647,12 +3678,11 @@ function ficheOeuvre(code){
           '<td class="num mut sec">'+pv(partDep*r)+' %</td><td class="num mut sec">'+pv(partDr*r)+' %</td>'+
           '<td class="num w">'+eur(eurDe(cs.net,t))+'</td></tr>';}).join('');})()+
       '</tbody><tfoot><tr class="'+(E.ok?'':'tot-faux')+'"><td class="l">Total des parts représentées</td>'+
+      '<td class="num mut">'+pv(t)+' %</td>'+
+      '<td class="num'+(C0.rendu?' ced':' mut')+'">'+(C0.rendu?'− '+pv(C0.rendu)+' pt':'·')+'</td>'+
       '<td class="num">'+E.html+'</td>'+
-      (function(){var C=calculRevers();
-        return '<td class="num'+(C.rendu?' ced':' mut')+'">'+(C.rendu?'− '+pv(C.rendu)+' pt':'·')+'</td>'+
-          '<td class="num">'+pv(C.net)+' pt</td>'+
-          '<td class="num sec">'+pv(TOT>0?partDep*C.net/TOT:0)+' %</td><td class="num sec">'+pv(TOT>0?partDr*C.net/TOT:0)+' %</td>'+
-          '<td class="num">'+eur(t>0?(o.net||0)*C.net/t:(o.net||0))+'</td>';})()+
+      '<td class="num sec">'+pv(TOT>0?partDep*C0.net/TOT:0)+' %</td><td class="num sec">'+pv(TOT>0?partDr*C0.net/TOT:0)+' %</td>'+
+      '<td class="num">'+eur(t>0?(o.net||0)*C0.net/t:(o.net||0))+'</td>'+
       '</tr></tfoot></table></div>'+
       '<div class="rowline" style="margin-top:8px"><button class="btn sm" id="v-prop">Recalculer depuis les parts</button>'+
       '<span class="mut" style="font-size:11.5px">'+(manuel?'Points saisis à la main.':
@@ -3674,6 +3704,11 @@ function ficheOeuvre(code){
     G.forEach(function(x,idx){
       var cs=C.parSW[x.k]||{cede:0,net:+pts[x.k]||0,noms:[]},r=TOT>0?cs.net/TOT:0,tr=tb.children[idx];
       if(!tr)return;
+      var mi=tr.children[1].querySelector('.mini');
+      if(mi){var calc2=ptsCalcules(x),tc=tauxCede(x);
+        mi.innerHTML=pv(x.ecrPh)+' % × '+pv(x.l.deal==null?0:x.l.deal)+' % = '+pv(calc2)+' pt'+
+          (tc?' − '+pv(tc)+'\u00a0% = '+pv(ptsNetsCalcules(x))+' pt nets':'')+
+          (Math.abs(calc2-(+pts[x.k]||0))>0.02?' <span class="tag warn">modifié</span>':'');}
       tr.children[2].className='num'+(cs.cede?' ced':' mut');
       tr.children[2].innerHTML=(cs.cede?'− '+pv(cs.cede)+' pt':'·')+
         (cs.noms.length?'<div class="mini">'+esc(cs.noms.join(' · '))+'</div>':'');
@@ -3682,15 +3717,16 @@ function ficheOeuvre(code){
       tr.children[5].textContent=pv(partDr*r)+' %';
       tr.children[6].textContent=eur(eurDe(cs.net,t));});
     if(tf){
-      var E=etatTotal(t);
+      var E=etatTotal(C.net);
       vb.className=E.ok?'':'vent-faux';
       var al=el('vent-ko');
-      if(al){al.hidden=E.ok;if(!E.ok)al.innerHTML=texteEcart(t);}
+      if(al){al.hidden=E.ok;if(!E.ok)al.innerHTML=texteEcart(C.net,C.rendu);}
       tf.className=E.ok?'':'tot-faux';
-      tf.children[1].innerHTML=E.html;
+      tf.children[1].className='num mut';
+      tf.children[1].textContent=pv(t)+' %';
       tf.children[2].className='num'+(C.rendu?' ced':' mut');
       tf.children[2].textContent=C.rendu?'− '+pv(C.rendu)+' pt':'·';
-      tf.children[3].textContent=pv(C.net)+' pt';
+      tf.children[3].innerHTML=E.html;
       tf.children[4].textContent=pv(TOT>0?partDep*C.net/TOT:0)+' %';
       tf.children[5].textContent=pv(TOT>0?partDr*C.net/TOT:0)+' %';
       tf.children[6].textContent=eur(t>0?(o.net||0)*C.net/t:(o.net||0));
@@ -3744,6 +3780,11 @@ function ficheOeuvre(code){
   }
   // ce qu'un songwriter cède, utilisé par la ventilation
   function cedeDe(k){var C=calculRevers();return (C.parSW[k]||{cede:0,net:0,noms:[]});}
+  function texteAvert(C){
+    return 'Le total net ne retombe pas sur les <b>'+pv(TOT)+' %</b> de '+esc(socNom(soc))+
+      ' : il fait <b>'+pv(C.net)+' %</b>'+(C.rendu?' après '+pv(C.rendu)+' pt reversés':'')+
+      '. Vérifiez le reversement ou les points de la ventilation.';
+  }
   function drawRevers(){
     var b=el('revers');if(!b)return;
     var C=calculRevers(),co=coediteurs(),G=Object.keys(C.m);
@@ -3758,8 +3799,14 @@ function ficheOeuvre(code){
       return '<option value=""'+(v?'':' selected')+'>Choisir un coéditeur…</option>'+
         co.map(function(n){return '<option value="'+esc(n)+'"'+(norm(n)===norm(v)?' selected':'')+'>'+esc(n)+'</option>';}).join('')+
         '<option value="__autre"'+(v&&!dedans?' selected':'')+'>Autre éditeur…</option>';};
+    // le total net doit retomber sur notre part : dès qu'un reversement est saisi, c'est le premier suspect
+    var ecartTot=!etatTotal(C.net).ok,faux=ecartTot&&revers.length>0;
+    var ti=el('rv-titre');if(ti)ti.className='fl'+(faux?' fl-ko':'');
     var h='';
-    h+='<div class="rv-box">';
+    h+='<div class="rv-box'+(faux?' rv-ko':'')+'">';
+    if(faux)h+='<div class="rv-avert">'+texteAvert(C)+'</div>';
+    else if(ecartTot&&!revers.length)h+='<div class="mut" style="font-size:11.5px;margin-bottom:8px">'+
+      'La ventilation ne retombe pas sur nos '+pv(TOT)+' % : si l\'écart vient d\'un reversement à un coéditeur, saisissez-le ici.</div>';
     if(!revers.length){
       h+='<div class="rv-vide"><span class="mut">Aucun reversement — '+esc(socNom(soc))+' garde la totalité : <b>'+
         pv(C.tot)+' pt</b>.</span></div>';
@@ -3828,6 +3875,18 @@ function ficheOeuvre(code){
     var su=b.querySelector('[data-rvsum]'),ne=b.querySelector('[data-rvnet]');
     if(su)su.textContent=pv(C.rendu)+' pt';
     if(ne)ne.textContent=pv(C.net)+' pt';
+    // l'alerte suit le total net en direct
+    var faux=!etatTotal(C.net).ok&&revers.length>0,bx=b.querySelector('.rv-box'),ti=el('rv-titre');
+    if(ti)ti.className='fl'+(faux?' fl-ko':'');
+    if(bx){
+      bx.classList.toggle('rv-ko',faux);
+      var av=bx.querySelector('.rv-avert');
+      if(faux){
+        if(av)av.innerHTML=texteAvert(C);
+        else{av=document.createElement('div');av.className='rv-avert';av.innerHTML=texteAvert(C);
+          bx.insertBefore(av,bx.firstChild);}
+      }else if(av)av.remove();
+    }
   }
   // reversements et ventilation se lisent ensemble : on rafraîchit les deux d'un coup
   function majTout(){majRevers();majTotaux();}
