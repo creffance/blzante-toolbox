@@ -69,6 +69,8 @@ button,select,input,textarea{font-family:inherit}
 .btn:hover{border-color:var(--accent);color:var(--ink)}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
 .btn.primary:hover{filter:brightness(1.08)}
+.btn.alerte{background:var(--warn);border-color:var(--warn);color:#1a1205;font-weight:600}
+.btn.alerte:hover{filter:brightness(1.08);color:#1a1205}
 .btn.sm{padding:5px 8px;font-size:11.5px}
 .btn[disabled]{opacity:.45;cursor:not-allowed}
 .chip{font:500 12px/1 var(--sans);padding:7px 11px;border:1px solid var(--line-2);background:var(--surface);
@@ -282,6 +284,12 @@ tr.sel td{background:var(--accent-soft)}
 .plan-lien{border:1px solid var(--line);border-radius:4px;padding:8px 10px;background:var(--surface-2)}
 .plan-lien+.plan-lien{margin-top:6px}
 .tk-bloc{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;margin-top:8px}
+.ver-res{display:flex;flex-direction:column;gap:4px;margin-top:4px}
+.ver-prop{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px;align-items:center;
+ padding:4px 6px;border:1px solid var(--line);border-radius:4px}
+.ver-prop .ver-tt{min-width:0;display:flex;flex-direction:column;gap:1px}
+.ver-prop b,.ver-prop .mini{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
+.ver-prop b{font-size:12.5px;font-weight:600}
 .graph-rep{margin:6px 0 10px;overflow-x:auto}
 .graph-rep svg{max-width:100%;height:auto}
 @media(max-width:700px){.tk-bloc{grid-template-columns:1fr}}
@@ -1913,6 +1921,8 @@ function viewOeuvres(){
     if(state.filtre==='ratt'&&!r.sw.length)return false;
     if(state.filtre==='nonratt'&&r.sw.length)return false;
     if(state.filtre==='fiche'&&(r.artiste&&r.sortie&&r.spotify))return false;
+    if(state.filtre==='sacem'&&!r.sacemErr)return false;
+    if(state.filtre==='nonsorti'&&!r.nonSorti)return false;
     if(!q)return true;
     return (r.titre+' '+r.code+' '+r.artiste+' '+r.iswc+' '+r.sous+' '+r.titreTrack).toLowerCase().indexOf(q)>=0;});
   var k=state.sort.k,d=state.sort.d;
@@ -1925,7 +1935,11 @@ function viewOeuvres(){
     return (va-vb)*d;});
   var th=function(key,lbl,cls){return '<th class="sortable '+(cls||'num')+'" data-k="'+key+'">'+lbl+
     (k===key?' <span class="car">'+(d<0?'▼':'▲')+'</span>':'')+'</th>';};
+  var nErr=rs.filter(function(r){return !!r.sacemErr;}).length;
+  var nNS=rs.filter(function(r){return r.nonSorti;}).length;
   var f=[['tous','Toutes'],['rev','Avec revenus'],['ratt','Rattachées'],['nonratt','Non rattachées'],['fiche','Fiche à compléter']];
+  if(nErr)f.push(['sacem','Erreur Sacem '+nErr]);
+  if(nNS)f.push(['nonsorti','Pas encore commercialisées '+nNS]);
   var h='<div class="panel"><div class="phead">'+
     '<div class="rowline"><input type="search" id="q" placeholder="Titre, code, artiste, ISWC…" value="'+esc(state.q)+'" style="width:240px">'+
     f.map(function(x){return '<button class="chip" data-f="'+x[0]+'" aria-pressed="'+(state.filtre===x[0])+'">'+x[1]+'</button>';}).join('')+
@@ -2107,16 +2121,16 @@ function viewRappro(){
       '<span class="note">'+recl.length+' œuvre'+(recl.length>1?'s':'')+' dont le dépôt est erroné — à réclamer à la Sacem</span>'+
       '<button class="btn sm" id="recl-copy" style="margin-left:auto">Copier la liste</button></div>'+
       '<div class="tscroll"><table><thead><tr><th class="l">Œuvre</th><th class="l">Code / ISWC</th>'+
-      '<th class="l">Ce qui est faux</th><th class="l">Sortie</th><th class="l">Signalée</th><th class="l"></th></tr></thead><tbody>'+
+      '<th class="l">Ce qui est faux</th><th class="l">Sortie</th><th class="l">Statut</th><th class="l"></th></tr></thead><tbody>'+
       recl.map(function(r){
         return '<tr class="clickable" data-code="'+esc(r.code)+'"><td class="l w"><span class="tt">'+vignette(artDe(soc,r.code))+
           '<span>'+esc(r.titreTrack||r.titre)+'<div class="mini">'+(r.artiste?esc(r.artiste):'artiste à renseigner')+'</div></span></span></td>'+
           '<td class="l mut">'+esc(r.code)+(r.iswc?'<div class="mini">'+esc(r.iswc)+'</div>':'')+'</td>'+
           '<td class="l">'+(r.sacemErr.t?esc(r.sacemErr.t):'<span class="mut">à préciser</span>')+'</td>'+
           '<td class="l">'+lienPlan(soc,r.code)+'</td>'+
-          '<td class="l mut">'+esc(frDate(r.sacemErr.d))+
-            (r.sacemErr.envoi?'<div class="mini">réclamée le '+esc(frDate(r.sacemErr.envoi))+'</div>'
-              :'<div class="mini"><span class="tag ko">à envoyer</span></div>')+'</td>'+
+          '<td class="l"><span class="tag '+tonErr(etatErr(r.sacemErr))+'">'+esc(libErr(etatErr(r.sacemErr)))+'</span>'+
+            '<div class="mini">signalée le '+esc(frDate(r.sacemErr.d))+
+            (r.sacemErr.envoi?' · envoyée le '+esc(frDate(r.sacemErr.envoi)):'')+'</div></td>'+
           '<td class="l"><a class="lien-plan" href="#/'+esc(soc)+'/oeuvre/'+encodeURIComponent(r.code)+'">Fiche ↗</a></td></tr>';}).join('')+
       '</tbody></table></div></div>';
   }
@@ -2456,6 +2470,11 @@ function oeuvresDeSortie(r){
 // « Contrats signés » : l'œuvre apparaîtra dans les prochains exports de nos catalogues
 // Suivi du post Instagram d'une sortie, repris du Planning
 var INSTA_LIB={a_faire:'À faire',poste:'Posté',aucun:'Pas de post'};
+// Vie d'une erreur de dépôt signalée à la Sacem
+var ETATS_ERR=[['a_envoyer','À envoyer à la Sacem'],['envoyee','Réclamation envoyée'],['corrige','Corrigée par la Sacem']];
+function etatErr(x){return !x?'':(x.regle?'corrige':(x.envoi?'envoyee':'a_envoyer'));}
+function libErr(v){var y=ETATS_ERR.filter(function(z){return z[0]===v;})[0];return y?y[1]:'À envoyer à la Sacem';}
+function tonErr(v){return v==='corrige'?'ok':v==='envoyee'?'warn':'ko';}
 var STATUTS_SACEM=[['a_lancer','À lancer'],['en_cours','En cours'],
   ['en_signature','En cours de signature'],['contrats_signes','Contrats signés'],
   ['depose','Déposé à la Sacem'],['bloque','Bloqué'],['non_editeur','Non éditeur sur l\'œuvre']];
@@ -3201,8 +3220,8 @@ function render(){
       var L=sortiesLiees(soc,r.code);
       return [r.titreTrack||r.titre,r.code,r.iswc||'—',r.artiste||'—',
         L.length?L[0].type+' « '+titreSortie(L[0])+' » '+(L[0].date||''):'pas de sortie liée',
-        (r.sacemErr.t||'à préciser')].join('\t');}).join('\n');
-    var ent=['Titre','Code œuvre','ISWC','Artiste','Sortie','Erreur constatée'].join('\t');
+        (r.sacemErr.t||'à préciser'),libErr(etatErr(r.sacemErr))].join('\t');}).join('\n');
+    var ent=['Titre','Code œuvre','ISWC','Artiste','Sortie','Erreur constatée','Statut'].join('\t');
     var tout=ent+'\n'+txt;
     try{navigator.clipboard.writeText(tout);toast('Liste des réclamations copiée');}
     catch(err){
@@ -3380,6 +3399,8 @@ function ficheOeuvre(code){
     '<div class="hint" id="vent-hint"></div>'+
     '<div class="sep"></div><label class="fl">Ventilation des parts éditoriales</label>'+
     '<div id="vent"></div>'+
+    '<div class="sep"></div><label class="fl">Reversements à des coéditeurs</label>'+
+    '<div id="revers"></div>'+
     '<div id="splits-ok"></div>'+
     '</div></div>';
   openModal('<div class="eyebrow">Œuvre</div><h2>'+esc(o.titre)+'</h2>',body,
@@ -3506,7 +3527,9 @@ function ficheOeuvre(code){
             inp.value=lignes[i].deal;
           }else inp.value=0;}
         var tr=this.closest('tr');if(tr&&tr.children[1])tr.children[1].classList.toggle('w',this.checked);
-        proposer();drawVent();if(typeof drawSplitsOk==='function')drawSplitsOk();};});
+        proposer();drawVent();
+        if(typeof drawRevers==='function')drawRevers();
+        if(typeof drawSplitsOk==='function')drawSplitsOk();};});
     el('aut-body').querySelectorAll('[data-d]').forEach(function(c){
       c.oninput=function(){lignes[+this.dataset.d].deal=this.value===''?null:+this.value;
         proposer();drawVent();};});
@@ -3585,7 +3608,9 @@ function ficheOeuvre(code){
         'Points = écriture phono × part représentée.')+'</span></div>';
     el('vent').querySelectorAll('[data-pt]').forEach(function(i2){
       i2.oninput=function(){pts[this.dataset.pt]=this.value===''?0:+this.value;manuel=true;majTotaux();};});
-    el('v-prop').onclick=function(){proposer();drawVent();if(typeof drawSplitsOk==='function')drawSplitsOk();};
+    el('v-prop').onclick=function(){proposer();drawVent();
+      if(typeof drawRevers==='function')drawRevers();
+      if(typeof drawSplitsOk==='function')drawSplitsOk();};
   }
   function majTotaux(){
     // recalcul des totaux et des euros sans reconstruire les champs de saisie
@@ -3608,12 +3633,94 @@ function ficheOeuvre(code){
       tf.children[4].textContent=pv(TOT>0?partDep*t/TOT:0)+' %';
       tf.children[5].textContent=pv(TOT>0?partDr*t/TOT:0)+' %';
     }
+    if(typeof drawRevers==='function')majRevers();
     if(typeof drawSplitsOk==='function')drawSplitsOk();
   }
   function partLigne(){
     return 'Part de '+esc(socNom(soc))+' au dépôt : <b>'+pv(partPh)+' %</b> en phono · '+
       '<b>'+pv(partDep)+' %</b> en DEP · <b>'+pv(partDr)+' %</b> en DR. '+
       'Le phono commande la ventilation, DEP et DR suivent au prorata.';
+  }
+  /* ---- reversements de parts éditoriales à des coéditeurs ---- */
+  // Une part de ce que nous percevons peut revenir à un coéditeur, et cela peut
+  // différer d'un songwriter à l'autre sur une même œuvre.
+  var revers=(Array.isArray(e.reversements)?e.reversements:[]).map(function(x){
+    return {e:String(x&&x.e||''),p:(x&&x.p!=null)?+x.p:50,sw:String(x&&x.sw||'')};});
+  // les coéditeurs proposés : ceux du dépôt, sauf nous
+  function coediteurs(){
+    return eds.filter(function(x){return !x.moi&&x.nom;}).map(function(x){return x.nom;});
+  }
+  function ptsParSW(){
+    var m={},G=groupes();
+    G.forEach(function(x){m[x.k]={nom:(x.l.swId&&store.songwriters[x.l.swId]?store.songwriters[x.l.swId].nom:x.l.nom),
+      id:x.l.swId||'',pt:+pts[x.k]||0};});
+    return m;
+  }
+  // points repris par chaque coéditeur, et ce qu'il nous reste
+  function calculRevers(){
+    var m=ptsParSW(),cles=Object.keys(m),tot=0,par={},detail=[];
+    cles.forEach(function(k){tot+=m[k].pt;});
+    revers.forEach(function(r,i){
+      var p2=Math.max(0,Math.min(100,+r.p||0)),base=0;
+      cles.forEach(function(k){
+        if(r.sw&&String(m[k].id)!==String(r.sw))return;
+        base+=m[k].pt;});
+      var v=Math.round(base*p2)/100;
+      detail[i]={base:base,pt:v};
+      if(r.e)par[r.e]=(par[r.e]||0)+v;
+    });
+    var rendu=detail.reduce(function(a,x){return a+(x?x.pt:0);},0);
+    return {m:m,cles:cles,tot:tot,par:par,detail:detail,rendu:rendu,net:Math.round((tot-rendu)*100)/100};
+  }
+  function drawRevers(){
+    var b=el('revers');if(!b)return;
+    var C=calculRevers(),co=coediteurs(),G=Object.keys(C.m);
+    var opts=function(sel){
+      return '<option value=""'+(sel?'':' selected')+'>toute notre part</option>'+
+        G.map(function(k){var x=C.m[k];
+          return '<option value="'+esc(x.id)+'"'+(String(sel)===String(x.id)?' selected':'')+'>'+
+            esc(x.nom)+' · '+pv(x.pt)+' pt</option>';}).join('');};
+    var h='<datalist id="co-list">'+co.map(function(n){return '<option value="'+esc(n)+'">';}).join('')+'</datalist>';
+    if(!revers.length){
+      h+='<div class="mut" style="font-size:12px">Aucun reversement : '+esc(socNom(soc))+' garde '+pv(C.tot)+' pt.</div>';
+    }else{
+      h+='<div class="tscroll"><table><thead><tr><th class="l">Coéditeur</th><th class="num">Reversement</th>'+
+        '<th class="l">Sur</th><th class="num">Points cédés</th><th class="l"></th></tr></thead><tbody>'+
+        revers.map(function(r,i){
+          var d=C.detail[i]||{base:0,pt:0};
+          return '<tr><td class="l w"><input type="text" list="co-list" data-rve="'+i+'" value="'+esc(r.e)+
+              '" placeholder="Nom du coéditeur" style="width:100%"></td>'+
+            '<td class="num"><input type="number" step="0.01" min="0" max="100" data-rvp="'+i+'" value="'+
+              (r.p!=null?r.p:50)+'" style="width:78px"> %</td>'+
+            '<td class="l"><select data-rvsw="'+i+'">'+opts(r.sw)+'</select></td>'+
+            '<td class="num'+(d.pt?' w':' mut')+'">'+pv(d.pt)+' pt<div class="mini">sur '+pv(d.base)+' pt</div></td>'+
+            '<td class="l"><button type="button" class="btn sm" data-rvx="'+i+'">Retirer</button></td></tr>';}).join('')+
+        '</tbody><tfoot><tr><td class="l">Reste à '+esc(socNom(soc))+'</td><td></td><td class="l mut">'+
+          Object.keys(C.par).map(function(n){return esc(n)+' '+pv(C.par[n])+' pt';}).join(' · ')+
+          '</td><td class="num">'+pv(C.net)+' pt</td><td></td></tr></tfoot></table></div>';
+    }
+    h+='<div class="rowline" style="margin-top:6px"><button type="button" class="btn sm" id="rv-add">+ Ajouter un reversement</button>'+
+      '<span class="mut" style="font-size:11.5px">Un reversement peut viser toute notre part ou un seul songwriter.</span></div>';
+    b.innerHTML=h;
+    b.querySelectorAll('[data-rve]').forEach(function(i2){i2.oninput=function(){
+      revers[+this.dataset.rve].e=this.value;majRevers();};});
+    b.querySelectorAll('[data-rvp]').forEach(function(i2){i2.oninput=function(){
+      revers[+this.dataset.rvp].p=this.value===''?0:+this.value;majRevers();};});
+    b.querySelectorAll('[data-rvsw]').forEach(function(i2){i2.onchange=function(){
+      revers[+this.dataset.rvsw].sw=this.value;drawRevers();};});
+    b.querySelectorAll('[data-rvx]').forEach(function(x){x.onclick=function(){
+      revers.splice(+this.dataset.rvx,1);drawRevers();};});
+    el('rv-add').onclick=function(){revers.push({e:'',p:50,sw:''});drawRevers();
+      var l=b.querySelectorAll('[data-rve]');if(l.length)l[l.length-1].focus();};
+  }
+  // mise à jour des chiffres sans reconstruire les champs en cours de saisie
+  function majRevers(){
+    var b=el('revers');if(!b)return;
+    var C=calculRevers(),tb=b.querySelector('tbody'),tf=b.querySelector('tfoot tr');
+    if(tb)revers.forEach(function(r,i){var tr=tb.children[i],d=C.detail[i]||{base:0,pt:0};
+      if(tr)tr.children[3].innerHTML=pv(d.pt)+' pt<div class="mini">sur '+pv(d.base)+' pt</div>';});
+    if(tf){tf.children[2].innerHTML=Object.keys(C.par).map(function(n){return esc(n)+' '+pv(C.par[n])+' pt';}).join(' · ');
+      tf.children[3].textContent=pv(C.net)+' pt';}
   }
   /* ---- contrôles : relecture des splits, part nulle au dépôt, erreur de dépôt ---- */
   var splitsOk=e.splitsOk||'',part0Ok=e.part0Ok||'';
@@ -3635,12 +3742,9 @@ function ficheOeuvre(code){
         '<input type="checkbox" id="f-splitsok"'+(splitsOk?' checked':'')+' style="margin-top:3px">'+
         '<span><b>Splits vérifiés</b> — '+
         (splitsOk?'relus le '+esc(frDate(splitsOk)):'<span class="tag warn">à relire</span> les parts n\'ont jamais été validées à la main sur cette œuvre')+
-        '<div class="mini">'+
-        (concerne?'Un songwriter signé chez '+esc(socNom(soc))+' est ventilé ici : cochez une fois les parts contrôlées, '+
-          'même si le rattachement s\'est fait automatiquement. ':'')+
-        (retouche?'<b>La ventilation a été retouchée à la main</b> pour retomber sur notre part : le calcul automatique '+
-          '(écriture × part représentée) ne donne pas ce résultat, il faut le confirmer.':'')+
-        '</div></span></label></div>';
+        (retouche?'<div class="mini">'+'<b>La ventilation a été retouchée à la main</b> pour retomber sur notre part : le calcul automatique '+
+          '(écriture × part représentée) ne donne pas ce résultat, il faut le confirmer.</div>':'')+
+        '</span></label></div>';
     }
     if(partNulle){
       h+='<div class="ctrl'+(part0Ok?'':' vent-faux')+'" style="margin-top:8px">'+
@@ -3655,16 +3759,19 @@ function ficheOeuvre(code){
     // la Sacem se trompe parfois : on note l'erreur ici, elle ressort ensuite pour la réclamation
     h+='<div class="ctrl'+(errOuvre?' vent-faux':'')+'" style="margin-top:8px">'+
       (errOuvre
-        ?'<div><b>Erreur Sacem signalée</b> <span class="tag ko">réclamation à faire</span>'+
+        ?(function(){var et=etatErr(sacemErr);
+          return '<div><b>Erreur Sacem signalée</b> <span class="tag '+tonErr(et)+'">'+esc(libErr(et))+'</span>'+
           '<span class="mut" style="font-size:11.5px"> · le '+esc(frDate(sacemErr.d))+
-          (sacemErr.envoi?' · réclamation envoyée le '+esc(frDate(sacemErr.envoi)):'')+'</span>'+
+          (sacemErr.envoi?' · envoyée le '+esc(frDate(sacemErr.envoi)):'')+
+          (sacemErr.regle?' · corrigée le '+esc(frDate(sacemErr.regle)):'')+'</span>'+
           '<div class="field" style="margin-top:6px"><label class="fl">Ce qui est faux au dépôt</label>'+
           '<textarea id="f-errnote" rows="2" placeholder="Parts, ayants droit, titre, ISWC…">'+esc(sacemErr.t||'')+'</textarea></div>'+
           '<div class="rowline" style="margin-top:6px">'+
-            '<button type="button" class="btn sm" id="f-errsend">'+(sacemErr.envoi?'Réclamation renvoyée':'Réclamation envoyée')+'</button>'+
-            '<button type="button" class="btn sm" id="f-errok">Corrigé par la Sacem</button>'+
-            '<button type="button" class="btn sm" id="f-errno">Annuler le signalement</button></div></div>'
-        :'<div class="rowline"><button type="button" class="btn sm" id="f-erradd">Signaler une erreur Sacem</button>'+
+            '<label class="mini" style="display:flex;gap:6px;align-items:center">Statut '+
+            '<select id="f-errst">'+ETATS_ERR.map(function(x){
+              return '<option value="'+x[0]+'"'+(x[0]===et?' selected':'')+'>'+x[1]+'</option>';}).join('')+'</select></label>'+
+            '<button type="button" class="btn sm" id="f-errno">Annuler le signalement</button></div></div>';})()
+        :'<div class="rowline"><button type="button" class="btn sm alerte" id="f-erradd">Signaler une erreur Sacem</button>'+
           '<span class="mut" style="font-size:11.5px">Dépôt erroné côté Sacem : parts, ayants droit, titre…'+
           (sacemErr&&sacemErr.regle?' Dernière erreur corrigée le '+esc(frDate(sacemErr.regle))+'.':'')+'</span></div>')+
       '</div>';
@@ -3678,13 +3785,16 @@ function ficheOeuvre(code){
       sacemErr={d:new Date().toISOString(),t:''};errOuvre=true;drawSplitsOk();
       if(el('f-errnote'))el('f-errnote').focus();};
     if(el('f-errnote'))el('f-errnote').oninput=function(){if(sacemErr)sacemErr.t=this.value;};
-    if(el('f-errsend'))el('f-errsend').onclick=function(){
-      if(sacemErr)sacemErr.envoi=new Date().toISOString();drawSplitsOk();};
-    if(el('f-errok'))el('f-errok').onclick=function(){
-      if(sacemErr)sacemErr.regle=new Date().toISOString();errOuvre=false;drawSplitsOk();};
+    if(el('f-errst'))el('f-errst').onchange=function(){
+      if(!sacemErr)return;
+      var v=this.value,now=new Date().toISOString();
+      if(v==='a_envoyer'){delete sacemErr.envoi;delete sacemErr.regle;}
+      else if(v==='envoyee'){sacemErr.envoi=sacemErr.envoi||now;delete sacemErr.regle;}
+      else{sacemErr.envoi=sacemErr.envoi||now;sacemErr.regle=now;}
+      errOuvre=!sacemErr.regle;drawSplitsOk();};
     if(el('f-errno'))el('f-errno').onclick=function(){sacemErr=null;errOuvre=false;drawSplitsOk();};
   }
-  drawNotes();drawAut();drawVent();drawSplitsOk();majPochette(false);
+  drawNotes();drawAut();drawVent();drawRevers();drawSplitsOk();majPochette(false);
   /* ---- featuring : un champ par artiste invité, ouvert par « + Feat » ---- */
   var featsOe=listeFeat(e.feat||'');
   function syncFeat(){el('f-feat').value=featsOe.map(function(x){return String(x).trim();}).filter(Boolean).join(', ');}
@@ -3745,11 +3855,16 @@ function ficheOeuvre(code){
       var pris={};pris[code]=1;att.forEach(function(c){pris[c]=1;});if(verDe)pris[verDe]=1;
       var res=rows(soc).filter(function(x){return !pris[x.code]&&
         norm(x.titre+' '+x.titreTrack+' '+x.code+' '+x.artiste+' '+x.sous).indexOf(q)>=0;}).slice(0,6);
-      el('fv-res').innerHTML=res.length?'<div class="tscroll"><table><tbody>'+res.map(function(x){
-        return '<tr><td class="l w">'+esc(x.titreTrack||x.titre)+ficheLigne(x)+'</td>'+
-          '<td class="num mut">'+(x.net?eur(x.net)+' €':'—')+'</td>'+
-          '<td class="l"><button class="btn sm primary" data-vad="'+esc(x.code)+'">Rattacher</button></td></tr>';}).join('')+
-        '</tbody></table></div>'
+      // bouton à gauche, titre et deux repères seulement : la liste tient dans la colonne
+      el('fv-res').innerHTML=res.length?'<div class="ver-res">'+res.map(function(x){
+        var p2=[];
+        if(x.artiste)p2.push(esc(x.artiste));
+        if(x.sortie)p2.push(frDate(x.sortie));
+        p2.push('code '+esc(x.code));
+        return '<div class="ver-prop"><button class="btn sm primary" data-vad="'+esc(x.code)+'">Rattacher</button>'+
+          '<span class="ver-tt"><b title="'+esc(x.titreTrack||x.titre)+'">'+esc(x.titreTrack||x.titre)+'</b>'+
+          '<span class="mini" title="'+esc(ficheLigne(x).replace(/<[^>]+>/g,''))+'">'+p2.join(' · ')+'</span></span></div>';}).join('')+
+        '</div>'
         :'<div class="mut" style="font-size:12px">Aucune œuvre ne correspond.</div>';
       el('fv-res').querySelectorAll('[data-vad]').forEach(function(b){b.onclick=function(){
         var c=this.dataset.vad;
@@ -4165,6 +4280,10 @@ function ficheOeuvre(code){
     if(splitsOk)ed.splitsOk=splitsOk;else delete ed.splitsOk;
     if(part0Ok)ed.part0Ok=part0Ok;else delete ed.part0Ok;
     if(sacemErr)ed.sacemErr=sacemErr;else delete ed.sacemErr;
+    // reversements de parts éditoriales aux coéditeurs
+    var rvOk=revers.filter(function(x){return x.e&&+x.p>0;}).map(function(x){
+      return {e:String(x.e).trim(),p:Math.round((+x.p||0)*100)/100,sw:x.sw||''};});
+    if(rvOk.length)ed.reversements=rvOk;else delete ed.reversements;
     this.disabled=true;el('f-state').textContent='Enregistrement…';
     try{
       // les œuvres rattachées comme versions de celle-ci
