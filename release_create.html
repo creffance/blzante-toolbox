@@ -739,6 +739,7 @@ function ajouterSwGlobal(n) {
 // Pour un single, le titre saisi plus haut donne la ligne ; pour un projet ce sont les lignes qui commandent.
 function semerLignes() {
   if (estProjet()) { if (!oeRows.length) oeRows.push(nouvelleLigne('')); oeSeed = ''; return; }
+  // un single comme une synchro ne portent qu'un titre
   // un single n'a qu'un titre : une seule ligne, mise à jour au fil de la saisie
   const tr = (document.getElementById('trackName').value || '').trim();
   if (!oeRows.length) oeRows.push(nouvelleLigne(''));
@@ -892,7 +893,7 @@ function focusQ(id, pos) {
 }
 function oeuvresDuFormulaire() {
   const oeuvres = {}, sacem = {}, blzTracks = [];
-  const seul = typeSelect.value === 'Single';
+  const seul = typeSelect.value === 'Single' || typeSelect.value === 'Synchro';
   oeRows.forEach(l => {
     const oes = oesDe(l);
     const tr = (l.track || '').trim(), k = normT(tr || (oes[0] || {}).titre || '');
@@ -969,12 +970,12 @@ function updateConditionals() {
   const t = typeSelect.value;
   projectGroup.classList.toggle('visible', t === 'EP' || t === 'Album');
   epTracksGroup.classList.toggle('visible', t === 'EP' || t === 'Album');
-  trackGroup.classList.toggle('visible', t === 'Single' || t === 'Certification');
+  trackGroup.classList.toggle('visible', t === 'Single' || t === 'Certification' || t === 'Synchro');
   liveGroup.classList.toggle('visible', t === 'Live');
   certGroup.classList.toggle('visible', t === 'Certification');
   countryGroup.classList.toggle('visible', ['Single','EP','Album'].includes(t));
   actuGroup.classList.toggle('visible', t === 'Actu');
-  document.getElementById('oeuvresGroup').classList.toggle('visible', ['Single','EP','Album'].includes(t));
+  document.getElementById('oeuvresGroup').classList.toggle('visible', ['Single','EP','Album','Synchro'].includes(t));
   document.getElementById('codaGroup').classList.toggle('visible', ['Single','EP','Album'].includes(t));
   // le featuring d'un single se saisit à côté du nom du track, celui d'un projet track par track
   renderFeatsSingle();
@@ -1491,7 +1492,7 @@ submitBtn.addEventListener('click', async () => {
   try {
     let precedent = {};
     if (editId) { try { const r0 = await dbFetch('/releases/' + editId + '.json'); precedent = (r0.ok && await r0.json()) || {}; } catch (e) {} }
-    const liens = ['Single','EP','Album'].includes(type)
+    const liens = ['Single','EP','Album','Synchro'].includes(type)
       ? oeuvresDuFormulaire()
       : { oeuvres: precedent.oeuvres || {}, sacem: precedent.sacem || {}, blzTracks: precedent.blzTracks || [] };
     const release = Object.assign({}, precedent, {

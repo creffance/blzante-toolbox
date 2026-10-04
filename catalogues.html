@@ -1777,10 +1777,10 @@ function viewApercu(){
     '<a class="kpi kpi-lien" href="#/'+soc+'/rappro" data-nav="rappro"><div class="k">Œuvres à traiter</div>'+
       '<div class="v">'+e0(AT.oeuvres)+'</div><div class="s">'+e0(AT.faites)+' sur '+e0(AT.total)+' vérifiées'+
       (AT.vent?' · '+AT.vent+' dissolution'+(AT.vent>1?'s':'')+' à valider':'')+'</div></a>'+
-    kpi('','Songwriters signés',e0(sws.filter(estBLZ).length),
+    (S?'':kpi('','Songwriters signés',e0(sws.filter(estBLZ).length),
       (function(){var nt=sws.filter(function(x){return typeSW(x)==='termine';}).length,
         ne=sws.filter(function(x){return !estBLZ(x)&&typeSW(x)!=='termine';}).length;
-        return nt+' contrat'+(nt>1?'s':'')+' terminé'+(nt>1?'s':'')+' · '+ne+' externe'+(ne>1?'s':'');})())+
+        return nt+' contrat'+(nt>1?'s':'')+' terminé'+(nt>1?'s':'')+' · '+ne+' externe'+(ne>1?'s':'');})()))+
     '</div>';
   // répartitions : toute la chronologie au graphique, la période choisie en évidence et au tableau
   var sel=null;if(set){sel={};set.forEach(function(n){sel[n]=1;});}
@@ -1794,7 +1794,8 @@ function viewApercu(){
       '<div class="pbody">'+barres(F.fam,{detail:F.famTyp})+couverture(F)+'</div></div>'+
     '<div class="panel"><div class="phead"><h2>Par territoire</h2></div><div class="pbody">'+
       barres(F.pays,{casse:true})+'</div></div></div>'+
-    '<div class="split">';
+    // filtré sur une personne : le top œuvres prend toute la largeur, il n'y a plus de top songwriters
+    '<div class="'+(S?'':'split')+'">';
   // top œuvres de la sélection
   var parts={};rs.forEach(function(r){parts[r.code]=r;});
   var tous=Object.keys(F.oe).map(function(c){return {r:parts[c],v:F.oe[c]};}).filter(function(x){return x.r;})
@@ -1815,6 +1816,8 @@ function viewApercu(){
       :'<tr><td colspan="7" class="mut">Aucun revenu sur cette sélection.</td></tr>')+
     '</tbody></table></div>'+pages(tous.length,15,pO,'O')+'</div>';
   // top songwriters : signés, contrats terminés et externes, ceux à zéro compris
+  // (sans objet dès qu'on a filtré sur une seule personne)
+  if(S)return h+'</div>';
   var tsw=sws.map(function(sw){return {sw:sw,v:F.sw[sw.id]||0};})
     .sort(function(a,b){return (b.v-a.v)||String(a.sw.nom||'').localeCompare(String(b.sw.nom||''),'fr');});
   var mx=tsw.length&&tsw[0].v>0?tsw[0].v:1;
@@ -2318,7 +2321,8 @@ function titresSortie(r){
     if(Array.isArray(x))t=t.concat(x);else if(x)t=t.concat(String(x).split(/[,\n;]+/));});
   return t.map(norm).filter(Boolean);
 }
-var TYPES_SORTIE={Single:1,EP:1,Album:1};
+// Événements auxquels une œuvre peut être rattachée : les sorties, et les synchros
+var TYPES_SORTIE={Single:1,EP:1,Album:1,Synchro:1};
 function isoVersFR(d){var m=String(d||'').match(/^(\d{4})-(\d{2})-(\d{2})/);return m?m[3]+'/'+m[2]+'/'+m[1]:'';}
 function titreSortie(r){
   if(!r)return '';
@@ -2536,7 +2540,9 @@ function titrePourLien(r,o,info){
   if(exp)return exp;
   var dep=o.titre||'',cands=pistesProjet(r);
   var ts=titreSortie(r);
-  if(r.type==='Single'&&ts)cands=[ts].concat(cands);
+  // un single comme une synchro ne portent qu'un titre commercialisé : il fait foi
+  var unSeul=r.type==='Single'||r.type==='Synchro';
+  if(unSeul&&ts)cands=[ts].concat(cands);
   cands=cands.filter(Boolean);
   if(!cands.length)return dep;
   var cible=norm(dep);
@@ -2550,8 +2556,7 @@ function titrePourLien(r,o,info){
   var proche=cands.map(function(x){return {x:x,s:simil(norm(x),cible)};})
     .sort(function(a,b){return b.s-a.s;})[0];
   if(proche&&proche.s>=0.6)return proche.x;
-  // un single ne porte qu'un seul titre commercialisé : il fait foi sur le titre du dépôt
-  if(r.type==='Single'&&ts)return ts;
+  if(unSeul&&ts)return ts;
   return dep||cands[0];
 }
 function lierDansSortie(r,soc,code,info){
@@ -3781,9 +3786,10 @@ function ficheOeuvre(code){
   // ce qu'un songwriter cède, utilisé par la ventilation
   function cedeDe(k){var C=calculRevers();return (C.parSW[k]||{cede:0,net:0,noms:[]});}
   function texteAvert(C){
-    return 'Le total net ne retombe pas sur les <b>'+pv(TOT)+' %</b> de '+esc(socNom(soc))+
-      ' : il fait <b>'+pv(C.net)+' %</b>'+(C.rendu?' après '+pv(C.rendu)+' pt reversés':'')+
-      '. Vérifiez le reversement ou les points de la ventilation.';
+    return 'La part de nos auteurs ne retombe pas sur les <b>'+pv(TOT)+' %</b> de '+esc(socNom(soc))+
+      ' : elle fait <b>'+pv(C.net)+' %</b>'+(C.rendu?' après '+pv(C.rendu)+' pt reversés':'')+'. '+
+      (revers.length?'Vérifiez le reversement ou les points de la ventilation.'
+        :'L\'écart vient probablement d\'un reversement à un coéditeur : saisissez-le ici.');
   }
   function drawRevers(){
     var b=el('revers');if(!b)return;
@@ -3800,13 +3806,12 @@ function ficheOeuvre(code){
         co.map(function(n){return '<option value="'+esc(n)+'"'+(norm(n)===norm(v)?' selected':'')+'>'+esc(n)+'</option>';}).join('')+
         '<option value="__autre"'+(v&&!dedans?' selected':'')+'>Autre éditeur…</option>';};
     // le total net doit retomber sur notre part : dès qu'un reversement est saisi, c'est le premier suspect
-    var ecartTot=!etatTotal(C.net).ok,faux=ecartTot&&revers.length>0;
+    // l'écart sur notre part vient le plus souvent d'un reversement : on encadre le bloc dans tous les cas
+    var faux=!etatTotal(C.net).ok;
     var ti=el('rv-titre');if(ti)ti.className='fl'+(faux?' fl-ko':'');
     var h='';
     h+='<div class="rv-box'+(faux?' rv-ko':'')+'">';
     if(faux)h+='<div class="rv-avert">'+texteAvert(C)+'</div>';
-    else if(ecartTot&&!revers.length)h+='<div class="mut" style="font-size:11.5px;margin-bottom:8px">'+
-      'La ventilation ne retombe pas sur nos '+pv(TOT)+' % : si l\'écart vient d\'un reversement à un coéditeur, saisissez-le ici.</div>';
     if(!revers.length){
       h+='<div class="rv-vide"><span class="mut">Aucun reversement — '+esc(socNom(soc))+' garde la totalité : <b>'+
         pv(C.tot)+' pt</b>.</span></div>';
@@ -3876,7 +3881,7 @@ function ficheOeuvre(code){
     if(su)su.textContent=pv(C.rendu)+' pt';
     if(ne)ne.textContent=pv(C.net)+' pt';
     // l'alerte suit le total net en direct
-    var faux=!etatTotal(C.net).ok&&revers.length>0,bx=b.querySelector('.rv-box'),ti=el('rv-titre');
+    var faux=!etatTotal(C.net).ok,bx=b.querySelector('.rv-box'),ti=el('rv-titre');
     if(ti)ti.className='fl'+(faux?' fl-ko':'');
     if(bx){
       bx.classList.toggle('rv-ko',faux);

@@ -407,7 +407,7 @@ const normT = s => String(s == null ? '' : s).replace(/œ/g, 'oe').replace(/Œ/g
   .replace(/ß/g, 'ss').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim();
 // Une piste par titre BLZante, avec son featuring et son statut de dépôt
 function pistesSacem(r) {
-  if (!['Single', 'EP', 'Album'].includes(r.type)) return [];
+  if (!['Single', 'EP', 'Album', 'Synchro'].includes(r.type)) return [];
   const sacem = r.sacem || {}, oeuvres = r.oeuvres || {};
   // une piste peut porter plusieurs œuvres : la même dans deux catalogues, ou deux versions (studio et live)
   const oeuvresDe = k => { const v = oeuvres[k]; return (Array.isArray(v) ? v : (v ? [v] : [])).filter(Boolean); };
@@ -418,7 +418,7 @@ function pistesSacem(r) {
     feats[normT(t.title)] = (t.featurings || []).join(', ');
     if (/^https?:\/\//i.test(t.coda || '')) codas[normT(t.title)] = t.coda; });
   let titres = (Array.isArray(r.blzTracks) ? r.blzTracks : []).map(t => t && t.title).filter(Boolean);
-  if (!titres.length) titres = r.type === 'Single'
+  if (!titres.length) titres = (r.type === 'Single' || r.type === 'Synchro')
     ? [r.track || r.title || ''].filter(Boolean)
     : String(r.blzTrackNames || '').split(/\n|,|;/).map(x => x.trim()).filter(Boolean);
   // chaque ligne garde le titre commercialisé affiché et la clé sous laquelle le dépôt est stocké
@@ -430,7 +430,7 @@ function pistesSacem(r) {
   Object.keys(sacem).concat(Object.keys(oeuvres)).forEach(k => {
     if (vus[k]) return; vus[k] = 1; orphelins.push(k);
   });
-  if (r.type === 'Single' && lignes.length === 1 && orphelins.length === 1) {
+  if ((r.type === 'Single' || r.type === 'Synchro') && lignes.length === 1 && orphelins.length === 1) {
     // un single ne porte qu'un titre commercialisé : le dépôt s'y rattache, on l'affiche lui et pas le titre du dépôt
     lignes[0].cle = orphelins[0];
   } else {
@@ -834,7 +834,7 @@ function render() {
       // à droite : le statut Sacem en évidence, le suivi Insta en retrait
       const sacemR = sacemResume(r);
       const ins = instaDe(r);
-      const montreInsta = ['Single','EP','Album','Actu','Certification'].includes(r.type);
+      const montreInsta = ['Single','EP','Album','Actu','Certification','Synchro'].includes(r.type);
       // les fiches Coda s'affichent titre par titre ; il n'en reste ici que si aucune piste n'est listée
       const coda = !pistes.length && /^https?:\/\//i.test(r.coda || '') ? r.coda : '';
       if (sacemR || montreInsta || coda) {
