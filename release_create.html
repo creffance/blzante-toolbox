@@ -13,8 +13,6 @@
 body { font-family: 'Syne Mono', monospace; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
 body::before { content: ''; position: fixed; inset: 0; background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px); background-size: 60px 60px; opacity: 0.3; pointer-events: none; z-index: 0; }
 
-
-
 nav { display: flex; align-items: center; justify-content: space-between; padding: 18px 40px; border-bottom: 1px solid var(--border); position: relative; z-index: 1; }
 .nav-logo { font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 800; color: #fff; text-decoration: none; letter-spacing: 0.08em; display: flex; align-items: center; gap: 10px; }
 .nav-logo-img { height: 28px; width: auto; display: block; }
@@ -37,119 +35,18 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 }
 .form-input:focus, .form-select:focus { border-color: #555; }
 .form-input::placeholder { color: #444; }
+input[type="date"].form-input { color-scheme: dark; cursor: pointer; }
+input[type="date"].form-input::-webkit-calendar-picker-indicator { filter: invert(0.7); cursor: pointer; }
 .form-textarea { resize: vertical; min-height: 60px; line-height: 1.6; }
 
 .form-select { cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23777'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
 
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-/* Œuvres du catalogue & statut Sacem */
-.oe-row { border: 1px solid var(--border); padding: 8px; margin-bottom: 8px; }
-.oe-line { display: grid; grid-template-columns: minmax(90px,1fr) 1.1fr 150px 26px; gap: 8px; align-items: center; }
-.oe-line3 { grid-template-columns: minmax(120px,1fr) 1.15fr 180px; }
-.oe-line3 .oe-track { white-space: normal; }
-.oe-line + .oe-line { margin-top: 6px; }
-.oe-track { font-size: 0.72rem; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.oe-row .form-input, .oe-row .form-select { padding: 9px 10px; font-size: 0.72rem; }
-.oe-row .form-select:disabled { opacity: 0.7; cursor: default; }
-.oe-x { background: none; border: 1px solid var(--border); color: var(--muted); font-family: inherit; font-size: 0.7rem; cursor: pointer; padding: 6px 0; }
-.oe-x:hover { color: var(--error); border-color: rgba(255,107,107,0.4); }
-/* Fiches Coda : une ligne par titre */
-.cd-row { display: grid; grid-template-columns: minmax(110px,1fr) 1.6fr 60px; gap: 8px; align-items: center;
-  border: 1px solid var(--border); padding: 8px; margin-bottom: 8px; }
-.cd-track { font-size: 0.72rem; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.cd-row .form-input { padding: 9px 10px; font-size: 0.72rem; }
-.cd-go { color: #e8c547; text-decoration: none; font-size: 0.8rem; text-align: center; }
-.cd-go:hover { text-decoration: underline; }
-.cd-ko { font-size: 0.58rem; color: var(--muted); text-align: center; }
-/* Une œuvre rattachée au titre : autant de lignes que d'œuvres (studio, live…) */
-.oe-att { display: grid; grid-template-columns: minmax(120px,1fr) 180px 62px; gap: 8px; align-items: center; margin-top: 6px; }
-.oe-att .oe-lie { overflow: hidden; text-overflow: ellipsis; }
-.oe-att .form-select { padding: 9px 10px; font-size: 0.72rem; }
-.oe-att .oe-x { font-size: 0.6rem; }
-.oe-parœuvre { font-size: 0.58rem; color: var(--muted); font-family: 'Syne Mono', monospace; text-transform: uppercase; letter-spacing: 0.06em; }
-.oe-res { border: 1px solid var(--border); border-top: none; max-height: 168px; overflow-y: auto; }
-.oe-opt { padding: 7px 10px; font-size: 0.66rem; color: var(--muted); cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.05); }
-.oe-opt:hover { background: rgba(255,255,255,0.05); color: var(--text); }
-.oe-opt b { color: var(--text); font-weight: 400; }
-.oe-lie { font-size: 0.62rem; color: var(--success); margin-top: 5px; }
-.oe-lie button { background: none; border: none; color: var(--muted); cursor: pointer; font-family: inherit; font-size: 0.62rem; text-decoration: underline; }
-.oe-nores { font-size: 0.62rem; color: var(--error); padding: 7px 10px; border: 1px solid var(--border); border-top: none; }
-.tk-sw { grid-column: 2 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 6px; }
-.tk-swl { font-family: 'Syne Mono', monospace; font-size: 0.55rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
-.tk-chips { display: flex; flex-wrap: wrap; gap: 4px; }
-.tk-pick { position: relative; display: inline-block; }
-.tk-sw .form-input { width: 210px; padding: 7px 9px; font-size: 0.66rem; }
-.tk-res { position: absolute; left: 0; top: calc(100% + 2px); z-index: 30; min-width: 210px; max-height: 190px; overflow-y: auto;
-  background: var(--surface); border: 1px solid var(--border); box-shadow: 0 10px 26px rgba(0,0,0,.6); }
-.tk-res[hidden] { display: none; }
-.tk-opt { display: block; padding: 7px 10px; font-size: 0.68rem; color: var(--text); cursor: pointer; }
-.tk-opt:hover { background: rgba(255,255,255,0.07); color: var(--accent); }
-.sw-tag { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--border); padding: 3px 7px; font-size: 0.62rem; color: var(--text); }
-.sw-tag button { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.6rem; padding: 0; }
-.sw-tag button:hover { color: var(--error); }
-.tk-row { display: grid; grid-template-columns: 22px minmax(180px,1fr) auto 26px; gap: 8px; align-items: center;
-  margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); }
-.tk-n { font-family: 'Syne Mono', monospace; font-size: 0.6rem; color: var(--muted); text-align: right; }
-.tk-row .form-input { padding: 9px 10px; font-size: 0.72rem; }
-.oe-feat .form-input { font-size: 0.68rem; }
-.oe-prop { font-size: 0.64rem; color: var(--text); margin-top: 7px; padding: 7px 9px; border: 1px dashed rgba(232,197,71,0.45); background: rgba(232,197,71,0.05); display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.oe-prop b { font-weight: 400; color: var(--accent); }
-.oe-ok, .oe-no { background: none; font-family: inherit; font-size: 0.6rem; padding: 4px 9px; cursor: pointer; border: 1px solid var(--border); color: var(--muted); }
-.oe-ok { border-color: var(--accent); color: var(--accent); }
-.oe-ok:hover { background: var(--accent); color: #000; }
-.oe-no:hover { color: var(--text); border-color: #555; }
-.feats { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-.feat-l { display: inline-flex; align-items: center; }
-.feat-l .form-input { width: 150px; padding: 8px 9px; font-size: 0.68rem; }
-.feat-x { background: none; border: 1px solid var(--border); border-left: none; color: var(--muted); font-family: inherit; font-size: 0.6rem; padding: 9px 7px; cursor: pointer; }
-.feat-x:hover { color: var(--error); }
-.feat-add { background: none; border: 1px dashed var(--border); color: var(--muted); font-family: 'Syne Mono', monospace; font-size: 0.6rem; letter-spacing: 0.06em; padding: 8px 10px; cursor: pointer; white-space: nowrap; }
-.feat-add:hover { color: var(--accent); border-color: var(--accent); }
-.tk-single { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.tk-single > .form-input { flex: 1; min-width: 220px; }
-.opt { color: var(--muted); text-transform: none; letter-spacing: 0.02em; font-size: 0.9em; }
-.oe-feat .oe-track { color: var(--muted); font-size: 0.6rem; letter-spacing: 0.08em; text-transform: uppercase; }
-.oe-add2 { background: none; border: 1px solid var(--border); color: var(--muted); font-family: inherit; font-size: 0.6rem; padding: 7px 6px; cursor: pointer; white-space: nowrap; }
-.oe-add2:hover { color: var(--accent); border-color: var(--accent); }
-.oe-add { background: none; border: 1px dashed var(--border); color: var(--muted); font-family: inherit; font-size: 0.62rem; padding: 7px 12px; cursor: pointer; }
-.oe-hint { font-size: 0.6rem; color: var(--muted); margin-top: 6px; line-height: 1.6; }
-.oe-empty { font-size: 0.68rem; color: #555; }
-.sacem-b.non_editeur { border-color: var(--border); color: #888; font-style: italic; }
-.sacem-badges { display: inline-flex; gap: 4px; flex-wrap: wrap; }
-.sacem-b { font-size: 0.55rem; letter-spacing: 0.06em; padding: 2px 6px; border: 1px solid var(--border); color: var(--muted); white-space: nowrap; }
-.sacem-b.depose { border-color: #16321f; color: #2f9e5f; }
-.sacem-b.contrats_signes { border-color: #1d3a27; color: #86efac; }
-.sacem-b.en_signature { border-color: #333a15; color: #c2d94a; }
-.sacem-b.en_cours { border-color: #45390a; color: #eab308; }
-.sacem-b.a_lancer { border-color: #4a3410; color: #f59e0b; }
-.sacem-b.bloque { border-color: #4a1616; color: #ff4d4d; }
-.form-row-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
 
 /* Conditional fields */
 .conditional { display: none; }
 .conditional.visible { display: block; }
-.country-picker { position: relative; }
-.country-selected { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 4px; }
-.country-selected:empty { display: none; }
-.country-tag {
-  display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px;
-  background: rgba(232,197,71,0.1); border: 1px solid rgba(232,197,71,0.3);
-  font-family: 'Syne Mono', monospace; font-size: 0.6rem; color: var(--accent); cursor: pointer;
-}
-.country-tag:hover { background: rgba(232,197,71,0.2); }
-.country-tag .ct-x { color: #888; font-size: 0.7rem; }
-.country-dropdown {
-  display: none; position: absolute; top: 100%; left: 0; right: 0; z-index: 20;
-  background: var(--surface); border: 1px solid var(--border); max-height: 220px;
-  overflow-y: auto; margin-top: 2px;
-}
-.country-dropdown.open { display: block; }
-.country-opt {
-  padding: 7px 12px; cursor: pointer; font-size: 0.78rem; color: var(--text);
-  font-family: 'Syne Mono', monospace; transition: background 0.1s;
-}
-.country-opt:hover { background: rgba(232,197,71,0.08); }
-.country-opt.selected { background: rgba(232,197,71,0.12); color: var(--accent); }
 
 /* Songwriter multi-select */
 .sw-picker { position: relative; }
@@ -227,78 +124,21 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .recent-delete:hover { color: var(--error); }
 .empty-msg { font-size: 0.7rem; color: #444; padding: 16px 0; }
 
-@media (max-width: 760px) {
+@media (max-width: 560px) {
   nav { padding: 16px 20px; }
   .container { padding: 28px 20px 40px; }
   .form-row { grid-template-columns: 1fr; }
   .form-row-3 { grid-template-columns: 1fr; }
-  /* sur mobile, chaque champ prend toute la largeur : la recherche d'œuvre reste utilisable */
-  .oe-line, .oe-line3 { grid-template-columns: 1fr; gap: 6px; }
-  .oe-att { grid-template-columns: 1fr 62px; }
-  .oe-att .oe-lie { grid-column: 1 / -1; }
-  .cd-row { grid-template-columns: 1fr 44px; }
-  .cd-track { grid-column: 1 / -1; }
-  .oe-line3 .oe-track { padding-bottom: 2px; }
-  .tk-row { grid-template-columns: 22px 1fr; }
-  .tk-row .feats, .tk-row .oe-x { grid-column: 2 / -1; justify-self: start; }
-  .tk-sw { grid-column: 1 / -1; }
-  .tk-sw .form-input, .tk-pick, .tk-res { width: 100%; min-width: 0; }
-  .feat-l .form-input { width: 100%; }
-  .feats { width: 100%; }
 }
-
-/* ---- barre d'outils de la Toolbox ---- */
-nav{z-index:40 !important;gap:18px}
-.tnav{display:flex;align-items:center;gap:26px;min-width:0}
-.tbar{display:flex;align-items:center;gap:2px;font-family:'Syne',system-ui,sans-serif}
-.tbar>a,.tbar-plus>button{position:relative;display:inline-flex;align-items:center;gap:6px;
- padding:8px 12px;border:1px solid transparent;background:none;cursor:pointer;
- color:#9a9a9a;font:700 .72rem/1 'Syne',system-ui,sans-serif;letter-spacing:.09em;text-transform:uppercase;
- text-decoration:none;transition:color .15s,border-color .15s,background .15s}
-.tbar>a:hover,.tbar-plus>button:hover,.tbar-plus>button[aria-expanded="true"]{color:#fff;border-color:#2e2e2e;background:#151515}
-.tbar>a.on{color:#e8c547;border-color:#4a3f14;background:#1a1708}
-.tbar-sep{width:1px;height:18px;background:#2a2a2a;margin:0 8px}
-.tbar-plus{position:relative}
-.tbar-car{font-size:.55rem;opacity:.7}
-.tbar-menu{position:absolute;left:0;top:calc(100% + 6px);z-index:60;min-width:220px;background:#141414;
- border:1px solid #2a2a2a;box-shadow:0 12px 32px rgba(0,0,0,.6);padding:5px}
-.tbar-menu[hidden]{display:none}
-.tbar-t{font-family:'Syne Mono',monospace;font-size:.5rem;letter-spacing:.12em;text-transform:uppercase;color:#666;padding:8px 10px 3px}
-.tbar-menu a{display:block;padding:8px 10px;text-decoration:none;color:#ddd;font-size:.72rem;border-left:2px solid transparent}
-.tbar-menu a:hover{background:rgba(255,255,255,.06)}
-.tbar-menu a.on{border-left-color:#e8c547;color:#e8c547}
-@media (max-width:900px){.tbar>a{padding:7px 8px;font-size:.62rem}.tnav{gap:12px}}
 </style>
 </head>
 <body style="visibility:hidden">
 <nav>
-  <div class="tnav">
   <a class="nav-logo" href="index.html"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABoAAAAkCAIAAAAYWL1EAAABCGlDQ1BJQ0MgUHJvZmlsZQAAeJxjYGA8wQAELAYMDLl5JUVB7k4KEZFRCuwPGBiBEAwSk4sLGHADoKpv1yBqL+viUYcLcKakFicD6Q9ArFIEtBxopAiQLZIOYWuA2EkQtg2IXV5SUAJkB4DYRSFBzkB2CpCtkY7ETkJiJxcUgdT3ANk2uTmlyQh3M/Ck5oUGA2kOIJZhKGYIYnBncAL5H6IkfxEDg8VXBgbmCQixpJkMDNtbGRgkbiHEVBYwMPC3MDBsO48QQ4RJQWJRIliIBYiZ0tIYGD4tZ2DgjWRgEL7AwMAVDQsIHG5TALvNnSEfCNMZchhSgSKeDHkMyQx6QJYRgwGDIYMZAKbWPz9HbOBQAAAG/0lEQVR42o1WbUiTbRQ+z55tuc3vj6bkWqkVoSWWuVmmkoKESGoYmGZLBINJ0RfE0KwEPwL7EUI/JCz0RxEtgoIC031gZqXG0jSC2twKZbnmB6bbs+e8P47sHRq+7/lxc/M897nu69znXOe+GVhnLMv6fD4A2Lx5c0VFhVqtlkgkSqVSLBb39vZ2dnZaLBYAYBgGEWFjY1kWAMLCwhoaGmw2G66zhYWFtrY2sVhMiBthCYVCAMjLy/v69avf//79+zU1NVVVVbW1tXq9nj4ajcbw8HCGYfyIgfN/scrLyz0eDyLOzMx0dnampKRER0efP3/+yZMn3d3dhYWFJSUlbrcbEV+/fi0UCgUCwV84ElZRURHHcYj48OFDhUIBACdOnJibmwsMVqPRJCcnE+Lly5f9vhEREVFRUQAAAoEAAPbv37+wsICIjY2N9KWmpoYgvnz5cv369Rs3bjgcDkSMjY09deoUIv78+TMkJITYpaamarVaILZxcXFWqxUR29raiO/JkycJq6WlRa1W63Q6mUyWkJDg9Xrv3bsHALOzs4iYl5dHB1dRUWG1WldT+fTpU0S8e/cuYWVkZCwvLyPimTNncnJyKDT6Ozg46HQ6AeDNmzc8z1dXV5OLXq8fGBgAANi1axdFFBwcLBAIgoKCPn36hIharTYpKQkR5+fnm5qanj9/zrLss2fPEDE0NPTdu3eIWFlZyTBMRESE1+ttaGgAALh48SIi1tTU0D4XLlxAxOHhYQD48OEDIqamppaXlxuNRgCw2Wyzs7NJSUlE+eDBgwCg0+nsdntoaCgAgMlkcrlcYWFhDMNIpdKpqSmv15uZmUmsu7q6jh07hogqlYoy8ODBg5KSEkS0Wq1SqVQkEjmdzp6eHgCA0NDQlZWVjo4Oopaenu6nVlZWhoiJiYmZmZlZWVnp6ekej8fj8SQnJ5vNZkS8desWANTW1iJiUVERwzCgUqkQsbCwkPKdm5vL83xfX59AIAgLC/v48WNra+uOHTs0Gs3S0hK5abVaUptCoZBIJDMzM2NjY6sFp9FoEDEhIYHYbdmyBREHBgYI/cCBA4E1XFpaevToUZ/Ph4g6nQ4AmpubEbG1tXVVZPX19V6vNyQkxK9/s9k8NDQEAJs2bQIAtVo9MTGh1+v37t17+vRpwjWZTACQlpbm8XiGhobkcjkAFBcXQ1NT09zcnEgkAgAajx8/7vV6aQVtAAByubyrq4uwBgcH5XK5VCq1WCyIWF5eDgBZWVkmkwnOnTs3NzfnbzgsyzIM09fXNzw8rFQqhUKhUqmsr68nDSBid3d3UFAQAPT09CDi2NhYREQEAAwNDY2OjkJGRobb7Y6OjiY40lxSUtL8/Pzy8rLFYpmfnyeggYGBgoICItve3o6IHMeRyOrq6hCxt7cXWJadnJzMyspiWZZCo1GtVvszMDIycvbsWTpKgUBw584dwtJqtQCgUqn+/PnD83x/fz8AQGNjI6laLBZTQqmjZGdn5+fnp6Sk+E9w9+7dL1++pD2uXLkCAEql0m638zyPiAaDARiGkclkDoejrq6OgIRCIcuy1MX8tmfPnubmZpfLhYiLi4uVlZUAEBcXR9mgjmswGFazWVpaioirGg4wuVx+6NAhvV5PDYYCV6vVALB9+3bqFBzHUSUaDIZ/PV+9eoWIFovl8ePHer3ebDZbrVaKgmxqaqqhoUEikQBATk6O3W4nLET0wzEZGRk+n294eFihUOh0uuzs7JiYGJ7nFxcXXS7X79+/3W63w+F4//59b2/vr1+/AODq1as3b94UiUQ+n4+Oled5gUBgNBqhsrJyYWHB3wX919Jfr7rDhw+bTCYiS4wC5waDAYqLi+nT27dvNRpNTEzMepSQkJCCgoJHjx7RSo7jAg8hEE7IsiytUKlUKpVqdnZ2dHT08+fP09PTPp8vMjJy586daWlp27ZtI2ie5/1185eb2q8t2jAqKio/Pz8/P3/NOvrLsiyV5EZwZLQOEckz8BxJfPA/TEgQHMeR+OkhQ/40oZHneZr/BztaTR0l8EXgz+/6caMX0759+1JTUzs6OjiO+/btW3BwcHt7+/fv3yMjI8fGxiQSyfj4uM/nu337dmJios1mi46OXvu6ASBONptNKJPJxsfHW1pacnNz4+Pjjxw5Mjg46Ha7+/v7nU5nTEzM9PS0TCb78ePHyMjIxMTEtWvXqqqqOI5bI+rVBPA8L5FIEhMTFQrF5OTkpUuXHA6HSCTyer0ikUgkElVXVysUipycnJSUlPj4+KWlpRcvXlAlrIdjysrKenp6pqenY2NjnU7nysoKPbOkUqnL5YqNjaUq4Xk+PDzcbreHh4d7PJ6oqCgK0F9GJDIhz/NisXjr1q10jQVuFRkZuWZzeqVtIMR/ACfvUc9bOAzOAAAAAElFTkSuQmCC" alt="BLZante" class="nav-logo-img" /><span>BLZante</span></a>
-  <div class="tbar" id="tbar">
-    <a href="roster.html" data-t="roster.html roster_create.html">Roster</a>
-    <a href="release_planning.html" data-t="release_planning.html release_create.html">Planning</a>
-    <a href="ig_generator.html" data-t="ig_generator.html">IG Content</a>
-    <a href="catalogues.html" data-t="catalogues.html">Catalogues</a>
-    <span class="tbar-sep"></span>
-    <div class="tbar-plus">
-      <button type="button" id="tbarBtn" aria-expanded="false" aria-haspopup="true">Plus <span class="tbar-car">&#9662;</span></button>
-      <div class="tbar-menu" id="tbarMenu" hidden>
-        <div class="tbar-t">Créer</div>
-        <a href="roster_create.html">+ Fiche artiste</a>
-        <a href="release_create.html">+ Event planning</a>
-        <div class="tbar-t">Admin</div>
-        <a href="sacem_depot.html">SACEM Dépôt</a>
-        <a href="notes.html">Notes NDA / NDD</a>
-        <a href="onid_blzante.html">ONID BLZante</a>
-        <a href="infos_sacem.html">Infos Sacem</a>
-        <a href="infos_facturation.html">Infos facturation</a>
-        <a href="index.html">Toutes les pages</a>
-      </div>
-    </div>
-  </div>
-  </div>
-  <div class="nav-right"><button onclick="firebase.auth().signOut().then(()=>location.href='login.html')" style="background:none;border:1px solid var(--border);color:var(--muted);font-family:'Syne Mono',monospace;font-size:0.55rem;padding:4px 10px;cursor:pointer;letter-spacing:0.08em;text-transform:uppercase;transition:all 0.15s" onmouseover="this.style.borderColor='#555';this.style.color='#fff'" onmouseout="this.style.borderColor='';this.style.color=''">Déconnexion</button>
-    
+  <div class="nav-right"><button onclick="firebase.auth().signOut().then(()=>location.href='login.html')" style="background:none;border:1px solid var(--border);color:var(--muted);font-family:'Syne Mono',monospace;font-size:0.55rem;padding:4px 10px;cursor:pointer;letter-spacing:0.08em;text-transform:uppercase;transition:all 0.15s" onmouseover="this.style.borderColor='#555';this.style.color='#fff'" onmouseout="this.style.borderColor='';this.style.color=''">Déconnexion</button> 
+    <a class="nav-back" href="index.html">&larr; Toolbox</a>
+    <span class="nav-sep">/</span>
+    <span>Ajouter / Modifier</span>
   </div>
 </nav>
 
@@ -308,7 +148,7 @@ nav{z-index:40 !important;gap:18px}
   <div class="form-row-3">
     <div class="form-group">
       <label class="form-label">Date de sortie</label>
-      <input type="text" class="form-input" id="releaseDate" placeholder="DD/MM/YYYY" maxlength="10" autocomplete="off" />
+      <input type="date" class="form-input" id="releaseDate" autocomplete="off" />
     </div>
     <div class="form-group">
       <label class="form-label">Type de release</label>
@@ -317,7 +157,6 @@ nav{z-index:40 !important;gap:18px}
         <option value="Live">Live</option>
         <option value="Certification">Certification</option>
         <option value="Synchro">Synchro</option>
-        <option value="Actu">Actu</option>
         <option value="Single">Single</option>
         <option value="EP">EP</option>
         <option value="Album">Album</option>
@@ -331,21 +170,6 @@ nav{z-index:40 !important;gap:18px}
         <option value="Annulé" class="status-annule" id="optAnnule" style="display:none">Annulé</option>
       </select>
     </div>
-  </div>
-
-  <div class="form-group conditional" id="countryGroup">
-    <label class="form-label">Pays (2 max)</label>
-    <div class="country-picker" id="countryPicker">
-      <div class="country-selected" id="countrySelected"></div>
-      <input type="text" class="form-input" id="countrySearch" placeholder="Rechercher un pays…" autocomplete="off" />
-      <input type="hidden" id="releaseCountry" value="FR" />
-      <div class="country-dropdown" id="countryDropdown"></div>
-    </div>
-  </div>
-
-  <div class="form-group conditional" id="actuGroup">
-    <label class="form-label">Description de l'actualité</label>
-    <textarea class="form-input" id="actuDesc" rows="3" placeholder="Décrivez l'actualité..." style="resize:vertical;min-height:60px"></textarea>
   </div>
 
   <div class="form-group conditional" id="certGroup">
@@ -383,33 +207,19 @@ nav{z-index:40 !important;gap:18px}
   </div>
 
   <div class="form-group conditional" id="epTracksGroup">
-    <div class="form-group" style="display:none">
-      <label class="form-label">Nombre de titres total (optionnel)</label>
-      <input type="number" class="form-input" id="epTrackCount" placeholder="Ex: 12" min="1" max="30" autocomplete="off" />
-    </div>
-    <div class="form-group" style="display:none">
-      <label class="form-label">Noms des tracks (optionnel — un par ligne)</label>
-      <textarea class="form-input form-textarea" id="epTrackNames" placeholder="Track 1&#10;Track 2&#10;Track 3" rows="4"></textarea>
-    </div>
-    <div class="form-group" style="display:none">
-      <input type="number" class="form-input" id="blzTrackCount" />
-      <textarea class="form-input" id="blzTrackNames"></textarea>
+    <div class="form-group">
+      <label class="form-label">Nombre de titres (optionnel)</label>
+      <input type="number" class="form-input" id="epTrackCount" placeholder="Ex: 5" min="1" max="30" autocomplete="off" />
     </div>
     <div class="form-group">
-      <label class="form-label">Titres BLZante du projet</label>
-      <div id="trackRows"></div>
-      <button type="button" class="oe-add" id="trackAdd">+ Ajouter un titre</button>
-      <div class="oe-hint">Un titre par ligne, avec son featuring s'il y en a un. Ces titres alimentent le bloc Sacem plus bas.</div>
+      <label class="form-label">Noms des tracks (optionnel — un par ligne)</label>
+      <textarea class="form-input form-textarea" id="epTrackNames" placeholder="Track 1&#10;Track 2&#10;Track 3" rows="4"></textarea>
     </div>
   </div>
 
   <div class="form-group conditional" id="trackGroup">
-    <label class="form-label">Nom du track <span class="opt" id="featLbl">· featuring optionnel</span></label>
-    <div class="tk-single">
-      <input type="text" class="form-input" id="trackName" placeholder="Titre du single" autocomplete="off" />
-      <div class="feats" id="singleFeats"></div>
-    </div>
-    <input type="hidden" id="featurings" />
+    <label class="form-label">Nom du track</label>
+    <input type="text" class="form-input" id="trackName" placeholder="Titre du single" autocomplete="off" />
   </div>
 
   <div class="form-group conditional" id="liveGroup">
@@ -426,18 +236,6 @@ nav{z-index:40 !important;gap:18px}
   </div>
 
   <div class="form-group">
-    <label class="form-label">Lien pour image (Spotify, YouTube, Instagram…)</label>
-    <input type="text" class="form-input" id="releaseLink" placeholder="Coller un lien pour récupérer l'artwork automatiquement" autocomplete="off" />
-    <div id="artworkPreview" style="margin-top:8px;display:none">
-      <img id="artworkImg" style="max-width:120px;max-height:120px;border:1px solid #2a2a2a;display:block" crossorigin="anonymous" />
-      <div style="display:flex;gap:6px;margin-top:4px">
-        <button type="button" onclick="downloadArtwork()" style="background:none;border:1px solid #333;color:#e8c547;font-family:'Syne Mono',monospace;font-size:0.55rem;padding:3px 8px;cursor:pointer">⬇ Télécharger</button>
-        <button type="button" onclick="clearArtwork()" style="background:none;border:1px solid #333;color:#888;font-family:'Syne Mono',monospace;font-size:0.55rem;padding:3px 8px;cursor:pointer">✕ Supprimer</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="form-group" id="swGroup">
     <label class="form-label">Songwriters BLZante</label>
     <div class="sw-picker">
       <input type="text" class="sw-picker-input" id="swSearch" placeholder="Rechercher un songwriter..." autocomplete="off" />
@@ -480,28 +278,6 @@ nav{z-index:40 !important;gap:18px}
     <div class="sw-tags" id="swTags"></div>
   </div>
 
-  <div class="form-group conditional" id="oeuvresGroup">
-    <label class="form-label">Œuvres du catalogue &amp; statut Sacem</label>
-    <div id="oeuvresRows"></div>
-    <div class="oe-hint">Une ligne par titre de la sortie : rattachez-la à son œuvre du catalogue éditorial.
-      Une œuvre déjà au catalogue Sacem est « Déposée » d'office ; sinon choisissez le statut du dépôt.</div>
-  </div>
-
-  <div class="form-group conditional" id="codaGroup">
-    <label class="form-label">Fiches Coda</label>
-    <div id="codaRows"></div>
-    <div class="oe-hint">Un lien par titre : la fiche Coda du track, pas celle de la sortie.</div>
-  </div>
-
-  <div class="form-group">
-    <label class="form-label">Post Insta</label>
-    <select class="form-select" id="instaSuivi">
-      <option value="a_faire">À faire</option>
-      <option value="poste">Posté</option>
-      <option value="aucun">Pas de post</option>
-    </select>
-  </div>
-
   <button class="submit-btn" id="submitBtn">⚡ Ajouter</button>
   <button class="submit-btn cancel-btn" id="cancelBtn" style="display:none">Annuler la modification</button>
   <button class="submit-btn delete-btn" id="deleteBtn" style="display:none">🗑 Supprimer cet événement</button>
@@ -540,401 +316,7 @@ async function fbDelete(id) {
 
 // ─── State ───
 let selectedSw = [];
-
-
 let editId = null;
-
-// ─── Œuvres du catalogue (outil Catalogues) & statut Sacem par titre ───
-// Même normalisation que l'outil Catalogues, pour que les clés correspondent des deux côtés.
-const normT = s => String(s == null ? '' : s).replace(/œ/g, 'oe').replace(/Œ/g, 'OE').replace(/æ/g, 'ae').replace(/Æ/g, 'AE').replace(/ß/g, 'ss').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-  .toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim();
-const SOCS = [['blzante','BLZante'],['blz-publishing','BLZ Publishing'],['rossinante','Rossinante']];
-const STATUTS = [['a_lancer','À lancer'],['en_cours','En cours'],
-  ['en_signature','En cours de signature'],['contrats_signes','Contrats signés'],
-  ['depose','Déposé à la Sacem'],['bloque','Bloqué'],['non_editeur',"Non éditeur sur l'œuvre"]];
-// « À définir » a disparu : ce qui l'était devient « À lancer »
-const statutOk = v => (!v || v === 'a_definir') ? 'a_lancer' : v;
-const libStatut = v => (STATUTS.find(s => s[0] === statutOk(v)) || STATUTS[0])[1];
-let OEUVRES = [];            // {soc, code, t, tt, a, c, f, r}
-// Une ligne par track : son libellé vit indépendamment du titre saisi plus haut.
-let oeRows = [];             // {id, track, feats, sw, oes:[{soc,code,titre,iswc,statut}], statut, q, open}
-let oeSeed = '';             // état des titres déjà repris, pour ne pas écraser la saisie
-let oeNext = 1;
-let oeSig = null;            // état déjà rendu du bloc Sacem
-const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-const libOe = x => (x.tt || x.t) + (x.a ? ' — ' + x.a : '') + ' · ' + (SOCS.find(s => s[0] === x.soc) || [,''])[1] + ' · ' + x.code;
-const oeParCode = ch => ch && ch.code ? OEUVRES.find(o => o.soc === ch.soc && o.code === ch.code) : null;
-// Un même titre peut porter plusieurs œuvres : version studio et version live, ou le même dépôt dans deux catalogues.
-const oesDe = l => Array.isArray(l && l.oes) ? l.oes : [];
-const aOeuvre = (l, soc, code) => oesDe(l).some(x => x.soc === soc && String(x.code) === String(code));
-async function chargerOeuvres() {
-  const res = await Promise.all(SOCS.map(s => dbFetch('/editions/index/' + s[0] + '.json')
-    .then(r => r.ok ? r.json() : null).catch(() => null)));
-  OEUVRES = [];
-  res.forEach((d, i) => Object.keys(d || {}).forEach(code => {
-    const x = d[code] || {};
-    OEUVRES.push({ soc: SOCS[i][0], code, t: x.t || '', tt: x.tt || '', a: x.a || '', c: x.c, r: x.r || '',
-      rs: Array.isArray(x.rs) ? x.rs : (x.r ? [String(x.r)] : []), iswc: x.w || '', version: x.v || '',
-      f: x.f || '', isrc: x.i || '', sw: Array.isArray(x.s2) ? x.s2 : (x.s2 ? String(x.s2).split('|') : []) });
-  }));
-  OEUVRES.sort((a, b) => (a.tt || a.t).localeCompare(b.tt || b.t, 'fr'));
-  oeRows.forEach(l => oesDe(l).forEach(x => { if (!x.titre) { const y = oeParCode(x); if (y) x.titre = y.t; } }));
-  semerLignes(); renderTracks(); renderOeuvres();
-}
-// ─── Songwriters : liste commune au sélecteur global et aux lignes de tracks ───
-function swNoms() {
-  const l = [...document.querySelectorAll('#swDropdown .sw-option')].map(o => o.dataset.name);
-  oeRows.forEach(r => (r.sw || []).forEach(n => { if (!l.includes(n)) l.push(n); }));
-  return l.sort((a, b) => a.localeCompare(b, 'fr'));
-}
-function swHTML(l) {
-  const id = l.id;
-  return `<div class="tk-sw"><span class="tk-swl">Songwriters</span>
-    <span class="tk-chips">${(l.sw || []).map((n, i) => `<span class="sw-tag">${esc(n)}<button type="button" data-swrm="${id}" data-i="${i}">✕</button></span>`).join('')}</span>
-    <span class="tk-pick"><input class="form-input" data-swadd="${id}" placeholder="Chercher un songwriter…" autocomplete="off">
-      <span class="tk-res" data-swres="${id}" hidden></span></span></div>`;
-}
-function brancherSw(box, redessiner) {
-  const noms = swNoms();
-  box.querySelectorAll('[data-swadd]').forEach(inp => {
-    const id = inp.dataset.swadd;
-    const res = box.querySelector('[data-swres="' + id + '"]');
-    const l = () => oeRows.find(z => String(z.id) === String(id));
-    const fermer = () => { res.hidden = true; res.innerHTML = ''; };
-    const ajouter = n => {
-      const r = l(); if (!r) return;
-      r.sw = r.sw || []; if (!r.sw.includes(n)) r.sw.push(n);
-      inp.value = ''; fermer(); redessiner();
-      const suivant = document.querySelector('[data-swadd="' + id + '"]'); if (suivant) suivant.focus();
-    };
-    const proposer = () => {
-      const r = l(); if (!r) return;
-      const q = normT(inp.value);
-      const dispo = noms.filter(n => !(r.sw || []).includes(n) && (!q || normT(n).includes(q))).slice(0, 8);
-      if (!dispo.length) { fermer(); return; }
-      res.innerHTML = dispo.map(n => `<span class="tk-opt" data-n="${esc(n)}">${esc(n)}</span>`).join('');
-      res.hidden = false;
-      res.querySelectorAll('.tk-opt').forEach(o => o.addEventListener('mousedown', ev => { ev.preventDefault(); ajouter(o.dataset.n); }));
-    };
-    inp.addEventListener('focus', proposer);
-    inp.addEventListener('input', proposer);
-    inp.addEventListener('blur', () => setTimeout(fermer, 150));
-    inp.addEventListener('keydown', e => {
-      if (e.key === 'Enter') { e.preventDefault();
-        const p = res.querySelector('.tk-opt'); if (p) ajouter(p.dataset.n);
-        else if (inp.value.trim()) ajouter(inp.value.trim()); }
-      if (e.key === 'Escape') fermer();
-    });
-  });
-  box.querySelectorAll('[data-swrm]').forEach(b => b.addEventListener('click', function () {
-    const l = oeRows.find(z => String(z.id) === String(this.dataset.swrm)); if (!l || !l.sw) return;
-    l.sw.splice(+this.dataset.i, 1); redessiner();
-  }));
-}
-// ─── Featuring : un bouton « + Feat » ouvre un champ par artiste invité ───
-let featsSingle = [];
-function featsHTML(cle, liste) {
-  return liste.map((f, i) => `<span class="feat-l"><input class="form-input" data-fw="${cle}" data-i="${i}" value="${esc(f)}" placeholder="Artiste invité" autocomplete="off"><button type="button" class="feat-x" data-fwx="${cle}" data-i="${i}" title="Retirer">✕</button></span>`).join('') +
-    `<button type="button" class="feat-add" data-fwadd="${cle}">+ Feat</button>`;
-}
-function listeDe(cle) {
-  if (cle === 'single') return featsSingle;
-  const l = oeRows.find(z => String(z.id) === String(cle)); if (!l) return null;
-  if (!Array.isArray(l.feats)) l.feats = [];
-  return l.feats;
-}
-function brancherFeats(box, redessiner) {
-  box.querySelectorAll('[data-fw]').forEach(i => i.addEventListener('input', function () {
-    const L = listeDe(this.dataset.fw); if (L) { L[+this.dataset.i] = this.value; syncFeatsSingle(); } }));
-  box.querySelectorAll('[data-fwx]').forEach(b => b.addEventListener('click', function () {
-    const L = listeDe(this.dataset.fwx); if (!L) return; L.splice(+this.dataset.i, 1); syncFeatsSingle(); redessiner(); }));
-  box.querySelectorAll('[data-fwadd]').forEach(b => b.addEventListener('click', function () {
-    const cle = this.dataset.fwadd, L = listeDe(cle); if (!L) return; L.push(''); redessiner();
-    const inp = document.querySelectorAll('[data-fw="' + cle + '"]'); if (inp.length) inp[inp.length - 1].focus(); }));
-}
-function syncFeatsSingle() {
-  document.getElementById('featurings').value = featsSingle.map(x => String(x).trim()).filter(Boolean).join(', ');
-}
-function renderFeatsSingle() {
-  const box = document.getElementById('singleFeats'); if (!box) return;
-  box.innerHTML = featsHTML('single', featsSingle);
-  brancherFeats(box, () => { renderFeatsSingle(); renderOeuvres(); });
-}
-function setFeatsSingle(v) {
-  featsSingle = Array.isArray(v) ? v.slice() : listeFeat(v);
-  syncFeatsSingle(); renderFeatsSingle();
-}
-function estProjet() { const t = typeSelect.value; return t === 'EP' || t === 'Album'; }
-function titresBLZ() {
-  const t = typeSelect.value;
-  if (t === 'Single') return [document.getElementById('trackName').value.trim()].filter(Boolean);
-  if (estProjet()) return oeRows.map(l => (l.track || '').trim()).filter(Boolean);
-  return [];
-}
-function chercherOeuvre(titre) {
-  const k = normT(titre); if (!k) return null;
-  return OEUVRES.find(o => normT(o.tt) === k) || OEUVRES.find(o => normT(o.t) === k) || null;
-}
-function nouvelleLigne(track) {
-  return { id: oeNext++, track: track || '', feats: [], oes: [], statut: 'a_lancer', q: '', coda: '' };
-}
-// Œuvres qui peuvent correspondre : titre identique, titre proche, ou même artiste.
-function propositions(l) {
-  const k = normT(l.track), art = normT(document.getElementById('artistName').value);
-  if (!k && !art) return [];
-  const refus = l.refus || {};
-  if (!k) return [];
-  // ressemblance de titre : identique, contenu, ou proche à la lettre près
-  const bigrammes = t => { const o = []; for (let i = 0; i < t.length - 1; i++) o.push(t.slice(i, i + 2)); return o; };
-  const dice = (a, b) => {
-    const ga = bigrammes(a), gb = bigrammes(b); if (!ga.length || !gb.length) return 0;
-    const pris = {}; let com = 0;
-    ga.forEach(g => { for (let i = 0; i < gb.length; i++) if (!pris[i] && gb[i] === g) { pris[i] = 1; com++; break; } });
-    return 2 * com / (ga.length + gb.length);
-  };
-  const proche = t => {
-    if (!t) return 0;
-    if (t === k) return 10;
-    if (k.length < 4 || t.length < 4) return 0;
-    const court = t.length < k.length ? t : k, long = t.length < k.length ? k : t;
-    if (long.includes(court) && court.length / long.length >= 0.5) return 6;
-    const d = dice(k, t);
-    return d >= 0.62 ? 3 + d : 0;
-  };
-  const note = o => {
-    if (refus[o.soc + '|' + o.code]) return 0;
-    const n = Math.max(proche(normT(o.tt)), proche(normT(o.t)));
-    return n ? n + (art && normT(o.a) === art ? 1 : 0) : 0;
-  };
-  return OEUVRES.map(o => ({ o, n: note(o) })).filter(x => x.n > 0)
-    .sort((a, b) => b.n - a.n || (a.o.t || '').localeCompare(b.o.t || '', 'fr'))
-    .slice(0, 1).map(x => x.o);
-}
-function rattacherAuto(l) {
-  if (oesDe(l).length) { delete l.props; return false; }
-  const avant = (l.props || []).map(x => x.code).join(',');
-  const p = propositions(l);
-  if (p.length) l.props = p.map(o => ({ soc: o.soc, code: o.code })); else delete l.props;
-  return avant !== (l.props || []).map(x => x.code).join(',');
-}
-function lierLigne(l, o) {
-  l.oes = oesDe(l);
-  if (!aOeuvre(l, o.soc, o.code))
-    l.oes.push({ soc: o.soc, code: o.code, titre: o.t, iswc: o.iswc || '',
-      statut: o.c ? 'depose' : statutOk(l.statut) });
-  l.open = false; l.q = ''; delete l.props; delete l.prop;
-  if (o.f && !featsDe(l).some(Boolean)) l.feats = listeFeat(o.f);
-  if (!l.track) l.track = o.tt || o.t;
-  // les songwriters BLZante de l'œuvre rejoignent le track et la sortie
-  l.sw = l.sw || [];
-  (o.sw || []).forEach(n => { if (n && !l.sw.includes(n)) l.sw.push(n); });
-  if (typeSelect.value === 'Single') (o.sw || []).forEach(n => ajouterSwGlobal(n));
-}
-function ajouterSwGlobal(n) {
-  if (!n || selectedSw.includes(n)) return;
-  selectedSw.push(n);
-  swOptions.forEach(opt => { if (opt.dataset.name === n) opt.classList.add('selected'); });
-  renderTags();
-}
-// Pour un single, le titre saisi plus haut donne la ligne ; pour un projet ce sont les lignes qui commandent.
-function semerLignes() {
-  if (estProjet()) { if (!oeRows.length) oeRows.push(nouvelleLigne('')); oeSeed = ''; return; }
-  // un single comme une synchro ne portent qu'un titre
-  // un single n'a qu'un titre : une seule ligne, mise à jour au fil de la saisie
-  const tr = (document.getElementById('trackName').value || '').trim();
-  if (!oeRows.length) oeRows.push(nouvelleLigne(''));
-  if (oeRows.length > 1) oeRows = [oeRows.find(l => oesDe(l).length) || oeRows[0]];
-  const l = oeRows[0];
-  if (normT(l.track) !== normT(tr)) { l.track = tr; delete l.props; l.refus = {}; if (!oesDe(l).length) rattacherAuto(l); }
-  oeSeed = tr;
-}
-// ─── Bloc « Titres BLZante du projet » : un titre et son featuring par ligne ───
-function renderTracks() {
-  const box = document.getElementById('trackRows'); if (!box) return;
-  if (!estProjet()) { box.innerHTML = ''; return; }
-  if (!oeRows.length) oeRows.push(nouvelleLigne(''));
-  oeRows.forEach(l => { if (!Array.isArray(l.feats)) l.feats = []; l.feats = l.feats.filter((f, i, a) => f || i === a.length - 1 && f === ''); });
-  box.innerHTML = oeRows.map((l, n) => `<div class="tk-row">
-      <span class="tk-n">${n + 1}</span>
-      <input class="form-input" data-tk="${l.id}" placeholder="Titre du track" value="${esc(l.track)}" autocomplete="off">
-      <div class="feats">${featsHTML(l.id, l.feats)}</div>
-      <button type="button" class="oe-x" data-tkrm="${l.id}" title="Retirer ce titre">✕</button>
-      ${swHTML(l)}
-    </div>`).join('');
-  brancherFeats(box, () => { renderTracks(); renderOeuvres(); });
-  brancherSw(box, () => { renderTracks(); renderOeuvres(); });
-  box.querySelectorAll('[data-tk]').forEach(i => {
-    i.addEventListener('input', function () {
-      const l = oeRows.find(z => z.id === +this.dataset.tk); if (!l) return;
-      l.track = this.value; clearTimeout(oeT); oeT = setTimeout(() => { renderOeuvres(); }, 250); });
-    i.addEventListener('change', function () {
-      const l = oeRows.find(z => z.id === +this.dataset.tk); if (!l) return;
-      if (rattacherAuto(l)) { renderTracks(); }
-      renderOeuvres(); });
-  });
-  box.querySelectorAll('[data-tkrm]').forEach(b => b.addEventListener('click', function () {
-    oeRows = oeRows.filter(z => z.id !== +this.dataset.tkrm);
-    if (!oeRows.length) oeRows.push(nouvelleLigne(''));
-    renderTracks(); renderOeuvres(); }));
-}
-function featsDe(l) { return Array.isArray(l.feats) ? l.feats : []; }
-function renderOeuvres() {
-  const box = document.getElementById('oeuvresRows');
-  // un re-rendu déclenché par un autre champ ne doit pas arracher le curseur de la recherche d'œuvre
-  const af = document.activeElement;
-  const focusQid = af && af.dataset && af.dataset.q ? +af.dataset.q : null;
-  const focusPos = focusQid != null ? af.selectionStart : null;
-  const lignes = oeRows.filter(l => (l.track || '').trim() || oesDe(l).length);
-  // tant que rien n'a changé on ne reconstruit pas : sinon la saisie en cours est arrachée
-  const sig = typeSelect.value + '#' + OEUVRES.length + '#' + lignes.map(l => [l.id, l.track,
-    (l.feats || []).join(','), (l.sw || []).join(','), l.q || '', l.open ? 1 : 0, l.statut,
-    oesDe(l).map(x => x.soc + ':' + x.code + ':' + x.statut).join('+'),
-    (l.props || []).map(x => x.code).join('+')].join('\u00a7')).join('|') +
-    '#' + (typeSelect.value === 'Single' ? featsSingle.join(',') : '');
-  if (sig === oeSig) { renderCoda(); return; }
-  oeSig = sig;
-  if (!lignes.length) {
-    box.innerHTML = '<div class="oe-empty">' + (estProjet()
-      ? 'Renseignez les titres BLZante du projet ci-dessus.'
-      : 'Renseignez le nom du track ci-dessus.') + '</div>';
-    renderCoda();
-    return;
-  }
-  box.innerHTML = lignes.map(l => {
-    const oes = oesDe(l);
-    const st = statutOk(l.statut);
-    const q = (l.q || '').trim(), nq = normT(q);
-    const feat = (typeSelect.value === 'Single' ? featsSingle : featsDe(l)).filter(Boolean).join(', ');
-    const props = (!oes.length && l.props ? l.props : []).map(x => OEUVRES.find(o => o.soc === x.soc && o.code === x.code)).filter(Boolean);
-    let res = '';
-    if (l.open) {
-      const trouves = nq ? OEUVRES.filter(o => normT(o.tt + ' ' + o.t + ' ' + o.a + ' ' + o.code).includes(nq))
-        .filter(o => !aOeuvre(l, o.soc, o.code)).slice(0, 8) : [];
-      res = nq
-        ? (trouves.length
-          ? `<div class="oe-res">${trouves.map(o => `<div class="oe-opt" data-pick="${l.id}" data-soc="${o.soc}" data-code="${o.code}"><b>${esc(o.tt || o.t)}</b>${o.a ? ' — ' + esc(o.a) : ''} · ${esc((SOCS.find(s => s[0] === o.soc) || [,''])[1])} · ${esc(o.code)}${o.c ? ' · déposée' : ''}${o.v ? ' · version ' + esc(o.version || o.v) : ''}${o.f ? ' · feat. ' + esc(o.f) : ''}</div>`).join('')}</div>`
-          : `<div class="oe-nores">Aucune œuvre au catalogue pour « ${esc(q)} ».</div>`)
-        : '';
-    }
-    // une ligne par œuvre rattachée : studio et live vivent côte à côte, chacune avec son statut
-    const att = oes.map((x, n) => {
-      const y = oeParCode(x), auCat = !!(y && y.c);
-      const sx = auCat ? 'depose' : statutOk(x.statut);
-      return `<div class="oe-att">
-        <span class="oe-lie" style="margin:0">↳ ${esc(y ? libOe(y) : (x.titre || '') + ' · ' + x.code)}${y && y.version ? ' <span style="color:var(--muted)">· version ' + esc(y.version) + '</span>' : ''}</span>
-        <select class="form-select" data-sto="${l.id}:${n}" ${auCat ? 'disabled title="Œuvre déposée au catalogue Sacem"' : ''}>
-          ${STATUTS.map(s => `<option value="${s[0]}"${s[0] === sx ? ' selected' : ''}>${s[1]}</option>`).join('')}
-        </select>
-        <button type="button" class="oe-x" data-unl="${l.id}:${n}" title="Délier cette œuvre">délier</button>
-      </div>`; }).join('');
-    return `<div class="oe-row">
-      <div class="oe-line oe-line3">
-        <span class="oe-track" title="${esc(l.track)}">${esc(l.track || (oes[0] || {}).titre || '(sans titre)')}${feat ? ' <span style="color:var(--muted)">feat. ' + esc(feat) + '</span>' : ''}</span>
-        <input class="form-input" data-q="${l.id}" placeholder="${oes.length ? 'Rattacher une autre œuvre (version live…)' : "Chercher l'œuvre au catalogue…"}" value="${esc(l.q || '')}" autocomplete="off">
-        ${oes.length
-          ? `<span class="oe-parœuvre">statut par œuvre ↓</span>`
-          : `<select class="form-select" data-st="${l.id}">
-              ${STATUTS.map(s => `<option value="${s[0]}"${s[0] === st ? ' selected' : ''}>${s[1]}</option>`).join('')}
-            </select>`}
-      </div>
-      ${att}
-      ${props.length && !(l.q || '').trim() ? props.map((o, n) => `<div class="oe-prop">${props.length > 1 ? 'Proposition ' + (n + 1) + ' : ' : 'Œuvre proposée : '}<b>${esc(libOe(o))}</b>${o.c ? ' · déposée' : ''}
-          <button type="button" class="oe-ok" data-okp="${l.id}" data-soc="${o.soc}" data-code="${o.code}">Valider</button>
-          <button type="button" class="oe-no" data-nop="${l.id}" data-soc="${o.soc}" data-code="${o.code}">Ce n'est pas elle</button></div>`).join('') : ''}
-      ${res}
-      ${oes.length || props.length ? '' : `<div class="oe-lie" style="color:var(--muted)">Non rattachée au catalogue · ${esc(libStatut(st))}</div>`}
-    </div>`;
-  }).join('');
-  const maj = () => { renderOeuvres(); };
-  box.querySelectorAll('[data-q]').forEach(i => {
-    i.addEventListener('focus', function () {
-      const l = oeRows.find(z => z.id === +this.dataset.q); if (l) l.open = true; });
-    i.addEventListener('input', function () {
-      const l = oeRows.find(z => z.id === +this.dataset.q); if (!l) return;
-      const pos = this.selectionStart; l.q = this.value; l.open = true; maj(); focusQ(l.id, pos); });
-  });
-  box.querySelectorAll('[data-pick]').forEach(d => d.addEventListener('mousedown', function (ev) {
-    ev.preventDefault();
-    const l = oeRows.find(z => z.id === +this.dataset.pick); if (!l) return;
-    const o = OEUVRES.find(z => z.soc === this.dataset.soc && z.code === this.dataset.code);
-    if (o) lierLigne(l, o);
-    renderTracks(); maj();
-  }));
-  box.querySelectorAll('[data-okp]').forEach(b => b.addEventListener('click', function () {
-    const l = oeRows.find(z => z.id === +this.dataset.okp); if (!l) return;
-    const o = OEUVRES.find(z => z.soc === this.dataset.soc && z.code === this.dataset.code); if (o) lierLigne(l, o);
-    renderTracks(); maj(); }));
-  box.querySelectorAll('[data-nop]').forEach(b => b.addEventListener('click', function () {
-    const l = oeRows.find(z => z.id === +this.dataset.nop); if (!l) return;
-    l.refus = l.refus || {}; l.refus[this.dataset.soc + '|' + this.dataset.code] = 1;
-    rattacherAuto(l); maj(); }));
-  box.querySelectorAll('[data-unl]').forEach(b => b.addEventListener('click', function () {
-    const [id, n] = this.dataset.unl.split(':');
-    const l = oeRows.find(z => z.id === +id); if (!l) return;
-    const x = oesDe(l)[+n]; if (!x) return;
-    l.refus = l.refus || {}; l.refus[x.soc + '|' + x.code] = 1;
-    l.oes.splice(+n, 1); delete l.props; l.open = true; l.q = '';
-    if (!l.oes.length && l.statut === 'depose') l.statut = 'a_lancer';
-    maj(); focusQ(l.id);
-  }));
-  box.querySelectorAll('[data-sto]').forEach(s => s.addEventListener('change', function () {
-    const [id, n] = this.dataset.sto.split(':');
-    const l = oeRows.find(z => z.id === +id); if (!l) return;
-    const x = oesDe(l)[+n]; if (x) { x.statut = this.value; maj(); } }));
-  box.querySelectorAll('[data-st]').forEach(s => s.addEventListener('change', function () {
-    const l = oeRows.find(z => z.id === +this.dataset.st); if (l) { l.statut = this.value; maj(); } }));
-  if (focusQid != null && document.activeElement !== document.querySelector('[data-q="' + focusQid + '"]'))
-    focusQ(focusQid, focusPos);
-  renderCoda();
-}
-function focusQ(id, pos) {
-  const i = document.querySelector('[data-q="' + id + '"]'); if (!i) return;
-  i.focus(); if (pos != null) { try { i.setSelectionRange(pos, pos); } catch (e) {} }
-}
-function oeuvresDuFormulaire() {
-  const oeuvres = {}, sacem = {}, blzTracks = [];
-  const seul = typeSelect.value === 'Single' || typeSelect.value === 'Synchro';
-  oeRows.forEach(l => {
-    const oes = oesDe(l);
-    const tr = (l.track || '').trim(), k = normT(tr || (oes[0] || {}).titre || '');
-    if (!k) return;
-    if (seul) l.feats = listeFeat(document.getElementById('featurings').value);
-    if (oes.length) {
-      // chaque œuvre du titre garde son propre statut de dépôt
-      const liste = oes.map(x => {
-        const y = oeParCode(x);
-        return { soc: x.soc, code: x.code, titre: x.titre || (y && y.t) || tr, iswc: x.iswc || (y && y.iswc) || '',
-          track: tr || undefined, statut: (y && y.c) ? 'depose' : statutOk(x.statut) };
-      });
-      oeuvres[k] = liste.length > 1 ? liste : liste[0];
-      sacem[k] = liste[0].statut;
-    } else sacem[k] = statutOk(l.statut);
-    blzTracks.push({ title: tr || (oes[0] || {}).titre || '', featurings: featsDe(l).map(f => f.trim()).filter(Boolean),
-      songwriters: (l.sw || []).slice(), coda: (l.coda || '').trim() });
-  });
-  return { oeuvres, sacem, blzTracks };
-}
-// Songwriters de la sortie : ceux du sélecteur global plus ceux de chaque track
-function swDeLaSortie(tracks) {
-  const l = [...selectedSw];
-  (tracks || []).forEach(t => (t.songwriters || []).forEach(n => { if (n && !l.includes(n)) l.push(n); }));
-  return l;
-}
-const listeFeat = t => String(t || '').split(/\s*(?:,|&|\bet\b|\/)\s*/i).map(x => x.trim()).filter(Boolean);
-let oeT = null;
-document.getElementById('artistName').addEventListener('change', () => {
-  oeRows.forEach(l => { if (!oesDe(l).length) rattacherAuto(l); }); renderOeuvres(); });
-document.getElementById('trackName').addEventListener('input', () => {
-  clearTimeout(oeT); oeT = setTimeout(() => { semerLignes(); renderOeuvres(); }, 300); });
-document.getElementById('trackName').addEventListener('change', () => {
-  const l = oeRows[0]; if (l && !oesDe(l).length) { l.track = document.getElementById('trackName').value.trim(); rattacherAuto(l); }
-  renderOeuvres(); });
-document.getElementById('trackAdd').addEventListener('click', () => {
-  oeRows.push(nouvelleLigne(''));
-  renderTracks(); renderOeuvres();
-  const inp = document.querySelectorAll('[data-tk]');
-  if (inp.length) inp[inp.length - 1].focus();
-});
 
 // ─── Elements ───
 const dateInput = document.getElementById('releaseDate');
@@ -944,8 +326,6 @@ const projectGroup = document.getElementById('projectGroup');
 const trackGroup = document.getElementById('trackGroup');
 const liveGroup = document.getElementById('liveGroup');
 const certGroup = document.getElementById('certGroup');
-const countryGroup = document.getElementById('countryGroup');
-const actuGroup = document.getElementById('actuGroup');
 const epTracksGroup = document.getElementById('epTracksGroup');
 const swSearch = document.getElementById('swSearch');
 const swDropdown = document.getElementById('swDropdown');
@@ -957,293 +337,20 @@ const deleteBtn = document.getElementById('deleteBtn');
 const pageTitle = document.getElementById('pageTitle');
 const optAnnule = document.getElementById('optAnnule');
 
-// ─── Date auto-format ───
-dateInput.addEventListener('input', (e) => {
-  let v = e.target.value.replace(/[^0-9]/g, '');
-  if (v.length > 2) v = v.slice(0,2) + '/' + v.slice(2);
-  if (v.length > 5) v = v.slice(0,5) + '/' + v.slice(5,9);
-  e.target.value = v;
-});
+// ─── Date helpers (DD/MM/YYYY ↔ YYYY-MM-DD) ───
+function ddmmToIso(dd) { if (!dd) return ''; const p = dd.split('/'); return p.length === 3 ? p[2]+'-'+p[1]+'-'+p[0] : ''; }
+function isoToDdmm(iso) { if (!iso) return ''; const p = iso.split('-'); return p.length === 3 ? p[2]+'/'+p[1]+'/'+p[0] : ''; }
 
 // ─── Conditional fields ───
 function updateConditionals() {
   const t = typeSelect.value;
   projectGroup.classList.toggle('visible', t === 'EP' || t === 'Album');
-  epTracksGroup.classList.toggle('visible', t === 'EP' || t === 'Album');
-  trackGroup.classList.toggle('visible', t === 'Single' || t === 'Certification' || t === 'Synchro');
+  epTracksGroup.classList.toggle('visible', t === 'EP');
+  trackGroup.classList.toggle('visible', t === 'Single' || t === 'Certification');
   liveGroup.classList.toggle('visible', t === 'Live');
   certGroup.classList.toggle('visible', t === 'Certification');
-  countryGroup.classList.toggle('visible', ['Single','EP','Album'].includes(t));
-  actuGroup.classList.toggle('visible', t === 'Actu');
-  document.getElementById('oeuvresGroup').classList.toggle('visible', ['Single','EP','Album','Synchro'].includes(t));
-  document.getElementById('codaGroup').classList.toggle('visible', ['Single','EP','Album'].includes(t));
-  // le featuring d'un single se saisit à côté du nom du track, celui d'un projet track par track
-  renderFeatsSingle();
-  // pour un EP ou un album, les songwriters se saisissent track par track
-  const gsw = document.getElementById('swGroup');
-  if (gsw) gsw.style.display = (t === 'EP' || t === 'Album') ? 'none' : '';
-  semerLignes(); renderTracks(); renderOeuvres();
 }
 typeSelect.addEventListener('change', updateConditionals);
-
-// ─── Artwork extraction from links ───
-let extractedArtwork = '';
-
-function showArtwork(url) {
-  extractedArtwork = url;
-  const img = document.getElementById('artworkImg');
-  const preview = document.getElementById('artworkPreview');
-  img.src = url;
-  img.onerror = () => { preview.style.display = 'none'; extractedArtwork = ''; };
-  preview.style.display = '';
-}
-function clearArtwork() {
-  extractedArtwork = '';
-  document.getElementById('artworkPreview').style.display = 'none';
-  document.getElementById('artworkImg').src = '';
-}
-
-function downloadArtwork() {
-  if (!extractedArtwork) return;
-  const artist = document.getElementById('artistName').value.trim() || 'artwork';
-  const filename = artist.replace(/[^a-zA-Z0-9]/g, '_') + '_artwork';
-
-  // Fetch the original image file directly (no resize)
-  fetch(extractedArtwork)
-    .then(res => res.blob())
-    .then(blob => {
-      const ext = blob.type === 'image/png' ? '.png' : blob.type === 'image/webp' ? '.webp' : '.jpg';
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename + ext;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 2000);
-    })
-    .catch(() => {
-      // CORS fallback: open in new tab
-      window.open(extractedArtwork, '_blank');
-    });
-}
-
-function extractYouTubeId(url) {
-  const m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([a-zA-Z0-9_-]{11})/);
-  return m ? m[1] : null;
-}
-
-async function tryExtractArtwork(url) {
-  if (!url) return;
-
-  // YouTube → try highest resolution first, fallback to lower
-  const ytId = extractYouTubeId(url);
-  if (ytId) {
-    const sizes = ['maxresdefault', 'sddefault', 'hqdefault'];
-    for (const size of sizes) {
-      const thumbUrl = `https://img.youtube.com/vi/${ytId}/${size}.jpg`;
-      try {
-        const res = await fetch(thumbUrl, { method: 'HEAD' });
-        if (res.ok) {
-          // maxresdefault returns a placeholder (120x90) if not available, check via loading
-          const img = new Image();
-          img.crossOrigin = 'anonymous';
-          const loaded = await new Promise(resolve => {
-            img.onload = () => resolve(img);
-            img.onerror = () => resolve(null);
-            img.src = thumbUrl;
-          });
-          if (loaded && loaded.naturalWidth > 200) {
-            showArtwork(thumbUrl);
-            return;
-          }
-        }
-      } catch(e) {}
-    }
-    // Ultimate fallback
-    showArtwork(`https://img.youtube.com/vi/${ytId}/hqdefault.jpg`);
-    return;
-  }
-
-  // Spotify → oembed endpoint, request max size
-  if (url.includes('open.spotify.com')) {
-    try {
-      const res = await fetch(`https://open.spotify.com/oembed?url=${encodeURIComponent(url)}`);
-      if (res.ok) {
-        const data = await res.json();
-        if (data.thumbnail_url) {
-          // Spotify oembed returns 300px (ab67616d00001e02), replace with 640px (ab67616d0000b273)
-          const hiRes = data.thumbnail_url.replace('ab67616d00001e02', 'ab67616d0000b273');
-          showArtwork(hiRes);
-          return;
-        }
-      }
-    } catch(e) { console.warn('Spotify oembed failed:', e); }
-  }
-
-  // Instagram → try oembed (may not work without auth)
-  if (url.includes('instagram.com')) {
-    try {
-      const res = await fetch(`https://api.instagram.com/oembed/?url=${encodeURIComponent(url)}`);
-      if (res.ok) {
-        const data = await res.json();
-        if (data.thumbnail_url) { showArtwork(data.thumbnail_url); return; }
-      }
-    } catch(e) { console.warn('Instagram oembed failed:', e); }
-  }
-}
-
-document.getElementById('releaseLink').addEventListener('input', function() {
-  const url = this.value.trim();
-  if (url.startsWith('http')) tryExtractArtwork(url);
-  else clearArtwork();
-});
-
-// ─── Fiches Coda : un lien par titre de la sortie ───
-let codaSig = null;
-function renderCoda() {
-  const box = document.getElementById('codaRows'); if (!box) return;
-  if (!['Single','EP','Album'].includes(typeSelect.value)) { box.innerHTML = ''; codaSig = null; return; }
-  const lignes = oeRows.filter(l => (l.track || '').trim() || oesDe(l).length);
-  // tant que les titres n'ont pas bougé, on ne reconstruit rien : les champs en cours de saisie restent en place
-  const sig = typeSelect.value + '#' + lignes.map(l => l.id + ':' + (l.track || (oesDe(l)[0] || {}).titre || '')).join('|');
-  if (sig === codaSig) return;
-  if (document.activeElement && box.contains(document.activeElement)) return;
-  codaSig = sig;
-  if (!lignes.length) {
-    box.innerHTML = '<div class="oe-empty">' + (estProjet()
-      ? 'Renseignez les titres BLZante du projet ci-dessus.'
-      : 'Renseignez le nom du track pour lui rattacher sa fiche Coda.') + '</div>';
-    return;
-  }
-  box.innerHTML = lignes.map(l => {
-    const u = (l.coda || '').trim(), bon = /^https?:\/\//i.test(u);
-    return `<div class="cd-row">
-      <span class="cd-track" title="${esc(l.track || (oesDe(l)[0] || {}).titre)}">${esc(l.track || (oesDe(l)[0] || {}).titre || '(sans titre)')}</span>
-      <input class="form-input" data-cd="${l.id}" value="${esc(u)}" placeholder="Lien de la fiche Coda du track" autocomplete="off">
-      ${bon ? `<a class="cd-go" href="${esc(u)}" target="_blank" rel="noopener" title="Ouvrir la fiche Coda">↗</a>`
-            : `<span class="cd-ko">${u ? 'lien incomplet' : ''}</span>`}
-    </div>`; }).join('');
-  box.querySelectorAll('[data-cd]').forEach(i => {
-    i.addEventListener('input', function () {
-      const l = oeRows.find(z => z.id === +this.dataset.cd); if (l) l.coda = this.value;
-      majLigneCoda(this.closest('.cd-row'), this.value); });
-  });
-}
-// le raccourci « ↗ » se met à jour sans reconstruire la ligne, pour ne pas perdre le curseur
-function majLigneCoda(row, u) {
-  if (!row) return;
-  const fin = row.lastElementChild; if (!fin) return;
-  const v = (u || '').trim();
-  fin.outerHTML = /^https?:\/\//i.test(v)
-    ? `<a class="cd-go" href="${esc(v)}" target="_blank" rel="noopener" title="Ouvrir la fiche Coda">↗</a>`
-    : `<span class="cd-ko">${v ? 'lien incomplet' : ''}</span>`;
-}
-
-// ─── Country searchable picker ───
-const COUNTRIES = [
-  { code: 'FR', label: '🇫🇷 France' },
-  { code: 'US', label: '🇺🇸 États-Unis' },
-  { code: 'GB', label: '🇬🇧 Royaume-Uni' },
-  { code: 'DE', label: '🇩🇪 Allemagne' },
-  { code: 'ES', label: '🇪🇸 Espagne' },
-  { code: 'IT', label: '🇮🇹 Italie' },
-  { code: 'BE', label: '🇧🇪 Belgique' },
-  { code: 'CH', label: '🇨🇭 Suisse' },
-  { code: 'CA', label: '🇨🇦 Canada' },
-  { code: 'JP', label: '🇯🇵 Japon' },
-  { code: 'KR', label: '🇰🇷 Corée du Sud' },
-  { code: 'BR', label: '🇧🇷 Brésil' },
-  { code: 'AR', label: '🇦🇷 Argentine' },
-  { code: 'MX', label: '🇲🇽 Mexique' },
-  { code: 'NG', label: '🇳🇬 Nigeria' },
-  { code: 'CI', label: "🇨🇮 Côte d'Ivoire" },
-  { code: 'SN', label: '🇸🇳 Sénégal' },
-  { code: 'MA', label: '🇲🇦 Maroc' },
-  { code: 'DZ', label: '🇩🇿 Algérie' },
-  { code: 'CM', label: '🇨🇲 Cameroun' },
-  { code: 'GN', label: '🇬🇳 Guinée (Conakry)' },
-  { code: 'GH', label: '🇬🇭 Ghana' },
-  { code: 'EC', label: '🇪🇨 Équateur' },
-  { code: 'ML', label: '🇲🇱 Mali' },
-  { code: 'CV', label: '🇨🇻 Cap-Vert' },
-  { code: 'NL', label: '🇳🇱 Pays-Bas' },
-  { code: 'GA', label: '🇬🇦 Gabon' },
-  { code: 'BJ', label: '🇧🇯 Bénin' },
-  { code: 'CD', label: '🇨🇩 RD Congo' },
-  { code: 'INTL', label: '🌍 International' },
-];
-
-const countrySearch = document.getElementById('countrySearch');
-const countryHidden = document.getElementById('releaseCountry');
-const countryDropdown = document.getElementById('countryDropdown');
-const countrySelectedDiv = document.getElementById('countrySelected');
-let selectedCountries = ['FR'];
-
-function getCountryLabel(code) {
-  const c = COUNTRIES.find(c => c.code === code);
-  return c ? c.label : code;
-}
-
-function syncCountryHidden() {
-  countryHidden.value = selectedCountries.join(',');
-}
-
-function renderSelectedCountries() {
-  countrySelectedDiv.innerHTML = selectedCountries.map(code =>
-    `<span class="country-tag" data-code="${code}">${getCountryLabel(code)} <span class="ct-x">✕</span></span>`
-  ).join('');
-  syncCountryHidden();
-}
-
-function addCountry(code) {
-  if (selectedCountries.includes(code)) return;
-  if (selectedCountries.length >= 2) selectedCountries.shift();
-  selectedCountries.push(code);
-  renderSelectedCountries();
-  countrySearch.value = '';
-  countryDropdown.classList.remove('open');
-}
-
-function removeCountry(code) {
-  selectedCountries = selectedCountries.filter(c => c !== code);
-  renderSelectedCountries();
-}
-
-function setCountry(codeOrCodes) {
-  if (typeof codeOrCodes === 'string' && codeOrCodes.includes(',')) {
-    selectedCountries = codeOrCodes.split(',').filter(Boolean);
-  } else if (typeof codeOrCodes === 'string') {
-    selectedCountries = codeOrCodes ? [codeOrCodes] : ['FR'];
-  } else {
-    selectedCountries = ['FR'];
-  }
-  renderSelectedCountries();
-}
-
-function renderCountryDropdown(query) {
-  const q = (query || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  const filtered = q ? COUNTRIES.filter(c => c.label.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').includes(q) || c.code.toLowerCase().includes(q)) : COUNTRIES;
-  countryDropdown.innerHTML = filtered.map(c =>
-    `<div class="country-opt${selectedCountries.includes(c.code) ? ' selected' : ''}" data-code="${c.code}">${c.label}</div>`
-  ).join('');
-  countryDropdown.classList.toggle('open', filtered.length > 0);
-}
-
-countrySearch.addEventListener('focus', () => renderCountryDropdown(''));
-countrySearch.addEventListener('input', () => renderCountryDropdown(countrySearch.value));
-countryDropdown.addEventListener('click', (e) => {
-  const opt = e.target.closest('.country-opt');
-  if (opt) addCountry(opt.dataset.code);
-});
-countrySelectedDiv.addEventListener('click', (e) => {
-  const tag = e.target.closest('.country-tag');
-  if (tag) removeCountry(tag.dataset.code);
-});
-document.addEventListener('click', (e) => {
-  if (!e.target.closest('.country-picker')) countryDropdown.classList.remove('open');
-});
-renderSelectedCountries();
 
 // ─── Songwriter picker ───
 swSearch.addEventListener('focus', () => swDropdown.classList.add('open'));
@@ -1295,10 +402,9 @@ function enterEditMode(release) {
   cancelBtn.style.display = '';
   deleteBtn.style.display = '';
   optAnnule.style.display = '';
-  dateInput.value = release.date;
+  dateInput.value = ddmmToIso(release.date);
   typeSelect.value = release.type;
   statusSelect.value = release.status || 'Confirmé';
-  document.getElementById('instaSuivi').value = release.insta || 'a_faire';
   document.getElementById('artistName').value = release.artist || '';
   document.getElementById('projectName').value = release.project || '';
   document.getElementById('trackName').value = release.track || '';
@@ -1306,61 +412,8 @@ function enterEditMode(release) {
   document.getElementById('liveVille').value = release.ville || '';
   document.getElementById('certType').value = release.certType || '';
   document.getElementById('certLevel').value = release.certLevel || '';
-  document.getElementById('releaseCountry').value = release.country || 'FR';
-  setCountry(release.country || 'FR');
-  document.getElementById('actuDesc').value = release.actuDesc || '';
-  document.getElementById('releaseLink').value = release.link || '';
-  if (release.artwork) showArtwork(release.artwork);
   document.getElementById('epTrackCount').value = release.epTrackCount || '';
   document.getElementById('epTrackNames').value = release.epTrackNames || '';
-  document.getElementById('blzTrackCount').value = release.blzTrackCount || '';
-  document.getElementById('blzTrackNames').value = release.blzTrackNames || '';
-  setFeatsSingle(release.featurings || []);
-  // une ligne par track connu : titres du projet, statuts Sacem, œuvres liées, featurings
-  oeRows = []; oeNext = 1; oeSeed = '';
-  codaSig = null; oeSig = null;
-  const ligne = t => {
-    const k = normT(t); if (!k) return null;
-    let l = oeRows.find(z => normT(z.track) === k);
-    if (!l) { l = { id: oeNext++, track: t, feats: [], oes: [], statut: 'a_lancer', q: '' }; oeRows.push(l); }
-    return l;
-  };
-  (release.type === 'Single' ? [release.track || ''] : String(release.blzTrackNames || '').split(/\n|,|;/))
-    .map(x => x.trim()).filter(Boolean).forEach(ligne);
-  (Array.isArray(release.blzTracks) ? release.blzTracks : []).forEach(t => {
-    const l = ligne(t && t.title); if (!l) return;
-    if (t.featurings && t.featurings.length) l.feats = t.featurings.slice();
-    if (t.songwriters && t.songwriters.length) l.sw = t.songwriters.slice();
-    if (t.coda) l.coda = t.coda; });
-  // ancienne fiche Coda posée sur la sortie : on la rattache au premier titre
-  if (release.coda && oeRows.length && !oeRows.some(l => l.coda)) oeRows[0].coda = release.coda;
-  Object.keys(release.sacem || {}).forEach(k => {
-    const v0 = release.oeuvres && release.oeuvres[k];
-    const x = Array.isArray(v0) ? v0[0] : v0;
-    const l = ligne((x && (x.track || x.titre)) || k) || null;
-    if (l) l.statut = statutOk(release.sacem[k]);
-  });
-  // une piste peut porter plusieurs œuvres : version studio et version live, ou le même dépôt ailleurs
-  Object.keys(release.oeuvres || {}).forEach(k => {
-    const v = release.oeuvres[k], tous = (Array.isArray(v) ? v : [v]).filter(x => x && x.code);
-    if (!tous.length) return;
-    const l = ligne(tous[0].track || tous[0].titre || k); if (!l) return;
-    tous.forEach(x => {
-      if (aOeuvre(l, x.soc, x.code)) return;
-      l.oes.push({ soc: x.soc, code: x.code, titre: x.titre || '', iswc: x.iswc || '',
-        statut: statutOk(x.statut || (release.sacem || {})[k]) });
-    });
-  });
-  // liens posés depuis l'outil Catalogues (fiche œuvre → sortie)
-  OEUVRES.filter(o => (o.rs || []).includes(String(release.id)) || String(o.r) === String(release.id)).forEach(o => {
-    const l = ligne(o.tt || o.t); if (!l) return;
-    if (aOeuvre(l, o.soc, o.code)) return;
-    l.oes.push({ soc: o.soc, code: o.code, titre: o.t, iswc: o.iswc || '',
-      statut: o.c ? 'depose' : statutOk(l.statut) });
-    if (o.f && !featsDe(l).some(Boolean)) l.feats = listeFeat(o.f);
-  });
-  oeSeed = (release.type === 'Single' ? [release.track || ''] : String(release.blzTrackNames || '').split(/\n|,|;/))
-    .map(x => x.trim()).filter(Boolean).join('|');
   selectedSw = release.songwriters ? (Array.isArray(release.songwriters) ? [...release.songwriters] : release.songwriters.split(',')) : [];
   swOptions.forEach(opt => { opt.classList.toggle('selected', selectedSw.includes(opt.dataset.name)); });
   renderTags();
@@ -1382,7 +435,6 @@ function resetForm() {
   dateInput.value = '';
   typeSelect.value = '';
   statusSelect.value = 'Confirmé';
-  document.getElementById('instaSuivi').value = 'a_faire';
   document.getElementById('artistName').value = '';
   document.getElementById('projectName').value = '';
   document.getElementById('trackName').value = '';
@@ -1392,50 +444,28 @@ function resetForm() {
   document.getElementById('certLevel').value = '';
   document.getElementById('epTrackCount').value = '';
   document.getElementById('epTrackNames').value = '';
-  document.getElementById('blzTrackCount').value = '';
-  document.getElementById('blzTrackNames').value = '';
   projectGroup.classList.remove('visible');
   trackGroup.classList.remove('visible');
   liveGroup.classList.remove('visible');
   certGroup.classList.remove('visible');
-  countryGroup.classList.remove('visible');
-  actuGroup.classList.remove('visible');
   epTracksGroup.classList.remove('visible');
-  document.getElementById('releaseCountry').value = 'FR';
-  setCountry('FR');
-  document.getElementById('actuDesc').value = '';
-  document.getElementById('releaseLink').value = '';
-  clearArtwork();
   selectedSw = [];
   swOptions.forEach(o => o.classList.remove('selected'));
   renderTags();
-  oeRows = []; oeSeed = ''; codaSig = null; oeSig = null; renderTracks(); renderOeuvres();
-  setFeatsSingle([]);
-  document.getElementById('oeuvresGroup').classList.remove('visible');
 }
 
-cancelBtn.addEventListener('click', () => {
-  // venu du planning : on y retourne à la même place plutôt que de rester sur un formulaire vide
-  if (editId && new URLSearchParams(window.location.search).get('retour') === 'planning') {
-    window.location.href = 'release_planning.html?focus=' + encodeURIComponent(editId);
-    return;
-  }
-  exitEditMode();
-});
+cancelBtn.addEventListener('click', exitEditMode);
 
 deleteBtn.addEventListener('click', async () => {
   if (!editId) return;
   if (!confirm('Supprimer définitivement cet événement ?')) return;
-  const cible = 'release_planning.html?focus=' + encodeURIComponent(editId);
   await fbDelete(editId);
-  // la sortie n'existe plus : le planning retombe sur la position mémorisée
-  window.location.href = cible;
+  window.location.href = 'release_planning.html';
 });
 
 // Check URL for edit param
 (async () => {
   try { await _waitAuth(); } catch(e) { return; }
-  try { await chargerOeuvres(); } catch(e) {}
 
   const urlParams = new URLSearchParams(window.location.search);
   const editParam = urlParams.get('edit');
@@ -1449,7 +479,8 @@ deleteBtn.addEventListener('click', async () => {
 
 // ─── Submit ───
 submitBtn.addEventListener('click', async () => {
-  const date = dateInput.value.trim();
+  const dateRaw = dateInput.value.trim();
+  const date = isoToDdmm(dateRaw);
   const type = typeSelect.value;
   const releaseStatus = statusSelect.value;
   const artist = document.getElementById('artistName').value.trim();
@@ -1461,12 +492,10 @@ submitBtn.addEventListener('click', async () => {
   const certLevel = document.getElementById('certLevel').value;
   const epTrackCount = document.getElementById('epTrackCount').value.trim();
   const epTrackNames = document.getElementById('epTrackNames').value.trim();
-  const blzTrackCount = document.getElementById('blzTrackCount').value.trim();
-  const blzTrackNames = document.getElementById('blzTrackNames').value.trim();
   const statusMsg = document.getElementById('statusMsg');
 
-  if (!date || !/^\d{2}\/\d{2}\/\d{4}$/.test(date)) {
-    statusMsg.textContent = '⚠ Date invalide (DD/MM/YYYY)'; statusMsg.className = 'status error'; return;
+  if (!dateRaw) {
+    statusMsg.textContent = '⚠ Date requise'; statusMsg.className = 'status error'; return;
   }
   if (!type) { statusMsg.textContent = '⚠ Choisir un type'; statusMsg.className = 'status error'; return; }
   if (!artist) { statusMsg.textContent = '⚠ Nom artiste requis'; statusMsg.className = 'status error'; return; }
@@ -1477,7 +506,6 @@ submitBtn.addEventListener('click', async () => {
   if (type === 'EP' || type === 'Album') {
     title = project || artist;
     if (type === 'EP' && epTrackCount) title += ' (' + epTrackCount + ' titres)';
-    if (type === 'Album' && epTrackCount) title += ' (' + epTrackCount + ' titres)';
   } else if (type === 'Live') {
     title = lieu + (ville ? ' — ' + ville : '');
   } else if (type === 'Certification') {
@@ -1490,31 +518,13 @@ submitBtn.addEventListener('click', async () => {
   submitBtn.textContent = '⏳ Enregistrement...';
 
   try {
-    let precedent = {};
-    if (editId) { try { const r0 = await dbFetch('/releases/' + editId + '.json'); precedent = (r0.ok && await r0.json()) || {}; } catch (e) {} }
-    const liens = ['Single','EP','Album','Synchro'].includes(type)
-      ? oeuvresDuFormulaire()
-      : { oeuvres: precedent.oeuvres || {}, sacem: precedent.sacem || {}, blzTracks: precedent.blzTracks || [] };
-    const release = Object.assign({}, precedent, {
+    const release = {
       id: editId || Date.now(), date, dateSortable: date.split('/').reverse().join('-'),
       type, status: releaseStatus, artist, title,
       project, track, lieu, ville, certType, certLevel,
       epTrackCount, epTrackNames,
-      blzTrackCount: ['EP','Album'].includes(type) && (liens.blzTracks || []).length ? String(liens.blzTracks.length) : blzTrackCount,
-      blzTrackNames: ['EP','Album'].includes(type) && (liens.blzTracks || []).length
-        ? liens.blzTracks.map(t => t.title).join('\n') : blzTrackNames,
-      country: ['Single','EP','Album'].includes(type) ? document.getElementById('releaseCountry').value : '',
-      actuDesc: type === 'Actu' ? document.getElementById('actuDesc').value.trim() : '',
-      link: document.getElementById('releaseLink').value.trim(),
-      // les fiches Coda vivent désormais sur chaque track (blzTracks[].coda)
-      coda: '',
-      insta: document.getElementById('instaSuivi').value,
-      artwork: extractedArtwork,
-      songwriters: swDeLaSortie(liens.blzTracks), createdAt: precedent.createdAt || new Date().toISOString(),
-      oeuvres: liens.oeuvres, sacem: liens.sacem,
-      featurings: listeFeat(document.getElementById('featurings').value),
-      blzTracks: (liens.blzTracks || []).filter(t => t.title),
-    });
+      songwriters: [...selectedSw], createdAt: editId ? undefined : new Date().toISOString(),
+    };
 
     await fbPut(release);
 
@@ -1523,9 +533,7 @@ submitBtn.addEventListener('click', async () => {
     setTimeout(() => { statusMsg.textContent = ''; statusMsg.className = 'status'; }, 3000);
 
     if (editId) {
-      // on repart au planning exactement là où on était : ?focus= replace la vue sur cette sortie
-      const cible = 'release_planning.html?focus=' + encodeURIComponent(editId);
-      setTimeout(() => { window.location.href = cible; }, 800);
+      setTimeout(() => { window.location.href = 'release_planning.html'; }, 800);
     } else {
       resetForm();
       renderRecent();
@@ -1552,36 +560,15 @@ async function renderRecent() {
   list.innerHTML = recent.map(r => {
     const st = r.status && r.status !== 'Confirmé' ? ` [${r.status}]` : '';
     const sw = r.songwriters && r.songwriters.length ? (Array.isArray(r.songwriters) ? r.songwriters.join(', ') : r.songwriters) : '';
-    const sc = r.sacem ? Object.values(r.sacem) : [];
-    const n = v => sc.filter(x => x === v).length;
-    const badges = sc.length ? '<span class="sacem-badges">' + STATUTS.filter(s => n(s[0])).map(s =>
-      `<span class="sacem-b ${s[0]}">${sc.length > 1 ? n(s[0]) + ' ' : ''}${s[1]}</span>`).join('') + '</span>' : '';
     return `
     <div class="recent-item" data-id="${r.id}">
       <span class="recent-date">${r.date}</span>
       <span class="recent-type">${r.type}</span>
       <span class="recent-name">${r.artist} — ${r.title}${st}</span>
-      <span class="recent-sw">${sw}</span>${badges}
+      <span class="recent-sw">${sw}</span>
     </div>`;
   }).join('');
 }
-</script>
-
-<script>
-/* ---- barre d'outils : outil courant repéré, menu « Plus » ---- */
-(function(){
-  var ici=(location.pathname.split('/').pop()||'index.html').toLowerCase();
-  document.querySelectorAll('#tbar>a').forEach(function(a){
-    if((a.getAttribute('data-t')||'').split(' ').indexOf(ici)>=0)a.classList.add('on');});
-  document.querySelectorAll('#tbarMenu a').forEach(function(a){
-    if(a.getAttribute('href').toLowerCase()===ici)a.classList.add('on');});
-  var b=document.getElementById('tbarBtn'),m=document.getElementById('tbarMenu');
-  if(!b||!m)return;
-  function ouvrir(v){m.hidden=!v;b.setAttribute('aria-expanded',v?'true':'false');}
-  b.addEventListener('click',function(e){e.stopPropagation();ouvrir(m.hidden);});
-  document.addEventListener('click',function(e){if(!m.hidden&&!m.contains(e.target))ouvrir(false);});
-  document.addEventListener('keydown',function(e){if(e.key==='Escape')ouvrir(false);});
-})();
 </script>
 </body>
 </html>
