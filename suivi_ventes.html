@@ -1,0 +1,1405 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="blzante_spiral_black.png">
+<title>Suivi Ventes — BLZante Toolbox</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Syne+Mono&display=swap">
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+/* ─── DESIGN SYSTEM ─── */
+:root {
+  --bg: #0a0a0a; --surface: #141414; --surface-2: #1a1a1a;
+  --border: #262626; --border-hi: #3a3a3a;
+  --text: #e8e8e8; --muted: #777; --muted-2: #555;
+  --accent: #e8c547; --accent-dim: rgba(232,197,71,0.15);
+  --success: #4ade80; --error: #ff6b6b; --info: #60a5fa;
+  --up: #4ade80; --down: #ff6b6b; --stable: #777;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); }
+body {
+  font-family: 'Syne Mono', monospace;
+  min-height: 100vh; display: flex; flex-direction: column;
+  visibility: hidden;
+}
+body::before {
+  content: ''; position: fixed; inset: 0;
+  background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 60px 60px; opacity: 0.3; pointer-events: none; z-index: 0;
+}
+
+/* ─── NAV ─── */
+nav {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 40px; border-bottom: 1px solid var(--border);
+  position: relative; z-index: 1;
+}
+.nav-logo {
+  font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 800;
+  color: #fff; text-decoration: none; letter-spacing: 0.08em;
+  display: flex; align-items: center; gap: 10px;
+}
+.nav-logo-img { height: 28px; width: auto; display: block; }
+.nav-right {
+  display: flex; align-items: center; gap: 12px;
+  font-size: 0.65rem; color: var(--muted); letter-spacing: 0.14em; text-transform: uppercase;
+}
+.nav-back { color: var(--muted); text-decoration: none; transition: color 0.15s; }
+.nav-back:hover { color: #fff; }
+.nav-sep { color: var(--border); }
+#logoutBtn {
+  background: none; border: 1px solid var(--border); color: var(--muted);
+  font-family: 'Syne Mono', monospace; font-size: 0.6rem;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 5px 12px; cursor: pointer; transition: all 0.15s;
+}
+#logoutBtn:hover { border-color: #555; color: var(--text); }
+
+/* ─── LAYOUT ─── */
+.container {
+  max-width: 1200px; margin: 0 auto; padding: 32px 40px 60px;
+  position: relative; z-index: 1; flex: 1; width: 100%;
+}
+.header-row {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 24px; border-bottom: 1px solid var(--border); padding-bottom: 20px;
+}
+.header-row h1 { font-family: 'Syne', sans-serif; font-size: 1.3rem; font-weight: 800; }
+.header-actions { display: flex; gap: 8px; }
+.btn {
+  font-family: 'Syne', sans-serif; font-size: 0.68rem; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 8px 16px; border: 1px solid var(--border); background: var(--surface);
+  color: var(--text); cursor: pointer; transition: all 0.2s; text-decoration: none;
+}
+.btn:hover { border-color: #555; }
+.btn-accent { background: var(--accent); color: #000; border-color: var(--accent); }
+.btn-accent:hover { background: #d4b23e; border-color: #d4b23e; }
+
+/* ─── TABS ─── */
+.tabs {
+  display: flex; gap: 0; margin-bottom: 24px; border-bottom: 1px solid var(--border);
+}
+.tab {
+  font-family: 'Syne', sans-serif; font-size: 0.72rem; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 10px 20px; background: none; border: none; color: var(--muted);
+  cursor: pointer; position: relative; transition: color 0.2s;
+}
+.tab.active { color: var(--accent); }
+.tab.active::after {
+  content: ''; position: absolute; bottom: -1px; left: 0; right: 0;
+  height: 2px; background: var(--accent);
+}
+.tab:hover:not(.active) { color: var(--text); }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ─── UPLOAD ZONE ─── */
+.upload-section {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 28px;
+}
+.upload-box {
+  border: 2px dashed var(--border); background: var(--surface);
+  padding: 28px; text-align: center; cursor: pointer;
+  transition: all 0.2s; position: relative;
+}
+.upload-box:hover, .upload-box.drag-over {
+  border-color: var(--accent); background: var(--accent-dim);
+}
+.upload-box.has-file { border-color: var(--success); border-style: solid; }
+.upload-icon { font-size: 1.6rem; margin-bottom: 8px; opacity: 0.5; }
+.upload-label {
+  font-family: 'Syne', sans-serif; font-size: 0.78rem; font-weight: 700;
+  margin-bottom: 4px;
+}
+.upload-hint { font-size: 0.62rem; color: var(--muted); }
+.upload-file-info {
+  font-size: 0.62rem; color: var(--success); margin-top: 6px;
+  display: none;
+}
+.upload-box.has-file .upload-file-info { display: block; }
+.upload-box input[type=file] { display: none; }
+
+/* ─── WEEK SELECTOR ─── */
+.week-bar {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 20px;
+  padding: 12px 16px; background: var(--surface); border: 1px solid var(--border);
+}
+.week-bar label {
+  font-family: 'Syne', sans-serif; font-size: 0.7rem; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted);
+}
+.week-bar select, .week-bar input {
+  font-family: 'Syne Mono', monospace; font-size: 0.75rem;
+  background: var(--bg); border: 1px solid var(--border); color: var(--text);
+  padding: 6px 10px;
+}
+.week-bar select { min-width: 100px; }
+
+/* ─── STATS CARDS ─── */
+.stats-row {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+  margin-bottom: 24px;
+}
+.stat-card {
+  background: var(--surface); border: 1px solid var(--border);
+  padding: 16px; text-align: center;
+}
+.stat-value {
+  font-family: 'Syne', sans-serif; font-size: 1.6rem; font-weight: 800;
+  color: #fff; margin-bottom: 4px;
+}
+.stat-label {
+  font-size: 0.58rem; color: var(--muted); letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.stat-value.up { color: var(--up); }
+.stat-value.down { color: var(--down); }
+
+/* ─── CHART ─── */
+.chart-section {
+  background: var(--surface); border: 1px solid var(--border);
+  padding: 20px; margin-bottom: 24px;
+}
+.chart-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px;
+}
+.chart-title {
+  font-family: 'Syne', sans-serif; font-size: 0.8rem; font-weight: 700;
+}
+.chart-legend {
+  display: flex; gap: 12px; flex-wrap: wrap;
+}
+.legend-item {
+  display: flex; align-items: center; gap: 4px; font-size: 0.58rem; color: var(--muted);
+  cursor: pointer; transition: opacity 0.2s;
+}
+.legend-item.hidden { opacity: 0.3; }
+.legend-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+}
+canvas#salesChart { width: 100%; height: 300px; }
+
+/* ─── TABLE ─── */
+.table-wrap {
+  overflow-x: auto; margin-bottom: 24px;
+  border: 1px solid var(--border);
+}
+table {
+  width: 100%; border-collapse: collapse; font-size: 0.7rem;
+}
+th {
+  font-family: 'Syne', sans-serif; font-size: 0.6rem; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted);
+  padding: 10px 12px; text-align: left; background: var(--surface);
+  border-bottom: 1px solid var(--border); white-space: nowrap;
+  position: sticky; top: 0; z-index: 2;
+}
+td {
+  padding: 8px 12px; border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+tr:hover td { background: var(--surface); }
+td.num { text-align: right; font-variant-numeric: tabular-nums; }
+td.ht { color: var(--muted); font-style: italic; }
+td.rank { color: var(--accent); font-weight: 600; }
+td.evol-up { color: var(--up); }
+td.evol-down { color: var(--down); }
+td.evol-new { color: var(--info); }
+
+/* ─── MATCHES PANEL ─── */
+.matches-section {
+  background: var(--surface); border: 1px solid var(--border);
+  padding: 20px; margin-bottom: 24px;
+}
+.matches-title {
+  font-family: 'Syne', sans-serif; font-size: 0.8rem; font-weight: 700;
+  margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+}
+.match-badge {
+  font-size: 0.55rem; background: var(--accent); color: #000;
+  padding: 2px 8px; font-weight: 700; letter-spacing: 0.08em;
+}
+.match-list { display: flex; flex-direction: column; gap: 8px; }
+.match-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; background: var(--bg); border: 1px solid var(--border);
+  transition: border-color 0.2s;
+}
+.match-item:hover { border-color: var(--accent); }
+.match-info { flex: 1; }
+.match-artist {
+  font-family: 'Syne', sans-serif; font-size: 0.78rem; font-weight: 700; color: #fff;
+}
+.match-title { font-size: 0.68rem; color: var(--muted); margin-top: 2px; }
+.match-meta { font-size: 0.55rem; color: var(--muted-2); margin-top: 3px; }
+.match-source {
+  font-size: 0.52rem; letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 3px 8px; border: 1px solid var(--border); color: var(--muted);
+  margin-left: 8px;
+}
+.match-source.planning { border-color: var(--info); color: var(--info); }
+.match-source.catalogue { border-color: var(--accent); color: var(--accent); }
+.match-actions { display: flex; gap: 6px; margin-left: 12px; }
+.match-btn {
+  font-family: 'Syne Mono', monospace; font-size: 0.55rem;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 5px 12px; border: 1px solid var(--border);
+  background: none; color: var(--muted); cursor: pointer; transition: all 0.15s;
+}
+.match-btn:hover { border-color: var(--accent); color: var(--accent); }
+.match-btn.tracked { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+
+/* ─── TRACKED RELEASES ─── */
+.tracked-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px; margin-bottom: 24px;
+}
+.tracked-card {
+  background: var(--surface); border: 1px solid var(--border);
+  padding: 14px; transition: border-color 0.2s; position: relative;
+}
+.tracked-card:hover { border-color: #444; }
+.tracked-card .type-badge {
+  position: absolute; top: 10px; right: 10px;
+  font-size: 0.5rem; letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 2px 8px; border: 1px solid var(--border); color: var(--muted);
+}
+.tracked-card .type-badge.album { border-color: var(--accent); color: var(--accent); }
+.tracked-card .type-badge.single { border-color: var(--info); color: var(--info); }
+.tracked-artist {
+  font-family: 'Syne', sans-serif; font-size: 0.82rem; font-weight: 800; color: #fff;
+}
+.tracked-title { font-size: 0.7rem; color: var(--muted); margin-top: 2px; }
+.tracked-stats { display: flex; gap: 16px; margin-top: 10px; }
+.tracked-stat-val {
+  font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 700;
+}
+.tracked-stat-lbl {
+  font-size: 0.5rem; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase;
+}
+.tracked-card .remove-btn {
+  position: absolute; bottom: 10px; right: 10px;
+  font-size: 0.5rem; color: var(--muted-2); cursor: pointer;
+  background: none; border: none; padding: 4px;
+  transition: color 0.15s;
+}
+.tracked-card .remove-btn:hover { color: var(--error); }
+
+/* ─── EMPTY STATE ─── */
+.empty-state {
+  text-align: center; padding: 48px; color: var(--muted);
+}
+.empty-state .icon { font-size: 2rem; margin-bottom: 12px; opacity: 0.3; }
+.empty-state p { font-size: 0.72rem; margin-bottom: 16px; }
+
+/* ─── TOAST ─── */
+.toast {
+  position: fixed; bottom: 24px; right: 24px;
+  background: var(--surface); border: 1px solid var(--border);
+  padding: 12px 20px; font-size: 0.7rem; z-index: 100;
+  transform: translateY(100px); opacity: 0; transition: all 0.3s;
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast.success { border-color: var(--success); }
+.toast.error { border-color: var(--error); }
+
+/* ─── MODAL ─── */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+  z-index: 50; display: none; align-items: center; justify-content: center;
+}
+.modal-overlay.show { display: flex; }
+.modal {
+  background: var(--surface); border: 1px solid var(--border);
+  padding: 28px; max-width: 500px; width: 90%;
+}
+.modal h2 {
+  font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 800;
+  margin-bottom: 16px;
+}
+.modal .form-group { margin-bottom: 14px; }
+.modal label {
+  display: block; font-size: 0.6rem; color: var(--muted);
+  letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px;
+}
+.modal input, .modal select {
+  width: 100%; font-family: 'Syne Mono', monospace; font-size: 0.75rem;
+  background: var(--bg); border: 1px solid var(--border); color: var(--text);
+  padding: 8px 12px;
+}
+.modal .btn-row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+
+/* ─── FOOTER ─── */
+footer {
+  padding: 20px 40px; border-top: 1px solid var(--border);
+  font-size: 0.55rem; color: var(--muted-2); text-align: center;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  position: relative; z-index: 1;
+}
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 768px) {
+  nav { padding: 14px 16px; }
+  .container { padding: 20px 16px 40px; }
+  .upload-section { grid-template-columns: 1fr; }
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+  .tracked-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo">
+    <img src="blzante_spiral.png" alt="" class="nav-logo-img">
+    BLZante
+  </a>
+  <div class="nav-right">
+    <a href="index.html" class="nav-back">Toolbox</a>
+    <span class="nav-sep">/</span>
+    <span>Suivi Ventes</span>
+    <button id="logoutBtn" onclick="firebase.auth().signOut()">Déconnexion</button>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="header-row">
+    <h1>Suivi Ventes</h1>
+    <div class="header-actions">
+      <button class="btn" onclick="openAddManual()">+ Ajouter manuellement</button>
+      <button class="btn" onclick="exportXLSX()">↓ Exporter .xlsx</button>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" data-tab="dashboard" onclick="switchTab('dashboard')">Dashboard</button>
+    <button class="tab" data-tab="import" onclick="switchTab('import')">Import SNEP</button>
+    <button class="tab" data-tab="releases" onclick="switchTab('releases')">Sorties suivies</button>
+    <button class="tab" data-tab="history" onclick="switchTab('history')">Historique</button>
+  </div>
+
+  <!-- ═══════════════ DASHBOARD ═══════════════ -->
+  <div class="tab-panel active" id="panel-dashboard">
+    <div class="week-bar">
+      <label>Semaine</label>
+      <select id="weekSelect" onchange="renderDashboard()"></select>
+      <label style="margin-left:16px">Type</label>
+      <select id="typeFilter" onchange="renderDashboard()">
+        <option value="all">Tous</option>
+        <option value="album">Albums</option>
+        <option value="single">Singles</option>
+      </select>
+    </div>
+
+    <div class="stats-row" id="statsRow">
+      <div class="stat-card"><div class="stat-value" id="statTracked">—</div><div class="stat-label">Sorties suivies</div></div>
+      <div class="stat-card"><div class="stat-value" id="statInTop">—</div><div class="stat-label">Dans le top</div></div>
+      <div class="stat-card"><div class="stat-value" id="statTotalSales">—</div><div class="stat-label">Ventes semaine</div></div>
+      <div class="stat-card"><div class="stat-value" id="statBestRank">—</div><div class="stat-label">Meilleur rang</div></div>
+    </div>
+
+    <div class="chart-section">
+      <div class="chart-header">
+        <div class="chart-title">Évolution des ventes</div>
+        <div class="chart-legend" id="chartLegend"></div>
+      </div>
+      <canvas id="salesChart" height="300"></canvas>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Rang</th><th>Artiste</th><th>Titre</th><th>Type</th>
+            <th>Ventes</th><th>Sem-1</th><th>Évol</th><th>Cumul</th>
+          </tr>
+        </thead>
+        <tbody id="dashboardTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══════════════ IMPORT SNEP ═══════════════ -->
+  <div class="tab-panel" id="panel-import">
+    <div class="upload-section">
+      <div class="upload-box" id="uploadAlbums" onclick="this.querySelector('input').click()">
+        <div class="upload-icon">📀</div>
+        <div class="upload-label">Top 200 Albums</div>
+        <div class="upload-hint">Fichier .xlsx SNEP</div>
+        <div class="upload-file-info" id="albumFileInfo"></div>
+        <input type="file" accept=".xlsx,.xls" onchange="handleFile(this, 'albums')">
+      </div>
+      <div class="upload-box" id="uploadSingles" onclick="this.querySelector('input').click()">
+        <div class="upload-icon">🎵</div>
+        <div class="upload-label">Top 200 Singles</div>
+        <div class="upload-hint">Fichier .xlsx SNEP</div>
+        <div class="upload-file-info" id="singleFileInfo"></div>
+        <input type="file" accept=".xlsx,.xls" onchange="handleFile(this, 'singles')">
+      </div>
+    </div>
+
+    <div class="week-bar" id="importWeekBar" style="display:none">
+      <label>Semaine détectée</label>
+      <span id="importWeekLabel" style="font-family:'Syne',sans-serif;font-weight:700;color:#fff;font-size:0.85rem"></span>
+      <div style="flex:1"></div>
+      <button class="btn btn-accent" onclick="processImport()">Importer & matcher</button>
+    </div>
+
+    <!-- Matches -->
+    <div class="matches-section" id="matchesSection" style="display:none">
+      <div class="matches-title">
+        Correspondances trouvées
+        <span class="match-badge" id="matchCount">0</span>
+      </div>
+      <div id="matchTabs" style="display:flex;gap:0;margin-bottom:12px;border-bottom:1px solid var(--border)">
+        <button class="tab active" data-mtab="new" onclick="switchMatchTab('new')" style="font-size:0.62rem;padding:6px 14px">Nouvelles</button>
+        <button class="tab" data-mtab="tracked" onclick="switchMatchTab('tracked')" style="font-size:0.62rem;padding:6px 14px">Déjà suivies</button>
+        <button class="tab" data-mtab="all" onclick="switchMatchTab('all')" style="font-size:0.62rem;padding:6px 14px">Tout le SNEP</button>
+      </div>
+      <div class="match-list" id="matchList"></div>
+    </div>
+
+    <!-- Import Results -->
+    <div id="importResults" style="display:none">
+      <div class="matches-section">
+        <div class="matches-title">Résultats d'import</div>
+        <div id="importSummary"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ TRACKED RELEASES ═══════════════ -->
+  <div class="tab-panel" id="panel-releases">
+    <div class="week-bar">
+      <label>Filtrer</label>
+      <select id="relTypeFilter" onchange="renderTracked()">
+        <option value="all">Tous</option>
+        <option value="album">Albums</option>
+        <option value="single">Singles</option>
+      </select>
+      <input type="text" id="relSearch" placeholder="Rechercher..." oninput="renderTracked()" style="flex:1;max-width:300px">
+    </div>
+    <div class="tracked-grid" id="trackedGrid"></div>
+    <div class="empty-state" id="trackedEmpty" style="display:none">
+      <div class="icon">📊</div>
+      <p>Aucune sortie suivie. Importez un fichier SNEP pour commencer.</p>
+    </div>
+  </div>
+
+  <!-- ═══════════════ HISTORY ═══════════════ -->
+  <div class="tab-panel" id="panel-history">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Semaine</th><th>Date import</th><th>Albums</th><th>Singles</th>
+            <th>Releases matchées</th>
+          </tr>
+        </thead>
+        <tbody id="historyTable"></tbody>
+      </table>
+    </div>
+    <div class="empty-state" id="historyEmpty" style="display:none">
+      <div class="icon">📅</div>
+      <p>Aucun historique d'import.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Add Manual Modal -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal">
+    <h2>Ajouter une sortie à suivre</h2>
+    <div class="form-group">
+      <label>Artiste</label>
+      <input type="text" id="manualArtist">
+    </div>
+    <div class="form-group">
+      <label>Titre</label>
+      <input type="text" id="manualTitle">
+    </div>
+    <div class="form-group">
+      <label>Type</label>
+      <select id="manualType">
+        <option value="album">Album</option>
+        <option value="single">Single</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Lien Planning (optionnel)</label>
+      <input type="text" id="manualPlanningId" placeholder="ID event planning">
+    </div>
+    <div class="btn-row">
+      <button class="btn" onclick="closeModal('addModal')">Annuler</button>
+      <button class="btn btn-accent" onclick="saveManualRelease()">Ajouter</button>
+    </div>
+  </div>
+</div>
+
+<footer>BLZante Toolbox — Suivi Ventes</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   FIREBASE CONFIG & AUTH
+   ═══════════════════════════════════════════════════════════════ */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyBuwwcRdlxLf7-ZdmUAi0ajB5uL3y-m800",
+  authDomain: "blzante-toolbox.firebaseapp.com",
+  databaseURL: "https://blzante-toolbox-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "blzante-toolbox",
+  storageBucket: "blzante-toolbox.firebasestorage.app",
+  messagingSenderId: "599088931653",
+  appId: "1:599088931653:web:34f936e8302e894afb942c"
+};
+if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+
+function _waitAuth() {
+  return new Promise((res, rej) => {
+    firebase.auth().onAuthStateChanged(u => {
+      if (!u) { window.location.href = 'login.html'; rej(); }
+      else { document.body.style.visibility = 'visible'; window._fbToken = null; u.getIdToken().then(t => { window._fbToken = t; }); res(u); }
+    });
+  });
+}
+
+async function dbFetch(path, opts = {}) {
+  if (!window._fbToken) {
+    const u = firebase.auth().currentUser;
+    if (u) window._fbToken = await u.getIdToken();
+  }
+  const url = FIREBASE_CONFIG.databaseURL + path + (path.includes('?') ? '&' : '?') + 'auth=' + window._fbToken;
+  const r = await fetch(url, {
+    ...opts,
+    headers: { 'Content-Type': 'application/json', ...(opts.headers || {}) }
+  });
+  if (!r.ok) throw new Error('DB error ' + r.status);
+  return r.json();
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   STATE
+   ═══════════════════════════════════════════════════════════════ */
+let STATE = {
+  tracked: {},       // {id: {artist, title, type, planningId, oeuvreRef, addedAt}}
+  sales: {},         // {weekKey: {releaseId: {rank, sales, salesPrev, evol, type}}}
+  weeks: [],         // sorted week keys ['2638', '2639', ...]
+  imports: {},       // {weekKey: {date, albumsCount, singlesCount}}
+  // Loaded from Firebase
+  releases: null,    // planning releases
+  catalogue: null,   // editions index
+};
+
+// Parsed SNEP data (transient, for current import)
+let PARSED = { albums: null, singles: null, week: null };
+
+/* ═══════════════════════════════════════════════════════════════
+   NORMALIZATION (matches release_create.html / catalogues.html)
+   ═══════════════════════════════════════════════════════════════ */
+function normT(s) {
+  if (!s) return '';
+  return s.normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .toUpperCase().replace(/[^A-Z0-9]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SNEP PARSING
+   ═══════════════════════════════════════════════════════════════ */
+function parseSNEP(arrayBuffer, type) {
+  const wb = XLSX.read(arrayBuffer, { type: 'array' });
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const range = XLSX.utils.decode_range(ws['!ref']);
+
+  // Detect week from row 3 or 5 — look for "S XX 20XX"
+  let weekKey = null;
+  for (let r = 0; r < 6; r++) {
+    for (let c = 0; c < 10; c++) {
+      const cell = ws[XLSX.utils.encode_cell({r, c})];
+      if (cell && cell.v) {
+        const m = String(cell.v).match(/S\s*(\d{1,2})\s+(\d{4})/);
+        if (m) {
+          weekKey = m[2].slice(2) + m[1].padStart(2, '0');
+          break;
+        }
+      }
+    }
+    if (weekKey) break;
+  }
+
+  // Find header row (row with "Rang" in col A)
+  let headerRow = -1;
+  for (let r = 0; r <= 10; r++) {
+    const cell = ws[XLSX.utils.encode_cell({r, c: 0})];
+    if (cell && normT(String(cell.v)).includes('RANG')) {
+      headerRow = r;
+      break;
+    }
+  }
+  if (headerRow < 0) { toast('Format non reconnu', 'error'); return null; }
+
+  // Read headers
+  const headers = [];
+  for (let c = 0; c <= range.e.c; c++) {
+    const cell = ws[XLSX.utils.encode_cell({r: headerRow, c})];
+    headers.push(cell ? String(cell.v).trim() : '');
+  }
+
+  // Parse data rows
+  const entries = [];
+  for (let r = headerRow + 1; r <= range.e.r; r++) {
+    const row = {};
+    for (let c = 0; c <= range.e.c; c++) {
+      const cell = ws[XLSX.utils.encode_cell({r, c})];
+      row[headers[c]] = cell ? cell.v : null;
+    }
+    if (row['Rang'] == null || row['Rang'] === '') break;
+    entries.push({
+      rank: parseInt(row['Rang']) || 999,
+      rankPrev: row['Rang -1'],
+      artist: String(row['Interprète'] || '').trim(),
+      title: String(row['Titre'] || '').trim(),
+      label: String(row['Label'] || '').trim(),
+      editor: String(row['Editeur'] || '').trim(),
+      genre: String(row['Genre'] || '').trim(),
+      sales: type === 'albums'
+        ? (parseInt(row['Ventes']) || 0)
+        : (parseInt(row['Nb écoutes']) || 0),
+      salesPrev: type === 'albums'
+        ? (parseInt(row['Ventes semaine-1']) || 0)
+        : null,
+      salesPhysical: parseInt(row['Ventes Physique']) || 0,
+      salesDownload: parseInt(row['Ventes Download']) || 0,
+      type: type === 'albums' ? 'album' : 'single',
+      _norm: normT(String(row['Interprète'] || '') + ' ' + String(row['Titre'] || ''))
+    });
+  }
+
+  return { weekKey, entries, type };
+}
+
+function handleFile(input, type) {
+  const file = input.files[0];
+  if (!file) return;
+  const box = input.closest('.upload-box');
+  const info = box.querySelector('.upload-file-info');
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    const parsed = parseSNEP(e.target.result, type);
+    if (!parsed) return;
+    PARSED[type] = parsed;
+    if (!PARSED.week && parsed.weekKey) PARSED.week = parsed.weekKey;
+
+    box.classList.add('has-file');
+    info.textContent = file.name + ' — ' + parsed.entries.length + ' entrées';
+
+    // Show week bar
+    if (PARSED.week) {
+      document.getElementById('importWeekBar').style.display = '';
+      const w = PARSED.week;
+      document.getElementById('importWeekLabel').textContent = 'S' + w.slice(2) + ' 20' + w.slice(0, 2);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// Drag & drop
+document.querySelectorAll('.upload-box').forEach(box => {
+  box.addEventListener('dragover', e => { e.preventDefault(); box.classList.add('drag-over'); });
+  box.addEventListener('dragleave', () => box.classList.remove('drag-over'));
+  box.addEventListener('drop', e => {
+    e.preventDefault(); box.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (!file) return;
+    const input = box.querySelector('input');
+    const dt = new DataTransfer(); dt.items.add(file); input.files = dt.files;
+    const type = box.id === 'uploadAlbums' ? 'albums' : 'singles';
+    handleFile(input, type);
+  });
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   MATCHING ENGINE
+   ═══════════════════════════════════════════════════════════════ */
+async function loadFirebaseData() {
+  if (!STATE.releases) {
+    try { STATE.releases = await dbFetch('/releases.json') || {}; }
+    catch(e) { STATE.releases = {}; console.warn('Could not load releases:', e); }
+  }
+  // Load catalogue index (all societies)
+  if (!STATE.catalogue) {
+    STATE.catalogue = {};
+    for (const soc of ['blzante', 'blz-publishing', 'rossinante']) {
+      try {
+        const idx = await dbFetch('/editions/index/' + soc + '.json');
+        if (idx) STATE.catalogue[soc] = idx;
+      } catch(e) { /* ignore */ }
+    }
+  }
+}
+
+function matchEntry(entry) {
+  const matches = [];
+  const nEntry = entry._norm;
+  const nArtist = normT(entry.artist);
+  const nTitle = normT(entry.title);
+
+  // 1) Match against planning releases
+  if (STATE.releases) {
+    for (const [id, rel] of Object.entries(STATE.releases)) {
+      if (!rel || !rel.artist) continue;
+      const rType = (rel.type || '').toLowerCase();
+      // Only match albums to albums, singles to singles (or EPs)
+      if (entry.type === 'album' && rType !== 'album' && rType !== 'ep') continue;
+      if (entry.type === 'single' && rType !== 'single') continue;
+
+      const nRelArtist = normT(rel.artist);
+      const nRelProject = normT(rel.project || '');
+      const nRelTrack = normT(rel.track || '');
+
+      // Artist match (fuzzy — one must contain the other)
+      const artistMatch = nArtist.includes(nRelArtist) || nRelArtist.includes(nArtist);
+      if (!artistMatch) continue;
+
+      // Title match
+      let titleMatch = false;
+      if (entry.type === 'album' && nRelProject) {
+        titleMatch = nTitle.includes(nRelProject) || nRelProject.includes(nTitle);
+      }
+      if (entry.type === 'single' && nRelTrack) {
+        titleMatch = nTitle.includes(nRelTrack) || nRelTrack.includes(nTitle);
+      }
+      if (!titleMatch) continue;
+
+      matches.push({
+        source: 'planning', releaseId: id, planningData: rel,
+        artist: rel.artist, title: rel.project || rel.track || '',
+        type: rType, date: rel.date
+      });
+    }
+  }
+
+  // 2) Match against catalogue oeuvres (for singles especially)
+  for (const [soc, idx] of Object.entries(STATE.catalogue)) {
+    if (!idx) continue;
+    for (const [code, oeuvre] of Object.entries(idx)) {
+      if (!oeuvre) continue;
+      const nOA = normT(oeuvre.a || ''); // artist
+      const nOT = normT(oeuvre.tt || oeuvre.t || ''); // commercial title or SACEM title
+
+      if (!nOA || !nOT) continue;
+      const artistMatch = nArtist.includes(nOA) || nOA.includes(nArtist);
+      if (!artistMatch) continue;
+      const titleMatch = nTitle.includes(nOT) || nOT.includes(nTitle);
+      if (!titleMatch) continue;
+
+      // Avoid duplicating if already matched via planning
+      const alreadyMatched = matches.some(m =>
+        m.source === 'planning' && m.planningData && m.planningData.oeuvres &&
+        Object.values(m.planningData.oeuvres).some(o =>
+          (Array.isArray(o) ? o : [o]).some(oo => oo && oo.code === code)
+        )
+      );
+      if (alreadyMatched) continue;
+
+      matches.push({
+        source: 'catalogue', soc, code, oeuvreData: oeuvre,
+        artist: oeuvre.a, title: oeuvre.tt || oeuvre.t,
+        type: entry.type,
+        releaseId: oeuvre.r || (oeuvre.rs && oeuvre.rs[0]) || null
+      });
+    }
+  }
+
+  return matches;
+}
+
+async function processImport() {
+  if (!PARSED.albums && !PARSED.singles) {
+    toast('Uploadez au moins un fichier SNEP', 'error');
+    return;
+  }
+  toast('Chargement des données Firebase...', 'info');
+  await loadFirebaseData();
+
+  const weekKey = PARSED.week;
+  const allEntries = [];
+  if (PARSED.albums) allEntries.push(...PARSED.albums.entries);
+  if (PARSED.singles) allEntries.push(...PARSED.singles.entries);
+
+  // Match each entry
+  let newMatches = 0;
+  const matchResults = [];
+  for (const entry of allEntries) {
+    const matches = matchEntry(entry);
+    const isTracked = Object.values(STATE.tracked).some(t => {
+      const nA = normT(t.artist);
+      const nT = normT(t.title);
+      return (normT(entry.artist).includes(nA) || nA.includes(normT(entry.artist))) &&
+             (normT(entry.title).includes(nT) || nT.includes(normT(entry.title)));
+    });
+
+    matchResults.push({ entry, matches, isTracked });
+    if (matches.length > 0 && !isTracked) newMatches++;
+  }
+
+  // Store sales data for this week for tracked releases
+  const weekSales = {};
+  for (const { entry } of matchResults) {
+    // Check if this entry corresponds to a tracked release
+    for (const [tid, tracked] of Object.entries(STATE.tracked)) {
+      const nA = normT(tracked.artist);
+      const nT = normT(tracked.title);
+      const eA = normT(entry.artist);
+      const eT = normT(entry.title);
+      if ((eA.includes(nA) || nA.includes(eA)) && (eT.includes(nT) || nT.includes(eT))) {
+        weekSales[tid] = {
+          rank: entry.rank, sales: entry.sales, salesPrev: entry.salesPrev,
+          type: entry.type
+        };
+      }
+    }
+  }
+
+  // Save to Firebase
+  if (Object.keys(weekSales).length > 0) {
+    STATE.sales[weekKey] = { ...(STATE.sales[weekKey] || {}), ...weekSales };
+    await dbFetch('/suivi-ventes/sales/' + weekKey + '.json', {
+      method: 'PATCH', body: JSON.stringify(weekSales)
+    });
+  }
+
+  // Save import record
+  const importRec = {
+    date: new Date().toISOString(),
+    albumsCount: PARSED.albums ? PARSED.albums.entries.length : 0,
+    singlesCount: PARSED.singles ? PARSED.singles.entries.length : 0
+  };
+  STATE.imports[weekKey] = importRec;
+  await dbFetch('/suivi-ventes/imports/' + weekKey + '.json', { method: 'PUT', body: JSON.stringify(importRec) });
+
+  // Update weeks list
+  if (!STATE.weeks.includes(weekKey)) {
+    STATE.weeks.push(weekKey);
+    STATE.weeks.sort();
+  }
+
+  // Render matches
+  renderMatches(matchResults, weekKey);
+  document.getElementById('matchesSection').style.display = '';
+  document.getElementById('matchCount').textContent = newMatches + ' nouvelles';
+
+  toast('Import S' + weekKey.slice(2) + ' terminé — ' + newMatches + ' nouvelle(s) correspondance(s)', 'success');
+  renderDashboard();
+  renderHistory();
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RENDER MATCHES
+   ═══════════════════════════════════════════════════════════════ */
+let ALL_MATCH_RESULTS = [];
+function renderMatches(matchResults, weekKey) {
+  ALL_MATCH_RESULTS = matchResults;
+  switchMatchTab('new');
+}
+
+function switchMatchTab(tab) {
+  document.querySelectorAll('#matchTabs .tab').forEach(t => t.classList.toggle('active', t.dataset.mtab === tab));
+  const list = document.getElementById('matchList');
+  list.innerHTML = '';
+
+  let items = [];
+  if (tab === 'new') {
+    items = ALL_MATCH_RESULTS.filter(r => r.matches.length > 0 && !r.isTracked);
+  } else if (tab === 'tracked') {
+    items = ALL_MATCH_RESULTS.filter(r => r.isTracked);
+  } else {
+    items = ALL_MATCH_RESULTS;
+  }
+
+  if (items.length === 0) {
+    list.innerHTML = '<div style="padding:16px;color:var(--muted);font-size:0.7rem;text-align:center">' +
+      (tab === 'new' ? 'Aucune nouvelle correspondance' : tab === 'tracked' ? 'Aucune sortie déjà suivie trouvée' : 'Aucune entrée') + '</div>';
+    return;
+  }
+
+  for (const item of items) {
+    const e = item.entry;
+    const div = document.createElement('div');
+    div.className = 'match-item';
+
+    let sourceTags = '';
+    for (const m of item.matches) {
+      sourceTags += `<span class="match-source ${m.source}">${m.source === 'planning' ? '📅 Planning' : '📚 Catalogue'}</span>`;
+    }
+
+    const isTracked = item.isTracked || Object.values(STATE.tracked).some(t =>
+      normT(t.artist) === normT(e.artist) && normT(t.title) === normT(e.title)
+    );
+
+    div.innerHTML = `
+      <div class="match-info">
+        <div class="match-artist">${esc(e.artist)}</div>
+        <div class="match-title">${esc(e.title)}</div>
+        <div class="match-meta">Rang ${e.rank} · ${fmt(e.sales)} ${e.type === 'album' ? 'ventes' : 'écoutes'} · ${esc(e.label)} ${sourceTags}</div>
+      </div>
+      <div class="match-actions">
+        <button class="match-btn ${isTracked ? 'tracked' : ''}" onclick="toggleTrack(this, ${JSON.stringify(e).replace(/"/g, '&quot;')}, ${JSON.stringify(item.matches[0] || null).replace(/"/g, '&quot;')})">
+          ${isTracked ? '✓ Suivi' : '+ Suivre'}
+        </button>
+      </div>
+    `;
+    list.appendChild(div);
+  }
+}
+
+async function toggleTrack(btn, entry, bestMatch) {
+  const nA = normT(entry.artist);
+  const nT = normT(entry.title);
+
+  // Check if already tracked
+  const existingId = Object.entries(STATE.tracked).find(([, t]) =>
+    normT(t.artist) === nA && normT(t.title) === nT
+  );
+
+  if (existingId) {
+    // Untrack
+    delete STATE.tracked[existingId[0]];
+    await dbFetch('/suivi-ventes/tracked/' + existingId[0] + '.json', { method: 'DELETE' });
+    btn.classList.remove('tracked');
+    btn.textContent = '+ Suivre';
+    toast(entry.artist + ' retiré du suivi', 'info');
+  } else {
+    // Track
+    const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    const data = {
+      artist: entry.artist, title: entry.title, type: entry.type,
+      label: entry.label,
+      planningId: bestMatch && bestMatch.source === 'planning' ? bestMatch.releaseId : null,
+      oeuvreRef: bestMatch && bestMatch.source === 'catalogue' ? { soc: bestMatch.soc, code: bestMatch.code } : null,
+      addedAt: new Date().toISOString()
+    };
+    STATE.tracked[id] = data;
+    await dbFetch('/suivi-ventes/tracked/' + id + '.json', { method: 'PUT', body: JSON.stringify(data) });
+    btn.classList.add('tracked');
+    btn.textContent = '✓ Suivi';
+    toast(entry.artist + ' — ' + entry.title + ' ajouté au suivi', 'success');
+  }
+  renderTracked();
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DASHBOARD
+   ═══════════════════════════════════════════════════════════════ */
+function renderDashboard() {
+  const weekSel = document.getElementById('weekSelect');
+  const typeFilter = document.getElementById('typeFilter').value;
+
+  // Populate week selector
+  if (weekSel.options.length !== STATE.weeks.length) {
+    weekSel.innerHTML = '';
+    for (const w of [...STATE.weeks].reverse()) {
+      const opt = document.createElement('option');
+      opt.value = w;
+      opt.textContent = 'S' + w.slice(2) + ' 20' + w.slice(0, 2);
+      weekSel.appendChild(opt);
+    }
+  }
+  const selectedWeek = weekSel.value || STATE.weeks[STATE.weeks.length - 1];
+  if (!selectedWeek) {
+    document.getElementById('dashboardTable').innerHTML =
+      '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--muted)">Aucune donnée. Importez un fichier SNEP.</td></tr>';
+    return;
+  }
+
+  const weekData = STATE.sales[selectedWeek] || {};
+
+  // Filter tracked releases
+  let tracked = Object.entries(STATE.tracked);
+  if (typeFilter !== 'all') tracked = tracked.filter(([, t]) => t.type === typeFilter);
+
+  // Build table rows
+  const rows = [];
+  let totalSales = 0, inTop = 0, bestRank = 999;
+  for (const [tid, t] of tracked) {
+    const s = weekData[tid];
+    if (s) {
+      rows.push({ ...t, ...s, tid, inTop: true });
+      totalSales += s.sales || 0;
+      inTop++;
+      if (s.rank < bestRank) bestRank = s.rank;
+    } else {
+      rows.push({ ...t, rank: null, sales: null, inTop: false, tid });
+    }
+  }
+  rows.sort((a, b) => (a.rank || 999) - (b.rank || 999));
+
+  // Stats
+  document.getElementById('statTracked').textContent = tracked.length;
+  document.getElementById('statInTop').textContent = inTop;
+  document.getElementById('statTotalSales').textContent = totalSales > 0 ? fmt(totalSales) : '—';
+  document.getElementById('statBestRank').textContent = bestRank < 999 ? '#' + bestRank : '—';
+
+  // Table
+  const tbody = document.getElementById('dashboardTable');
+  tbody.innerHTML = '';
+  for (const r of rows) {
+    const tr = document.createElement('tr');
+    const evol = r.salesPrev != null && r.sales != null
+      ? (r.sales > r.salesPrev ? 'evol-up' : r.sales < r.salesPrev ? 'evol-down' : '')
+      : '';
+    const evolText = r.salesPrev != null && r.sales != null
+      ? (r.sales > r.salesPrev ? '↑' : r.sales < r.salesPrev ? '↓' : '=')
+      : '';
+
+    // Compute cumul from all weeks
+    let cumul = 0;
+    for (const w of STATE.weeks) {
+      const ws = STATE.sales[w];
+      if (ws && ws[r.tid]) cumul += ws[r.tid].sales || 0;
+    }
+
+    tr.innerHTML = `
+      <td class="${r.rank ? 'rank' : 'ht'}">${r.rank ? '#' + r.rank : 'Hors top'}</td>
+      <td style="font-family:'Syne',sans-serif;font-weight:700;color:#fff">${esc(r.artist)}</td>
+      <td>${esc(r.title)}</td>
+      <td><span style="font-size:0.55rem;letter-spacing:0.08em;text-transform:uppercase;color:${r.type === 'album' ? 'var(--accent)' : 'var(--info)'}">${r.type}</span></td>
+      <td class="num ${r.inTop ? '' : 'ht'}">${r.sales != null ? fmt(r.sales) : '—'}</td>
+      <td class="num">${r.salesPrev != null ? fmt(r.salesPrev) : '—'}</td>
+      <td class="${evol}">${evolText}</td>
+      <td class="num">${cumul > 0 ? fmt(cumul) : '—'}</td>
+    `;
+    tbody.appendChild(tr);
+  }
+
+  if (rows.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--muted)">Aucune sortie suivie</td></tr>';
+  }
+
+  // Chart
+  renderChart(selectedWeek, typeFilter);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CHART (canvas-based, no external lib)
+   ═══════════════════════════════════════════════════════════════ */
+const CHART_COLORS = [
+  '#e8c547','#60a5fa','#4ade80','#ff6b6b','#c084fc','#fb923c',
+  '#f472b6','#22d3ee','#a3e635','#e879f9','#fbbf24','#34d399'
+];
+
+function renderChart(currentWeek, typeFilter) {
+  const canvas = document.getElementById('salesChart');
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = 300 * dpr;
+  ctx.scale(dpr, dpr);
+  const W = rect.width, H = 300;
+  ctx.clearRect(0, 0, W, H);
+
+  // Get tracked releases filtered
+  let tracked = Object.entries(STATE.tracked);
+  if (typeFilter !== 'all') tracked = tracked.filter(([, t]) => t.type === typeFilter);
+
+  // Only show releases that have at least some data
+  const series = [];
+  for (const [tid, t] of tracked) {
+    const data = [];
+    let hasData = false;
+    for (const w of STATE.weeks) {
+      const ws = STATE.sales[w];
+      const val = ws && ws[tid] ? ws[tid].sales : 0;
+      data.push(val);
+      if (val > 0) hasData = true;
+    }
+    if (hasData) series.push({ id: tid, label: t.artist + ' — ' + t.title, data, visible: true });
+  }
+
+  if (series.length === 0 || STATE.weeks.length < 2) {
+    ctx.fillStyle = '#555';
+    ctx.font = '12px "Syne Mono", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('Pas assez de données pour le graphique', W / 2, H / 2);
+    document.getElementById('chartLegend').innerHTML = '';
+    return;
+  }
+
+  // Chart dimensions
+  const pad = { top: 20, right: 20, bottom: 30, left: 60 };
+  const cW = W - pad.left - pad.right;
+  const cH = H - pad.top - pad.bottom;
+
+  // Scale
+  let maxVal = 0;
+  for (const s of series) if (s.visible) for (const v of s.data) if (v > maxVal) maxVal = v;
+  if (maxVal === 0) maxVal = 100;
+  maxVal = Math.ceil(maxVal * 1.1);
+
+  const xStep = cW / (STATE.weeks.length - 1 || 1);
+
+  // Grid
+  ctx.strokeStyle = '#262626'; ctx.lineWidth = 0.5;
+  const gridSteps = 5;
+  for (let i = 0; i <= gridSteps; i++) {
+    const y = pad.top + (cH / gridSteps) * i;
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke();
+    ctx.fillStyle = '#555'; ctx.font = '9px "Syne Mono", monospace'; ctx.textAlign = 'right';
+    ctx.fillText(fmt(Math.round(maxVal - (maxVal / gridSteps) * i)), pad.left - 6, y + 3);
+  }
+
+  // X labels
+  ctx.fillStyle = '#555'; ctx.font = '9px "Syne Mono", monospace'; ctx.textAlign = 'center';
+  for (let i = 0; i < STATE.weeks.length; i++) {
+    const x = pad.left + i * xStep;
+    ctx.fillText('S' + STATE.weeks[i].slice(2), x, H - 8);
+  }
+
+  // Lines
+  for (let si = 0; si < series.length; si++) {
+    const s = series[si];
+    if (!s.visible) continue;
+    ctx.strokeStyle = CHART_COLORS[si % CHART_COLORS.length];
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let i = 0; i < s.data.length; i++) {
+      const x = pad.left + i * xStep;
+      const y = pad.top + cH - (s.data[i] / maxVal) * cH;
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    // Dots
+    ctx.fillStyle = CHART_COLORS[si % CHART_COLORS.length];
+    for (let i = 0; i < s.data.length; i++) {
+      if (s.data[i] > 0) {
+        const x = pad.left + i * xStep;
+        const y = pad.top + cH - (s.data[i] / maxVal) * cH;
+        ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+  }
+
+  // Legend
+  const legend = document.getElementById('chartLegend');
+  legend.innerHTML = '';
+  for (let si = 0; si < series.length; si++) {
+    const s = series[si];
+    const item = document.createElement('div');
+    item.className = 'legend-item' + (s.visible ? '' : ' hidden');
+    item.innerHTML = `<span class="legend-dot" style="background:${CHART_COLORS[si % CHART_COLORS.length]}"></span>${esc(s.label)}`;
+    item.onclick = () => { s.visible = !s.visible; renderChart(currentWeek, typeFilter); };
+    legend.appendChild(item);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TRACKED RELEASES
+   ═══════════════════════════════════════════════════════════════ */
+function renderTracked() {
+  const typeFilter = document.getElementById('relTypeFilter').value;
+  const search = normT(document.getElementById('relSearch').value);
+  const grid = document.getElementById('trackedGrid');
+  grid.innerHTML = '';
+
+  let entries = Object.entries(STATE.tracked);
+  if (typeFilter !== 'all') entries = entries.filter(([, t]) => t.type === typeFilter);
+  if (search) entries = entries.filter(([, t]) => (normT(t.artist) + ' ' + normT(t.title)).includes(search));
+
+  document.getElementById('trackedEmpty').style.display = entries.length === 0 ? '' : 'none';
+
+  for (const [id, t] of entries) {
+    // Compute cumul & last week rank
+    let cumul = 0, lastRank = null;
+    for (const w of STATE.weeks) {
+      const ws = STATE.sales[w];
+      if (ws && ws[id]) {
+        cumul += ws[id].sales || 0;
+        lastRank = ws[id].rank;
+      }
+    }
+
+    const card = document.createElement('div');
+    card.className = 'tracked-card';
+    card.innerHTML = `
+      <span class="type-badge ${t.type}">${t.type}</span>
+      <div class="tracked-artist">${esc(t.artist)}</div>
+      <div class="tracked-title">${esc(t.title)}</div>
+      <div class="tracked-stats">
+        <div><div class="tracked-stat-val">${cumul > 0 ? fmt(cumul) : '—'}</div><div class="tracked-stat-lbl">Cumul</div></div>
+        <div><div class="tracked-stat-val">${lastRank ? '#' + lastRank : '—'}</div><div class="tracked-stat-lbl">Dernier rang</div></div>
+      </div>
+      ${t.planningId ? '<div style="margin-top:8px;font-size:0.52rem;color:var(--info)">📅 Lié au planning</div>' : ''}
+      ${t.oeuvreRef ? '<div style="margin-top:4px;font-size:0.52rem;color:var(--accent)">📚 Lié au catalogue</div>' : ''}
+      <button class="remove-btn" onclick="removeTracked('${id}')">✕ Retirer</button>
+    `;
+    grid.appendChild(card);
+  }
+}
+
+async function removeTracked(id) {
+  if (!confirm('Retirer cette sortie du suivi ?')) return;
+  delete STATE.tracked[id];
+  await dbFetch('/suivi-ventes/tracked/' + id + '.json', { method: 'DELETE' });
+  renderTracked();
+  toast('Sortie retirée du suivi', 'info');
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   HISTORY
+   ═══════════════════════════════════════════════════════════════ */
+function renderHistory() {
+  const tbody = document.getElementById('historyTable');
+  tbody.innerHTML = '';
+  const empty = document.getElementById('historyEmpty');
+
+  const weeks = Object.entries(STATE.imports).sort((a, b) => b[0].localeCompare(a[0]));
+  empty.style.display = weeks.length === 0 ? '' : 'none';
+
+  for (const [wk, imp] of weeks) {
+    const tr = document.createElement('tr');
+    const d = imp.date ? new Date(imp.date).toLocaleDateString('fr-FR') : '—';
+    const matched = STATE.sales[wk] ? Object.keys(STATE.sales[wk]).length : 0;
+    tr.innerHTML = `
+      <td style="font-family:'Syne',sans-serif;font-weight:700">S${wk.slice(2)} 20${wk.slice(0, 2)}</td>
+      <td>${d}</td>
+      <td class="num">${imp.albumsCount || 0}</td>
+      <td class="num">${imp.singlesCount || 0}</td>
+      <td class="num">${matched}</td>
+    `;
+    tbody.appendChild(tr);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ADD MANUAL
+   ═══════════════════════════════════════════════════════════════ */
+function openAddManual() {
+  document.getElementById('addModal').classList.add('show');
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('show');
+}
+
+async function saveManualRelease() {
+  const artist = document.getElementById('manualArtist').value.trim();
+  const title = document.getElementById('manualTitle').value.trim();
+  const type = document.getElementById('manualType').value;
+  const planningId = document.getElementById('manualPlanningId').value.trim() || null;
+
+  if (!artist || !title) { toast('Artiste et titre requis', 'error'); return; }
+
+  const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  const data = { artist, title, type, planningId, oeuvreRef: null, addedAt: new Date().toISOString() };
+  STATE.tracked[id] = data;
+  await dbFetch('/suivi-ventes/tracked/' + id + '.json', { method: 'PUT', body: JSON.stringify(data) });
+
+  closeModal('addModal');
+  document.getElementById('manualArtist').value = '';
+  document.getElementById('manualTitle').value = '';
+  toast(artist + ' — ' + title + ' ajouté au suivi', 'success');
+  renderTracked();
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   EXPORT XLSX
+   ═══════════════════════════════════════════════════════════════ */
+function exportXLSX() {
+  const wb = XLSX.utils.book_new();
+
+  // Build data array
+  const tracked = Object.entries(STATE.tracked);
+  const headers = ['Semaine', ...tracked.map(([, t]) => t.artist + ' — ' + t.title)];
+  const data = [headers];
+
+  for (const w of STATE.weeks) {
+    const row = ['S' + w.slice(2) + ' 20' + w.slice(0, 2)];
+    for (const [tid] of tracked) {
+      const ws = STATE.sales[w];
+      if (ws && ws[tid]) row.push(ws[tid].sales);
+      else row.push('Hors top');
+    }
+    data.push(row);
+  }
+
+  // Add TOTAL row
+  const totalRow = ['TOTAL'];
+  for (const [tid] of tracked) {
+    let total = 0;
+    for (const w of STATE.weeks) {
+      const ws = STATE.sales[w];
+      if (ws && ws[tid]) total += ws[tid].sales || 0;
+    }
+    totalRow.push(total);
+  }
+  data.push(totalRow);
+
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  XLSX.utils.book_append_sheet(wb, ws, 'Suivi Ventes');
+  XLSX.writeFile(wb, 'suivi_ventes_' + new Date().toISOString().slice(0, 10) + '.xlsx');
+  toast('Export téléchargé', 'success');
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   HELPERS
+   ═══════════════════════════════════════════════════════════════ */
+function esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+function fmt(n) { return n != null ? n.toLocaleString('fr-FR') : '—'; }
+
+function toast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast ' + (type || '') + ' show';
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab[data-tab]').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + tab));
+  if (tab === 'dashboard') renderDashboard();
+  if (tab === 'releases') renderTracked();
+  if (tab === 'history') renderHistory();
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   INIT
+   ═══════════════════════════════════════════════════════════════ */
+async function init() {
+  try { await _waitAuth(); } catch(e) { return; }
+
+  // Load saved data from Firebase
+  try {
+    const [tracked, sales, imports] = await Promise.all([
+      dbFetch('/suivi-ventes/tracked.json'),
+      dbFetch('/suivi-ventes/sales.json'),
+      dbFetch('/suivi-ventes/imports.json')
+    ]);
+    STATE.tracked = tracked || {};
+    STATE.sales = sales || {};
+    STATE.imports = imports || {};
+    STATE.weeks = Object.keys(STATE.sales).sort();
+  } catch(e) {
+    console.warn('Could not load suivi-ventes data:', e);
+  }
+
+  renderDashboard();
+  renderTracked();
+  renderHistory();
+}
+
+init();
+</script>
+</body>
+</html>
