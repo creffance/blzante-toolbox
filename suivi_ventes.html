@@ -615,6 +615,20 @@ function setImportFilter(f){
   renderImportTable();
 }
 
+function updateImportChips(){
+  if(!IMPORT_ENTRIES.length)return;
+  var nMatched=IMPORT_ENTRIES.filter(function(e){return e.matches.length>0;}).length;
+  var nTracked=IMPORT_ENTRIES.filter(function(e){return e.isTracked;}).length;
+  var nAlb=IMPORT_ENTRIES.filter(function(e){return e.type==='album';}).length;
+  var nSgl=IMPORT_ENTRIES.filter(function(e){return e.type==='single';}).length;
+  document.getElementById('importChips').innerHTML=
+    '<button class="chip" data-if="all" aria-pressed="'+(importFilter==='all')+'" onclick="setImportFilter(\'all\')">Tout <span style="color:var(--muted)">'+IMPORT_ENTRIES.length+'</span></button>'+
+    '<button class="chip" data-if="matched" aria-pressed="'+(importFilter==='matched')+'" onclick="setImportFilter(\'matched\')">Correspondances <span style="color:var(--muted)">'+nMatched+'</span></button>'+
+    '<button class="chip" data-if="tracked" aria-pressed="'+(importFilter==='tracked')+'" onclick="setImportFilter(\'tracked\')">Déjà suivies <span style="color:var(--muted)">'+nTracked+'</span></button>'+
+    (nAlb?'<button class="chip" data-if="album" aria-pressed="'+(importFilter==='album')+'" onclick="setImportFilter(\'album\')">Albums <span style="color:var(--muted)">'+nAlb+'</span></button>':'')+
+    (nSgl?'<button class="chip" data-if="single" aria-pressed="'+(importFilter==='single')+'" onclick="setImportFilter(\'single\')">Singles <span style="color:var(--muted)">'+nSgl+'</span></button>':'');
+}
+
 /* ═══════════════════════════════════════════════════
    RENDER IMPORT TABLE
    ═══════════════════════════════════════════════════ */
@@ -623,16 +637,19 @@ function renderImportTable(){
   var tbody=document.getElementById('importTable');
   tbody.innerHTML='';
 
-  var list=IMPORT_ENTRIES.filter(function(e){
-    if(importFilter==='matched'&&e.matches.length===0)return false;
-    if(importFilter==='tracked'&&!e.isTracked)return false;
-    if(importFilter==='album'&&e.type!=='album')return false;
-    if(importFilter==='single'&&e.type!=='single')return false;
-    if(q&&e._norm.indexOf(q)<0&&norm(e.label).indexOf(q)<0)return false;
-    return true;
+  // Build filtered list while keeping original index into IMPORT_ENTRIES
+  var list=[];
+  IMPORT_ENTRIES.forEach(function(e,origIdx){
+    e._origIdx=origIdx;
+    if(importFilter==='matched'&&e.matches.length===0)return;
+    if(importFilter==='tracked'&&!e.isTracked)return;
+    if(importFilter==='album'&&e.type!=='album')return;
+    if(importFilter==='single'&&e.type!=='single')return;
+    if(q&&e._norm.indexOf(q)<0&&norm(e.label||'').indexOf(q)<0)return;
+    list.push(e);
   });
 
-  list.forEach(function(e,idx){
+  list.forEach(function(e){
     var tr=document.createElement('tr');
     if(e.isTracked)tr.className='tracked-row';
 
@@ -647,12 +664,13 @@ function renderImportTable(){
       matchHTML='<span style="color:var(--muted-2);font-size:.6rem">—</span>';
     }
 
-    // Track button
+    // Track button — use _origIdx to reference the correct entry in IMPORT_ENTRIES
     var trackHTML;
     if(e.isTracked){
-      trackHTML='<span class="badge badge-tracked">✓ Suivi</span>';
+      var tid=getTrackedId(e);
+      trackHTML='<button class="btn btn-sm" style="border-color:var(--accent);color:var(--accent);background:var(--accent-dim)" onclick="removeTracked(\''+tid+'\')">✓ Suivi</button>';
     }else{
-      trackHTML='<button class="btn btn-sm" onclick="trackEntry('+idx+')">+ Suivre</button>';
+      trackHTML='<button class="btn btn-sm" onclick="trackEntry('+e._origIdx+')">+ Suivre</button>';
     }
 
     tr.innerHTML=
@@ -687,9 +705,11 @@ async function trackEntry(idx){
   };
   tracked[id]=data;
   try{await dbFetch('/suivi-ventes/tracked/'+id+'.json',{method:'PUT',body:JSON.stringify(data)});}
-  catch(err){console.error('save tracked failed',err);}
+  catch(err){console.error('save tracked failed',err);toast('Erreur sauvegarde Firebase','error');return;}
 
-  e.isTracked=true;
+  // Update isTracked on ALL import entries (in case of name match across entries)
+  IMPORT_ENTRIES.forEach(function(en){en.isTracked=isEntryTracked(en);});
+  updateImportChips();
   renderImportTable();
   toast(e.artist+' — '+e.title+' ajouté au suivi','success');
 }
@@ -701,6 +721,7 @@ async function removeTracked(id){
   // Update isTracked on import entries
   IMPORT_ENTRIES.forEach(function(e){e.isTracked=isEntryTracked(e);});
   renderTracked();
+  updateImportChips();
   renderImportTable();
   toast('Sortie retirée du suivi','info');
 }
@@ -711,6 +732,7 @@ async function removeTracked(id){
 async function saveImport(){
   var weekKey=PARSED.week;
   if(!weekKey){toast('Pas de semaine détectée','error');return;}
+  if(Object.keys(tracked).length===0){toast('Aucune sortie suivie — cliquez "+ Suivre" d\'abord','error');return;}
 
   // For each tracked release, find its sales in current SNEP
   var weekSales={};
@@ -741,9 +763,11 @@ async function saveImport(){
   catch(e){console.error('save import failed',e);}
 
   if(weeks.indexOf(weekKey)<0){weeks.push(weekKey);weeks.sort();}
-  toast('Semaine S'+weekKey.slice(2)+' enregistrée','success');
+  toast('Semaine S'+weekKey.slice(2)+' enregistrée — rendez-vous sur le Dashboard','success');
   renderDashboard();
   renderHistory();
+  // Auto-switch to dashboard after saving
+  switchTab('dashboard');
 }
 
 /* ═══════════════════════════════════════════════════
@@ -765,7 +789,11 @@ function renderDashboard(){
 
   var selWeek=weekSel.value||weeks[weeks.length-1];
   if(!selWeek){
-    document.getElementById('dashboardTable').innerHTML='<tr><td colspan="8" class="empty">Aucune donnée. Importez un fichier SNEP.</td></tr>';
+    document.getElementById('statTracked').textContent=Object.keys(tracked).length||'—';
+    document.getElementById('statInTop').textContent='—';
+    document.getElementById('statTotalSales').textContent='—';
+    document.getElementById('statBestRank').textContent='—';
+    document.getElementById('dashboardTable').innerHTML='<tr><td colspan="8" class="empty">Aucune semaine enregistrée.<br>Importez un fichier SNEP → sélectionnez des sorties à suivre → cliquez "Enregistrer la semaine".</td></tr>';
     return;
   }
   var wd=sales[selWeek]||{};
@@ -1031,6 +1059,10 @@ async function init(){
     weeks=Object.keys(sales).sort();
   }catch(e){console.warn('load suivi-ventes failed',e);}
   renderDashboard();renderTracked();renderHistory();
+  // If no data yet, default to Import tab
+  if(weeks.length===0&&Object.keys(tracked).length===0){
+    switchTab('import');
+  }
 }
 init();
 </script>
