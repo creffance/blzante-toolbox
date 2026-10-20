@@ -558,7 +558,7 @@ document.getElementById('submitBtn').addEventListener('click', async () => {
   const statusMsg = document.getElementById('statusMsg');
   if (!d.name) { statusMsg.textContent = '⚠ Nom requis'; statusMsg.className = 'status error'; return; }
   if (!d.types.length && !d.skills.length) { statusMsg.textContent = '⚠ Sélectionner au moins un type ou compétence'; statusMsg.className = 'status error'; return; }
-  const id = editId || d.name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
+  const id = editId || d.name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
   const btn = document.getElementById('submitBtn');
   btn.disabled = true; btn.textContent = '⏳ Enregistrement...';
   try {
