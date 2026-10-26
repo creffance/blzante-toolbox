@@ -344,7 +344,8 @@ function _waitAuth(){
   return new Promise(function(res,rej){
     firebase.auth().onAuthStateChanged(function(u){
       if(!u){window.location.href='login.html';rej();}
-      else{document.body.style.visibility='visible';window._fbUser=u;u.getIdToken().then(function(t){window._fbToken=t;});res(u);}
+      else{document.body.style.visibility='visible';window._fbUser=u;
+        u.getIdToken().then(function(t){window._fbToken=t;res(u);}).catch(rej);}
     });
   });
 }
@@ -705,7 +706,7 @@ async function trackEntry(idx){
   };
   tracked[id]=data;
   try{await dbFetch('/suivi-ventes/tracked/'+id+'.json',{method:'PUT',body:JSON.stringify(data)});}
-  catch(err){console.error('save tracked failed',err);toast('Erreur sauvegarde Firebase','error');return;}
+  catch(err){console.error('save tracked failed',err);toast('Erreur Firebase: '+err.message+' — vérifier les rules','error');}
 
   // Update isTracked on ALL import entries (in case of name match across entries)
   IMPORT_ENTRIES.forEach(function(en){en.isTracked=isEntryTracked(en);});
