@@ -58,17 +58,31 @@ nav{display:flex;align-items:center;justify-content:space-between;padding:18px 4
 .tab-panel{display:none}
 .tab-panel.active{display:block}
 
-/* UPLOAD */
-.upload-section{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
-.upload-box{border:2px dashed var(--border);background:var(--surface);padding:28px;text-align:center;cursor:pointer;transition:all .2s;position:relative}
-.upload-box:hover,.upload-box.drag-over{border-color:var(--accent);background:var(--accent-dim)}
-.upload-box.has-file{border-color:var(--success);border-style:solid}
-.upload-icon{font-size:1.6rem;margin-bottom:8px;opacity:.5}
-.upload-label{font-family:'Syne',sans-serif;font-size:.78rem;font-weight:700;margin-bottom:4px}
-.upload-hint{font-size:.62rem;color:var(--muted)}
-.upload-file-info{font-size:.62rem;color:var(--success);margin-top:6px;display:none}
-.upload-box.has-file .upload-file-info{display:block}
-.upload-box input[type=file]{display:none}
+/* DROP ZONE */
+.drop{border:2px dashed var(--border);background:var(--surface);padding:36px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:16px}
+.drop:hover,.drop.over{border-color:var(--accent);background:var(--accent-dim)}
+.drop b{font-family:'Syne',sans-serif;font-size:.82rem;font-weight:700;display:block;margin-bottom:6px}
+.drop p{font-size:.62rem;color:var(--muted);margin-top:6px}
+.drop .btn{margin-top:10px}
+
+/* FILE LIST */
+.filelist{margin-bottom:16px}
+.filerow{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;background:var(--surface);border:1px solid var(--border);margin-bottom:4px}
+.filerow b{font-family:'Syne',sans-serif;font-size:.72rem;font-weight:700}
+.filerow .mini{font-size:.58rem;color:var(--muted);margin-top:2px}
+.filerow .rowline{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.tag{font-size:.52rem;font-family:'Syne',sans-serif;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border:1px solid;display:inline-block}
+.tag.ok{border-color:var(--success);color:var(--success)}
+.tag.warn{border-color:var(--error);color:var(--error)}
+.tag.info{border-color:var(--info);color:var(--info)}
+
+/* PROGRESS */
+.prog{height:4px;background:var(--border);margin-bottom:16px;overflow:hidden}
+.prog i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+
+/* IMPORT ACTIONS */
+.import-actions{display:flex;align-items:center;gap:12px;margin-bottom:20px;padding:12px 16px;background:var(--surface);border:1px solid var(--border)}
+.import-actions .left{font-size:.62rem;color:var(--muted);flex:1}
 
 /* WEEK BAR */
 .week-bar{display:flex;align-items:center;gap:12px;margin-bottom:20px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);flex-wrap:wrap}
@@ -164,7 +178,7 @@ td.ht{color:var(--muted);font-style:italic}
 .link-tag{font-size:.52rem;color:var(--info);cursor:pointer;text-decoration:underline;text-decoration-style:dotted}
 
 footer{padding:20px 40px;border-top:1px solid var(--border);font-size:.55rem;color:var(--muted-2);text-align:center;letter-spacing:.1em;text-transform:uppercase;position:relative;z-index:1}
-@media(max-width:768px){nav{padding:14px 16px}.container{padding:20px 16px 40px}.upload-section{grid-template-columns:1fr}.stats-row{grid-template-columns:repeat(2,1fr)}.tracked-grid{grid-template-columns:1fr}}
+@media(max-width:768px){nav{padding:14px 16px}.container{padding:20px 16px 40px}.stats-row{grid-template-columns:repeat(2,1fr)}.tracked-grid{grid-template-columns:1fr}.import-actions{flex-wrap:wrap}.filerow{flex-wrap:wrap}}
 </style>
 </head>
 <body>
@@ -229,29 +243,21 @@ footer{padding:20px 40px;border-top:1px solid var(--border);font-size:.55rem;col
 
   <!-- ═══════ IMPORT SNEP ═══════ -->
   <div class="tab-panel" id="panel-import">
-    <!-- Step 1: Upload -->
-    <div class="upload-section">
-      <div class="upload-box" id="uploadAlbums" onclick="this.querySelector('input').click()">
-        <div class="upload-icon">📀</div>
-        <div class="upload-label">Top 200 Albums</div>
-        <div class="upload-hint">Fichier .xlsx SNEP</div>
-        <div class="upload-file-info" id="albumFileInfo"></div>
-        <input type="file" accept=".xlsx,.xls" onchange="handleFile(this,'albums')">
+    <!-- Step 1: Drop zone + file list -->
+    <div id="importUpload">
+      <div class="drop" id="drop">
+        <b>Déposez vos fichiers SNEP Top 200 ici</b>
+        <p>Albums et/ou Singles — fichiers .xlsx · la semaine et le type sont détectés automatiquement</p>
+        <p><button class="btn" id="pickBtn" onclick="document.getElementById('fileInput').click()">Choisir des fichiers</button></p>
+        <input type="file" id="fileInput" accept=".xlsx,.xls" multiple hidden>
       </div>
-      <div class="upload-box" id="uploadSingles" onclick="this.querySelector('input').click()">
-        <div class="upload-icon">🎵</div>
-        <div class="upload-label">Top 200 Singles</div>
-        <div class="upload-hint">Fichier .xlsx SNEP</div>
-        <div class="upload-file-info" id="singleFileInfo"></div>
-        <input type="file" accept=".xlsx,.xls" onchange="handleFile(this,'singles')">
+      <div class="filelist" id="fileList"></div>
+      <div class="prog" id="importProg" hidden><i></i></div>
+      <div id="importErr"></div>
+      <div class="import-actions" id="importActions" style="display:none">
+        <span class="left" id="importState"></span>
+        <button class="btn btn-accent" id="importGoBtn" onclick="processImport()">Importer</button>
       </div>
-    </div>
-
-    <div id="importWeekBar" class="week-bar" style="display:none">
-      <label>Semaine détectée</label>
-      <span id="importWeekLabel" style="font-family:'Syne',sans-serif;font-weight:700;color:#fff;font-size:.85rem"></span>
-      <div style="flex:1"></div>
-      <button class="btn btn-accent" onclick="processImport()">Importer & chercher les correspondances</button>
     </div>
 
     <!-- Step 2: Results — full SNEP table with match suggestions -->
@@ -262,7 +268,7 @@ footer{padding:20px 40px;border-top:1px solid var(--border);font-size:.55rem;col
           <span class="count" id="importTotalCount">0</span>
           <span class="note" id="importMatchNote"></span>
           <div style="flex:1"></div>
-          <button class="btn btn-sm btn-accent" id="btnSaveImport" onclick="saveImport()">Enregistrer la semaine</button>
+          <button class="btn btn-sm" onclick="resetImport()">Nouvel import</button>
         </div>
         <div class="pbody" style="padding-bottom:0">
           <div class="chip-row" id="importChips"></div>
@@ -280,7 +286,7 @@ footer{padding:20px 40px;border-top:1px solid var(--border);font-size:.55rem;col
     </div>
 
     <div class="empty" id="importEmpty">
-      <p>Uploadez un fichier SNEP Top 200 Albums et/ou Singles pour commencer.</p>
+      <p>Déposez un ou plusieurs fichiers SNEP Top 200 pour commencer.</p>
     </div>
   </div>
 
@@ -368,7 +374,7 @@ var releases=null;  // planning data from firebase
 var catalogueIdx=null; // editions index data
 
 // Current import
-var PARSED={albums:null,singles:null,week:null};
+var importFiles=[];     // [{file,buf,parsed,detect,weekKey,status}]
 var IMPORT_ENTRIES=[];  // merged + enriched with matches
 var importFilter='all'; // 'all','matched','unmatched','tracked'
 
@@ -410,6 +416,12 @@ function parseSNEP(buf,type){
     headers.push(ch?String(ch.v).trim():'');
   }
 
+  // Auto-detect type if not provided: "Nb écoutes" → singles, "Ventes" → albums
+  if(!type){
+    var hasEcoutes=headers.some(function(h){return norm(h).indexOf('NB ECOUTES')>=0;});
+    type=hasEcoutes?'singles':'albums';
+  }
+
   var entries=[];
   for(var rr=hRow+1;rr<=range.e.r;rr++){
     var row={};
@@ -437,53 +449,93 @@ function parseSNEP(buf,type){
   return {weekKey:weekKey,entries:entries,type:type};
 }
 
-function handleFile(input,type){
-  var file=input.files[0];if(!file)return;
-  var box=input.closest('.upload-box');
-  var info=box.querySelector('.upload-file-info');
-  var reader=new FileReader();
-  reader.onload=function(e){
-    var parsed=parseSNEP(e.target.result,type);
-    if(!parsed){toast('Format non reconnu','error');return;}
-    PARSED[type]=parsed;
-    if(!PARSED.week&&parsed.weekKey)PARSED.week=parsed.weekKey;
-    box.classList.add('has-file');
-    info.textContent=file.name+' — '+parsed.entries.length+' entrées';
-    if(PARSED.week){
-      document.getElementById('importWeekBar').style.display='';
-      var w=PARSED.week;
-      document.getElementById('importWeekLabel').textContent='S'+w.slice(2)+' 20'+w.slice(0,2);
-    }
-    document.getElementById('importEmpty').style.display='none';
-  };
-  reader.readAsArrayBuffer(file);
+/* ═══════════════════════════════════════════════════
+   FILE MANAGEMENT (catalogues-style)
+   ═══════════════════════════════════════════════════ */
+function setupDropZone(){
+  var drop=document.getElementById('drop');
+  var fileInput=document.getElementById('fileInput');
+  if(!drop)return;
+  ['dragenter','dragover'].forEach(function(ev){
+    drop.addEventListener(ev,function(e){e.preventDefault();drop.classList.add('over');});
+  });
+  ['dragleave','drop'].forEach(function(ev){
+    drop.addEventListener(ev,function(e){e.preventDefault();drop.classList.remove('over');});
+  });
+  drop.addEventListener('drop',function(e){
+    if(e.dataTransfer&&e.dataTransfer.files)addFiles(e.dataTransfer.files);
+  });
+  fileInput.onchange=function(){addFiles(this.files);this.value='';};
 }
 
-// Drag & drop
-document.querySelectorAll('.upload-box').forEach(function(box){
-  box.addEventListener('dragover',function(e){e.preventDefault();box.classList.add('drag-over');});
-  box.addEventListener('dragleave',function(){box.classList.remove('drag-over');});
-  box.addEventListener('drop',function(e){
-    e.preventDefault();box.classList.remove('drag-over');
-    var file=e.dataTransfer.files[0];if(!file)return;
-    var input=box.querySelector('input');
-    var dt=new DataTransfer();dt.items.add(file);input.files=dt.files;
-    handleFile(input,box.id==='uploadAlbums'?'albums':'singles');
+function addFiles(fl){
+  Array.prototype.forEach.call(fl,function(f){
+    if(!/\.xlsx?$/i.test(f.name)){toast('Ignoré (pas un .xlsx) : '+f.name,'error');return;}
+    var x={file:f,parsed:null,detect:null,weekKey:null,status:'reading'};
+    importFiles.push(x);
+    var fr=new FileReader();
+    fr.onload=function(){
+      try{
+        var p=parseSNEP(new Uint8Array(fr.result));
+        if(!p){x.status='error';x.detect='format non reconnu';drawFileList();return;}
+        x.parsed=p;x.detect=p.type;x.weekKey=p.weekKey;x.status='ready';
+      }catch(err){x.status='error';x.detect='erreur de lecture';}
+      drawFileList();
+    };
+    fr.onerror=function(){x.status='error';x.detect='erreur de lecture';drawFileList();};
+    fr.readAsArrayBuffer(f);
   });
-});
+  drawFileList();
+}
+
+function drawFileList(){
+  var list=document.getElementById('fileList');
+  list.innerHTML=importFiles.map(function(x,i){
+    var info,tag;
+    if(x.status==='reading'){info='<span style="color:var(--muted)">lecture…</span>';tag='';}
+    else if(x.status==='error'){info='';tag='<span class="tag warn">'+esc(x.detect||'erreur')+'</span>';}
+    else{
+      var typeLbl=x.detect==='albums'?'Albums':'Singles';
+      var weekLbl=x.weekKey?'S'+x.weekKey.slice(2)+' 20'+x.weekKey.slice(0,2):'semaine ?';
+      info='<div class="mini">'+x.parsed.entries.length+' entrées · '+typeLbl+' · '+weekLbl+'</div>';
+      tag='<span class="tag ok">'+typeLbl+'</span><span class="tag info">'+weekLbl+'</span>';
+    }
+    return '<div class="filerow"><div><b>'+esc(x.file.name)+'</b>'+info+'</div>'+
+      '<div class="rowline">'+tag+
+      '<button class="btn btn-sm" data-rm="'+i+'">Retirer</button></div></div>';
+  }).join('');
+  list.querySelectorAll('[data-rm]').forEach(function(b){
+    b.onclick=function(){importFiles.splice(+this.dataset.rm,1);drawFileList();};
+  });
+  // Show/hide actions
+  var ready=importFiles.filter(function(x){return x.status==='ready';});
+  var actions=document.getElementById('importActions');
+  actions.style.display=ready.length?'':'none';
+  var goBtn=document.getElementById('importGoBtn');
+  goBtn.disabled=!ready.length;
+  goBtn.textContent=ready.length?'Importer '+ready.length+' fichier'+(ready.length>1?'s':''):'Importer';
+  document.getElementById('importEmpty').style.display=importFiles.length?'none':'';
+}
+
+function resetImport(){
+  importFiles=[];IMPORT_ENTRIES=[];importFilter='all';
+  document.getElementById('importResults').style.display='none';
+  document.getElementById('importUpload').style.display='';
+  document.getElementById('importEmpty').style.display='';
+  document.getElementById('fileList').innerHTML='';
+  document.getElementById('importActions').style.display='none';
+  document.getElementById('importProg').hidden=true;
+  document.getElementById('importErr').innerHTML='';
+}
 
 /* ═══════════════════════════════════════════════════
    LOAD FIREBASE DATA (releases + catalogue)
    ═══════════════════════════════════════════════════ */
 async function loadFirebaseData(){
-  var status=document.getElementById('importMatchNote');
-  status.textContent='Chargement du planning...';
-
   try{
     if(!releases){releases=await dbFetch('/releases.json')||{};}
   }catch(e){console.warn('releases load failed',e);releases={};}
 
-  status.textContent='Chargement du catalogue...';
   if(!catalogueIdx){
     catalogueIdx={};
     for(var soc of ['blzante','blz-publishing','rossinante']){
@@ -491,7 +543,6 @@ async function loadFirebaseData(){
       catch(e){/* skip */}
     }
   }
-  status.textContent='';
 }
 
 /* ═══════════════════════════════════════════════════
@@ -572,16 +623,32 @@ function getTrackedId(entry){
    PROCESS IMPORT — parse files, match, show table
    ═══════════════════════════════════════════════════ */
 async function processImport(){
-  if(!PARSED.albums&&!PARSED.singles){toast('Uploadez au moins un fichier','error');return;}
+  var ready=importFiles.filter(function(x){return x.status==='ready';});
+  if(!ready.length){toast('Aucun fichier valide','error');return;}
 
+  var goBtn=document.getElementById('importGoBtn');
+  goBtn.disabled=true;goBtn.textContent='Import en cours…';
+  var prog=document.getElementById('importProg');prog.hidden=false;
+  var stateEl=document.getElementById('importState');
+
+  // 1) Load planning + catalogue for matching
+  stateEl.textContent='Chargement du planning et du catalogue…';
   await loadFirebaseData();
 
-  // Merge entries
+  // 2) Merge all entries
   IMPORT_ENTRIES=[];
-  if(PARSED.albums)IMPORT_ENTRIES=IMPORT_ENTRIES.concat(PARSED.albums.entries);
-  if(PARSED.singles)IMPORT_ENTRIES=IMPORT_ENTRIES.concat(PARSED.singles.entries);
+  var albumsCount=0,singlesCount=0;
+  var weekKeys=[];
+  ready.forEach(function(x){
+    IMPORT_ENTRIES=IMPORT_ENTRIES.concat(x.parsed.entries);
+    if(x.detect==='albums')albumsCount+=x.parsed.entries.length;
+    else singlesCount+=x.parsed.entries.length;
+    if(x.weekKey&&weekKeys.indexOf(x.weekKey)<0)weekKeys.push(x.weekKey);
+  });
 
-  // Enrich each entry with matches
+  // 3) Enrich with matches
+  stateEl.textContent='Recherche des correspondances…';
+  prog.querySelector('i').style.width='30%';
   var matchCount=0;
   IMPORT_ENTRIES.forEach(function(e){
     e.matches=findMatches(e);
@@ -589,25 +656,67 @@ async function processImport(){
     if(e.matches.length>0)matchCount++;
   });
 
+  // 4) Auto-save to Firebase: sales data for tracked releases + import history
+  stateEl.textContent='Enregistrement dans Firebase…';
+  prog.querySelector('i').style.width='60%';
+  var saveErrors=[];
+  for(var wi=0;wi<weekKeys.length;wi++){
+    var wk=weekKeys[wi];
+
+    // Save sales data for tracked releases
+    var weekSales={};
+    Object.keys(tracked).forEach(function(tid){
+      var t=tracked[tid];
+      var nA=norm(t.artist),nT=norm(t.title);
+      IMPORT_ENTRIES.forEach(function(e){
+        var eA=norm(e.artist),eT=norm(e.title);
+        if((eA.indexOf(nA)>=0||nA.indexOf(eA)>=0)&&(eT.indexOf(nT)>=0||nT.indexOf(eT)>=0)){
+          weekSales[tid]={rank:e.rank,sales:e.sales,salesPrev:e.salesPrev,type:e.type};
+        }
+      });
+      if(!weekSales[tid])weekSales[tid]={rank:null,sales:null,type:t.type};
+    });
+    if(Object.keys(weekSales).length>0){
+      sales[wk]=weekSales;
+      try{await dbFetch('/suivi-ventes/sales/'+wk+'.json',{method:'PUT',body:JSON.stringify(weekSales)});}
+      catch(e){saveErrors.push('sales S'+wk.slice(2)+': '+e.message);}
+    }
+
+    // Save import history record
+    var rec={date:new Date().toISOString(),albumsCount:albumsCount,singlesCount:singlesCount};
+    imports[wk]=rec;
+    try{await dbFetch('/suivi-ventes/imports/'+wk+'.json',{method:'PUT',body:JSON.stringify(rec)});}
+    catch(e){saveErrors.push('imports S'+wk.slice(2)+': '+e.message);}
+
+    if(weeks.indexOf(wk)<0){weeks.push(wk);weeks.sort();}
+  }
+
+  prog.querySelector('i').style.width='100%';
+  stateEl.textContent='';
+
+  // Handle save errors
+  if(saveErrors.length>0){
+    var droits=saveErrors.some(function(e){return /401|403|[Pp]ermission|denied/.test(e);});
+    document.getElementById('importErr').innerHTML=
+      '<div class="filerow" style="display:block;border-color:var(--error);margin-top:8px">'+
+      '<b>Données importées mais erreur(s) Firebase</b>'+
+      '<div class="mini" style="white-space:normal;margin-top:5px">'+esc(saveErrors.join(' · '))+'</div>'+
+      (droits?'<div class="mini" style="margin-top:6px">Ajoutez <b>"suivi-ventes": {".read":"auth!=null",".write":"auth!=null"}</b> dans les règles de la Realtime Database.</div>':'')+
+      '</div>';
+  }
+
+  // 5) Show results
+  document.getElementById('importUpload').style.display='none';
   document.getElementById('importResults').style.display='';
   document.getElementById('importTotalCount').textContent=IMPORT_ENTRIES.length;
-  document.getElementById('importMatchNote').textContent=matchCount+' correspondance(s) avec le planning / catalogue';
-
-  // Render chips
-  var nMatched=IMPORT_ENTRIES.filter(function(e){return e.matches.length>0;}).length;
-  var nTracked=IMPORT_ENTRIES.filter(function(e){return e.isTracked;}).length;
-  var nAlb=IMPORT_ENTRIES.filter(function(e){return e.type==='album';}).length;
-  var nSgl=IMPORT_ENTRIES.filter(function(e){return e.type==='single';}).length;
-  document.getElementById('importChips').innerHTML=
-    '<button class="chip" data-if="all" aria-pressed="true" onclick="setImportFilter(\'all\')">Tout <span style="color:var(--muted)">'+IMPORT_ENTRIES.length+'</span></button>'+
-    '<button class="chip" data-if="matched" aria-pressed="false" onclick="setImportFilter(\'matched\')">Correspondances <span style="color:var(--muted)">'+nMatched+'</span></button>'+
-    '<button class="chip" data-if="tracked" aria-pressed="false" onclick="setImportFilter(\'tracked\')">Déjà suivies <span style="color:var(--muted)">'+nTracked+'</span></button>'+
-    (nAlb?'<button class="chip" data-if="album" aria-pressed="false" onclick="setImportFilter(\'album\')">Albums <span style="color:var(--muted)">'+nAlb+'</span></button>':'')+
-    (nSgl?'<button class="chip" data-if="single" aria-pressed="false" onclick="setImportFilter(\'single\')">Singles <span style="color:var(--muted)">'+nSgl+'</span></button>':'');
+  document.getElementById('importMatchNote').textContent=matchCount+' correspondance(s) · '+
+    (weekKeys.length?weekKeys.map(function(w){return 'S'+w.slice(2);}).join(', '):'')+(saveErrors.length?'':' · enregistré ✓');
 
   importFilter='all';
+  updateImportChips();
   renderImportTable();
-  toast('Import traité — '+matchCount+' correspondance(s) trouvée(s)','success');
+  renderDashboard();renderHistory();
+  toast('Import terminé — '+matchCount+' correspondance(s) trouvée(s)'+(saveErrors.length?' (erreurs Firebase)':''),'success');
 }
 
 function setImportFilter(f){
@@ -708,7 +817,25 @@ async function trackEntry(idx){
   try{await dbFetch('/suivi-ventes/tracked/'+id+'.json',{method:'PUT',body:JSON.stringify(data)});}
   catch(err){console.error('save tracked failed',err);toast('Erreur Firebase: '+err.message+' — vérifier les rules','error');}
 
-  // Update isTracked on ALL import entries (in case of name match across entries)
+  // Also save this release's sales data for all imported weeks
+  var nA=norm(e.artist),nT=norm(e.title);
+  for(var wi=0;wi<weeks.length;wi++){
+    var wk=weeks[wi];
+    if(!sales[wk])sales[wk]={};
+    if(sales[wk][id])continue;
+    // Find in IMPORT_ENTRIES
+    IMPORT_ENTRIES.forEach(function(ie){
+      var eA=norm(ie.artist),eT=norm(ie.title);
+      if((eA.indexOf(nA)>=0||nA.indexOf(eA)>=0)&&(eT.indexOf(nT)>=0||nT.indexOf(eT)>=0)){
+        sales[wk][id]={rank:ie.rank,sales:ie.sales,salesPrev:ie.salesPrev,type:ie.type};
+      }
+    });
+    if(!sales[wk][id])sales[wk][id]={rank:null,sales:null,type:e.type};
+    try{await dbFetch('/suivi-ventes/sales/'+wk+'/'+id+'.json',{method:'PUT',body:JSON.stringify(sales[wk][id])});}
+    catch(err){/* silently continue */}
+  }
+
+  // Update isTracked on ALL import entries
   IMPORT_ENTRIES.forEach(function(en){en.isTracked=isEntryTracked(en);});
   updateImportChips();
   renderImportTable();
@@ -727,49 +854,7 @@ async function removeTracked(id){
   toast('Sortie retirée du suivi','info');
 }
 
-/* ═══════════════════════════════════════════════════
-   SAVE IMPORT — persist week sales data
-   ═══════════════════════════════════════════════════ */
-async function saveImport(){
-  var weekKey=PARSED.week;
-  if(!weekKey){toast('Pas de semaine détectée','error');return;}
-  if(Object.keys(tracked).length===0){toast('Aucune sortie suivie — cliquez "+ Suivre" d\'abord','error');return;}
-
-  // For each tracked release, find its sales in current SNEP
-  var weekSales={};
-  Object.keys(tracked).forEach(function(tid){
-    var t=tracked[tid];
-    var nA=norm(t.artist),nT=norm(t.title);
-    IMPORT_ENTRIES.forEach(function(e){
-      var eA=norm(e.artist),eT=norm(e.title);
-      if((eA.indexOf(nA)>=0||nA.indexOf(eA)>=0)&&(eT.indexOf(nT)>=0||nT.indexOf(eT)>=0)){
-        weekSales[tid]={rank:e.rank,sales:e.sales,salesPrev:e.salesPrev,type:e.type};
-      }
-    });
-    // If not found in SNEP, mark as "hors top"
-    if(!weekSales[tid])weekSales[tid]={rank:null,sales:null,type:t.type};
-  });
-
-  // Save sales
-  sales[weekKey]=weekSales;
-  try{await dbFetch('/suivi-ventes/sales/'+weekKey+'.json',{method:'PUT',body:JSON.stringify(weekSales)});}
-  catch(e){console.error('save sales failed',e);}
-
-  // Save import record
-  var rec={date:new Date().toISOString(),
-    albumsCount:PARSED.albums?PARSED.albums.entries.length:0,
-    singlesCount:PARSED.singles?PARSED.singles.entries.length:0};
-  imports[weekKey]=rec;
-  try{await dbFetch('/suivi-ventes/imports/'+weekKey+'.json',{method:'PUT',body:JSON.stringify(rec)});}
-  catch(e){console.error('save import failed',e);}
-
-  if(weeks.indexOf(weekKey)<0){weeks.push(weekKey);weeks.sort();}
-  toast('Semaine S'+weekKey.slice(2)+' enregistrée — rendez-vous sur le Dashboard','success');
-  renderDashboard();
-  renderHistory();
-  // Auto-switch to dashboard after saving
-  switchTab('dashboard');
-}
+/* saveImport is now integrated into processImport — auto-saves on import */
 
 /* ═══════════════════════════════════════════════════
    DASHBOARD
@@ -1059,6 +1144,7 @@ async function init(){
     tracked=res[0]||{};sales=res[1]||{};imports=res[2]||{};
     weeks=Object.keys(sales).sort();
   }catch(e){console.warn('load suivi-ventes failed',e);}
+  setupDropZone();
   renderDashboard();renderTracked();renderHistory();
   // If no data yet, default to Import tab
   if(weeks.length===0&&Object.keys(tracked).length===0){
