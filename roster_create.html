@@ -58,6 +58,10 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .remove-btn:hover { border-color: var(--error); color: var(--error); }
 .add-btn-dyn { font-family: 'Syne Mono', monospace; font-size: 0.62rem; padding: 8px 14px; background: transparent; border: 1px dashed var(--border); color: var(--muted); cursor: pointer; transition: all 0.15s; text-align: center; margin-top: 4px; }
 .add-btn-dyn:hover { border-color: #555; color: var(--text); }
+.vis-toggle { display: flex; align-items: center; cursor: pointer; user-select: none; }
+.vis-toggle .vis-cb { display: none; }
+.vis-icon { font-size: 1rem; opacity: 0.7; transition: opacity 0.15s; }
+.vis-toggle:hover .vis-icon { opacity: 1; }
 
 /* Major placement row */
 .major-item { display: grid; grid-template-columns: 1fr 1fr auto auto; gap: 6px; align-items: center; }
@@ -288,16 +292,32 @@ function makeGallery(arr, galId, addBtnId, fileInputId, urlInputId) {
 const renderImages = makeGallery(images, 'imgGallery', 'imgAddBtn', 'imgFileInput', 'imgUrlInput');
 const renderBgImages = makeGallery(bgImages, 'bgGallery', 'bgAddBtn', 'bgFileInput', 'bgUrlInput');
 
-// ─── Placements (simple artist names) ───
-function addPlacement(val) {
+// ─── Placements (artist names + visible toggle) ───
+function addPlacement(val, visible) {
+  if (typeof val === 'object' && val !== null) { visible = val.visible !== false; val = val.name || ''; }
+  if (visible === undefined) visible = true;
   const div = document.createElement('div'); div.className = 'dynamic-item';
-  div.innerHTML = `<input type="text" class="form-input" placeholder="Nom de l'artiste" value="${val||''}" /><button class="remove-btn" onclick="this.parentElement.remove()">×</button>`;
+  div.innerHTML = `<input type="text" class="form-input" placeholder="Nom de l'artiste" value="${val||''}" />` +
+    `<label class="vis-toggle" title="Afficher sur la fiche"><input type="checkbox" class="vis-cb" ${visible ? 'checked' : ''} /><span class="vis-icon">${visible ? '👁' : '👁‍🗨'}</span></label>` +
+    `<button class="remove-btn" onclick="this.parentElement.remove()">×</button>`;
   const input = div.querySelector('input');
+  const cb = div.querySelector('.vis-cb');
+  const icon = div.querySelector('.vis-icon');
+  cb.addEventListener('change', () => { icon.textContent = cb.checked ? '👁' : '👁‍🗨'; });
   input.addEventListener('keydown', e => {
     if (e.key !== 'Enter') return; e.preventDefault();
     if (input.value.trim()) { addPlacement(); }
   });
-  document.getElementById('placementsList').appendChild(div);
+  // Insert alphabetically
+  const list = document.getElementById('placementsList');
+  const items = [...list.querySelectorAll('.dynamic-item')];
+  const newName = (val || '').toLowerCase();
+  let inserted = false;
+  for (const item of items) {
+    const n = (item.querySelector('.form-input').value || '').toLowerCase();
+    if (newName && newName < n) { list.insertBefore(div, item); inserted = true; break; }
+  }
+  if (!inserted) list.appendChild(div);
   if (!val) input.focus();
 }
 document.getElementById('addPlacement').addEventListener('click', () => addPlacement());
@@ -420,7 +440,7 @@ function gatherData() {
   const name = document.getElementById('artistName').value.trim();
   const bio = document.getElementById('artistBio').value.trim();
   const bioEn = document.getElementById('artistBioEn').value.trim();
-  const placements = []; document.querySelectorAll('#placementsList .dynamic-item .form-input').forEach(i => { const v = i.value.trim(); if (v) placements.push(v); });
+  const placements = []; document.querySelectorAll('#placementsList .dynamic-item').forEach(div => { const v = div.querySelector('.form-input').value.trim(); const vis = div.querySelector('.vis-cb'); if (v) placements.push({ name: v, visible: vis ? vis.checked : true }); });
   const majors = []; document.querySelectorAll('#majorList .major-item').forEach(div => {
     const artist = div.querySelector('[data-f=artist]').value.trim();
     const title = div.querySelector('[data-f=title]').value.trim();
@@ -499,7 +519,10 @@ async function loadForEdit(id) {
     renderBgImages();
     toggleDiscoSection();
     const pl = Array.isArray(d.placements) ? d.placements : d.placements ? Object.values(d.placements) : [];
-    pl.forEach(p => addPlacement(typeof p === 'string' ? p : p.name || ''));
+    pl.forEach(p => {
+      if (typeof p === 'string') addPlacement(p, true);
+      else addPlacement(p.name || '', p.visible !== false);
+    });
     const mj = Array.isArray(d.majors) ? d.majors : d.majors ? Object.values(d.majors) : [];
     mj.forEach(m => addMajor(m.artist, m.title, m.artwork, m.link));
     const dc = Array.isArray(d.discography) ? d.discography : d.discography ? Object.values(d.discography) : [];

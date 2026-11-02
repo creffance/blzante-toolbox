@@ -376,6 +376,8 @@ var tracked={};   // {id:{artist,title,type,label,planningId,oeuvreRef,addedAt}}
 var sales={};     // {weekKey:{releaseId:{rank,sales,salesPrev,type}}}
 var imports={};   // {weekKey:{date,albumsCount,singlesCount}}
 var weeks=[];     // sorted week keys
+var rawEntries={};// {weekKey:[{a,t,r,s,sp,tp}]} compact raw SNEP entries
+var rawLoaded=false;
 var releases=null;  // planning data from firebase
 var catalogueIdx=null; // editions index data
 
@@ -652,13 +654,39 @@ async function processImport(){
   stateEl.textContent='Enregistrement dans Firebase…';
   prog.querySelector('i').style.width='60%';
   var saveErrors=[];
+
+  // Build per-week entry lists from import files
+  var entriesByWeek={};
+  ready.forEach(function(x){
+    var wk=x.weekKey;if(!wk)return;
+    if(!entriesByWeek[wk])entriesByWeek[wk]=[];
+    entriesByWeek[wk]=entriesByWeek[wk].concat(x.parsed.entries);
+  });
+
   for(var wi=0;wi<weekKeys.length;wi++){
     var wk=weekKeys[wi];
+    var weekEntries=entriesByWeek[wk]||[];
+
+    // Save compact raw entries for future backfill
+    var compactRaw=weekEntries.map(function(e){
+      return {a:e.artist,t:e.title,r:e.rank,s:e.sales,sp:e.salesPrev,tp:e.type};
+    });
+    // Merge with existing raw (other type may already be there)
+    var existingRaw=rawEntries[wk]||[];
+    var newTypes={};
+    weekEntries.forEach(function(e){newTypes[e.type]=true;});
+    // Keep entries of types NOT in this import, add new ones
+    var mergedRaw=existingRaw.filter(function(r){return !newTypes[r.tp];}).concat(compactRaw);
+    rawEntries[wk]=mergedRaw;
+    try{await dbFetch('/suivi-ventes/raw/'+wk+'.json',{method:'PUT',body:JSON.stringify(mergedRaw)});}
+    catch(e){saveErrors.push('raw S'+wk.slice(2)+': '+e.message);}
+
+    // Save sales for tracked entries — match against THIS week's entries only
     var weekSales={};
     Object.keys(tracked).forEach(function(tid){
       var t=tracked[tid];
       var nA=norm(t.artist),nT=norm(t.title);
-      IMPORT_ENTRIES.forEach(function(e){
+      weekEntries.forEach(function(e){
         var eA=norm(e.artist),eT=norm(e.title);
         if((eA.indexOf(nA)>=0||nA.indexOf(eA)>=0)&&(eT.indexOf(nT)>=0||nT.indexOf(eT)>=0)){
           weekSales[tid]={rank:e.rank,sales:e.sales,salesPrev:e.salesPrev,type:e.type};
@@ -799,18 +827,29 @@ async function trackEntry(idx){
   try{await dbFetch('/suivi-ventes/tracked/'+id+'.json',{method:'PUT',body:JSON.stringify(data)});}
   catch(err){console.error('save tracked failed',err);toast('Erreur Firebase: '+err.message+' — vérifier les rules','error');}
 
+  // Backfill historical data from stored raw entries
   var nA=norm(e.artist),nT=norm(e.title);
+  // Load all raw entries from Firebase if not yet loaded
+  if(!rawLoaded){
+    try{var allRaw=await dbFetch('/suivi-ventes/raw.json');rawEntries=allRaw||{};rawLoaded=true;}
+    catch(err){console.warn('raw load failed',err);}
+  }
   for(var wi=0;wi<weeks.length;wi++){
     var wk=weeks[wi];
     if(!sales[wk])sales[wk]={};
     if(sales[wk][id])continue;
-    IMPORT_ENTRIES.forEach(function(ie){
-      var eA=norm(ie.artist),eT=norm(ie.title);
-      if((eA.indexOf(nA)>=0||nA.indexOf(eA)>=0)&&(eT.indexOf(nT)>=0||nT.indexOf(eT)>=0)){
-        sales[wk][id]={rank:ie.rank,sales:ie.sales,salesPrev:ie.salesPrev,type:ie.type};
+    // Search in raw entries for THIS week, not IMPORT_ENTRIES
+    var weekRaw=rawEntries[wk]||[];
+    var found=false;
+    for(var ri=0;ri<weekRaw.length;ri++){
+      var r=weekRaw[ri];
+      var rA=norm(r.a),rT=norm(r.t);
+      if((rA.indexOf(nA)>=0||nA.indexOf(rA)>=0)&&(rT.indexOf(nT)>=0||nT.indexOf(rT)>=0)){
+        sales[wk][id]={rank:r.r,sales:r.s,salesPrev:r.sp||null,type:r.tp};
+        found=true;break;
       }
-    });
-    if(!sales[wk][id])sales[wk][id]={rank:null,sales:null,type:e.type};
+    }
+    if(!found)sales[wk][id]={rank:null,sales:null,type:e.type};
     try{await dbFetch('/suivi-ventes/sales/'+wk+'/'+id+'.json',{method:'PUT',body:JSON.stringify(sales[wk][id])});}
     catch(err){/* silently continue */}
   }
@@ -1307,6 +1346,19 @@ function uploadMissing(weekKey,type){
         p.weekKey=weekKey;
         // Save to Firebase
         await loadFirebaseData();
+
+        // Store raw entries for future backfill
+        var compactRaw=p.entries.map(function(e){
+          return {a:e.artist,t:e.title,r:e.rank,s:e.sales,sp:e.salesPrev,tp:e.type};
+        });
+        var existingRaw=rawEntries[weekKey]||[];
+        // Keep entries of other type, replace this type's entries
+        var typeSingular=type==='albums'?'album':'single';
+        var mergedRaw=existingRaw.filter(function(r){return r.tp!==typeSingular;}).concat(compactRaw);
+        rawEntries[weekKey]=mergedRaw;
+        try{await dbFetch('/suivi-ventes/raw/'+weekKey+'.json',{method:'PUT',body:JSON.stringify(mergedRaw)});}catch(e){}
+
+        // Update sales for tracked entries
         var weekSales={};
         Object.keys(tracked).forEach(function(tid){
           var t=tracked[tid];
@@ -1412,10 +1464,14 @@ async function init(){
     var res=await Promise.all([
       dbFetch('/suivi-ventes/tracked.json'),
       dbFetch('/suivi-ventes/sales.json'),
-      dbFetch('/suivi-ventes/imports.json')
+      dbFetch('/suivi-ventes/imports.json'),
+      dbFetch('/suivi-ventes/raw.json')
     ]);
     tracked=res[0]||{};sales=res[1]||{};imports=res[2]||{};
-    weeks=Object.keys(sales).sort();
+    rawEntries=res[3]||{};rawLoaded=true;
+    weeks=Object.keys(imports).concat(Object.keys(sales));
+    // Deduplicate and sort
+    weeks=weeks.filter(function(w,i,a){return a.indexOf(w)===i;}).sort();
   }catch(e){console.warn('load suivi-ventes failed',e);}
   setupDropZone();
   renderDashboard();renderTracked();renderHistory();
