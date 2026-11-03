@@ -461,12 +461,15 @@ function rerenderRoster() {
 
       if (placements.length) {
         const sorted = [...placements]
-          .map(p => typeof p === 'string' ? { name: p, visible: true } : { name: p.name || '', visible: p.visible !== false })
+          .map(p => typeof p === 'string' ? { name: p, visible: true, country: 'FR' } : { name: p.name || '', visible: p.visible !== false, country: p.country || 'FR' })
           .filter(p => p.name && p.visible)
           .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
         if (sorted.length) {
           h += `<div class="card-section-title">${t('artistes_places')}</div><div class="card-placements">`;
-          sorted.forEach(p => { h += `<span class="pl-tag">${p.name}</span>`; });
+          sorted.forEach(p => {
+            const flag = p.country ? `<img src="https://flagcdn.com/16x12/${p.country.toLowerCase()}.png" style="width:14px;height:10px;vertical-align:middle;margin-right:3px" />` : '';
+            h += `<span class="pl-tag">${flag}${p.name}</span>`;
+          });
           h += `</div>`;
         }
       }
@@ -642,7 +645,7 @@ function openSpecialExport(a) {
   // --- Artistes placés (individual checkboxes) ---
   mh += `<div class="se-section">Artistes placés</div>`;
   if (placements.length) {
-    const sortedPl = [...placements].map((p, i) => ({ name: typeof p === 'string' ? p : p.name || '', visible: typeof p === 'string' ? true : p.visible !== false, idx: i })).filter(p => p.name && p.visible).sort((a, b) => a.name.localeCompare(b.name));
+    const sortedPl = [...placements].map((p, i) => ({ name: typeof p === 'string' ? p : p.name || '', visible: typeof p === 'string' ? true : p.visible !== false, country: typeof p === 'string' ? 'FR' : p.country || 'FR', idx: i })).filter(p => p.name && p.visible).sort((a, b) => a.name.localeCompare(b.name));
     sortedPl.forEach(p => {
       mh += `<label class="se-check"><input type="checkbox" data-se="placement" value="${p.idx}" checked /> ${p.name}</label>`;
     });
@@ -824,12 +827,15 @@ function buildArtistCardHTML(a, pdfLang, opts) {
   }
   if (placements.length) {
     const sorted = [...placements]
-      .map(p => typeof p === 'string' ? { name: p, visible: true } : { name: p.name || '', visible: p.visible !== false })
+      .map(p => typeof p === 'string' ? { name: p, visible: true, country: 'FR' } : { name: p.name || '', visible: p.visible !== false, country: p.country || 'FR' })
       .filter(p => p.name && p.visible)
       .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
     if (sorted.length) {
       h += `<div class="pdf-section-label">${t('artistes_places', pdfLang).toUpperCase()}</div><div class="pdf-tags">`;
-      sorted.forEach(p => { h += `<span class="pdf-tag">${p.name}</span>`; });
+      sorted.forEach(p => {
+        const flag = p.country ? `<img src="https://flagcdn.com/16x12/${p.country.toLowerCase()}.png" crossorigin="anonymous" style="width:14px;height:10px;vertical-align:middle;margin-right:3px" />` : '';
+        h += `<span class="pdf-tag">${flag}${p.name}</span>`;
+      });
       h += '</div>';
     }
   }

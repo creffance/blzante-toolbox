@@ -63,6 +63,18 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .vis-icon { font-size: 1rem; opacity: 0.7; transition: opacity 0.15s; }
 .vis-toggle:hover .vis-icon { opacity: 1; }
 
+/* Planning placement suggestions */
+.planning-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid var(--border); background: var(--surface); margin-bottom: 4px; }
+.planning-art { width: 36px; height: 36px; object-fit: cover; border: 1px solid var(--border); flex-shrink: 0; }
+.planning-art-empty { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: #1a1a1a; border: 1px solid var(--border); font-size: 0.6rem; color: var(--muted); flex-shrink: 0; }
+.planning-info { flex: 1; min-width: 0; }
+.planning-title { font-size: 0.72rem; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.planning-meta { font-size: 0.55rem; color: var(--muted); }
+.planning-actions { display: flex; gap: 4px; flex-shrink: 0; }
+.planning-add-btn { font-family: 'Syne Mono', monospace; font-size: 0.52rem; padding: 4px 8px; background: transparent; border: 1px solid var(--border); color: var(--muted); cursor: pointer; white-space: nowrap; transition: all 0.15s; }
+.planning-add-btn:hover { border-color: var(--accent); color: var(--accent); }
+.planning-add-btn.added { border-color: var(--success); color: var(--success); pointer-events: none; }
+
 /* Major placement row */
 .major-item { display: grid; grid-template-columns: 1fr 1fr auto auto; gap: 6px; align-items: center; }
 .major-item .form-input { padding: 10px 12px; font-size: 0.78rem; }
@@ -176,6 +188,11 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
     <div class="dynamic-list" id="placementsList"></div>
     <button class="add-btn-dyn" id="addPlacement">+ Ajouter un artiste</button>
   </div>
+
+  <div class="form-section" id="planningSection" style="display:none">Placements du planning
+    <span style="font-size:0.55rem;color:var(--muted);font-weight:400;margin-left:8px">Releases où cet artiste apparaît</span>
+  </div>
+  <div class="dynamic-list" id="planningList" style="display:none"></div>
 
   <div class="form-section">Placements majeurs</div>
   <div class="dynamic-list" id="majorList"></div>
@@ -292,12 +309,16 @@ function makeGallery(arr, galId, addBtnId, fileInputId, urlInputId) {
 const renderImages = makeGallery(images, 'imgGallery', 'imgAddBtn', 'imgFileInput', 'imgUrlInput');
 const renderBgImages = makeGallery(bgImages, 'bgGallery', 'bgAddBtn', 'bgFileInput', 'bgUrlInput');
 
-// ─── Placements (artist names + visible toggle) ───
-function addPlacement(val, visible) {
-  if (typeof val === 'object' && val !== null) { visible = val.visible !== false; val = val.name || ''; }
+// ─── Placements (artist names + visible toggle + country) ───
+const COUNTRY_FLAGS = { FR: '🇫🇷', US: '🇺🇸', GB: '🇬🇧', DE: '🇩🇪', ES: '🇪🇸', IT: '🇮🇹', BR: '🇧🇷', JP: '🇯🇵', KR: '🇰🇷', CA: '🇨🇦', AU: '🇦🇺', MX: '🇲🇽', NL: '🇳🇱', BE: '🇧🇪', CH: '🇨🇭', PT: '🇵🇹', SE: '🇸🇪', NO: '🇳🇴', DK: '🇩🇰', PL: '🇵🇱', TR: '🇹🇷', IN: '🇮🇳', MA: '🇲🇦', DZ: '🇩🇿', TN: '🇹🇳', SN: '🇸🇳', CI: '🇨🇮', CM: '🇨🇲', CD: '🇨🇩', CG: '🇨🇬', GA: '🇬🇦' };
+function addPlacement(val, visible, country) {
+  if (typeof val === 'object' && val !== null) { visible = val.visible !== false; country = val.country || 'FR'; val = val.name || ''; }
   if (visible === undefined) visible = true;
+  if (!country) country = 'FR';
+  const countryOpts = Object.keys(COUNTRY_FLAGS).map(c => `<option value="${c}" ${c === country ? 'selected' : ''}>${COUNTRY_FLAGS[c]} ${c}</option>`).join('');
   const div = document.createElement('div'); div.className = 'dynamic-item';
   div.innerHTML = `<input type="text" class="form-input" placeholder="Nom de l'artiste" value="${val||''}" />` +
+    `<select class="form-select pl-country" style="width:80px;padding:6px 4px;font-size:0.68rem">${countryOpts}</select>` +
     `<label class="vis-toggle" title="Afficher sur la fiche"><input type="checkbox" class="vis-cb" ${visible ? 'checked' : ''} /><span class="vis-icon">${visible ? '👁' : '👁‍🗨'}</span></label>` +
     `<button class="remove-btn" onclick="this.parentElement.remove()">×</button>`;
   const input = div.querySelector('input');
@@ -321,6 +342,66 @@ function addPlacement(val, visible) {
   if (!val) input.focus();
 }
 document.getElementById('addPlacement').addEventListener('click', () => addPlacement());
+
+// ─── Planning placements (auto-fetch from releases) ───
+async function loadPlanningPlacements(artistName) {
+  const section = document.getElementById('planningSection');
+  const list = document.getElementById('planningList');
+  if (!artistName) { section.style.display = 'none'; list.style.display = 'none'; return; }
+  try {
+    const res = await dbFetch('/releases.json');
+    const data = await res.json();
+    if (!data) { section.style.display = 'none'; list.style.display = 'none'; return; }
+    const releases = Object.values(data);
+    const norm = s => (s || '').toLowerCase().trim();
+    const artistNorm = norm(artistName);
+    // Find releases where this artist is the main artist or a featuring
+    const matched = releases.filter(r => {
+      if (norm(r.artist) === artistNorm) return true;
+      const feats = Array.isArray(r.featurings) ? r.featurings : r.featurings ? [r.featurings] : [];
+      if (feats.some(f => norm(f) === artistNorm)) return true;
+      // Also check songwriters
+      const sw = Array.isArray(r.songwriters) ? r.songwriters : r.songwriters ? r.songwriters.split(',') : [];
+      if (sw.some(s => norm(s) === artistNorm)) return true;
+      return false;
+    }).filter(r => ['Single', 'EP', 'Album', 'Synchro'].includes(r.type))
+      .sort((a, b) => (b.dateSortable || '').localeCompare(a.dateSortable || ''));
+
+    if (!matched.length) { section.style.display = 'none'; list.style.display = 'none'; return; }
+    section.style.display = '';
+    list.style.display = '';
+    list.innerHTML = '';
+    matched.forEach(r => {
+      const div = document.createElement('div');
+      div.className = 'planning-item';
+      const artHtml = r.artwork
+        ? `<img class="planning-art" src="${r.artwork}" />`
+        : `<div class="planning-art-empty">${r.type === 'Synchro' ? '🎬' : '🎵'}</div>`;
+      const dateStr = r.date || '';
+      const feat = Array.isArray(r.featurings) && r.featurings.length ? ` feat. ${r.featurings.join(', ')}` : '';
+      const mainArtist = norm(r.artist) === artistNorm ? '' : `${r.artist} · `;
+      div.innerHTML = `${artHtml}` +
+        `<div class="planning-info">` +
+          `<div class="planning-title">${r.title || ''}${feat}</div>` +
+          `<div class="planning-meta">${mainArtist}${r.type} · ${dateStr}${r.link ? ' · 🔗' : ''}</div>` +
+        `</div>` +
+        `<div class="planning-actions">` +
+          `<button class="planning-add-btn" data-target="placement" title="Ajouter aux artistes placés">→ Placés</button>` +
+          `<button class="planning-add-btn" data-target="major" title="Ajouter aux placements majeurs">→ Majeurs</button>` +
+        `</div>`;
+      // Wire buttons
+      div.querySelector('[data-target="placement"]').addEventListener('click', function() {
+        addPlacement(r.artist === artistName ? (r.title || '') : (r.artist || ''), true, 'FR');
+        this.textContent = '✓'; this.classList.add('added');
+      });
+      div.querySelector('[data-target="major"]').addEventListener('click', function() {
+        addMajor(r.artist || '', r.title || '', r.artwork || '', r.link || '');
+        this.textContent = '✓'; this.classList.add('added');
+      });
+      list.appendChild(div);
+    });
+  } catch(err) { console.error('Planning fetch error:', err); }
+}
 
 // ─── Major placements ───
 let majorCount = 0;
@@ -440,7 +521,7 @@ function gatherData() {
   const name = document.getElementById('artistName').value.trim();
   const bio = document.getElementById('artistBio').value.trim();
   const bioEn = document.getElementById('artistBioEn').value.trim();
-  const placements = []; document.querySelectorAll('#placementsList .dynamic-item').forEach(div => { const v = div.querySelector('.form-input').value.trim(); const vis = div.querySelector('.vis-cb'); if (v) placements.push({ name: v, visible: vis ? vis.checked : true }); });
+  const placements = []; document.querySelectorAll('#placementsList .dynamic-item').forEach(div => { const v = div.querySelector('.form-input').value.trim(); const vis = div.querySelector('.vis-cb'); const ctry = div.querySelector('.pl-country'); if (v) placements.push({ name: v, visible: vis ? vis.checked : true, country: ctry ? ctry.value : 'FR' }); });
   const majors = []; document.querySelectorAll('#majorList .major-item').forEach(div => {
     const artist = div.querySelector('[data-f=artist]').value.trim();
     const title = div.querySelector('[data-f=title]').value.trim();
@@ -520,9 +601,11 @@ async function loadForEdit(id) {
     toggleDiscoSection();
     const pl = Array.isArray(d.placements) ? d.placements : d.placements ? Object.values(d.placements) : [];
     pl.forEach(p => {
-      if (typeof p === 'string') addPlacement(p, true);
-      else addPlacement(p.name || '', p.visible !== false);
+      if (typeof p === 'string') addPlacement(p, true, 'FR');
+      else addPlacement(p.name || '', p.visible !== false, p.country || 'FR');
     });
+    // Fetch planning releases for this artist
+    loadPlanningPlacements(d.name);
     const mj = Array.isArray(d.majors) ? d.majors : d.majors ? Object.values(d.majors) : [];
     mj.forEach(m => addMajor(m.artist, m.title, m.artwork, m.link));
     const dc = Array.isArray(d.discography) ? d.discography : d.discography ? Object.values(d.discography) : [];
