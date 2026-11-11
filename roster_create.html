@@ -83,8 +83,17 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .major-upload:hover { border-color: #555; }
 
 /* Cert row */
-.cert-item { display: grid; grid-template-columns: 80px 80px 1fr 1fr auto auto; gap: 6px; align-items: center; }
+.cert-item { display: grid; grid-template-columns: 80px 80px 1fr 1fr auto auto auto; gap: 6px; align-items: center; }
 .cert-item .form-select, .cert-item .form-input { padding: 10px 8px; font-size: 0.72rem; }
+.cert-artwork { width: 40px; height: 40px; object-fit: cover; border: 1px solid var(--border); }
+.cert-link-btn { font-family: 'Syne Mono', monospace; font-size: 0.52rem; padding: 6px 6px; background: var(--surface); border: 1px solid var(--border); color: var(--muted); cursor: pointer; white-space: nowrap; transition: all 0.15s; display: flex; align-items: center; gap: 3px; }
+.cert-link-btn:hover { border-color: #1db954; color: #1db954; }
+.cert-link-btn.has-link { border-color: #1db954; color: #1db954; }
+.cert-link-input { display: none; grid-column: 1 / -1; }
+.cert-link-input.open { display: flex; gap: 6px; align-items: center; }
+.cert-link-input .form-input { flex: 1; font-size: 0.68rem; padding: 8px 10px; }
+.cert-link-input .cert-fetch-btn { font-family: 'Syne Mono', monospace; font-size: 0.55rem; padding: 6px 10px; background: #1db954; border: none; color: #fff; cursor: pointer; white-space: nowrap; }
+.cert-link-input .cert-fetch-btn:hover { opacity: 0.85; }
 .cert-artwork { width: 36px; height: 36px; object-fit: cover; border: 1px solid var(--border); }
 
 /* Submit */
@@ -310,7 +319,7 @@ const renderImages = makeGallery(images, 'imgGallery', 'imgAddBtn', 'imgFileInpu
 const renderBgImages = makeGallery(bgImages, 'bgGallery', 'bgAddBtn', 'bgFileInput', 'bgUrlInput');
 
 // ─── Placements (artist names + visible toggle + country) ───
-const COUNTRY_FLAGS = { FR: '🇫🇷', US: '🇺🇸', GB: '🇬🇧', DE: '🇩🇪', ES: '🇪🇸', IT: '🇮🇹', BR: '🇧🇷', JP: '🇯🇵', KR: '🇰🇷', CA: '🇨🇦', AU: '🇦🇺', MX: '🇲🇽', NL: '🇳🇱', BE: '🇧🇪', CH: '🇨🇭', PT: '🇵🇹', SE: '🇸🇪', NO: '🇳🇴', DK: '🇩🇰', PL: '🇵🇱', TR: '🇹🇷', IN: '🇮🇳', MA: '🇲🇦', DZ: '🇩🇿', TN: '🇹🇳', SN: '🇸🇳', CI: '🇨🇮', CM: '🇨🇲', CD: '🇨🇩', CG: '🇨🇬', GA: '🇬🇦' };
+const COUNTRY_FLAGS = { FR: '🇫🇷', US: '🇺🇸', GB: '🇬🇧', DE: '🇩🇪', ES: '🇪🇸', IT: '🇮🇹', BR: '🇧🇷', JP: '🇯🇵', KR: '🇰🇷', CA: '🇨🇦', AU: '🇦🇺', MX: '🇲🇽', NL: '🇳🇱', BE: '🇧🇪', CH: '🇨🇭', PT: '🇵🇹', SE: '🇸🇪', NO: '🇳🇴', DK: '🇩🇰', PL: '🇵🇱', TR: '🇹🇷', IN: '🇮🇳', NG: '🇳🇬', MA: '🇲🇦', DZ: '🇩🇿', TN: '🇹🇳', SN: '🇸🇳', CI: '🇨🇮', CM: '🇨🇲', CD: '🇨🇩', CG: '🇨🇬', GA: '🇬🇦' };
 function addPlacement(val, visible, country) {
   if (typeof val === 'object' && val !== null) { visible = val.visible !== false; country = val.country || 'FR'; val = val.name || ''; }
   if (visible === undefined) visible = true;
@@ -371,6 +380,18 @@ async function loadPlanningPlacements(artistName) {
     section.style.display = '';
     list.style.display = '';
     list.innerHTML = '';
+    // Collect existing placements and majors for duplicate detection
+    const existingPlacements = new Set();
+    document.querySelectorAll('#placementsList .dynamic-item .form-input').forEach(i => {
+      const v = (i.value || '').trim().toLowerCase();
+      if (v) existingPlacements.add(v);
+    });
+    const existingMajors = new Set();
+    document.querySelectorAll('#majorList .major-item').forEach(div => {
+      const a = (div.querySelector('[data-f=artist]')?.value || '').trim().toLowerCase();
+      const t = (div.querySelector('[data-f=title]')?.value || '').trim().toLowerCase();
+      if (a || t) existingMajors.add(a + '||' + t);
+    });
     matched.forEach(r => {
       const div = document.createElement('div');
       div.className = 'planning-item';
@@ -380,24 +401,32 @@ async function loadPlanningPlacements(artistName) {
       const dateStr = r.date || '';
       const feat = Array.isArray(r.featurings) && r.featurings.length ? ` feat. ${r.featurings.join(', ')}` : '';
       const mainArtist = norm(r.artist) === artistNorm ? '' : `${r.artist} · `;
+      // Check if placement target already exists
+      const placementName = r.artist === artistName ? (r.title || '') : (r.artist || '');
+      const isPlacementDupe = existingPlacements.has(norm(placementName));
+      const isMajorDupe = existingMajors.has(norm(r.artist || '') + '||' + norm(r.title || ''));
       div.innerHTML = `${artHtml}` +
         `<div class="planning-info">` +
           `<div class="planning-title">${r.title || ''}${feat}</div>` +
           `<div class="planning-meta">${mainArtist}${r.type} · ${dateStr}${r.link ? ' · 🔗' : ''}</div>` +
         `</div>` +
         `<div class="planning-actions">` +
-          `<button class="planning-add-btn" data-target="placement" title="Ajouter aux artistes placés">→ Placés</button>` +
-          `<button class="planning-add-btn" data-target="major" title="Ajouter aux placements majeurs">→ Majeurs</button>` +
+          `<button class="planning-add-btn${isPlacementDupe ? ' added' : ''}" data-target="placement" title="${isPlacementDupe ? 'Déjà dans les artistes placés' : 'Ajouter aux artistes placés'}">${isPlacementDupe ? '✓ Placé' : '→ Placés'}</button>` +
+          `<button class="planning-add-btn${isMajorDupe ? ' added' : ''}" data-target="major" title="${isMajorDupe ? 'Déjà dans les placements majeurs' : 'Ajouter aux placements majeurs'}">${isMajorDupe ? '✓ Majeur' : '→ Majeurs'}</button>` +
         `</div>`;
-      // Wire buttons
-      div.querySelector('[data-target="placement"]').addEventListener('click', function() {
-        addPlacement(r.artist === artistName ? (r.title || '') : (r.artist || ''), true, 'FR');
-        this.textContent = '✓'; this.classList.add('added');
-      });
-      div.querySelector('[data-target="major"]').addEventListener('click', function() {
-        addMajor(r.artist || '', r.title || '', r.artwork || '', r.link || '');
-        this.textContent = '✓'; this.classList.add('added');
-      });
+      // Wire buttons (only if not already added)
+      if (!isPlacementDupe) {
+        div.querySelector('[data-target="placement"]').addEventListener('click', function() {
+          addPlacement(placementName, true, 'FR');
+          this.textContent = '✓ Placé'; this.classList.add('added');
+        });
+      }
+      if (!isMajorDupe) {
+        div.querySelector('[data-target="major"]').addEventListener('click', function() {
+          addMajor(r.artist || '', r.title || '', r.artwork || '', r.link || '');
+          this.textContent = '✓ Majeur'; this.classList.add('added');
+        });
+      }
       list.appendChild(div);
     });
   } catch(err) { console.error('Planning fetch error:', err); }
@@ -475,14 +504,20 @@ document.getElementById('addDisco').addEventListener('click', () => addDisco());
 let certCount = 0;
 function addCert(type, level, artist, project, artwork) {
   certCount++;
-  const div = document.createElement('div'); div.className = 'cert-item'; div.dataset.cid = certCount;
+  const cid = certCount;
+  const div = document.createElement('div'); div.className = 'cert-item'; div.dataset.cid = cid;
   div.innerHTML = `<select class="form-select" data-f="type"><option value="">Type</option><option value="Single" ${type==='Single'?'selected':''}>Single</option><option value="Album" ${type==='Album'?'selected':''}>Album</option></select>` +
     `<select class="form-select" data-f="level"><option value="">Certif</option><option value="Or" ${level==='Or'?'selected':''}>Or</option><option value="Platine" ${level==='Platine'?'selected':''}>Platine</option><option value="Double platine" ${level==='Double platine'?'selected':''}>Double platine</option><option value="Triple platine" ${level==='Triple platine'?'selected':''}>Triple platine</option><option value="Diamant" ${level==='Diamant'?'selected':''}>Diamant</option></select>` +
     `<input type="text" class="form-input" placeholder="Artiste" value="${artist||''}" data-f="artist" />` +
     `<input type="text" class="form-input" placeholder="Projet" value="${project||''}" data-f="project" />` +
     `<input type="file" accept="image/*" style="display:none" data-f="file" />` +
     `<button type="button" class="major-upload" data-f="upload">img</button>` +
-    `<button class="remove-btn" onclick="this.parentElement.remove()">×</button>`;
+    `<button type="button" class="cert-link-btn" data-f="spotifyToggle" title="Coller un lien Spotify">🔗</button>` +
+    `<button class="remove-btn" onclick="this.parentElement.remove()">×</button>` +
+    `<div class="cert-link-input" data-f="linkRow">` +
+      `<input type="text" class="form-input" data-f="spotifyUrl" placeholder="Lien Spotify (open.spotify.com/...)" autocomplete="off" />` +
+      `<button type="button" class="cert-fetch-btn" data-f="fetchArt">Récupérer</button>` +
+    `</div>`;
   if (artwork) {
     const img = document.createElement('img'); img.className = 'cert-artwork'; img.src = artwork; img.dataset.f = 'artworkSrc';
     div.insertBefore(img, div.querySelector('.remove-btn'));
@@ -498,6 +533,40 @@ function addCert(type, level, artist, project, artwork) {
     ev.target.value = '';
   });
   div.querySelector('[data-f=upload]').addEventListener('click', e => { e.preventDefault(); fileInput.click(); });
+  // Spotify link toggle & fetch
+  const linkRow = div.querySelector('[data-f=linkRow]');
+  const spotifyBtn = div.querySelector('[data-f=spotifyToggle]');
+  const spotifyInput = div.querySelector('[data-f=spotifyUrl]');
+  spotifyBtn.addEventListener('click', e => { e.preventDefault(); linkRow.classList.toggle('open'); if (linkRow.classList.contains('open')) spotifyInput.focus(); });
+  div.querySelector('[data-f=fetchArt]').addEventListener('click', async e => {
+    e.preventDefault();
+    const url = spotifyInput.value.trim();
+    if (!url || !url.includes('open.spotify.com')) { spotifyInput.style.borderColor = 'var(--error)'; return; }
+    spotifyInput.style.borderColor = '';
+    const btn = div.querySelector('[data-f=fetchArt]'); btn.textContent = '⏳';
+    try {
+      const res = await fetch(`https://open.spotify.com/oembed?url=${encodeURIComponent(url)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.thumbnail_url) {
+          const hiRes = data.thumbnail_url.replace('ab67616d00001e02', 'ab67616d0000b273');
+          let img = div.querySelector('.cert-artwork');
+          if (!img) { img = document.createElement('img'); img.className = 'cert-artwork'; img.dataset.f = 'artworkSrc'; div.insertBefore(img, div.querySelector('.remove-btn')); }
+          img.src = hiRes;
+          spotifyBtn.classList.add('has-link');
+          btn.textContent = '✓ OK';
+          linkRow.classList.remove('open');
+          return;
+        }
+      }
+      btn.textContent = '✗ Erreur';
+    } catch(err) { console.warn('Spotify oembed failed:', err); btn.textContent = '✗ Erreur'; }
+    setTimeout(() => { btn.textContent = 'Récupérer'; }, 2000);
+  });
+  // Also auto-fetch on paste
+  spotifyInput.addEventListener('paste', () => {
+    setTimeout(() => { div.querySelector('[data-f=fetchArt]').click(); }, 100);
+  });
   document.getElementById('certsList').appendChild(div);
 }
 document.getElementById('addCert').addEventListener('click', () => addCert());

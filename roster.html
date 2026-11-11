@@ -107,10 +107,16 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .pl-tag { font-size: 0.58rem; color: var(--text); padding: 3px 8px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.04); }
 
 .card-majors { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
-.major-block { display: flex; gap: 6px; align-items: center; border: 1px solid var(--border); padding: 4px 8px; }
-.major-art { width: 36px; height: 36px; object-fit: cover; }
-.major-info { font-size: 0.58rem; color: #aaa; line-height: 1.3; }
-.major-info strong { color: #fff; }
+.major-card { position: relative; width: 110px; height: 110px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); flex-shrink: 0; }
+.major-card a { text-decoration: none; }
+.major-card-art { width: 100%; height: 100%; object-fit: cover; display: block; }
+.major-card-noart { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1a1a1a, #0a0a0a); font-size: 1.6rem; }
+.major-card-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.82) 100%); display: flex; flex-direction: column; justify-content: flex-end; padding: 6px 7px; }
+.major-card-artist { font-family: 'Syne', sans-serif; font-size: 0.52rem; font-weight: 700; color: #fff; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.major-card-title { font-family: 'Syne Mono', monospace; font-size: 0.46rem; color: rgba(255,255,255,0.75); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.major-card-meta { font-family: 'Syne Mono', monospace; font-size: 0.4rem; color: rgba(255,255,255,0.45); }
+.major-card-listen { position: absolute; top: 5px; right: 5px; width: 22px; height: 22px; background: rgba(0,0,0,0.6); border: 1px solid rgba(232,197,71,0.4); display: flex; align-items: center; justify-content: center; color: var(--accent); text-decoration: none; font-size: 0.5rem; opacity: 0.7; transition: opacity 0.2s; z-index: 2; }
+.major-card-listen:hover { opacity: 1; background: rgba(0,0,0,0.85); }
 .listen-link { display: inline-flex; align-items: center; gap: 3px; color: var(--accent); font-size: 0.5rem; text-decoration: none; margin-top: 2px; opacity: 0.8; transition: opacity 0.15s; }
 .listen-link:hover { opacity: 1; }
 
@@ -138,10 +144,10 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .cert-card { position: relative; width: 90px; height: 90px; overflow: hidden; border: 1px solid rgba(232,197,71,0.3); flex-shrink: 0; }
 .cert-card-art { width: 100%; height: 100%; object-fit: cover; display: block; }
 .cert-card-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.82) 100%); display: flex; flex-direction: column; justify-content: flex-end; padding: 5px 6px; }
-.cert-card-level { font-family: 'Syne', sans-serif; font-size: 0.52rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #e8c547; line-height: 1.1; }
-.cert-card-title { font-family: 'Syne Mono', monospace; font-size: 0.46rem; color: #fff; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.cert-card-artist { font-family: 'Syne Mono', monospace; font-size: 0.42rem; color: rgba(255,255,255,0.6); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cert-card-artist { font-family: 'Syne', sans-serif; font-size: 0.52rem; font-weight: 700; color: #fff; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cert-card-title { font-family: 'Syne Mono', monospace; font-size: 0.46rem; color: rgba(255,255,255,0.75); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cert-card-type { font-family: 'Syne Mono', monospace; font-size: 0.4rem; color: rgba(232,197,71,0.7); text-transform: uppercase; letter-spacing: 0.06em; }
+.cert-card-level { font-family: 'Syne', sans-serif; font-size: 0.46rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #e8c547; line-height: 1.1; }
 .cert-card-noart { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1a1a1a, #0a0a0a); font-size: 1.6rem; }
 
 .social-link { display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border: 1px solid rgba(255,255,255,0.15); color: #ddd; transition: all 0.15s; }
@@ -182,15 +188,23 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .pdf-major img { width: 44px; height: 44px; object-fit: cover; }
 .pdf-major-info { font-size: 0.66rem; color: #aaa; line-height: 1.3; }
 .pdf-major-info strong { color: #fff; }
+.pdf-majors-cards { display: flex; gap: 6px; flex-wrap: wrap; }
+.pdf-major-card { position: relative; width: 100px; height: 100px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); }
+.pdf-major-card-art { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pdf-major-card-noart { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1a1a1a, #0a0a0a); font-size: 1.4rem; }
+.pdf-major-card-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.82) 100%); display: flex; flex-direction: column; justify-content: flex-end; padding: 5px 6px; }
+.pdf-major-card-artist { font-family: 'Syne', sans-serif; font-size: 0.48rem; font-weight: 700; color: #fff; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pdf-major-card-title { font-family: 'Syne Mono', monospace; font-size: 0.42rem; color: rgba(255,255,255,0.75); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pdf-major-card-meta { font-family: 'Syne Mono', monospace; font-size: 0.36rem; color: rgba(255,255,255,0.45); }
 .pdf-certs { display: flex; flex-wrap: wrap; gap: 6px; }
 .pdf-cert-card { position: relative; width: 80px; height: 80px; overflow: hidden; border: 1px solid rgba(232,197,71,0.3); }
 .pdf-cert-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .pdf-cert-card-noart { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1a1a1a, #0a0a0a); font-size: 1.4rem; }
 .pdf-cert-card-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.8) 100%); display: flex; flex-direction: column; justify-content: flex-end; padding: 4px 5px; }
-.pdf-cert-card-level { font-family: 'Syne', sans-serif; font-size: 0.48rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #e8c547; line-height: 1.1; }
-.pdf-cert-card-title { font-family: 'Syne Mono', monospace; font-size: 0.4rem; color: #fff; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.pdf-cert-card-artist { font-family: 'Syne Mono', monospace; font-size: 0.36rem; color: rgba(255,255,255,0.6); line-height: 1.2; }
+.pdf-cert-card-artist { font-family: 'Syne', sans-serif; font-size: 0.48rem; font-weight: 700; color: #fff; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pdf-cert-card-title { font-family: 'Syne Mono', monospace; font-size: 0.4rem; color: rgba(255,255,255,0.75); line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pdf-cert-card-type { font-family: 'Syne Mono', monospace; font-size: 0.34rem; color: rgba(232,197,71,0.7); text-transform: uppercase; }
+.pdf-cert-card-level { font-family: 'Syne', sans-serif; font-size: 0.42rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #e8c547; line-height: 1.1; }
 .pdf-socials { position: absolute; top: 40px; right: 40px; display: flex; gap: 12px; z-index: 2; }
 .pdf-socials a { color: #ddd; }
 .pdf-socials svg { width: 30px; height: 30px; }
@@ -447,13 +461,16 @@ function rerenderRoster() {
         });
         h += `<div class="card-section-title">${t('discographie')}</div><div class="card-majors">`;
         sortedDisco.forEach(d => {
-          h += `<div class="major-block">`;
-          if (d.artwork) h += `<img class="major-art" src="${d.artwork}" />`;
-          h += `<div class="major-info"><strong>${d.artist || ''}</strong>`;
-          if (d.feat) h += ` <span style="color:#e8c547;font-size:0.52rem">feat. ${d.feat}</span>`;
-          h += `<br>${d.title || ''}`;
-          if (d.date) h += `<br><span style="color:#666;font-size:0.52rem">${d.date}</span>`;
-          if (d.link) h += `<br><a class="listen-link" href="${d.link}" target="_blank">▶ ${t('ecouter')}</a>`;
+          h += `<div class="major-card">`;
+          if (d.artwork) h += `<img class="major-card-art" src="${d.artwork}" />`;
+          else h += `<div class="major-card-noart">🎵</div>`;
+          if (d.link) h += `<a class="major-card-listen" href="${d.link}" target="_blank" title="${t('ecouter')}">▶</a>`;
+          h += `<div class="major-card-overlay">`;
+          h += `<div class="major-card-artist">${d.artist || ''}`;
+          if (d.feat) h += ` <span style="color:#e8c547">ft. ${d.feat}</span>`;
+          h += `</div>`;
+          h += `<div class="major-card-title" title="${d.title || ''}">${d.title || ''}</div>`;
+          if (d.date) h += `<div class="major-card-meta">${d.date}</div>`;
           h += `</div></div>`;
         });
         h += `</div>`;
@@ -477,10 +494,13 @@ function rerenderRoster() {
       if (majors.length) {
         h += `<div class="card-section-title">${t('placements_majeurs')}</div><div class="card-majors">`;
         majors.forEach(m => {
-          h += `<div class="major-block">`;
-          if (m.artwork) h += `<img class="major-art" src="${m.artwork}" />`;
-          h += `<div class="major-info"><strong>${m.artist || ''}</strong><br>${m.title || ''}`;
-          if (m.link) h += `<br><a class="listen-link" href="${m.link}" target="_blank">▶ ${t('ecouter')}</a>`;
+          h += `<div class="major-card">`;
+          if (m.artwork) h += `<img class="major-card-art" src="${m.artwork}" />`;
+          else h += `<div class="major-card-noart">🎵</div>`;
+          if (m.link) h += `<a class="major-card-listen" href="${m.link}" target="_blank" title="${t('ecouter')}">▶</a>`;
+          h += `<div class="major-card-overlay">`;
+          h += `<div class="major-card-artist">${m.artist || ''}</div>`;
+          h += `<div class="major-card-title" title="${m.title || ''}">${m.title || ''}</div>`;
           h += `</div></div>`;
         });
         h += `</div>`;
@@ -506,10 +526,10 @@ function rerenderRoster() {
               out += `<div class="cert-card-noart">${emoji || '🎵'}</div>`;
             }
             out += `<div class="cert-card-overlay">`;
-            out += `<div class="cert-card-level">${levelLabel}</div>`;
-            if (c.project) out += `<div class="cert-card-title" title="${c.project}">${c.project}</div>`;
             if (c.artist) out += `<div class="cert-card-artist" title="${c.artist}">${c.artist}</div>`;
+            if (c.project) out += `<div class="cert-card-title" title="${c.project}">${c.project}</div>`;
             out += `<div class="cert-card-type">${c.type || ''}</div>`;
+            out += `<div class="cert-card-level">${levelLabel}</div>`;
             out += `</div></div>`;
           });
           return out + '</div>';
@@ -812,16 +832,18 @@ function buildArtistCardHTML(a, pdfLang, opts) {
       const [am, ay] = (x.date || '00/0000').split('/'); const [bm, by] = (y.date || '00/0000').split('/');
       return (by + bm).localeCompare(ay + am);
     });
-    h += `<div class="pdf-section-label">${t('discographie', pdfLang).toUpperCase()}</div><div class="pdf-majors">`;
+    h += `<div class="pdf-section-label">${t('discographie', pdfLang).toUpperCase()}</div><div class="pdf-majors pdf-majors-cards">`;
     sortedDisco.forEach(d => {
-      h += '<div class="pdf-major">';
-      if (d.artwork) h += `<img src="${d.artwork}" crossorigin="anonymous" />`;
-      h += `<div class="pdf-major-info"><strong>${d.artist || ''}</strong>`;
-      if (d.feat) h += ` <span style="color:#e8c547;font-size:0.52rem">feat. ${d.feat}</span>`;
-      h += `<br>${d.title || ''}`;
-      if (d.date) h += `<br><span style="color:#666;font-size:0.52rem">${d.date}</span>`;
-      if (d.link) h += `<br><a href="${d.link}" target="_blank" style="color:#e8c547;font-size:0.5rem;text-decoration:none">▶ ${t("ecouter", pdfLang)}</a>`;
-      h += `</div></div>`;
+      h += '<div class="pdf-major-card">';
+      if (d.artwork) h += `<img src="${d.artwork}" crossorigin="anonymous" class="pdf-major-card-art" />`;
+      else h += '<div class="pdf-major-card-noart">🎵</div>';
+      h += '<div class="pdf-major-card-overlay">';
+      h += `<div class="pdf-major-card-artist">${d.artist || ''}`;
+      if (d.feat) h += ` <span style="color:#e8c547">ft. ${d.feat}</span>`;
+      h += `</div>`;
+      h += `<div class="pdf-major-card-title">${d.title || ''}</div>`;
+      if (d.date) h += `<div class="pdf-major-card-meta">${d.date}</div>`;
+      h += '</div></div>';
     });
     h += '</div>';
   }
@@ -840,13 +862,15 @@ function buildArtistCardHTML(a, pdfLang, opts) {
     }
   }
   if (majors.length) {
-    h += `<div class="pdf-section-label">${t('placements_majeurs', pdfLang).toUpperCase()}</div><div class="pdf-majors">`;
+    h += `<div class="pdf-section-label">${t('placements_majeurs', pdfLang).toUpperCase()}</div><div class="pdf-majors pdf-majors-cards">`;
     majors.forEach(m => {
-      h += '<div class="pdf-major">';
-      if (m.artwork) h += `<img src="${m.artwork}" crossorigin="anonymous" />`;
-      h += `<div class="pdf-major-info"><strong>${m.artist || ''}</strong><br>${m.title || ''}`;
-      if (m.link) h += `<br><a href="${m.link}" target="_blank" style="color:#e8c547;font-size:0.5rem;text-decoration:none">▶ ${t("ecouter", pdfLang)}</a>`;
-      h += `</div></div>`;
+      h += '<div class="pdf-major-card">';
+      if (m.artwork) h += `<img src="${m.artwork}" crossorigin="anonymous" class="pdf-major-card-art" />`;
+      else h += '<div class="pdf-major-card-noart">🎵</div>';
+      h += '<div class="pdf-major-card-overlay">';
+      h += `<div class="pdf-major-card-artist">${m.artist || ''}</div>`;
+      h += `<div class="pdf-major-card-title">${m.title || ''}</div>`;
+      h += '</div></div>';
     });
     h += '</div>';
   }
@@ -866,10 +890,10 @@ function buildArtistCardHTML(a, pdfLang, opts) {
         if (c.artwork) out += `<img src="${c.artwork}" crossorigin="anonymous" />`;
         else out += `<div class="pdf-cert-card-noart">${emoji || '🎵'}</div>`;
         out += '<div class="pdf-cert-card-overlay">';
-        out += `<div class="pdf-cert-card-level">${levelLabel}</div>`;
-        if (c.project) out += `<div class="pdf-cert-card-title">${c.project}</div>`;
         if (c.artist) out += `<div class="pdf-cert-card-artist">${c.artist}</div>`;
+        if (c.project) out += `<div class="pdf-cert-card-title">${c.project}</div>`;
         out += `<div class="pdf-cert-card-type">${c.type || ''}</div>`;
+        out += `<div class="pdf-cert-card-level">${levelLabel}</div>`;
         out += '</div></div>';
       });
       return out + '</div>';
