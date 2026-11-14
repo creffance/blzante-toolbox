@@ -252,7 +252,6 @@ const I18N = {
   songwriters: { fr: 'Songwriters', en: 'Songwriters' },
   // Card sections
   discographie: { fr: 'Discographie', en: 'Discography' },
-  derniers_placements: { fr: 'Derniers placements', en: 'Latest Placements' },
   artistes_places: { fr: 'Artistes placés', en: 'Plugged Artists' },
   placements_majeurs: { fr: 'Placements majeurs', en: 'Main Plugged Tracks / Projects' },
   cert_singles: { fr: 'Certifications Singles', en: 'Singles Certifications' },
@@ -363,30 +362,11 @@ function rerenderRoster() {
   try { await _waitAuth(); } catch(e) { return; }
 
   try {
-    const [res, relRes] = await Promise.all([dbFetch('/roster.json'), dbFetch('/releases.json')]);
+    const res = await dbFetch('/roster.json');
     const data = await res.json();
-    const relData = await relRes.json();
-    const allReleases = relData ? Object.values(relData) : [];
     const content = document.getElementById('rosterContent');
     if (!data) { content.innerHTML = `<div class="loading">${t('aucun_artiste')}<br><a href="roster_create.html" style="color:var(--accent)">${t('creer_fiche')}</a></div>`; return; }
     const allArtists = Object.values(data).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-
-    // Build per-artist recent placements from planning releases
-    function getArtistPlanningReleases(artistName) {
-      if (!artistName) return [];
-      const norm = s => (s || '').toLowerCase().trim();
-      const an = norm(artistName);
-      return allReleases.filter(r => {
-        if (r.status === 'Annulé') return false;
-        if (!['Single','EP','Album','Synchro'].includes(r.type)) return false;
-        if (norm(r.artist) === an) return true;
-        const feats = Array.isArray(r.featurings) ? r.featurings : r.featurings ? [r.featurings] : [];
-        if (feats.some(f => norm(f) === an)) return true;
-        const sw = Array.isArray(r.songwriters) ? r.songwriters : r.songwriters ? r.songwriters.split(',') : [];
-        if (sw.some(s => norm(s) === an)) return true;
-        return false;
-      }).sort((a, b) => (b.dateSortable || '').localeCompare(a.dateSortable || '')).slice(0, 12);
-    }
     // Single unified list — songwriter fiches shown in priority (no duplicates)
     const seenIds = new Set();
     const songwriterFirst = allArtists.filter(a => {
@@ -473,25 +453,6 @@ function rerenderRoster() {
 
       const displayBio = (currentLang === 'en' && a.bioEn) ? a.bioEn : a.bio;
       if (displayBio) h += `<div class="card-bio">${displayBio}</div>`;
-
-      // Derniers placements from planning
-      const planningReleases = getArtistPlanningReleases(a.name);
-      if (planningReleases.length) {
-        h += `<div class="card-section-title">${t('derniers_placements')}</div><div class="card-majors">`;
-        planningReleases.forEach(r => {
-          const feat = Array.isArray(r.featurings) && r.featurings.length ? ` <span style="color:#e8c547">ft. ${r.featurings.join(', ')}</span>` : '';
-          h += `<div class="major-card">`;
-          if (r.artwork) h += `<img class="major-card-art" src="${r.artwork}" />`;
-          else h += `<div class="major-card-noart">${r.type === 'Synchro' ? '🎬' : '🎵'}</div>`;
-          if (r.link) h += `<a class="major-card-listen" href="${r.link}" target="_blank" title="${t('ecouter')}">▶</a>`;
-          h += `<div class="major-card-overlay">`;
-          h += `<div class="major-card-artist">${r.artist || ''}${feat}</div>`;
-          h += `<div class="major-card-title" title="${r.title || ''}">${r.title || ''}</div>`;
-          h += `<div class="major-card-meta">${r.type}${r.date ? ' · ' + r.date : ''}</div>`;
-          h += `</div></div>`;
-        });
-        h += `</div>`;
-      }
 
       if (discography.length) {
         const sortedDisco = [...discography].sort((a, b) => {
@@ -693,15 +654,6 @@ function openSpecialExport(a) {
   const certs = a.certs ? (Array.isArray(a.certs) ? a.certs : Object.values(a.certs)) : [];
   const specials = a.specialInfo ? (Array.isArray(a.specialInfo) ? a.specialInfo : Object.values(a.specialInfo)) : [];
 
-  // --- Derniers placements (from planning) ---
-  const pReleases = getArtistPlanningReleases(a.name);
-  mh += `<div class="se-section">Derniers placements</div>`;
-  if (pReleases.length) {
-    mh += `<label class="se-check"><input type="checkbox" data-se="section" value="planning" checked /> Inclure les derniers placements (${pReleases.length})</label>`;
-  } else {
-    mh += `<label class="se-check" style="opacity:0.4"><input type="checkbox" data-se="section" value="planning" disabled /> Derniers placements (aucun)</label>`;
-  }
-
   // --- Discographie (section toggle) ---
   mh += `<div class="se-section">Discographie</div>`;
   if (discography.length) {
@@ -806,7 +758,6 @@ function openSpecialExport(a) {
       bioEn: customBioEn,
       context: customContext,
       youtube: customPlaylist || a.youtube,
-      _includePlanning: !!includedSections.planning,
       discography: includedSections.discography ? a.discography : [],
       placements: filteredPlacements,
       majors: filteredMajors,
@@ -876,23 +827,6 @@ function buildArtistCardHTML(a, pdfLang, opts) {
   const displayBio = (pdfLang === 'en' && a.bioEn) ? a.bioEn : a.bio;
   if (displayBio) h += `<div class="pdf-bio">${displayBio}</div>`;
   if (a.context) h += `<div class="pdf-context">${a.context}</div>`;
-  // Derniers placements from planning (skip if custom export opted out)
-  const planningReleases = (a._includePlanning !== false) ? getArtistPlanningReleases(a.name) : [];
-  if (planningReleases.length) {
-    h += `<div class="pdf-section-label">${t('derniers_placements', pdfLang).toUpperCase()}</div><div class="pdf-majors pdf-majors-cards">`;
-    planningReleases.forEach(r => {
-      const feat = Array.isArray(r.featurings) && r.featurings.length ? ` <span style="color:#e8c547">ft. ${r.featurings.join(', ')}</span>` : '';
-      h += '<div class="pdf-major-card">';
-      if (r.artwork) h += `<img src="${r.artwork}" crossorigin="anonymous" class="pdf-major-card-art" />`;
-      else h += `<div class="pdf-major-card-noart">${r.type === 'Synchro' ? '🎬' : '🎵'}</div>`;
-      h += '<div class="pdf-major-card-overlay">';
-      h += `<div class="pdf-major-card-artist">${r.artist || ''}${feat}</div>`;
-      h += `<div class="pdf-major-card-title">${r.title || ''}</div>`;
-      h += `<div class="pdf-major-card-meta">${r.type}${r.date ? ' · ' + r.date : ''}</div>`;
-      h += '</div></div>';
-    });
-    h += '</div>';
-  }
   if (discography.length) {
     const sortedDisco = [...discography].sort((x, y) => {
       const [am, ay] = (x.date || '00/0000').split('/'); const [bm, by] = (y.date || '00/0000').split('/');
