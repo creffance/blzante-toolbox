@@ -187,7 +187,11 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
     </div>
   </div>
 
-  <div class="form-section" id="discoSection" style="display:none">Discographie artiste</div>
+  <div class="form-section" id="discoSection" style="display:none">Discographie artiste
+    <label style="float:right;font-size:0.65rem;font-weight:400;color:#aaa;cursor:pointer;display:flex;align-items:center;gap:5px">
+      <input type="checkbox" id="discoVisible" checked /> Afficher sur la fiche
+    </label>
+  </div>
   <div class="dynamic-list" id="discoList" style="display:none"></div>
   <button class="add-btn-dyn" id="addDisco" style="display:none">+ Ajouter une sortie</button>
 
@@ -623,7 +627,8 @@ function gatherData() {
   });
   return {
     name, types: selectedTypes, skills: selectedSkills, bio, bioEn, images, bgImages,
-    placements, majors, discography, certs, specialInfo, specialInfoEn,
+    placements, majors, discography, discoVisible: document.getElementById('discoVisible').checked,
+    certs, specialInfo, specialInfoEn,
     instagram: document.getElementById('linkInsta').value.trim(),
     tiktok: document.getElementById('linkTiktok').value.trim(),
     spotify: document.getElementById('linkSpotify').value.trim(),
@@ -679,6 +684,7 @@ async function loadForEdit(id) {
     mj.forEach(m => addMajor(m.artist, m.title, m.artwork, m.link));
     const dc = Array.isArray(d.discography) ? d.discography : d.discography ? Object.values(d.discography) : [];
     dc.forEach(x => addDisco(x.artist, x.title, x.artwork, x.date, x.link, x.feat));
+    document.getElementById('discoVisible').checked = d.discoVisible !== false;
     const cr = Array.isArray(d.certs) ? d.certs : d.certs ? Object.values(d.certs) : [];
     cr.forEach(c => addCert(c.type, c.level, c.artist, c.project, c.artwork));
     const sp = Array.isArray(d.specialInfo) ? d.specialInfo : d.specialInfo ? Object.values(d.specialInfo) : [];
