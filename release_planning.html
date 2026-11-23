@@ -184,6 +184,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
   .rel-droite { grid-column: 1 / -1; flex-direction: row; align-items: center; justify-content: flex-start; margin-top: 4px; }
 }
 .rel-sacem.non_editeur { color: #888; border-color: var(--border); font-style: italic; }
+.rel-dupe { font-size: 0.5rem; padding: 1px 5px; color: #f59e0b; border: 1px solid rgba(245,158,11,0.3); background: rgba(245,158,11,0.08); letter-spacing: 0.04em; white-space: nowrap; cursor: help; }
 .rel-tracks .dot.non_editeur { background: #555; }
 .rel-tracks { color: #666; font-size: 0.55rem; font-family: 'Syne Mono', monospace; display: flex; flex-wrap: wrap; gap: 4px 10px; }
 .rel-tracks .pt { display: inline-flex; align-items: center; gap: 4px; }
@@ -316,10 +317,10 @@ nav{z-index:40 !important;gap:18px}
 
   <div class="dashboard-wrap">
     <div class="dashboard-header">
-      <div class="dashboard-title">BLZante — <span id="dashPeriodLabel">Last 6 Months</span></div>
+      <div class="dashboard-title">BLZante — <span id="dashPeriodLabel">Last 12 Months</span></div>
       <div class="period-btns">
-        <button class="period-btn active" data-period="6">6 mois</button>
-        <button class="period-btn" data-period="12">12 mois</button>
+        <button class="period-btn" data-period="6">6 mois</button>
+        <button class="period-btn active" data-period="12">12 mois</button>
         <button class="period-btn" data-period="all">All Time</button>
         <button class="period-btn" data-period="upcoming">À venir</button>
       </div>
@@ -535,6 +536,15 @@ function rafraichir(enCours) {
 }
 
 // Songwriters signés chez BLZante, publiés par l'outil Catalogues
+// Fallback hardcodé : noms exclus + aliases (nom planning → nom affiché)
+const SW_EXCLUS = new Set(['alzouma moise','alzouma moïse','bolon scridge','lafaille djeff','guenassia laura','laura guenassia','nadjee','opifex william','pablo','raouli linda']);
+const SW_ALIASES = {
+  'brion vincent': 'Vincha', 'gnakouri jean-baptiste': '2B', 'ilango kevin': 'Kev 117',
+  'le seri': 'Seri Yannick Zadi', 'pinel nathan': 'Ivy', 'preira mouhamed': 'VJ',
+  // Reverse aliases for matching
+  'vincha': 'Vincha', '2b': '2B', 'kev 117': 'Kev 117', 'kev117': 'Kev 117',
+  'seri yannick zadi': 'Seri Yannick Zadi', 'ivy': 'Ivy', 'vj': 'VJ',
+};
 let SIGNES = null;
 async function chargerSignes() {
   try {
@@ -543,11 +553,19 @@ async function chargerSignes() {
     SIGNES = d && Object.keys(d).length ? d : null;
   } catch (e) { SIGNES = null; }
 }
-function estSigne(nom) { return !SIGNES || !!SIGNES[normT(nom)]; }
+function estSigne(nom) {
+  const n = normT(nom);
+  if (SW_EXCLUS.has(n)) return false;
+  if (!SIGNES) return true;
+  return !!SIGNES[n];
+}
 // Un nom du planning peut se lire comme une seule fiche (un membre → son duo)
 // ou comme plusieurs (MAB → Gabriel et Hadrien Mabilat).
 function nomsSignes(nom) {
-  const v = SIGNES && SIGNES[normT(nom)];
+  const n = normT(nom);
+  // Check hardcoded aliases first
+  if (SW_ALIASES[n]) return [SW_ALIASES[n]];
+  const v = SIGNES && SIGNES[n];
   if (!v) return [nom];
   return Array.isArray(v) ? v : [v];
 }
@@ -578,7 +596,7 @@ function buildSwFilters() {
 }
 
 // ─── Dashboard recap ───
-let dashPeriod = 6; // 6, 12, 'all', or 'upcoming'
+let dashPeriod = 12; // 6, 12, 'all', or 'upcoming'
 
 function buildDashboard() {
   const dash = document.getElementById('dashboardRecap');
@@ -610,11 +628,13 @@ function buildDashboard() {
   }
 
   const sorties = recent.filter(r => ['Single','EP','Album'].includes(r.type));
+  // Exclude duplicate singles from counts (already counted via their EP/Album)
+  const sortiesDeduped = sorties.filter(r => !(r.type === 'Single' && dupeIndex.dupeIds.has(r.id)));
   const hasNonFR = (r) => r.country && r.country.split(',').some(c => c && c !== 'FR');
   const isFR = (r) => !hasNonFR(r);
   const isINTL = (r) => hasNonFR(r);
-  const sortiesFR = sorties.filter(r => isFR(r));
-  const sortiesINTL = sorties.filter(r => isINTL(r));
+  const sortiesFR = sortiesDeduped.filter(r => isFR(r));
+  const sortiesINTL = sortiesDeduped.filter(r => isINTL(r));
   const certsSingle = recent.filter(r => r.type === 'Certification' && r.certType === 'Single');
   const certsAlbum = recent.filter(r => r.type === 'Certification' && r.certType === 'Album');
   const synchros = recent.filter(r => r.type === 'Synchro');
@@ -633,7 +653,7 @@ function buildDashboard() {
     }
     return sum + 1;
   }, 0);
-  const totalTracks = countTracks(sorties);
+  const totalTracks = countTracks(sortiesDeduped);
   const tracksFR = countTracks(sortiesFR);
   const tracksINTL = countTracks(sortiesINTL);
 
@@ -652,8 +672,8 @@ function buildDashboard() {
   h += `<div class="dash-card"><div class="dash-num${certsSingle.length ? ' accent' : ''}">${certsSingle.length}</div><div class="dash-label">Certifs Singles</div></div>`;
   h += `<div class="dash-card"><div class="dash-num${certsAlbum.length ? ' orange' : ''}">${certsAlbum.length}</div><div class="dash-label">Certifs Albums</div></div>`;
   h += `<div class="dash-card"><div class="dash-num">${synchros.length}</div><div class="dash-label">Synchros</div></div>`;
-  // dépôts Sacem restants sur la période
-  const aDeposer = sorties.reduce((n, r) => n + pistesSacem(r).filter(p => !SACEM_FAIT[p.statut]).length, 0);
+  // dépôts Sacem restants sur la période (hors doublons)
+  const aDeposer = sortiesDeduped.reduce((n, r) => n + pistesSacem(r).filter(p => !SACEM_FAIT[p.statut]).length, 0);
   h += `<div class="dash-card"><div class="dash-num${aDeposer ? ' red' : ' green'}">${aDeposer}</div><div class="dash-label">Dépôts Sacem à faire</div></div>`;
   dash.innerHTML = h;
 }
@@ -738,7 +758,41 @@ function majFiltres() {
   document.getElementById('fReset').hidden = !actif;
 }
 
+// ─── Duplicate track detection ───
+// A Single is a duplicate if the same title+artist appears as a track in an EP/Album
+function buildDuplicateIndex(releases) {
+  const norm = s => (s || '').toLowerCase().trim();
+  const trackMap = {};
+  const add = (key, id, type) => { if (key && key !== '||') { if (!trackMap[key]) trackMap[key] = []; trackMap[key].push({ id, type }); }};
+
+  releases.filter(r => r.status !== 'Annulé').forEach(r => {
+    if (r.type === 'Single') add(norm(r.artist) + '||' + norm(r.title), r.id, 'Single');
+    if ((['EP','Album'].includes(r.type)) && Array.isArray(r.blzTracks) && r.blzTracks.length) {
+      r.blzTracks.filter(t => t.title).forEach(t => add(norm(r.artist) + '||' + norm(t.title), r.id, r.type));
+    } else if (['EP','Album'].includes(r.type)) {
+      (r.blzTrackNames || r.epTrackNames || '').split('\n').filter(Boolean).forEach(n => add(norm(r.artist) + '||' + norm(n.trim()), r.id, r.type));
+    }
+  });
+
+  const dupeIds = new Set(), dupeInfo = new Map();
+  Object.entries(trackMap).forEach(([key, entries]) => {
+    if (entries.length < 2) return;
+    const types = new Set(entries.map(e => e.type));
+    if (types.size < 2) return;
+    entries.forEach(e => {
+      dupeIds.add(e.id);
+      const others = entries.filter(o => o.id !== e.id);
+      if (!dupeInfo.has(e.id)) dupeInfo.set(e.id, []);
+      dupeInfo.get(e.id).push({ track: key.split('||')[1], with: others.map(o => o.type).join('/') });
+    });
+  });
+  return { dupeIds, dupeInfo };
+}
+
+let dupeIndex = { dupeIds: new Set(), dupeInfo: new Map() };
+
 function render() {
+  dupeIndex = buildDuplicateIndex(cachedReleases);
   let filtered = filtrerSw(applyTypeFilter(cachedReleases));
   const content = document.getElementById('planningContent');
   const stats = document.getElementById('stats');
@@ -837,9 +891,15 @@ function render() {
       const montreInsta = ['Single','EP','Album','Actu','Certification','Synchro'].includes(r.type);
       // les fiches Coda s'affichent titre par titre ; il n'en reste ici que si aucune piste n'est listée
       const coda = !pistes.length && /^https?:\/\//i.test(r.coda || '') ? r.coda : '';
-      if (sacemR || montreInsta || coda) {
+      const isDupe = dupeIndex.dupeIds.has(r.id);
+      if (sacemR || montreInsta || coda || isDupe) {
         html += `<div class="rel-droite">`;
         if (sacemR) html += `<span class="rel-sacem ${sacemR.cls}" title="Statut Sacem des titres BLZante">${sacemR.lbl}</span>`;
+        if (isDupe) {
+          const di = dupeIndex.dupeInfo.get(r.id);
+          const tip = di ? di.map(d => `"${d.track}" aussi sur ${d.with}`).join(', ') : 'Doublon';
+          html += `<span class="rel-dupe" title="${tip}">⚠ doublon</span>`;
+        }
         if (montreInsta) html += `<span class="rel-insta ${ins}" title="Suivi du post Instagram">${INSTA_LIB[ins]}</span>`;
         if (coda) html += `<a class="rel-coda" href="${coda.replace(/"/g, '&quot;')}" target="_blank" rel="noopener" title="Ouvrir la fiche Coda" onclick="event.stopPropagation()">↗ Coda</a>`;
         html += `</div>`;
@@ -1063,7 +1123,8 @@ document.getElementById('exportBtn').addEventListener('click', async () => {
     h += '<div style="height:1px;background:linear-gradient(90deg,rgba(232,197,71,0.4),rgba(255,255,255,0.08) 50%,transparent);margin-bottom:12px"></div>';
 
     // Dashboard recap in PDF (when filtered by songwriter or always)
-    const pdfSorties = filtered.filter(r => ['Single','EP','Album'].includes(r.type) && r.status !== 'Annulé');
+    const pdfSortiesAll = filtered.filter(r => ['Single','EP','Album'].includes(r.type) && r.status !== 'Annulé');
+    const pdfSorties = pdfSortiesAll.filter(r => !(r.type === 'Single' && dupeIndex.dupeIds.has(r.id)));
     const pdfCountTracks = (list) => list.reduce((sum, r) => {
       if ((r.type === 'EP' || r.type === 'Album') && r.blzTrackCount && parseInt(r.blzTrackCount) > 0) {
         if (activeSw !== 'all' && r.blzTracks && Array.isArray(r.blzTracks)) {
