@@ -111,7 +111,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .major-card { position: relative; width: 110px; height: 110px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); flex-shrink: 0; }
 .major-card-sm { width: 86px; height: 86px; }
 .major-card a { text-decoration: none; }
-.major-card-art { width: 100%; height: 100%; object-fit: cover; display: block; }
+.major-card-art { width: 100%; height: 100%; object-fit: cover; display: block; vertical-align: bottom; }
 .major-card-noart { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1a1a1a, #0a0a0a); font-size: 1.6rem; }
 .major-card-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.82) 100%); display: flex; flex-direction: column; justify-content: flex-end; padding: 6px 7px; }
 .major-card-artist { font-family: 'Syne', sans-serif; font-size: 0.52rem; font-weight: 700; color: #fff; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -145,7 +145,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 
 .card-certs { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
 .cert-card { position: relative; width: 86px; height: 86px; overflow: hidden; border: 1px solid rgba(232,197,71,0.3); flex-shrink: 0; }
-.cert-card-art { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cert-card-art { width: 100%; height: 100%; object-fit: cover; display: block; vertical-align: bottom; }
 .cert-card-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.82) 100%); display: flex; flex-direction: column; justify-content: flex-end; padding: 5px 6px; }
 .cert-card-artist { font-family: 'Syne', sans-serif; font-size: 0.46rem; font-weight: 700; color: #fff; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cert-card-title { font-family: 'Syne Mono', monospace; font-size: 0.4rem; color: rgba(255,255,255,0.75); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -193,7 +193,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .pdf-major-info strong { color: #fff; }
 .pdf-majors-cards { display: flex; gap: 5px; flex-wrap: wrap; }
 .pdf-major-card { position: relative; width: 80px; height: 80px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); }
-.pdf-major-card-art { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pdf-major-card-art { width: 100%; height: 100%; object-fit: cover; display: block; vertical-align: bottom; }
 .pdf-major-card-noart { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1a1a1a, #0a0a0a); font-size: 1.4rem; }
 .pdf-major-card-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.82) 100%); display: flex; flex-direction: column; justify-content: flex-end; padding: 5px 6px; }
 .pdf-major-card-artist { font-family: 'Syne', sans-serif; font-size: 0.48rem; font-weight: 700; color: #fff; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -201,13 +201,17 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .pdf-major-card-meta { font-family: 'Syne Mono', monospace; font-size: 0.36rem; color: rgba(255,255,255,0.45); }
 .pdf-certs { display: flex; flex-wrap: wrap; gap: 5px; }
 .pdf-cert-card { position: relative; width: 70px; height: 70px; overflow: hidden; border: 1px solid rgba(232,197,71,0.3); }
-.pdf-cert-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pdf-cert-card img { width: 100%; height: 100%; object-fit: cover; display: block; vertical-align: bottom; }
 .pdf-cert-card-noart { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1a1a1a, #0a0a0a); font-size: 1.4rem; }
 .pdf-cert-card-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.8) 100%); display: flex; flex-direction: column; justify-content: flex-end; padding: 4px 5px; }
 .pdf-cert-card-artist { font-family: 'Syne', sans-serif; font-size: 0.48rem; font-weight: 700; color: #fff; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pdf-cert-card-title { font-family: 'Syne Mono', monospace; font-size: 0.4rem; color: rgba(255,255,255,0.75); line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pdf-cert-card-type { font-family: 'Syne Mono', monospace; font-size: 0.34rem; color: rgba(232,197,71,0.7); text-transform: uppercase; }
 .pdf-cert-card-level { font-family: 'Syne', sans-serif; font-size: 0.42rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #e8c547; line-height: 1.1; }
+.pdf-certs-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.pdf-certs-col .pdf-section-label { margin-top: 4px; }
+.cert-card-play, .pdf-cert-play { position: absolute; top: 3px; right: 3px; width: 18px; height: 18px; background: rgba(0,0,0,0.6); border: 1px solid rgba(232,197,71,0.4); display: flex; align-items: center; justify-content: center; color: #e8c547; text-decoration: none; font-size: 0.42rem; z-index: 2; opacity: 0.7; }
+.cert-card-play:hover { opacity: 1; background: rgba(0,0,0,0.85); }
 .pdf-socials { position: absolute; top: 30px; right: 36px; display: flex; align-items: center; gap: 10px; z-index: 2; }
 .pdf-socials a { color: #ddd; }
 .pdf-socials svg { width: 28px; height: 28px; }
@@ -235,6 +239,7 @@ function dbFetch(path,opts){const sep=path.includes('?')?'&':'?';return fetch(DB
 function _waitAuth(){return new Promise((res,rej)=>{firebase.auth().onAuthStateChanged(async u=>{if(!u){window.location.href='login.html';rej();}else{window._fbToken=await u.getIdToken();document.body.style.visibility='visible';res(u);}});});}
 
 const DEFAULT_BG = 'roster_bg.png';
+const BLZ_LOGO_B64 = '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';
 
 const SOCIAL_ICONS = {
   instagram: `<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>`,
@@ -254,7 +259,7 @@ const I18N = {
   songwriters: { fr: 'Songwriters', en: 'Songwriters' },
   // Card sections
   discographie: { fr: 'Discographie', en: 'Discography' },
-  derniers_placements: { fr: 'Derniers placements', en: 'Latest Placements' },
+  derniers_placements: { fr: 'Derniers placements', en: 'Latest Cuts' },
   artistes_places: { fr: 'Artistes placés', en: 'Plugged Artists' },
   placements_majeurs: { fr: 'Placements majeurs', en: 'Main Plugged Tracks / Projects' },
   cert_singles: { fr: 'Certifications Singles', en: 'Singles Certifications' },
@@ -468,8 +473,8 @@ function rerenderRoster() {
         h += `</div>`;
       }
 
-      // Derniers placements from planning (past only, max 5)
-      const planningReleases = getArtistPlanningReleases(a.name);
+      // Derniers placements from planning (past only, max 9)
+      const planningReleases = a.showLatestCuts !== false ? getArtistPlanningReleases(a.name) : [];
       if (planningReleases.length) {
         h += `<div class="card-section-title">${t('derniers_placements')}</div><div class="card-majors card-majors-sm">`;
         planningReleases.forEach(r => {
@@ -527,7 +532,7 @@ function rerenderRoster() {
       const visibleMajors = majors.filter(m => m.displayOnFiche !== false);
       if (visibleMajors.length) {
         h += `<div class="card-section-title">${t('placements_majeurs')}</div><div class="card-majors card-majors-sm">`;
-        visibleMajors.slice(0, 10).forEach(m => {
+        visibleMajors.slice(0, 9).forEach(m => {
           h += `<div class="major-card major-card-sm">`;
           if (m.artwork) h += `<img class="major-card-art" src="${m.artwork}" />`;
           else h += `<div class="major-card-noart">🎵</div>`;
@@ -563,6 +568,7 @@ function rerenderRoster() {
               out += `<div class="cert-card-noart">${emoji || '🎵'}</div>`;
             }
             if (medalSlug) out += `<img class="cert-card-medal" src="cert_${medalSlug}.png" onerror="this.style.display='none'" />`;
+            if (c.spotifyLink) out += `<a class="cert-card-play" href="${c.spotifyLink}" target="_blank" title="Écouter">▶</a>`;
             out += `<div class="cert-card-overlay">`;
             if (c.artist) out += `<div class="cert-card-artist" title="${c.artist}">${c.artist}</div>`;
             if (c.project) out += `<div class="cert-card-title" title="${c.project}">${c.project}</div>`;
@@ -838,7 +844,7 @@ function getArtistPlanningReleases(artistName) {
     const sw = Array.isArray(r.songwriters) ? r.songwriters : r.songwriters ? r.songwriters.split(',') : [];
     if (sw.some(s => norm(s) === an)) return true;
     return false;
-  }).sort((a, b) => (b.dateSortable || '').localeCompare(a.dateSortable || '')).slice(0, 5);
+  }).sort((a, b) => (b.dateSortable || '').localeCompare(a.dateSortable || '')).slice(0, 9);
 }
 
 function buildArtistCardHTML(a, pdfLang, opts) {
@@ -866,7 +872,7 @@ function buildArtistCardHTML(a, pdfLang, opts) {
   const socials = ['instagram','tiktok','spotify','ytChannel','genius'].filter(k => a[k]);
   h += '<div class="pdf-socials">';
   socials.forEach(k => { h += `<a href="${a[k]}" target="_blank">${SOCIAL_ICONS[k]}</a>`; });
-  h += `<a href="https://www.instagram.com/blzante_/" target="_blank"><img class="pdf-blz-logo" src="BLZante_logo_blanc.png" crossorigin="anonymous" /></a>`;
+  h += `<a href="https://www.instagram.com/blzante_/" target="_blank"><img class="pdf-blz-logo" src="data:image/png;base64,${BLZ_LOGO_B64}" /></a>`;
   h += '</div>';
   h += '<div class="pdf-top">';
   if (primary) h += `<img class="pdf-photo" src="${primary.src}" crossorigin="anonymous" />`;
@@ -898,7 +904,7 @@ function buildArtistCardHTML(a, pdfLang, opts) {
     displaySpecials.forEach(s => { if (s) h += `<div style="font-size:0.62rem;color:#ccc;padding:2px 0">⭐ ${s}</div>`; });
   }
   // Derniers placements from planning (skip if custom export opted out)
-  const planningReleases = (a._includePlanning !== false) ? getArtistPlanningReleases(a.name) : [];
+  const planningReleases = (a._includePlanning !== false && a.showLatestCuts !== false) ? getArtistPlanningReleases(a.name) : [];
   if (planningReleases.length) {
     h += `<div class="pdf-section-label">${t('derniers_placements', pdfLang).toUpperCase()}</div><div class="pdf-majors pdf-majors-cards">`;
     planningReleases.forEach(r => {
@@ -952,10 +958,11 @@ function buildArtistCardHTML(a, pdfLang, opts) {
   const visibleMajors = majors.filter(m => m.displayOnFiche !== false);
   if (visibleMajors.length) {
     h += `<div class="pdf-section-label">${t('placements_majeurs', pdfLang).toUpperCase()}</div><div class="pdf-majors pdf-majors-cards">`;
-    visibleMajors.slice(0, 10).forEach(m => {
+    visibleMajors.slice(0, 9).forEach(m => {
       h += '<div class="pdf-major-card">';
       if (m.artwork) h += `<img src="${m.artwork}" crossorigin="anonymous" class="pdf-major-card-art" />`;
       else h += '<div class="pdf-major-card-noart">🎵</div>';
+      if (m.link) h += `<a href="${m.link}" target="_blank" style="position:absolute;top:4px;right:4px;width:18px;height:18px;background:rgba(0,0,0,0.6);border:1px solid rgba(232,197,71,0.4);display:flex;align-items:center;justify-content:center;color:#e8c547;text-decoration:none;font-size:0.45rem;z-index:2">▶</a>`;
       h += '<div class="pdf-major-card-overlay">';
       h += `<div class="pdf-major-card-artist">${m.artist || ''}</div>`;
       h += `<div class="pdf-major-card-title">${m.title || ''}</div>`;
@@ -973,7 +980,7 @@ function buildArtistCardHTML(a, pdfLang, opts) {
     const renderPdfCertGroup = (title, list) => {
       if (!list.length) return '';
       const shown = list.slice(0, 5);
-      let out = `<div class="pdf-section-label">${title}</div><div class="pdf-certs">`;
+      let out = `<div class="pdf-certs-col"><div class="pdf-section-label">${title}</div><div class="pdf-certs">`;
       shown.forEach(c => {
         const emoji = CERT_EMOJI[c.level] || '';
         const levelLabel = tCertLevel(c.level, pdfLang);
@@ -981,18 +988,27 @@ function buildArtistCardHTML(a, pdfLang, opts) {
         out += '<div class="pdf-cert-card">';
         if (c.artwork) out += `<img src="${c.artwork}" crossorigin="anonymous" />`;
         else out += `<div class="pdf-cert-card-noart">${emoji || '🎵'}</div>`;
-        if (medalSlug) out += `<img class="cert-card-medal" src="cert_${medalSlug}.png" crossorigin="anonymous" onerror="this.style.display='none'" style="position:absolute;top:2px;left:2px;width:20px;height:20px;z-index:2;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.6))" />`;
+        if (medalSlug) out += `<img src="cert_${medalSlug}.png" crossorigin="anonymous" onerror="this.style.display='none'" style="position:absolute;top:2px;left:2px;width:18px;height:18px;z-index:2;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.6))" />`;
+        if (c.spotifyLink) out += `<a class="pdf-cert-play" href="${c.spotifyLink}" target="_blank">▶</a>`;
         out += '<div class="pdf-cert-card-overlay">';
         if (c.artist) out += `<div class="pdf-cert-card-artist">${c.artist}</div>`;
         if (c.project) out += `<div class="pdf-cert-card-title">${c.project}</div>`;
         out += `<div class="pdf-cert-card-type">${c.type || ''} ${levelLabel}</div>`;
         out += '</div></div>';
       });
-      return out + '</div>';
+      return out + '</div></div>';
     };
-    h += renderPdfCertGroup(t('cert_singles', pdfLang).toUpperCase(), singles);
-    h += renderPdfCertGroup(t('cert_albums', pdfLang).toUpperCase(), albums);
-    h += renderPdfCertGroup(t('cert_autres', pdfLang).toUpperCase(), other);
+    // Layout: singles and albums side by side
+    if (singles.length && albums.length) {
+      h += '<div class="pdf-certs-row">';
+      h += renderPdfCertGroup(t('cert_singles', pdfLang).toUpperCase(), singles);
+      h += renderPdfCertGroup(t('cert_albums', pdfLang).toUpperCase(), albums);
+      h += '</div>';
+    } else {
+      h += renderPdfCertGroup(t('cert_singles', pdfLang).toUpperCase(), singles);
+      h += renderPdfCertGroup(t('cert_albums', pdfLang).toUpperCase(), albums);
+    }
+    if (other.length) h += renderPdfCertGroup(t('cert_autres', pdfLang).toUpperCase(), other);
   }
   h += '</div>'; // close pdf-content
   return h;
