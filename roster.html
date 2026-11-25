@@ -363,10 +363,9 @@ function rerenderRoster() {
   try { await _waitAuth(); } catch(e) { return; }
 
   try {
-    const [res, relRes] = await Promise.all([dbFetch('/roster.json'), dbFetch('/releases.json')]);
+    window._allReleases = [];
+    const res = await dbFetch('/roster.json');
     const data = await res.json();
-    const relData = await relRes.json();
-    window._allReleases = relData ? Object.values(relData) : [];
     const content = document.getElementById('rosterContent');
     if (!data) { content.innerHTML = `<div class="loading">${t('aucun_artiste')}<br><a href="roster_create.html" style="color:var(--accent)">${t('creer_fiche')}</a></div>`; return; }
     const allArtists = Object.values(data).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
@@ -598,6 +597,12 @@ function rerenderRoster() {
 
     renderAll();
     window._renderRoster = renderAll;
+
+    // Load releases in background (non-blocking) for "derniers placements"
+    dbFetch('/releases.json').then(r => r.ok ? r.json() : null).then(d => {
+      window._allReleases = d ? Object.values(d) : [];
+      renderAll();
+    }).catch(() => {});
 
     // Toggle & PDF clicks
     content.addEventListener('click', e => {
