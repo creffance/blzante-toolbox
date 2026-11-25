@@ -478,7 +478,7 @@ function rerenderRoster() {
         h += `</div>`;
       }
 
-      if (discography.length) {
+      if (discography.length && a.discoVisible !== false) {
         const sortedDisco = [...discography].sort((a, b) => {
           const [am, ay] = (a.date || '00/0000').split('/'); const [bm, by] = (b.date || '00/0000').split('/');
           return (by + bm).localeCompare(ay + am);
@@ -699,7 +699,7 @@ function openSpecialExport(a) {
 
   // --- Discographie (section toggle) ---
   mh += `<div class="se-section">Discographie</div>`;
-  if (discography.length) {
+  if (discography.length && a.discoVisible !== false) {
     mh += `<label class="se-check"><input type="checkbox" data-se="section" value="discography" checked /> Inclure la discographie</label>`;
   } else {
     mh += `<label class="se-check" style="opacity:0.4"><input type="checkbox" data-se="section" value="discography" disabled /> Discographie (vide)</label>`;
@@ -908,7 +908,7 @@ function buildArtistCardHTML(a, pdfLang, opts) {
     });
     h += '</div>';
   }
-  if (discography.length) {
+  if (discography.length && a.discoVisible !== false) {
     const sortedDisco = [...discography].sort((x, y) => {
       const [am, ay] = (x.date || '00/0000').split('/'); const [bm, by] = (y.date || '00/0000').split('/');
       return (by + bm).localeCompare(ay + am);
