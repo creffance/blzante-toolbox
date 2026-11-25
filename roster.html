@@ -108,12 +108,13 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 
 .card-majors { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
 .card-majors-sm { gap: 5px; }
-.major-card { position: relative; width: 110px; height: 110px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); flex-shrink: 0; background: #0a0a0a; }
+.major-card { display: grid; width: 110px; height: 110px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); flex-shrink: 0; background: #0a0a0a; }
+.major-card > * { grid-area: 1 / 1; }
 .major-card-sm { width: 86px; height: 86px; }
 .major-card a { text-decoration: none; }
-.major-card-art { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
-.major-card-noart { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1a1a1a, #0a0a0a); font-size: 1.6rem; }
-.major-card-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.82) 100%); display: flex; flex-direction: column; justify-content: flex-end; padding: 6px 7px; box-sizing: border-box; }
+.major-card-art { width: 100%; height: 100%; object-fit: cover; display: block; }
+.major-card-noart { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1a1a1a, #0a0a0a); font-size: 1.6rem; }
+.major-card-overlay { background: linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.82) 100%); display: flex; flex-direction: column; justify-content: flex-end; padding: 6px 7px; box-sizing: border-box; }
 .major-card-artist { font-family: 'Syne', sans-serif; font-size: 0.52rem; font-weight: 700; color: #fff; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .major-card-title { font-family: 'Syne Mono', monospace; font-size: 0.46rem; color: rgba(255,255,255,0.75); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .major-card-meta { font-family: 'Syne Mono', monospace; font-size: 0.4rem; color: rgba(255,255,255,0.45); }
@@ -144,13 +145,14 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .se-btn-cancel:hover { border-color: #555; color: var(--text); }
 
 .card-certs { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
-.cert-card { position: relative; width: 86px; height: 86px; overflow: hidden; border: 1px solid rgba(232,197,71,0.3); flex-shrink: 0; background: #0a0a0a; }
-.cert-card-art { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
-.cert-card-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.82) 100%); display: flex; flex-direction: column; justify-content: flex-end; padding: 5px 6px; box-sizing: border-box; }
+.cert-card { display: grid; width: 86px; height: 86px; overflow: hidden; border: 1px solid rgba(232,197,71,0.3); flex-shrink: 0; background: #0a0a0a; }
+.cert-card > * { grid-area: 1 / 1; }
+.cert-card-art { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cert-card-overlay { background: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.82) 100%); display: flex; flex-direction: column; justify-content: flex-end; padding: 5px 6px; box-sizing: border-box; }
 .cert-card-artist { font-family: 'Syne', sans-serif; font-size: 0.46rem; font-weight: 700; color: #fff; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cert-card-title { font-family: 'Syne Mono', monospace; font-size: 0.4rem; color: rgba(255,255,255,0.75); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cert-card-certline { font-family: 'Syne Mono', monospace; font-size: 0.4rem; color: rgba(232,197,71,0.7); text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.cert-card-noart { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1a1a1a, #0a0a0a); font-size: 1.6rem; }
+.cert-card-noart { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1a1a1a, #0a0a0a); font-size: 1.6rem; }
 .cert-card-medal { position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; z-index: 2; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.6)); }
 
 .social-link { display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border: 1px solid rgba(255,255,255,0.15); color: #ddd; transition: all 0.15s; }
@@ -191,20 +193,22 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .pdf-major img { width: 44px; height: 44px; object-fit: cover; }
 .pdf-major-info { font-size: 0.66rem; color: #aaa; line-height: 1.3; }
 .pdf-major-info strong { color: #fff; }
-.pdf-majors-cards { display: flex; gap: 5px; flex-wrap: wrap; }
-.pdf-major-card { position: relative; width: 86px; height: 86px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); background: #0a0a0a; }
-.pdf-major-card-art { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
-.pdf-major-card-noart { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1a1a1a, #0a0a0a); font-size: 1.4rem; }
-.pdf-major-card-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.82) 100%); display: flex; flex-direction: column; justify-content: flex-end; padding: 5px 6px; box-sizing: border-box; gap: 1px; }
+.pdf-majors-cards { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; }
+.pdf-major-card { display: grid; aspect-ratio: 1; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); background: #0a0a0a; }
+.pdf-major-card > * { grid-area: 1 / 1; }
+.pdf-major-card-art { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pdf-major-card-noart { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1a1a1a, #0a0a0a); font-size: 1.4rem; }
+.pdf-major-card-overlay { background: linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.82) 100%); display: flex; flex-direction: column; justify-content: flex-end; padding: 5px 6px; box-sizing: border-box; gap: 1px; }
 .pdf-major-card-artist { font-family: 'Syne', sans-serif; font-size: 0.44rem; font-weight: 700; color: #fff; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pdf-major-card-feat { font-family: 'Syne Mono', monospace; font-size: 0.34rem; color: #e8c547; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pdf-major-card-title { font-family: 'Syne Mono', monospace; font-size: 0.38rem; color: rgba(255,255,255,0.75); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pdf-major-card-meta { font-family: 'Syne Mono', monospace; font-size: 0.34rem; color: rgba(255,255,255,0.45); line-height: 1.2; }
-.pdf-certs { display: flex; flex-wrap: wrap; gap: 5px; }
-.pdf-cert-card { position: relative; width: 86px; height: 86px; overflow: hidden; border: 1px solid rgba(232,197,71,0.3); background: #0a0a0a; }
-.pdf-cert-card img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
-.pdf-cert-card-noart { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1a1a1a, #0a0a0a); font-size: 1.4rem; }
-.pdf-cert-card-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.8) 100%); display: flex; flex-direction: column; justify-content: flex-end; padding: 5px 5px; box-sizing: border-box; gap: 1px; }
+.pdf-certs { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; }
+.pdf-cert-card { display: grid; aspect-ratio: 1; overflow: hidden; border: 1px solid rgba(232,197,71,0.3); background: #0a0a0a; }
+.pdf-cert-card > * { grid-area: 1 / 1; }
+.pdf-cert-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pdf-cert-card-noart { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1a1a1a, #0a0a0a); font-size: 1.4rem; }
+.pdf-cert-card-overlay { background: linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.8) 100%); display: flex; flex-direction: column; justify-content: flex-end; padding: 5px 5px; box-sizing: border-box; gap: 1px; }
 .pdf-cert-card-artist { font-family: 'Syne', sans-serif; font-size: 0.44rem; font-weight: 700; color: #fff; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pdf-cert-card-title { font-family: 'Syne Mono', monospace; font-size: 0.38rem; color: rgba(255,255,255,0.75); line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pdf-cert-card-type { font-family: 'Syne Mono', monospace; font-size: 0.34rem; color: rgba(232,197,71,0.7); text-transform: uppercase; line-height: 1.2; }
