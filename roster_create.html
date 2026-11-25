@@ -324,7 +324,7 @@ const renderImages = makeGallery(images, 'imgGallery', 'imgAddBtn', 'imgFileInpu
 const renderBgImages = makeGallery(bgImages, 'bgGallery', 'bgAddBtn', 'bgFileInput', 'bgUrlInput');
 
 // ─── Placements (artist names + visible toggle + country) ───
-const COUNTRY_FLAGS = { FR: '🇫🇷', US: '🇺🇸', GB: '🇬🇧', DE: '🇩🇪', ES: '🇪🇸', IT: '🇮🇹', BR: '🇧🇷', JP: '🇯🇵', KR: '🇰🇷', CA: '🇨🇦', AU: '🇦🇺', MX: '🇲🇽', NL: '🇳🇱', BE: '🇧🇪', CH: '🇨🇭', PT: '🇵🇹', SE: '🇸🇪', NO: '🇳🇴', DK: '🇩🇰', PL: '🇵🇱', TR: '🇹🇷', IN: '🇮🇳', NG: '🇳🇬', ML: '🇲🇱', MA: '🇲🇦', DZ: '🇩🇿', TN: '🇹🇳', SN: '🇸🇳', CI: '🇨🇮', CM: '🇨🇲', CD: '🇨🇩', CG: '🇨🇬', GA: '🇬🇦' };
+const COUNTRY_FLAGS = { FR: '🇫🇷', US: '🇺🇸', GB: '🇬🇧', DE: '🇩🇪', ES: '🇪🇸', IT: '🇮🇹', BR: '🇧🇷', JP: '🇯🇵', KR: '🇰🇷', CA: '🇨🇦', AU: '🇦🇺', MX: '🇲🇽', NL: '🇳🇱', BE: '🇧🇪', CH: '🇨🇭', PT: '🇵🇹', SE: '🇸🇪', NO: '🇳🇴', DK: '🇩🇰', PL: '🇵🇱', TR: '🇹🇷', IN: '🇮🇳', NG: '🇳🇬', ML: '🇲🇱', GN: '🇬🇳', MA: '🇲🇦', DZ: '🇩🇿', TN: '🇹🇳', SN: '🇸🇳', CI: '🇨🇮', CM: '🇨🇲', CD: '🇨🇩', CG: '🇨🇬', GA: '🇬🇦' };
 function addPlacement(val, visible, country) {
   if (typeof val === 'object' && val !== null) { visible = val.visible !== false; country = val.country || 'FR'; val = val.name || ''; }
   if (visible === undefined) visible = true;

@@ -166,9 +166,9 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 /* PDF render (hidden) — A4 portrait proportions */
 #pdfRender {
   position: fixed; left: -9999px; top: 0; z-index: -1;
-  width: 794px; height: 1123px; /* A4 ratio */
+  width: 794px; min-height: 1123px; /* A4 ratio, auto-expand */
   background: #0a0a0a; color: #e8e8e8;
-  font-family: 'Syne', Arial, sans-serif; overflow: hidden;
+  font-family: 'Syne', Arial, sans-serif; overflow: visible;
 }
 .pdf-bg { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0.2; }
 .pdf-content { position: relative; z-index: 1; padding: 40px; height: 100%; display: flex; flex-direction: column; overflow: hidden; }
@@ -459,6 +459,16 @@ function rerenderRoster() {
       const displayBio = (currentLang === 'en' && a.bioEn) ? a.bioEn : a.bio;
       if (displayBio) h += `<div class="card-bio">${displayBio}</div>`;
 
+      const specials = a.specialInfo ? (Array.isArray(a.specialInfo) ? a.specialInfo : Object.values(a.specialInfo)) : [];
+      const specialsEn = a.specialInfoEn ? (Array.isArray(a.specialInfoEn) ? a.specialInfoEn : Object.values(a.specialInfoEn)) : [];
+      const displaySpecials = specials.map((s, i) => (currentLang === 'en' && specialsEn[i]) ? specialsEn[i] : s);
+      if (displaySpecials.some(s => s)) {
+        h += `<div class="card-section-title">${t('infos_speciales')}</div>`;
+        h += `<div class="card-specials">`;
+        displaySpecials.forEach(s => { if (s) h += `<div class="special-item">⭐ ${s}</div>`; });
+        h += `</div>`;
+      }
+
       // Derniers placements from planning (past only, max 5)
       const planningReleases = getArtistPlanningReleases(a.name);
       if (planningReleases.length) {
@@ -567,15 +577,6 @@ function rerenderRoster() {
         h += renderCertGroup(t('cert_autres'), other);
       }
 
-      const specials = a.specialInfo ? (Array.isArray(a.specialInfo) ? a.specialInfo : Object.values(a.specialInfo)) : [];
-      const specialsEn = a.specialInfoEn ? (Array.isArray(a.specialInfoEn) ? a.specialInfoEn : Object.values(a.specialInfoEn)) : [];
-      const displaySpecials = specials.map((s, i) => (currentLang === 'en' && specialsEn[i]) ? specialsEn[i] : s);
-      if (displaySpecials.some(s => s)) {
-        h += `<div class="card-section-title">${t('infos_speciales')}</div>`;
-        h += `<div class="card-specials">`;
-        displaySpecials.forEach(s => { if (s) h += `<div class="special-item">⭐ ${s}</div>`; });
-        h += `</div>`;
-      }
 
       h += `</div></div></div></div>`;
       return h;
@@ -891,6 +892,13 @@ function buildArtistCardHTML(a, pdfLang, opts) {
   const displayBio = (pdfLang === 'en' && a.bioEn) ? a.bioEn : a.bio;
   if (displayBio) h += `<div class="pdf-bio">${displayBio}</div>`;
   if (a.context) h += `<div class="pdf-context">${a.context}</div>`;
+  const specials = a.specialInfo ? (Array.isArray(a.specialInfo) ? a.specialInfo : Object.values(a.specialInfo)) : [];
+  const specialsEn = a.specialInfoEn ? (Array.isArray(a.specialInfoEn) ? a.specialInfoEn : Object.values(a.specialInfoEn)) : [];
+  const displaySpecials = specials.map((s, i) => (pdfLang === 'en' && specialsEn[i]) ? specialsEn[i] : s);
+  if (displaySpecials.some(s => s)) {
+    h += `<div class="pdf-section-label">${t('infos_speciales', pdfLang).toUpperCase()}</div>`;
+    displaySpecials.forEach(s => { if (s) h += `<div style="font-size:0.62rem;color:#ccc;padding:2px 0">⭐ ${s}</div>`; });
+  }
   // Derniers placements from planning (skip if custom export opted out)
   const planningReleases = (a._includePlanning !== false) ? getArtistPlanningReleases(a.name) : [];
   if (planningReleases.length) {
@@ -987,13 +995,6 @@ function buildArtistCardHTML(a, pdfLang, opts) {
     h += renderPdfCertGroup(t('cert_albums', pdfLang).toUpperCase(), albums);
     h += renderPdfCertGroup(t('cert_autres', pdfLang).toUpperCase(), other);
   }
-  const specials = a.specialInfo ? (Array.isArray(a.specialInfo) ? a.specialInfo : Object.values(a.specialInfo)) : [];
-  const specialsEn = a.specialInfoEn ? (Array.isArray(a.specialInfoEn) ? a.specialInfoEn : Object.values(a.specialInfoEn)) : [];
-  const displaySpecials = specials.map((s, i) => (pdfLang === 'en' && specialsEn[i]) ? specialsEn[i] : s);
-  if (displaySpecials.some(s => s)) {
-    h += `<div class="pdf-section-label">${t('infos_speciales', pdfLang).toUpperCase()}</div>`;
-    displaySpecials.forEach(s => { if (s) h += `<div style="font-size:0.62rem;color:#ccc;padding:2px 0">⭐ ${s}</div>`; });
-  }
   if (!options.noFooter) {
     h += '<div class="pdf-footer"><img src="data:image/png;base64,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" crossorigin="anonymous" /></div>';
   }
@@ -1006,6 +1007,8 @@ async function renderArtistToPDF(a, pdf, render, lang) {
   const pdfLang = lang || 'fr';
   let h = buildArtistCardHTML(a, pdfLang);
 
+  render.style.height = 'auto';
+  render.style.overflow = 'visible';
   render.innerHTML = h;
 
   const allImgs = render.querySelectorAll('img');
@@ -1015,16 +1018,35 @@ async function renderArtistToPDF(a, pdf, render, lang) {
   }));
   await new Promise(r => setTimeout(r, 200));
 
+  // Measure actual content height and scale to fit A4 if needed
+  const pageW = 794, pageH = 1123;
+  const contentH = render.scrollHeight;
+  const needsScale = contentH > pageH;
+  const scaleFactor = needsScale ? pageH / contentH : 1;
+
+  if (needsScale) {
+    // Wrap content in a scaled container
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = `transform: scale(${scaleFactor}); transform-origin: top left; width: ${pageW}px;`;
+    while (render.firstChild) wrapper.appendChild(render.firstChild);
+    render.appendChild(wrapper);
+    render.style.height = pageH + 'px';
+    render.style.overflow = 'hidden';
+  } else {
+    render.style.height = pageH + 'px';
+  }
+
   const canvas = await html2canvas(render, {
-    width: 794, height: 1123, scale: 2,
+    width: pageW, height: pageH, scale: 2,
     backgroundColor: '#0a0a0a', useCORS: true, allowTaint: true,
   });
 
   const imgData = canvas.toDataURL('image/jpeg', 0.92);
   pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
 
-  const scaleX = 210 / 794;
-  const scaleY = 297 / 1123;
+  const scaleX = 210 / pageW;
+  const scaleY = 297 / pageH;
+  const sf = needsScale ? scaleFactor : 1;
   render.querySelectorAll('a[href]').forEach(link => {
     const rect = link.getBoundingClientRect();
     const renderRect = render.getBoundingClientRect();
@@ -1037,6 +1059,7 @@ async function renderArtistToPDF(a, pdf, render, lang) {
     }
   });
   render.innerHTML = '';
+  render.style.height = '';
 }
 
 // ─── PDF output: download with correct filename ───
