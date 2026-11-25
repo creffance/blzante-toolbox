@@ -363,14 +363,10 @@ function rerenderRoster() {
   try { await _waitAuth(); } catch(e) { return; }
 
   try {
-    const res = await dbFetch('/roster.json');
+    const [res, relRes] = await Promise.all([dbFetch('/roster.json'), dbFetch('/releases.json')]);
     const data = await res.json();
-    // Releases loaded in background — roster displays immediately
-    window._allReleases = [];
-    dbFetch('/releases.json').then(r => r.ok ? r.json() : null).then(d => {
-      window._allReleases = d ? Object.values(d) : [];
-      if (window._renderRoster) window._renderRoster();
-    }).catch(() => {});
+    const relData = await relRes.json();
+    window._allReleases = relData ? Object.values(relData) : [];
     const content = document.getElementById('rosterContent');
     if (!data) { content.innerHTML = `<div class="loading">${t('aucun_artiste')}<br><a href="roster_create.html" style="color:var(--accent)">${t('creer_fiche')}</a></div>`; return; }
     const allArtists = Object.values(data).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
@@ -480,7 +476,7 @@ function rerenderRoster() {
         h += `</div>`;
       }
 
-      if (discography.length && a.discoVisible !== false) {
+      if (discography.length) {
         const sortedDisco = [...discography].sort((a, b) => {
           const [am, ay] = (a.date || '00/0000').split('/'); const [bm, by] = (b.date || '00/0000').split('/');
           return (by + bm).localeCompare(ay + am);
@@ -691,7 +687,7 @@ function openSpecialExport(a) {
 
   // --- Discographie (section toggle) ---
   mh += `<div class="se-section">Discographie</div>`;
-  if (discography.length && a.discoVisible !== false) {
+  if (discography.length) {
     mh += `<label class="se-check"><input type="checkbox" data-se="section" value="discography" checked /> Inclure la discographie</label>`;
   } else {
     mh += `<label class="se-check" style="opacity:0.4"><input type="checkbox" data-se="section" value="discography" disabled /> Discographie (vide)</label>`;
@@ -898,7 +894,7 @@ function buildArtistCardHTML(a, pdfLang, opts) {
     });
     h += '</div>';
   }
-  if (discography.length && a.discoVisible !== false) {
+  if (discography.length) {
     const sortedDisco = [...discography].sort((x, y) => {
       const [am, ay] = (x.date || '00/0000').split('/'); const [bm, by] = (y.date || '00/0000').split('/');
       return (by + bm).localeCompare(ay + am);
