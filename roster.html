@@ -143,16 +143,15 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .se-btn-cancel { background: transparent; border: 1px solid var(--border); color: var(--muted); }
 .se-btn-cancel:hover { border-color: #555; color: var(--text); }
 
-.card-certs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
-.cert-card { position: relative; width: 90px; height: 90px; overflow: hidden; border: 1px solid rgba(232,197,71,0.3); flex-shrink: 0; }
+.card-certs { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
+.cert-card { position: relative; width: 86px; height: 86px; overflow: hidden; border: 1px solid rgba(232,197,71,0.3); flex-shrink: 0; }
 .cert-card-art { width: 100%; height: 100%; object-fit: cover; display: block; }
 .cert-card-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.82) 100%); display: flex; flex-direction: column; justify-content: flex-end; padding: 5px 6px; }
-.cert-card-artist { font-family: 'Syne', sans-serif; font-size: 0.52rem; font-weight: 700; color: #fff; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.cert-card-title { font-family: 'Syne Mono', monospace; font-size: 0.46rem; color: rgba(255,255,255,0.75); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.cert-card-type { font-family: 'Syne Mono', monospace; font-size: 0.4rem; color: rgba(232,197,71,0.7); text-transform: uppercase; letter-spacing: 0.06em; }
-.cert-card-level { font-family: 'Syne', sans-serif; font-size: 0.46rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #e8c547; line-height: 1.1; }
+.cert-card-artist { font-family: 'Syne', sans-serif; font-size: 0.46rem; font-weight: 700; color: #fff; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cert-card-title { font-family: 'Syne Mono', monospace; font-size: 0.4rem; color: rgba(255,255,255,0.75); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cert-card-certline { font-family: 'Syne Mono', monospace; font-size: 0.4rem; color: rgba(232,197,71,0.7); text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cert-card-noart { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1a1a1a, #0a0a0a); font-size: 1.6rem; }
-.cert-card-medal { position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; z-index: 2; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.6)); }
+.cert-card-medal { position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; z-index: 2; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.6)); }
 
 .social-link { display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border: 1px solid rgba(255,255,255,0.15); color: #ddd; transition: all 0.15s; }
 .social-link:hover { border-color: #fff; color: #fff; }
@@ -516,10 +515,11 @@ function rerenderRoster() {
         }
       }
 
-      if (majors.length) {
-        h += `<div class="card-section-title">${t('placements_majeurs')}</div><div class="card-majors">`;
-        majors.slice(0, 10).forEach(m => {
-          h += `<div class="major-card">`;
+      const visibleMajors = majors.filter(m => m.displayOnFiche !== false);
+      if (visibleMajors.length) {
+        h += `<div class="card-section-title">${t('placements_majeurs')}</div><div class="card-majors card-majors-sm">`;
+        visibleMajors.slice(0, 10).forEach(m => {
+          h += `<div class="major-card major-card-sm">`;
           if (m.artwork) h += `<img class="major-card-art" src="${m.artwork}" />`;
           else h += `<div class="major-card-noart">🎵</div>`;
           if (m.link) h += `<a class="major-card-listen" href="${m.link}" target="_blank" title="${t('ecouter')}">▶</a>`;
@@ -557,8 +557,7 @@ function rerenderRoster() {
             out += `<div class="cert-card-overlay">`;
             if (c.artist) out += `<div class="cert-card-artist" title="${c.artist}">${c.artist}</div>`;
             if (c.project) out += `<div class="cert-card-title" title="${c.project}">${c.project}</div>`;
-            out += `<div class="cert-card-type">${c.type || ''}</div>`;
-            out += `<div class="cert-card-level">${levelLabel}</div>`;
+            out += `<div class="cert-card-certline">${c.type || ''} ${levelLabel}</div>`;
             out += `</div></div>`;
           });
           return out + '</div>';
@@ -943,9 +942,10 @@ function buildArtistCardHTML(a, pdfLang, opts) {
       h += '</div>';
     }
   }
-  if (majors.length) {
+  const visibleMajors = majors.filter(m => m.displayOnFiche !== false);
+  if (visibleMajors.length) {
     h += `<div class="pdf-section-label">${t('placements_majeurs', pdfLang).toUpperCase()}</div><div class="pdf-majors pdf-majors-cards">`;
-    majors.slice(0, 10).forEach(m => {
+    visibleMajors.slice(0, 10).forEach(m => {
       h += '<div class="pdf-major-card">';
       if (m.artwork) h += `<img src="${m.artwork}" crossorigin="anonymous" class="pdf-major-card-art" />`;
       else h += '<div class="pdf-major-card-noart">🎵</div>';
@@ -978,8 +978,7 @@ function buildArtistCardHTML(a, pdfLang, opts) {
         out += '<div class="pdf-cert-card-overlay">';
         if (c.artist) out += `<div class="pdf-cert-card-artist">${c.artist}</div>`;
         if (c.project) out += `<div class="pdf-cert-card-title">${c.project}</div>`;
-        out += `<div class="pdf-cert-card-type">${c.type || ''}</div>`;
-        out += `<div class="pdf-cert-card-level">${levelLabel}</div>`;
+        out += `<div class="pdf-cert-card-type">${c.type || ''} ${levelLabel}</div>`;
         out += '</div></div>';
       });
       return out + '</div>';

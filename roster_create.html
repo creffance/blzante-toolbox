@@ -211,9 +211,13 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
   <div class="dynamic-list" id="majorList"></div>
   <button class="add-btn-dyn" id="addMajor">+ Ajouter un placement majeur</button>
 
-  <div class="form-section">Certifications</div>
-  <div class="dynamic-list" id="certsList"></div>
-  <button class="add-btn-dyn" id="addCert">+ Ajouter une certification</button>
+  <div class="form-section">Certifications Singles</div>
+  <div class="dynamic-list" id="certsSinglesList"></div>
+  <button class="add-btn-dyn" id="addCertSingle" type="button">+ Ajouter une certif Single</button>
+
+  <div class="form-section">Certifications Albums</div>
+  <div class="dynamic-list" id="certsAlbumsList"></div>
+  <button class="add-btn-dyn" id="addCertAlbum" type="button">+ Ajouter une certif Album</button>
 
   <div class="form-section">Informations spéciales</div>
   <p class="img-hint">Nominations, prix, musicien/directeur musical sur tournée, etc.</p>
@@ -323,7 +327,7 @@ const renderImages = makeGallery(images, 'imgGallery', 'imgAddBtn', 'imgFileInpu
 const renderBgImages = makeGallery(bgImages, 'bgGallery', 'bgAddBtn', 'bgFileInput', 'bgUrlInput');
 
 // ─── Placements (artist names + visible toggle + country) ───
-const COUNTRY_FLAGS = { FR: '🇫🇷', US: '🇺🇸', GB: '🇬🇧', DE: '🇩🇪', ES: '🇪🇸', IT: '🇮🇹', BR: '🇧🇷', JP: '🇯🇵', KR: '🇰🇷', CA: '🇨🇦', AU: '🇦🇺', MX: '🇲🇽', NL: '🇳🇱', BE: '🇧🇪', CH: '🇨🇭', PT: '🇵🇹', SE: '🇸🇪', NO: '🇳🇴', DK: '🇩🇰', PL: '🇵🇱', TR: '🇹🇷', IN: '🇮🇳', NG: '🇳🇬', MA: '🇲🇦', DZ: '🇩🇿', TN: '🇹🇳', SN: '🇸🇳', CI: '🇨🇮', CM: '🇨🇲', CD: '🇨🇩', CG: '🇨🇬', GA: '🇬🇦' };
+const COUNTRY_FLAGS = { FR: '🇫🇷', US: '🇺🇸', GB: '🇬🇧', DE: '🇩🇪', ES: '🇪🇸', IT: '🇮🇹', BR: '🇧🇷', JP: '🇯🇵', KR: '🇰🇷', CA: '🇨🇦', AU: '🇦🇺', MX: '🇲🇽', NL: '🇳🇱', BE: '🇧🇪', CH: '🇨🇭', PT: '🇵🇹', SE: '🇸🇪', NO: '🇳🇴', DK: '🇩🇰', PL: '🇵🇱', TR: '🇹🇷', IN: '🇮🇳', NG: '🇳🇬', ML: '🇲🇱', MA: '🇲🇦', DZ: '🇩🇿', TN: '🇹🇳', SN: '🇸🇳', CI: '🇨🇮', CM: '🇨🇲', CD: '🇨🇩', CG: '🇨🇬', GA: '🇬🇦' };
 function addPlacement(val, visible, country) {
   if (typeof val === 'object' && val !== null) { visible = val.visible !== false; country = val.country || 'FR'; val = val.name || ''; }
   if (visible === undefined) visible = true;
@@ -427,7 +431,7 @@ async function loadPlanningPlacements(artistName) {
       }
       if (!isMajorDupe) {
         div.querySelector('[data-target="major"]').addEventListener('click', function() {
-          addMajor(r.artist || '', r.title || '', r.artwork || '', r.link || '');
+          addMajor(r.artist || '', r.title || '', r.artwork || '', r.link || '', true, 'planning');
           this.textContent = '✓ Majeur'; this.classList.add('added');
         });
       }
@@ -438,12 +442,16 @@ async function loadPlanningPlacements(artistName) {
 
 // ─── Major placements ───
 let majorCount = 0;
-function addMajor(artist, title, artwork, link) {
+function addMajor(artist, title, artwork, link, displayOnFiche, source) {
   majorCount++;
-  const div = document.createElement('div'); div.className = 'major-item'; div.dataset.mid = majorCount;
+  const isChecked = displayOnFiche !== false;
+  const src = source || 'manual';
+  const div = document.createElement('div'); div.className = 'major-item'; div.dataset.mid = majorCount; div.dataset.source = src;
   div.innerHTML = `<input type="text" class="form-input" placeholder="Artiste" value="${artist||''}" data-f="artist" />` +
     `<input type="text" class="form-input" placeholder="Projet" value="${title||''}" data-f="title" />` +
     `<input type="text" class="form-input" placeholder="Lien écoute (optionnel)" value="${link||''}" data-f="link" style="font-size:0.68rem" />` +
+    `<label style="display:flex;align-items:center;gap:3px;font-size:0.6rem;color:#888;cursor:pointer;white-space:nowrap" title="Afficher sur la fiche"><input type="checkbox" data-f="displayOnFiche" ${isChecked ? 'checked' : ''} /> Fiche</label>` +
+    `<span style="font-size:0.5rem;color:${src === 'planning' ? '#e8c547' : '#555'};white-space:nowrap">${src === 'planning' ? '📋' : '✍️'}</span>` +
     `<input type="file" accept="image/*" style="display:none" data-f="file" />` +
     `<button type="button" class="major-upload" data-f="upload">img</button>` +
     `<button class="remove-btn" onclick="this.parentElement.remove()">×</button>`;
@@ -509,16 +517,19 @@ document.getElementById('addDisco').addEventListener('click', () => addDisco());
 
 // ─── Certifications ───
 let certCount = 0;
-function addCert(type, level, artist, project, artwork, displayOnFiche) {
+function addCert(type, level, artist, project, artwork, displayOnFiche, source) {
   certCount++;
   const cid = certCount;
   const isChecked = displayOnFiche !== false;
-  const div = document.createElement('div'); div.className = 'cert-item'; div.dataset.cid = cid;
-  div.innerHTML = `<select class="form-select" data-f="type"><option value="">Type</option><option value="Single" ${type==='Single'?'selected':''}>Single</option><option value="Album" ${type==='Album'?'selected':''}>Album</option></select>` +
+  const src = source || 'manual';
+  const certType = type || 'Single';
+  const div = document.createElement('div'); div.className = 'cert-item'; div.dataset.cid = cid; div.dataset.source = src;
+  div.innerHTML = `<input type="hidden" data-f="type" value="${certType}" />` +
     `<select class="form-select" data-f="level"><option value="">Certif</option><option value="Or" ${level==='Or'?'selected':''}>Or</option><option value="Platine" ${level==='Platine'?'selected':''}>Platine</option><option value="Double platine" ${level==='Double platine'?'selected':''}>Double platine</option><option value="Triple platine" ${level==='Triple platine'?'selected':''}>Triple platine</option><option value="Diamant" ${level==='Diamant'?'selected':''}>Diamant</option></select>` +
     `<input type="text" class="form-input" placeholder="Artiste" value="${artist||''}" data-f="artist" />` +
     `<input type="text" class="form-input" placeholder="Projet" value="${project||''}" data-f="project" />` +
     `<label style="display:flex;align-items:center;gap:3px;font-size:0.6rem;color:#888;cursor:pointer;white-space:nowrap" title="Afficher cette certif sur la fiche artiste"><input type="checkbox" data-f="displayOnFiche" ${isChecked ? 'checked' : ''} /> Fiche</label>` +
+    `<span style="font-size:0.5rem;color:${src === 'planning' ? '#e8c547' : '#555'};white-space:nowrap">${src === 'planning' ? '📋' : '✍️'}</span>` +
     `<input type="file" accept="image/*" style="display:none" data-f="file" />` +
     `<button type="button" class="major-upload" data-f="upload">img</button>` +
     `<button type="button" class="cert-link-btn" data-f="spotifyToggle" title="Coller un lien Spotify">🔗</button>` +
@@ -576,9 +587,11 @@ function addCert(type, level, artist, project, artwork, displayOnFiche) {
   spotifyInput.addEventListener('paste', () => {
     setTimeout(() => { div.querySelector('[data-f=fetchArt]').click(); }, 100);
   });
-  document.getElementById('certsList').appendChild(div);
+  const container = certType === 'Album' ? 'certsAlbumsList' : 'certsSinglesList';
+  document.getElementById(container).appendChild(div);
 }
-document.getElementById('addCert').addEventListener('click', () => addCert());
+document.getElementById('addCertSingle').addEventListener('click', () => addCert('Single'));
+document.getElementById('addCertAlbum').addEventListener('click', () => addCert('Album'));
 
 // ─── Informations spéciales ───
 function addSpecial(valFr, valEn) {
@@ -605,7 +618,9 @@ function gatherData() {
     const title = div.querySelector('[data-f=title]').value.trim();
     const link = div.querySelector('[data-f=link]').value.trim();
     const artImg = div.querySelector('.major-artwork');
-    if (artist || title) majors.push({ artist, title, link, artwork: artImg ? artImg.src : '' });
+    const displayOnFiche = div.querySelector('[data-f=displayOnFiche]')?.checked !== false;
+    const source = div.dataset.source || 'manual';
+    if (artist || title) majors.push({ artist, title, link, artwork: artImg ? artImg.src : '', displayOnFiche, source });
   });
   const discography = []; document.querySelectorAll('#discoList .major-item').forEach(div => {
     const date = div.querySelector('[data-f=date]').value.trim();
@@ -616,14 +631,15 @@ function gatherData() {
     const feat = div.querySelector('[data-f=feat]').value.trim();
     if (artist || title) discography.push({ date, artist, title, link, feat, artwork: artImg ? artImg.src : '' });
   });
-  const certs = []; document.querySelectorAll('#certsList .cert-item').forEach(div => {
+  const certs = []; document.querySelectorAll('#certsSinglesList .cert-item, #certsAlbumsList .cert-item').forEach(div => {
     const type = div.querySelector('[data-f=type]').value;
     const level = div.querySelector('[data-f=level]').value;
     const artist = div.querySelector('[data-f=artist]').value.trim();
     const project = div.querySelector('[data-f=project]').value.trim();
     const artImg = div.querySelector('.cert-artwork');
     const displayOnFiche = div.querySelector('[data-f=displayOnFiche]')?.checked !== false;
-    if (type || level || artist) certs.push({ type, level, artist, project, artwork: artImg ? artImg.src : '', displayOnFiche });
+    const source = div.dataset.source || 'manual';
+    if (type || level || artist) certs.push({ type, level, artist, project, artwork: artImg ? artImg.src : '', displayOnFiche, source });
   });
   const specialInfo = []; const specialInfoEn = [];
   document.querySelectorAll('#specialList .dynamic-item').forEach(div => {
@@ -687,12 +703,12 @@ async function loadForEdit(id) {
     // Fetch planning releases for this artist
     loadPlanningPlacements(d.name);
     const mj = Array.isArray(d.majors) ? d.majors : d.majors ? Object.values(d.majors) : [];
-    mj.forEach(m => addMajor(m.artist, m.title, m.artwork, m.link));
+    mj.forEach(m => addMajor(m.artist, m.title, m.artwork, m.link, m.displayOnFiche, m.source));
     const dc = Array.isArray(d.discography) ? d.discography : d.discography ? Object.values(d.discography) : [];
     dc.forEach(x => addDisco(x.artist, x.title, x.artwork, x.date, x.link, x.feat));
     document.getElementById('discoVisible').checked = d.discoVisible !== false;
     const cr = Array.isArray(d.certs) ? d.certs : d.certs ? Object.values(d.certs) : [];
-    cr.forEach(c => addCert(c.type, c.level, c.artist, c.project, c.artwork, c.displayOnFiche));
+    cr.forEach(c => addCert(c.type || 'Single', c.level, c.artist, c.project, c.artwork, c.displayOnFiche, c.source));
     const sp = Array.isArray(d.specialInfo) ? d.specialInfo : d.specialInfo ? Object.values(d.specialInfo) : [];
     const spEn = Array.isArray(d.specialInfoEn) ? d.specialInfoEn : d.specialInfoEn ? Object.values(d.specialInfoEn) : [];
     sp.forEach((s, i) => addSpecial(typeof s === 'string' ? s : '', typeof spEn[i] === 'string' ? spEn[i] : ''));
