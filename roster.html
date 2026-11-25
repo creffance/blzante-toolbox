@@ -108,7 +108,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 
 .card-majors { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
 .card-majors-sm { gap: 5px; }
-.major-card { position: relative; width: 110px; height: 110px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); flex-shrink: 0; }
+.major-card { position: relative; width: 110px; height: 110px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); flex-shrink: 0; font-size: 0; line-height: 0; }
 .major-card-sm { width: 86px; height: 86px; }
 .major-card a { text-decoration: none; }
 .major-card-art { width: 100%; height: 100%; object-fit: cover; display: block; vertical-align: bottom; }
@@ -144,8 +144,8 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .se-btn-cancel:hover { border-color: #555; color: var(--text); }
 
 .card-certs { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
-.cert-card { position: relative; width: 86px; height: 86px; overflow: hidden; border: 1px solid rgba(232,197,71,0.3); flex-shrink: 0; }
-.cert-card-art { width: 100%; height: 100%; object-fit: cover; display: block; vertical-align: bottom; }
+.cert-card { position: relative; width: 86px; height: 86px; overflow: hidden; border: 1px solid rgba(232,197,71,0.3); flex-shrink: 0; font-size: 0; line-height: 0; }
+.cert-card-art { width: 100%; height: 100%; object-fit: cover; display: block; }
 .cert-card-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.82) 100%); display: flex; flex-direction: column; justify-content: flex-end; padding: 5px 6px; }
 .cert-card-artist { font-family: 'Syne', sans-serif; font-size: 0.46rem; font-weight: 700; color: #fff; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cert-card-title { font-family: 'Syne Mono', monospace; font-size: 0.4rem; color: rgba(255,255,255,0.75); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -183,7 +183,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .pdf-playlist-row { display: flex; gap: 8px; flex-wrap: wrap; }
 .pdf-bio { font-size: 0.76rem; color: #d0d0d0; line-height: 1.6; font-family: 'Syne Mono', monospace; text-align: center; margin: 10px 0; padding: 12px 22px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); }
 .pdf-context { font-size: 0.82rem; color: #fff; line-height: 1.6; font-family: 'Syne', Arial, sans-serif; font-weight: 600; text-align: center; margin: 12px 0; padding: 18px 24px; background: rgba(232,197,71,0.08); border: 1px solid rgba(232,197,71,0.3); letter-spacing: 0.02em; }
-.pdf-section-label { font-size: 0.7rem; color: #bbb; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700; margin: 10px 0 5px; padding-top: 8px; padding-bottom: 4px; border-top: 1px solid rgba(255,255,255,0.06); border-bottom: 1px solid rgba(255,255,255,0.06); }
+.pdf-section-label { font-size: 0.72rem; color: #bbb; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700; margin: 14px 0 6px; padding-top: 10px; padding-bottom: 5px; border-top: 1px solid rgba(255,255,255,0.06); border-bottom: 1px solid rgba(255,255,255,0.06); }
 .pdf-tags { display: flex; gap: 6px; flex-wrap: wrap; }
 .pdf-tag { font-size: 0.66rem; color: #ddd; padding: 4px 10px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.05); font-family: 'Syne Mono', monospace; }
 .pdf-majors { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -192,7 +192,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .pdf-major-info { font-size: 0.66rem; color: #aaa; line-height: 1.3; }
 .pdf-major-info strong { color: #fff; }
 .pdf-majors-cards { display: flex; gap: 5px; flex-wrap: wrap; }
-.pdf-major-card { position: relative; width: 80px; height: 80px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); }
+.pdf-major-card { position: relative; width: 80px; height: 80px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); font-size: 0; line-height: 0; }
 .pdf-major-card-art { width: 100%; height: 100%; object-fit: cover; display: block; vertical-align: bottom; }
 .pdf-major-card-noart { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1a1a1a, #0a0a0a); font-size: 1.4rem; }
 .pdf-major-card-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.82) 100%); display: flex; flex-direction: column; justify-content: flex-end; padding: 5px 6px; }
@@ -200,7 +200,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .pdf-major-card-title { font-family: 'Syne Mono', monospace; font-size: 0.42rem; color: rgba(255,255,255,0.75); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pdf-major-card-meta { font-family: 'Syne Mono', monospace; font-size: 0.36rem; color: rgba(255,255,255,0.45); }
 .pdf-certs { display: flex; flex-wrap: wrap; gap: 5px; }
-.pdf-cert-card { position: relative; width: 70px; height: 70px; overflow: hidden; border: 1px solid rgba(232,197,71,0.3); }
+.pdf-cert-card { position: relative; width: 80px; height: 80px; overflow: hidden; border: 1px solid rgba(232,197,71,0.3); font-size: 0; line-height: 0; }
 .pdf-cert-card img { width: 100%; height: 100%; object-fit: cover; display: block; vertical-align: bottom; }
 .pdf-cert-card-noart { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1a1a1a, #0a0a0a); font-size: 1.4rem; }
 .pdf-cert-card-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.8) 100%); display: flex; flex-direction: column; justify-content: flex-end; padding: 4px 5px; }
@@ -215,7 +215,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .pdf-socials { position: absolute; top: 30px; right: 36px; display: flex; align-items: center; gap: 10px; z-index: 2; }
 .pdf-socials a { color: #ddd; }
 .pdf-socials svg { width: 28px; height: 28px; }
-.pdf-socials .pdf-blz-logo { height: 36px; width: auto; opacity: 0.7; margin-left: 6px; }
+.pdf-socials .pdf-blz-logo { height: 36px; width: auto; opacity: 0.7; margin-left: 16px; border-left: 1px solid rgba(255,255,255,0.15); padding-left: 16px; }
 
 </style>
 </head>
@@ -514,21 +514,6 @@ function rerenderRoster() {
         h += `</div>`;
       }
 
-      if (placements.length) {
-        const sorted = [...placements]
-          .map(p => typeof p === 'string' ? { name: p, visible: true, country: 'FR' } : { name: p.name || '', visible: p.visible !== false, country: p.country || 'FR' })
-          .filter(p => p.name && p.visible)
-          .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
-        if (sorted.length) {
-          h += `<div class="card-section-title">${t('artistes_places')}</div><div class="card-placements">`;
-          sorted.forEach(p => {
-            const flag = p.country ? `<img src="https://flagcdn.com/16x12/${p.country.toLowerCase()}.png" style="width:14px;height:10px;vertical-align:middle;margin-right:3px" />` : '';
-            h += `<span class="pl-tag">${flag}${p.name}</span>`;
-          });
-          h += `</div>`;
-        }
-      }
-
       const visibleMajors = majors.filter(m => m.displayOnFiche !== false);
       if (visibleMajors.length) {
         h += `<div class="card-section-title">${t('placements_majeurs')}</div><div class="card-majors card-majors-sm">`;
@@ -582,6 +567,20 @@ function rerenderRoster() {
         h += renderCertGroup(t('cert_autres'), other);
       }
 
+      if (placements.length) {
+        const sorted = [...placements]
+          .map(p => typeof p === 'string' ? { name: p, visible: true, country: 'FR' } : { name: p.name || '', visible: p.visible !== false, country: p.country || 'FR' })
+          .filter(p => p.name && p.visible)
+          .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+        if (sorted.length) {
+          h += `<div class="card-section-title">${t('artistes_places')}</div><div class="card-placements">`;
+          sorted.forEach(p => {
+            const flag = p.country ? `<img src="https://flagcdn.com/16x12/${p.country.toLowerCase()}.png" style="width:14px;height:10px;vertical-align:middle;margin-right:3px" />` : '';
+            h += `<span class="pl-tag">${flag}${p.name}</span>`;
+          });
+          h += `</div>`;
+        }
+      }
 
       h += `</div></div></div></div>`;
       return h;
@@ -901,7 +900,7 @@ function buildArtistCardHTML(a, pdfLang, opts) {
   const displaySpecials = specials.map((s, i) => (pdfLang === 'en' && specialsEn[i]) ? specialsEn[i] : s);
   if (displaySpecials.some(s => s)) {
     h += `<div class="pdf-section-label">${t('infos_speciales', pdfLang).toUpperCase()}</div>`;
-    displaySpecials.forEach(s => { if (s) h += `<div style="font-size:0.62rem;color:#ccc;padding:2px 0">⭐ ${s}</div>`; });
+    displaySpecials.forEach(s => { if (s) h += `<div style="font-size:0.72rem;color:#ccc;padding:3px 0;line-height:1.4">⭐ ${s}</div>`; });
   }
   // Derniers placements from planning (skip if custom export opted out)
   const planningReleases = (a._includePlanning !== false && a.showLatestCuts !== false) ? getArtistPlanningReleases(a.name) : [];
@@ -940,20 +939,6 @@ function buildArtistCardHTML(a, pdfLang, opts) {
       h += '</div></div>';
     });
     h += '</div>';
-  }
-  if (placements.length) {
-    const sorted = [...placements]
-      .map(p => typeof p === 'string' ? { name: p, visible: true, country: 'FR' } : { name: p.name || '', visible: p.visible !== false, country: p.country || 'FR' })
-      .filter(p => p.name && p.visible)
-      .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
-    if (sorted.length) {
-      h += `<div class="pdf-section-label">${t('artistes_places', pdfLang).toUpperCase()}</div><div class="pdf-tags">`;
-      sorted.forEach(p => {
-        const flag = p.country ? `<img src="https://flagcdn.com/16x12/${p.country.toLowerCase()}.png" crossorigin="anonymous" style="width:14px;height:10px;vertical-align:middle;margin-right:3px" />` : '';
-        h += `<span class="pdf-tag">${flag}${p.name}</span>`;
-      });
-      h += '</div>';
-    }
   }
   const visibleMajors = majors.filter(m => m.displayOnFiche !== false);
   if (visibleMajors.length) {
@@ -1009,6 +994,20 @@ function buildArtistCardHTML(a, pdfLang, opts) {
       h += renderPdfCertGroup(t('cert_albums', pdfLang).toUpperCase(), albums);
     }
     if (other.length) h += renderPdfCertGroup(t('cert_autres', pdfLang).toUpperCase(), other);
+  }
+  if (placements.length) {
+    const sorted = [...placements]
+      .map(p => typeof p === 'string' ? { name: p, visible: true, country: 'FR' } : { name: p.name || '', visible: p.visible !== false, country: p.country || 'FR' })
+      .filter(p => p.name && p.visible)
+      .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+    if (sorted.length) {
+      h += `<div class="pdf-section-label">${t('artistes_places', pdfLang).toUpperCase()}</div><div class="pdf-tags">`;
+      sorted.forEach(p => {
+        const flag = p.country ? `<img src="https://flagcdn.com/16x12/${p.country.toLowerCase()}.png" crossorigin="anonymous" style="width:14px;height:10px;vertical-align:middle;margin-right:3px" />` : '';
+        h += `<span class="pdf-tag">${flag}${p.name}</span>`;
+      });
+      h += '</div>';
+    }
   }
   h += '</div>'; // close pdf-content
   return h;
