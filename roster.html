@@ -108,12 +108,12 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 
 .card-majors { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
 .card-majors-sm { gap: 5px; }
-.major-card { position: relative; width: 110px; height: 110px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); flex-shrink: 0; font-size: 0; line-height: 0; }
+.major-card { position: relative; width: 110px; height: 110px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); flex-shrink: 0; }
 .major-card-sm { width: 86px; height: 86px; }
 .major-card a { text-decoration: none; }
-.major-card-art { width: 100%; height: 100%; object-fit: cover; display: block; vertical-align: bottom; }
-.major-card-noart { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1a1a1a, #0a0a0a); font-size: 1.6rem; }
-.major-card-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: -1px; background: linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.82) 100%); display: flex; flex-direction: column; justify-content: flex-end; padding: 6px 7px; }
+.major-card-art { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
+.major-card-noart { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1a1a1a, #0a0a0a); font-size: 1.6rem; }
+.major-card-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.82) 100%); display: flex; flex-direction: column; justify-content: flex-end; padding: 6px 7px; box-sizing: border-box; }
 .major-card-artist { font-family: 'Syne', sans-serif; font-size: 0.52rem; font-weight: 700; color: #fff; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .major-card-title { font-family: 'Syne Mono', monospace; font-size: 0.46rem; color: rgba(255,255,255,0.75); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .major-card-meta { font-family: 'Syne Mono', monospace; font-size: 0.4rem; color: rgba(255,255,255,0.45); }
@@ -144,13 +144,13 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .se-btn-cancel:hover { border-color: #555; color: var(--text); }
 
 .card-certs { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
-.cert-card { position: relative; width: 86px; height: 86px; overflow: hidden; border: 1px solid rgba(232,197,71,0.3); flex-shrink: 0; font-size: 0; line-height: 0; }
-.cert-card-art { width: 100%; height: 100%; object-fit: cover; display: block; }
-.cert-card-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: -1px; background: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.82) 100%); display: flex; flex-direction: column; justify-content: flex-end; padding: 5px 6px; }
+.cert-card { position: relative; width: 86px; height: 86px; overflow: hidden; border: 1px solid rgba(232,197,71,0.3); flex-shrink: 0; }
+.cert-card-art { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
+.cert-card-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.82) 100%); display: flex; flex-direction: column; justify-content: flex-end; padding: 5px 6px; box-sizing: border-box; }
 .cert-card-artist { font-family: 'Syne', sans-serif; font-size: 0.46rem; font-weight: 700; color: #fff; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cert-card-title { font-family: 'Syne Mono', monospace; font-size: 0.4rem; color: rgba(255,255,255,0.75); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cert-card-certline { font-family: 'Syne Mono', monospace; font-size: 0.4rem; color: rgba(232,197,71,0.7); text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.cert-card-noart { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1a1a1a, #0a0a0a); font-size: 1.6rem; }
+.cert-card-noart { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1a1a1a, #0a0a0a); font-size: 1.6rem; }
 .cert-card-medal { position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; z-index: 2; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.6)); }
 
 .social-link { display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border: 1px solid rgba(255,255,255,0.15); color: #ddd; transition: all 0.15s; }
@@ -171,7 +171,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
   font-family: 'Syne', Arial, sans-serif; overflow: visible;
 }
 .pdf-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-size: cover; background-position: center; opacity: 0.2; }
-.pdf-content { position: relative; z-index: 1; padding: 30px 36px; display: flex; flex-direction: column; }
+.pdf-content { position: relative; z-index: 1; padding: 22px 28px; display: flex; flex-direction: column; }
 .pdf-top { display: flex; align-items: flex-start; gap: 20px; margin-bottom: 12px; }
 .pdf-photo { width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 3px solid #262626; flex-shrink: 0; }
 .pdf-photo-ph { width: 90px; height: 90px; border-radius: 50%; background: #222; border: 3px solid #262626; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; font-weight: 800; color: #555; }
@@ -192,24 +192,27 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .pdf-major-info { font-size: 0.66rem; color: #aaa; line-height: 1.3; }
 .pdf-major-info strong { color: #fff; }
 .pdf-majors-cards { display: flex; gap: 5px; flex-wrap: wrap; }
-.pdf-major-card { position: relative; width: 86px; height: 86px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); font-size: 0; line-height: 0; }
-.pdf-major-card-art { width: 100%; height: 100%; object-fit: cover; display: block; vertical-align: bottom; }
-.pdf-major-card-noart { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1a1a1a, #0a0a0a); font-size: 1.4rem; }
-.pdf-major-card-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: -1px; background: linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.82) 100%); display: flex; flex-direction: column; justify-content: flex-end; padding: 5px 6px; }
+.pdf-major-card { position: relative; width: 90px; height: 90px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); font-size: 0; line-height: 0; }
+.pdf-major-card-art { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
+.pdf-major-card-noart { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1a1a1a, #0a0a0a); font-size: 1.4rem; }
+.pdf-major-card-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.82) 100%); display: flex; flex-direction: column; justify-content: flex-end; padding: 5px 6px; box-sizing: border-box; }
 .pdf-major-card-artist { font-family: 'Syne', sans-serif; font-size: 0.48rem; font-weight: 700; color: #fff; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pdf-major-card-title { font-family: 'Syne Mono', monospace; font-size: 0.42rem; color: rgba(255,255,255,0.75); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pdf-major-card-meta { font-family: 'Syne Mono', monospace; font-size: 0.36rem; color: rgba(255,255,255,0.45); }
 .pdf-certs { display: flex; flex-wrap: wrap; gap: 5px; }
-.pdf-cert-card { position: relative; width: 86px; height: 86px; overflow: hidden; border: 1px solid rgba(232,197,71,0.3); font-size: 0; line-height: 0; }
-.pdf-cert-card img { width: 100%; height: 100%; object-fit: cover; display: block; vertical-align: bottom; }
-.pdf-cert-card-noart { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1a1a1a, #0a0a0a); font-size: 1.4rem; }
-.pdf-cert-card-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: -1px; background: linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.8) 100%); display: flex; flex-direction: column; justify-content: flex-end; padding: 4px 5px; }
+.pdf-cert-card { position: relative; width: 90px; height: 90px; overflow: hidden; border: 1px solid rgba(232,197,71,0.3); font-size: 0; line-height: 0; }
+.pdf-cert-card img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
+.pdf-cert-card-noart { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1a1a1a, #0a0a0a); font-size: 1.4rem; }
+.pdf-cert-card-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.8) 100%); display: flex; flex-direction: column; justify-content: flex-end; padding: 4px 5px; box-sizing: border-box; }
 .pdf-cert-card-artist { font-family: 'Syne', sans-serif; font-size: 0.48rem; font-weight: 700; color: #fff; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pdf-cert-card-title { font-family: 'Syne Mono', monospace; font-size: 0.4rem; color: rgba(255,255,255,0.75); line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pdf-cert-card-type { font-family: 'Syne Mono', monospace; font-size: 0.34rem; color: rgba(232,197,71,0.7); text-transform: uppercase; }
 .pdf-cert-card-level { font-family: 'Syne', sans-serif; font-size: 0.42rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #e8c547; line-height: 1.1; }
-.pdf-certs-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.pdf-certs-col .pdf-section-label { margin-top: 4px; }
+.pdf-main-layout { display: grid; grid-template-columns: 1fr 190px; gap: 12px; }
+.pdf-main-left { min-width: 0; }
+.pdf-main-right { border-left: 1px solid rgba(255,255,255,0.06); padding-left: 12px; }
+.pdf-main-right .pdf-tag { font-size: 0.5rem; padding: 2px 5px; }
+.pdf-main-right .pdf-section-label { font-size: 0.6rem; margin-top: 0; }
 .cert-card-play, .pdf-cert-play { position: absolute; top: 3px; right: 3px; width: 18px; height: 18px; background: rgba(0,0,0,0.6); border: 1px solid rgba(232,197,71,0.4); display: flex; align-items: center; justify-content: center; color: #e8c547; text-decoration: none; font-size: 0.42rem; z-index: 2; opacity: 0.7; }
 .cert-card-play:hover { opacity: 1; background: rgba(0,0,0,0.85); }
 .pdf-socials { position: absolute; top: 30px; right: 36px; display: flex; align-items: center; gap: 10px; z-index: 2; }
@@ -902,6 +905,25 @@ function buildArtistCardHTML(a, pdfLang, opts) {
     h += `<div class="pdf-section-label">${t('infos_speciales', pdfLang).toUpperCase()}</div>`;
     displaySpecials.forEach(s => { if (s) h += `<div style="font-size:0.72rem;color:#ccc;padding:3px 0;line-height:1.4">⭐ ${s}</div>`; });
   }
+  // --- Two-column layout: main content left, plugged artists right ---
+  // Build plugged artists HTML first
+  let placementsHtml = '';
+  if (placements.length) {
+    const sorted = [...placements]
+      .map(p => typeof p === 'string' ? { name: p, visible: true, country: 'FR' } : { name: p.name || '', visible: p.visible !== false, country: p.country || 'FR' })
+      .filter(p => p.name && p.visible)
+      .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+    if (sorted.length) {
+      placementsHtml += `<div class="pdf-section-label">${t('artistes_places', pdfLang).toUpperCase()}</div><div class="pdf-tags">`;
+      sorted.forEach(p => {
+        const flag = p.country ? `<img src="https://flagcdn.com/16x12/${p.country.toLowerCase()}.png" crossorigin="anonymous" style="width:12px;height:9px;vertical-align:middle;margin-right:2px" />` : '';
+        placementsHtml += `<span class="pdf-tag">${flag}${p.name}</span>`;
+      });
+      placementsHtml += '</div>';
+    }
+  }
+  h += '<div class="pdf-main-layout"><div class="pdf-main-left">';
+
   // Derniers placements from planning (skip if custom export opted out)
   const planningReleases = (a._includePlanning !== false && a.showLatestCuts !== false) ? getArtistPlanningReleases(a.name) : [];
   if (planningReleases.length) {
@@ -965,7 +987,7 @@ function buildArtistCardHTML(a, pdfLang, opts) {
     const renderPdfCertGroup = (title, list) => {
       if (!list.length) return '';
       const shown = list.slice(0, 5);
-      let out = `<div class="pdf-certs-col"><div class="pdf-section-label">${title}</div><div class="pdf-certs">`;
+      let out = `<div class="pdf-section-label">${title}</div><div class="pdf-certs">`;
       shown.forEach(c => {
         const emoji = CERT_EMOJI[c.level] || '';
         const levelLabel = tCertLevel(c.level, pdfLang);
@@ -981,34 +1003,15 @@ function buildArtistCardHTML(a, pdfLang, opts) {
         out += `<div class="pdf-cert-card-type">${c.type || ''} ${levelLabel}</div>`;
         out += '</div></div>';
       });
-      return out + '</div></div>';
+      return out + '</div>';
     };
-    // Layout: singles and albums side by side
-    if (singles.length && albums.length) {
-      h += '<div class="pdf-certs-row">';
-      h += renderPdfCertGroup(t('cert_singles', pdfLang).toUpperCase(), singles);
-      h += renderPdfCertGroup(t('cert_albums', pdfLang).toUpperCase(), albums);
-      h += '</div>';
-    } else {
-      h += renderPdfCertGroup(t('cert_singles', pdfLang).toUpperCase(), singles);
-      h += renderPdfCertGroup(t('cert_albums', pdfLang).toUpperCase(), albums);
-    }
+    h += renderPdfCertGroup(t('cert_singles', pdfLang).toUpperCase(), singles);
+    h += renderPdfCertGroup(t('cert_albums', pdfLang).toUpperCase(), albums);
     if (other.length) h += renderPdfCertGroup(t('cert_autres', pdfLang).toUpperCase(), other);
   }
-  if (placements.length) {
-    const sorted = [...placements]
-      .map(p => typeof p === 'string' ? { name: p, visible: true, country: 'FR' } : { name: p.name || '', visible: p.visible !== false, country: p.country || 'FR' })
-      .filter(p => p.name && p.visible)
-      .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
-    if (sorted.length) {
-      h += `<div class="pdf-section-label">${t('artistes_places', pdfLang).toUpperCase()}</div><div class="pdf-tags">`;
-      sorted.forEach(p => {
-        const flag = p.country ? `<img src="https://flagcdn.com/16x12/${p.country.toLowerCase()}.png" crossorigin="anonymous" style="width:14px;height:10px;vertical-align:middle;margin-right:3px" />` : '';
-        h += `<span class="pdf-tag">${flag}${p.name}</span>`;
-      });
-      h += '</div>';
-    }
-  }
+  h += '</div>'; // close pdf-main-left
+  h += `<div class="pdf-main-right">${placementsHtml}</div>`;
+  h += '</div>'; // close pdf-main-layout
   h += '</div>'; // close pdf-content
   return h;
 }
