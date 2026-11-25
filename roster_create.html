@@ -187,13 +187,13 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
     </div>
   </div>
 
-  <div class="form-section" id="discoSection" style="display:none">Discographie artiste
+  <div class="form-section" id="discoSection">Discographie
     <label style="float:right;font-size:0.65rem;font-weight:400;color:#aaa;cursor:pointer;display:flex;align-items:center;gap:5px">
       <input type="checkbox" id="discoVisible" checked /> Afficher sur la fiche
     </label>
   </div>
-  <div class="dynamic-list" id="discoList" style="display:none"></div>
-  <button class="add-btn-dyn" id="addDisco" style="display:none">+ Ajouter une sortie</button>
+  <div class="dynamic-list" id="discoList"></div>
+  <button class="add-btn-dyn" id="addDisco">+ Ajouter une sortie</button>
 
   <div class="form-section">Placements</div>
   <div class="form-group">
@@ -276,10 +276,7 @@ document.getElementById('skillOptions').addEventListener('click', e => {
 });
 
 function toggleDiscoSection() {
-  const show = selectedTypes.includes('Artiste Interprète');
-  document.getElementById('discoSection').style.display = show ? '' : 'none';
-  document.getElementById('discoList').style.display = show ? '' : 'none';
-  document.getElementById('addDisco').style.display = show ? '' : 'none';
+  // Discographie toujours visible — le toggle "Afficher sur la fiche" gère l'affichage
 }
 
 // ─── Generic gallery handler ───
