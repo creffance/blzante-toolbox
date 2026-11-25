@@ -363,17 +363,16 @@ function rerenderRoster() {
   try { await _waitAuth(); } catch(e) { return; }
 
   try {
-    // Load roster first, releases in background (non-blocking)
-    window._allReleases = [];
     const res = await dbFetch('/roster.json');
     const data = await res.json();
-    const content = document.getElementById('rosterContent');
-    if (!data) { content.innerHTML = `<div class="loading">${t('aucun_artiste')}<br><a href="roster_create.html" style="color:var(--accent)">${t('creer_fiche')}</a></div>`; return; }
-    // Load releases in background, re-render when ready
-    dbFetch('/releases.json').then(r => r.json()).then(relData => {
-      window._allReleases = relData ? Object.values(relData) : [];
+    // Releases loaded in background — roster displays immediately
+    window._allReleases = [];
+    dbFetch('/releases.json').then(r => r.ok ? r.json() : null).then(d => {
+      window._allReleases = d ? Object.values(d) : [];
       if (window._renderRoster) window._renderRoster();
     }).catch(() => {});
+    const content = document.getElementById('rosterContent');
+    if (!data) { content.innerHTML = `<div class="loading">${t('aucun_artiste')}<br><a href="roster_create.html" style="color:var(--accent)">${t('creer_fiche')}</a></div>`; return; }
     const allArtists = Object.values(data).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     // Single unified list — songwriter fiches shown in priority (no duplicates)
     const seenIds = new Set();
@@ -695,7 +694,7 @@ function openSpecialExport(a) {
   if (discography.length && a.discoVisible !== false) {
     mh += `<label class="se-check"><input type="checkbox" data-se="section" value="discography" checked /> Inclure la discographie</label>`;
   } else {
-    mh += `<label class="se-check" style="opacity:0.4"><input type="checkbox" data-se="section" value="discography" disabled /> Discographie${a.discoVisible === false ? ' (masquée)' : ' (vide)'}</label>`;
+    mh += `<label class="se-check" style="opacity:0.4"><input type="checkbox" data-se="section" value="discography" disabled /> Discographie (vide)</label>`;
   }
 
   // --- Artistes placés (individual checkboxes) ---
