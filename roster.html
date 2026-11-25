@@ -363,12 +363,17 @@ function rerenderRoster() {
   try { await _waitAuth(); } catch(e) { return; }
 
   try {
-    const [res, relRes] = await Promise.all([dbFetch('/roster.json'), dbFetch('/releases.json')]);
+    // Load roster first, releases in background (non-blocking)
+    window._allReleases = [];
+    const res = await dbFetch('/roster.json');
     const data = await res.json();
-    const relData = await relRes.json();
-    window._allReleases = relData ? Object.values(relData) : [];
     const content = document.getElementById('rosterContent');
     if (!data) { content.innerHTML = `<div class="loading">${t('aucun_artiste')}<br><a href="roster_create.html" style="color:var(--accent)">${t('creer_fiche')}</a></div>`; return; }
+    // Load releases in background, re-render when ready
+    dbFetch('/releases.json').then(r => r.json()).then(relData => {
+      window._allReleases = relData ? Object.values(relData) : [];
+      if (window._renderRoster) window._renderRoster();
+    }).catch(() => {});
     const allArtists = Object.values(data).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     // Single unified list — songwriter fiches shown in priority (no duplicates)
     const seenIds = new Set();
