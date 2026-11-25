@@ -113,7 +113,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .major-card a { text-decoration: none; }
 .major-card-art { width: 100%; height: 100%; object-fit: cover; display: block; vertical-align: bottom; }
 .major-card-noart { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1a1a1a, #0a0a0a); font-size: 1.6rem; }
-.major-card-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.82) 100%); display: flex; flex-direction: column; justify-content: flex-end; padding: 6px 7px; }
+.major-card-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: -1px; background: linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.82) 100%); display: flex; flex-direction: column; justify-content: flex-end; padding: 6px 7px; }
 .major-card-artist { font-family: 'Syne', sans-serif; font-size: 0.52rem; font-weight: 700; color: #fff; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .major-card-title { font-family: 'Syne Mono', monospace; font-size: 0.46rem; color: rgba(255,255,255,0.75); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .major-card-meta { font-family: 'Syne Mono', monospace; font-size: 0.4rem; color: rgba(255,255,255,0.45); }
@@ -146,7 +146,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .card-certs { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
 .cert-card { position: relative; width: 86px; height: 86px; overflow: hidden; border: 1px solid rgba(232,197,71,0.3); flex-shrink: 0; font-size: 0; line-height: 0; }
 .cert-card-art { width: 100%; height: 100%; object-fit: cover; display: block; }
-.cert-card-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.82) 100%); display: flex; flex-direction: column; justify-content: flex-end; padding: 5px 6px; }
+.cert-card-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: -1px; background: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.82) 100%); display: flex; flex-direction: column; justify-content: flex-end; padding: 5px 6px; }
 .cert-card-artist { font-family: 'Syne', sans-serif; font-size: 0.46rem; font-weight: 700; color: #fff; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cert-card-title { font-family: 'Syne Mono', monospace; font-size: 0.4rem; color: rgba(255,255,255,0.75); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cert-card-certline { font-family: 'Syne Mono', monospace; font-size: 0.4rem; color: rgba(232,197,71,0.7); text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -192,18 +192,18 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .pdf-major-info { font-size: 0.66rem; color: #aaa; line-height: 1.3; }
 .pdf-major-info strong { color: #fff; }
 .pdf-majors-cards { display: flex; gap: 5px; flex-wrap: wrap; }
-.pdf-major-card { position: relative; width: 80px; height: 80px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); font-size: 0; line-height: 0; }
+.pdf-major-card { position: relative; width: 86px; height: 86px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); font-size: 0; line-height: 0; }
 .pdf-major-card-art { width: 100%; height: 100%; object-fit: cover; display: block; vertical-align: bottom; }
 .pdf-major-card-noart { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1a1a1a, #0a0a0a); font-size: 1.4rem; }
-.pdf-major-card-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.82) 100%); display: flex; flex-direction: column; justify-content: flex-end; padding: 5px 6px; }
+.pdf-major-card-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: -1px; background: linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.82) 100%); display: flex; flex-direction: column; justify-content: flex-end; padding: 5px 6px; }
 .pdf-major-card-artist { font-family: 'Syne', sans-serif; font-size: 0.48rem; font-weight: 700; color: #fff; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pdf-major-card-title { font-family: 'Syne Mono', monospace; font-size: 0.42rem; color: rgba(255,255,255,0.75); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pdf-major-card-meta { font-family: 'Syne Mono', monospace; font-size: 0.36rem; color: rgba(255,255,255,0.45); }
 .pdf-certs { display: flex; flex-wrap: wrap; gap: 5px; }
-.pdf-cert-card { position: relative; width: 80px; height: 80px; overflow: hidden; border: 1px solid rgba(232,197,71,0.3); font-size: 0; line-height: 0; }
+.pdf-cert-card { position: relative; width: 86px; height: 86px; overflow: hidden; border: 1px solid rgba(232,197,71,0.3); font-size: 0; line-height: 0; }
 .pdf-cert-card img { width: 100%; height: 100%; object-fit: cover; display: block; vertical-align: bottom; }
 .pdf-cert-card-noart { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1a1a1a, #0a0a0a); font-size: 1.4rem; }
-.pdf-cert-card-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.8) 100%); display: flex; flex-direction: column; justify-content: flex-end; padding: 4px 5px; }
+.pdf-cert-card-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: -1px; background: linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.8) 100%); display: flex; flex-direction: column; justify-content: flex-end; padding: 4px 5px; }
 .pdf-cert-card-artist { font-family: 'Syne', sans-serif; font-size: 0.48rem; font-weight: 700; color: #fff; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pdf-cert-card-title { font-family: 'Syne Mono', monospace; font-size: 0.4rem; color: rgba(255,255,255,0.75); line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pdf-cert-card-type { font-family: 'Syne Mono', monospace; font-size: 0.34rem; color: rgba(232,197,71,0.7); text-transform: uppercase; }
@@ -843,7 +843,7 @@ function getArtistPlanningReleases(artistName) {
     const sw = Array.isArray(r.songwriters) ? r.songwriters : r.songwriters ? r.songwriters.split(',') : [];
     if (sw.some(s => norm(s) === an)) return true;
     return false;
-  }).sort((a, b) => (b.dateSortable || '').localeCompare(a.dateSortable || '')).slice(0, 9);
+  }).sort((a, b) => (b.dateSortable || '').localeCompare(a.dateSortable || '')).slice(0, 10);
 }
 
 function buildArtistCardHTML(a, pdfLang, opts) {

@@ -516,7 +516,7 @@ document.getElementById('addDisco').addEventListener('click', () => addDisco());
 
 // ─── Certifications ───
 let certCount = 0;
-function addCert(type, level, artist, project, artwork, displayOnFiche, source) {
+function addCert(type, level, artist, project, artwork, displayOnFiche, source, spotifyLink) {
   certCount++;
   const cid = certCount;
   const isChecked = displayOnFiche !== false;
@@ -588,6 +588,13 @@ function addCert(type, level, artist, project, artwork, displayOnFiche, source) 
   });
   const container = certType === 'Album' ? 'certsAlbumsList' : 'certsSinglesList';
   document.getElementById(container).appendChild(div);
+  // Pre-fill spotify link if provided
+  if (spotifyLink) {
+    const spInput = div.querySelector('[data-f=spotifyUrl]');
+    if (spInput) spInput.value = spotifyLink;
+    const spBtn = div.querySelector('[data-f=spotifyToggle]');
+    if (spBtn) spBtn.classList.add('has-link');
+  }
 }
 document.getElementById('addCertSingle').addEventListener('click', () => addCert('Single'));
 document.getElementById('addCertAlbum').addEventListener('click', () => addCert('Album'));
@@ -638,7 +645,8 @@ function gatherData() {
     const artImg = div.querySelector('.cert-artwork');
     const displayOnFiche = div.querySelector('[data-f=displayOnFiche]')?.checked !== false;
     const source = div.dataset.source || 'manual';
-    if (type || level || artist) certs.push({ type, level, artist, project, artwork: artImg ? artImg.src : '', displayOnFiche, source });
+    const spotifyLink = (div.querySelector('[data-f=spotifyUrl]')?.value || '').trim();
+    if (type || level || artist) certs.push({ type, level, artist, project, artwork: artImg ? artImg.src : '', displayOnFiche, source, spotifyLink });
   });
   const specialInfo = []; const specialInfoEn = [];
   document.querySelectorAll('#specialList .dynamic-item').forEach(div => {
@@ -709,7 +717,7 @@ async function loadForEdit(id) {
     document.getElementById('discoVisible').checked = d.discoVisible !== false;
     document.getElementById('showLatestCuts').checked = d.showLatestCuts !== false;
     const cr = Array.isArray(d.certs) ? d.certs : d.certs ? Object.values(d.certs) : [];
-    cr.forEach(c => addCert(c.type || 'Single', c.level, c.artist, c.project, c.artwork, c.displayOnFiche, c.source));
+    cr.forEach(c => addCert(c.type || 'Single', c.level, c.artist, c.project, c.artwork, c.displayOnFiche, c.source, c.spotifyLink));
     const sp = Array.isArray(d.specialInfo) ? d.specialInfo : d.specialInfo ? Object.values(d.specialInfo) : [];
     const spEn = Array.isArray(d.specialInfoEn) ? d.specialInfoEn : d.specialInfoEn ? Object.values(d.specialInfoEn) : [];
     sp.forEach((s, i) => addSpecial(typeof s === 'string' ? s : '', typeof spEn[i] === 'string' ? spEn[i] : ''));
