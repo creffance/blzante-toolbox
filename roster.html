@@ -171,7 +171,7 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
   font-family: 'Syne', Arial, sans-serif; overflow: visible;
 }
 .pdf-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-size: cover; background-position: center; opacity: 0.2; }
-.pdf-content { position: relative; z-index: 1; padding: 40px; display: flex; flex-direction: column; }
+.pdf-content { position: relative; z-index: 1; padding: 30px 36px; display: flex; flex-direction: column; }
 .pdf-top { display: flex; align-items: flex-start; gap: 20px; margin-bottom: 12px; }
 .pdf-photo { width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 3px solid #262626; flex-shrink: 0; }
 .pdf-photo-ph { width: 90px; height: 90px; border-radius: 50%; background: #222; border: 3px solid #262626; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; font-weight: 800; color: #555; }
@@ -181,9 +181,9 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .pdf-playlist { display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; padding: 8px 16px; border: 1px solid rgba(255,0,0,0.35); background: rgba(255,0,0,0.06); color: #ccc; font-size: 0.68rem; font-family: 'Syne Mono', monospace; text-decoration: none; }
 .pdf-playlist-spotify { display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; padding: 8px 16px; border: 1px solid rgba(29,185,84,0.4); background: rgba(29,185,84,0.08); color: #ccc; font-size: 0.68rem; font-family: 'Syne Mono', monospace; text-decoration: none; }
 .pdf-playlist-row { display: flex; gap: 8px; flex-wrap: wrap; }
-.pdf-bio { font-size: 0.76rem; color: #d0d0d0; line-height: 1.7; font-family: 'Syne Mono', monospace; text-align: center; margin: 16px 0; padding: 16px 22px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); }
+.pdf-bio { font-size: 0.76rem; color: #d0d0d0; line-height: 1.6; font-family: 'Syne Mono', monospace; text-align: center; margin: 10px 0; padding: 12px 22px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); }
 .pdf-context { font-size: 0.82rem; color: #fff; line-height: 1.6; font-family: 'Syne', Arial, sans-serif; font-weight: 600; text-align: center; margin: 12px 0; padding: 18px 24px; background: rgba(232,197,71,0.08); border: 1px solid rgba(232,197,71,0.3); letter-spacing: 0.02em; }
-.pdf-section-label { font-size: 0.7rem; color: #bbb; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700; margin: 18px 0 8px; padding-top: 14px; padding-bottom: 5px; border-top: 1px solid rgba(255,255,255,0.06); border-bottom: 1px solid rgba(255,255,255,0.06); }
+.pdf-section-label { font-size: 0.7rem; color: #bbb; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700; margin: 10px 0 5px; padding-top: 8px; padding-bottom: 4px; border-top: 1px solid rgba(255,255,255,0.06); border-bottom: 1px solid rgba(255,255,255,0.06); }
 .pdf-tags { display: flex; gap: 6px; flex-wrap: wrap; }
 .pdf-tag { font-size: 0.66rem; color: #ddd; padding: 4px 10px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.05); font-family: 'Syne Mono', monospace; }
 .pdf-majors { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -191,16 +191,16 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .pdf-major img { width: 44px; height: 44px; object-fit: cover; }
 .pdf-major-info { font-size: 0.66rem; color: #aaa; line-height: 1.3; }
 .pdf-major-info strong { color: #fff; }
-.pdf-majors-cards { display: flex; gap: 6px; flex-wrap: wrap; }
-.pdf-major-card { position: relative; width: 100px; height: 100px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); }
+.pdf-majors-cards { display: flex; gap: 5px; flex-wrap: wrap; }
+.pdf-major-card { position: relative; width: 80px; height: 80px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); }
 .pdf-major-card-art { width: 100%; height: 100%; object-fit: cover; display: block; }
 .pdf-major-card-noart { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1a1a1a, #0a0a0a); font-size: 1.4rem; }
 .pdf-major-card-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.82) 100%); display: flex; flex-direction: column; justify-content: flex-end; padding: 5px 6px; }
 .pdf-major-card-artist { font-family: 'Syne', sans-serif; font-size: 0.48rem; font-weight: 700; color: #fff; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pdf-major-card-title { font-family: 'Syne Mono', monospace; font-size: 0.42rem; color: rgba(255,255,255,0.75); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pdf-major-card-meta { font-family: 'Syne Mono', monospace; font-size: 0.36rem; color: rgba(255,255,255,0.45); }
-.pdf-certs { display: flex; flex-wrap: wrap; gap: 6px; }
-.pdf-cert-card { position: relative; width: 80px; height: 80px; overflow: hidden; border: 1px solid rgba(232,197,71,0.3); }
+.pdf-certs { display: flex; flex-wrap: wrap; gap: 5px; }
+.pdf-cert-card { position: relative; width: 70px; height: 70px; overflow: hidden; border: 1px solid rgba(232,197,71,0.3); }
 .pdf-cert-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .pdf-cert-card-noart { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1a1a1a, #0a0a0a); font-size: 1.4rem; }
 .pdf-cert-card-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.8) 100%); display: flex; flex-direction: column; justify-content: flex-end; padding: 4px 5px; }
@@ -208,11 +208,10 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .pdf-cert-card-title { font-family: 'Syne Mono', monospace; font-size: 0.4rem; color: rgba(255,255,255,0.75); line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pdf-cert-card-type { font-family: 'Syne Mono', monospace; font-size: 0.34rem; color: rgba(232,197,71,0.7); text-transform: uppercase; }
 .pdf-cert-card-level { font-family: 'Syne', sans-serif; font-size: 0.42rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #e8c547; line-height: 1.1; }
-.pdf-socials { position: absolute; top: 40px; right: 40px; display: flex; gap: 12px; z-index: 2; }
+.pdf-socials { position: absolute; top: 30px; right: 36px; display: flex; align-items: center; gap: 10px; z-index: 2; }
 .pdf-socials a { color: #ddd; }
-.pdf-socials svg { width: 30px; height: 30px; }
-.pdf-footer { display: flex; justify-content: center; padding-top: 24px; padding-bottom: 10px; }
-.pdf-footer img { height: 70px; width: auto; opacity: 0.6; }
+.pdf-socials svg { width: 28px; height: 28px; }
+.pdf-socials .pdf-blz-logo { height: 36px; width: auto; opacity: 0.7; margin-left: 6px; }
 
 </style>
 </head>
@@ -865,11 +864,10 @@ function buildArtistCardHTML(a, pdfLang, opts) {
   if (bgSrc) h += `<div class="pdf-bg" style="background-image:url('${bgSrc}')"></div>`;
   h += '<div class="pdf-content">';
   const socials = ['instagram','tiktok','spotify','ytChannel','genius'].filter(k => a[k]);
-  if (socials.length) {
-    h += '<div class="pdf-socials">';
-    socials.forEach(k => { h += `<a href="${a[k]}" target="_blank">${SOCIAL_ICONS[k]}</a>`; });
-    h += '</div>';
-  }
+  h += '<div class="pdf-socials">';
+  socials.forEach(k => { h += `<a href="${a[k]}" target="_blank">${SOCIAL_ICONS[k]}</a>`; });
+  h += `<a href="https://www.instagram.com/blzante_/" target="_blank"><img class="pdf-blz-logo" src="BLZante_logo_blanc.png" crossorigin="anonymous" /></a>`;
+  h += '</div>';
   h += '<div class="pdf-top">';
   if (primary) h += `<img class="pdf-photo" src="${primary.src}" crossorigin="anonymous" />`;
   else h += `<div class="pdf-photo-ph">${initial}</div>`;
@@ -908,6 +906,7 @@ function buildArtistCardHTML(a, pdfLang, opts) {
       h += '<div class="pdf-major-card">';
       if (r.artwork) h += `<img src="${r.artwork}" crossorigin="anonymous" class="pdf-major-card-art" />`;
       else h += `<div class="pdf-major-card-noart">${r.type === 'Synchro' ? '🎬' : '🎵'}</div>`;
+      if (r.link) h += `<a href="${r.link}" target="_blank" style="position:absolute;top:4px;right:4px;width:18px;height:18px;background:rgba(0,0,0,0.6);border:1px solid rgba(232,197,71,0.4);display:flex;align-items:center;justify-content:center;color:#e8c547;text-decoration:none;font-size:0.45rem;z-index:2">▶</a>`;
       h += '<div class="pdf-major-card-overlay">';
       h += `<div class="pdf-major-card-artist">${r.artist || ''}${feat}</div>`;
       h += `<div class="pdf-major-card-title">${r.title || ''}</div>`;
@@ -995,9 +994,6 @@ function buildArtistCardHTML(a, pdfLang, opts) {
     h += renderPdfCertGroup(t('cert_albums', pdfLang).toUpperCase(), albums);
     h += renderPdfCertGroup(t('cert_autres', pdfLang).toUpperCase(), other);
   }
-  if (!options.noFooter) {
-    h += '<div class="pdf-footer"><img src="data:image/png;base64,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" crossorigin="anonymous" /></div>';
-  }
   h += '</div>'; // close pdf-content
   return h;
 }
@@ -1006,9 +1002,9 @@ function buildArtistCardHTML(a, pdfLang, opts) {
 async function renderArtistToPDF(a, pdf, render, lang) {
   const pdfLang = lang || 'fr';
   const h = buildArtistCardHTML(a, pdfLang);
-  const pageW = 794; // A4 width in px at 96dpi
+  const pageW = 794, pageH = 1123; // A4 at 96dpi
 
-  // Render with auto height to get natural content size
+  // Render with auto height to measure natural content size
   render.style.width = pageW + 'px';
   render.style.height = 'auto';
   render.style.overflow = 'visible';
@@ -1021,28 +1017,43 @@ async function renderArtistToPDF(a, pdf, render, lang) {
   }));
   await new Promise(r => setTimeout(r, 300));
 
-  // Measure real content height
-  const contentH = Math.max(render.scrollHeight, 1123);
+  const contentH = render.scrollHeight;
+  const needsScale = contentH > pageH;
+  const scaleFactor = needsScale ? Math.min(pageH / contentH, 1) : 1;
 
-  // Make the bg cover the full content height
+  // If content overflows, scale it proportionally (same X & Y) inside the A4 frame
+  if (needsScale) {
+    const scaledW = pageW / scaleFactor; // render wider so scaled result = pageW
+    render.style.width = scaledW + 'px';
+    render.innerHTML = h; // re-render at wider width
+    // Re-wait images
+    const imgs2 = render.querySelectorAll('img');
+    await Promise.all(Array.from(imgs2).map(img => {
+      if (img.complete) return Promise.resolve();
+      return new Promise(res => { img.onload = res; img.onerror = res; });
+    }));
+    await new Promise(r => setTimeout(r, 200));
+  }
+
+  // Final measure & bg
+  const finalH = needsScale ? Math.max(render.scrollHeight, pageH / scaleFactor) : Math.max(contentH, pageH);
   const bg = render.querySelector('.pdf-bg');
-  if (bg) bg.style.height = contentH + 'px';
+  if (bg) bg.style.height = finalH + 'px';
+  render.style.height = finalH + 'px';
 
-  // Set render to exact content size for capture
-  render.style.height = contentH + 'px';
-
+  const captureW = needsScale ? pageW / scaleFactor : pageW;
   const canvas = await html2canvas(render, {
-    width: pageW, height: contentH, scale: 2,
+    width: captureW, height: finalH, scale: 2,
     backgroundColor: '#0a0a0a', useCORS: true, allowTaint: true,
   });
 
-  // Scale the captured image to fit exactly on A4 (210×297mm)
+  // Place on A4 — proportional scaling (no distortion)
   const imgData = canvas.toDataURL('image/jpeg', 0.92);
   pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
 
-  // Add clickable links with correct scaling
-  const scaleX = 210 / pageW;
-  const scaleY = 297 / contentH;
+  // Add clickable links
+  const scaleX = 210 / captureW;
+  const scaleY = 297 / finalH;
   render.querySelectorAll('a[href]').forEach(link => {
     const rect = link.getBoundingClientRect();
     const renderRect = render.getBoundingClientRect();
@@ -1055,6 +1066,7 @@ async function renderArtistToPDF(a, pdf, render, lang) {
     }
   });
   render.innerHTML = '';
+  render.style.width = pageW + 'px';
   render.style.height = '';
 }
 
