@@ -216,10 +216,11 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
 .pdf-main-right .pdf-section-label { font-size: 0.6rem; margin-top: 0; }
 .cert-card-play, .pdf-cert-play { position: absolute; top: 3px; right: 3px; width: 18px; height: 18px; background: rgba(0,0,0,0.6); border: 1px solid rgba(232,197,71,0.4); display: flex; align-items: center; justify-content: center; color: #e8c547; text-decoration: none; font-size: 0.42rem; z-index: 2; opacity: 0.7; }
 .cert-card-play:hover { opacity: 1; background: rgba(0,0,0,0.85); }
-.pdf-socials { position: absolute; top: 30px; right: 36px; display: flex; align-items: center; gap: 10px; z-index: 2; }
+.pdf-socials { position: absolute; top: 22px; right: 28px; display: flex; align-items: center; gap: 10px; z-index: 2; }
 .pdf-socials a { color: #ddd; }
 .pdf-socials svg { width: 28px; height: 28px; }
-.pdf-socials .pdf-blz-logo { height: 36px; width: auto; opacity: 0.7; margin-left: 16px; border-left: 1px solid rgba(255,255,255,0.15); padding-left: 16px; }
+.pdf-logos { position: absolute; bottom: 18px; right: 28px; display: flex; align-items: center; gap: 10px; z-index: 2; }
+.pdf-logos img { height: 36px; width: auto; opacity: 0.7; }
 
 </style>
 </head>
@@ -264,6 +265,7 @@ const I18N = {
   // Card sections
   discographie: { fr: 'Discographie', en: 'Discography' },
   derniers_placements: { fr: 'Derniers placements', en: 'Latest Cuts' },
+  styles_musique: { fr: 'Styles', en: 'Music Styles' },
   artistes_places: { fr: 'Artistes placés', en: 'Plugged Artists' },
   placements_majeurs: { fr: 'Placements majeurs', en: 'Main Plugged Tracks / Projects' },
   cert_singles: { fr: 'Certifications Singles', en: 'Singles Certifications' },
@@ -571,6 +573,16 @@ function rerenderRoster() {
         h += renderCertGroup(t('cert_autres'), other);
       }
 
+      // Music styles
+      if (a.musicStyles) {
+        const styles = a.musicStyles.split(',').map(s => s.trim()).filter(Boolean);
+        if (styles.length) {
+          h += `<div class="card-section-title">${t('styles_musique')}</div><div class="card-placements">`;
+          styles.forEach(s => { h += `<span class="pl-tag" style="color:#e8c547;border-color:rgba(232,197,71,0.2)">${s}</span>`; });
+          h += `</div>`;
+        }
+      }
+
       if (placements.length) {
         const sorted = [...placements]
           .map(p => typeof p === 'string' ? { name: p, visible: true, country: 'FR' } : { name: p.name || '', visible: p.visible !== false, country: p.country || 'FR' })
@@ -873,9 +885,18 @@ function buildArtistCardHTML(a, pdfLang, opts) {
   if (bgSrc) h += `<div class="pdf-bg" style="background-image:url('${bgSrc}')"></div>`;
   h += '<div class="pdf-content">';
   const socials = ['instagram','tiktok','spotify','ytChannel','genius'].filter(k => a[k]);
-  h += '<div class="pdf-socials">';
-  socials.forEach(k => { h += `<a href="${a[k]}" target="_blank">${SOCIAL_ICONS[k]}</a>`; });
-  h += `<a href="https://www.instagram.com/blzante_/" target="_blank"><img class="pdf-blz-logo" src="data:image/png;base64,${BLZ_LOGO_B64}" /></a>`;
+  if (socials.length) {
+    h += '<div class="pdf-socials">';
+    socials.forEach(k => { h += `<a href="${a[k]}" target="_blank">${SOCIAL_ICONS[k]}</a>`; });
+    h += '</div>';
+  }
+  // Logos BLZante + coéditeur en bas à droite
+  h += '<div class="pdf-logos">';
+  h += `<a href="https://www.instagram.com/blzante_/" target="_blank"><img src="data:image/png;base64,${BLZ_LOGO_B64}" /></a>`;
+  if (a.coeditorLogo) {
+    const coLink = a.coeditorLink || '#';
+    h += `<a href="${coLink}" target="_blank"><img src="${a.coeditorLogo}" crossorigin="anonymous" title="${a.coeditorName || 'Coéditeur'}" /></a>`;
+  }
   h += '</div>';
   h += '<div class="pdf-top">';
   if (primary) h += `<img class="pdf-photo" src="${primary.src}" crossorigin="anonymous" />`;
@@ -907,8 +928,16 @@ function buildArtistCardHTML(a, pdfLang, opts) {
     displaySpecials.forEach(s => { if (s) h += `<div style="font-size:0.72rem;color:#ccc;padding:3px 0;line-height:1.4">⭐ ${s}</div>`; });
   }
   // --- Two-column layout: main content left, plugged artists right ---
-  // Build plugged artists HTML first
+  // Build right column HTML: music styles + plugged artists
   let placementsHtml = '';
+  if (a.musicStyles) {
+    const styles = a.musicStyles.split(',').map(s => s.trim()).filter(Boolean);
+    if (styles.length) {
+      placementsHtml += `<div class="pdf-section-label">${t('styles_musique', pdfLang).toUpperCase()}</div><div class="pdf-tags">`;
+      styles.forEach(s => { placementsHtml += `<span class="pdf-tag" style="color:#e8c547;border-color:rgba(232,197,71,0.2)">${s}</span>`; });
+      placementsHtml += '</div>';
+    }
+  }
   if (placements.length) {
     const sorted = [...placements]
       .map(p => typeof p === 'string' ? { name: p, visible: true, country: 'FR' } : { name: p.name || '', visible: p.visible !== false, country: p.country || 'FR' })

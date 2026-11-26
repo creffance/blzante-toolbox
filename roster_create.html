@@ -243,6 +243,27 @@ nav { display: flex; align-items: center; justify-content: space-between; paddin
     <div class="form-group"><label class="form-label">Playlist Spotify</label><input type="text" class="form-input" id="linkSpotifyPlaylist" placeholder="https://open.spotify.com/playlist/..." autocomplete="off" /></div>
   </div>
 
+  <div class="form-group">
+    <label class="form-label">Styles de musique</label>
+    <input type="text" class="form-input" id="musicStyles" placeholder="Afrobeats, Pop, R&B, Dancehall... (séparés par des virgules)" autocomplete="off" />
+  </div>
+
+  <div class="form-row">
+    <div class="form-group">
+      <label class="form-label">Logo coéditeur</label>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="text" class="form-input" id="coeditorName" placeholder="Nom du coéditeur" autocomplete="off" style="flex:1" />
+        <input type="file" accept="image/*" id="coeditorLogoFile" style="display:none" />
+        <button type="button" class="add-btn-dyn" id="coeditorLogoBtn" style="margin:0;white-space:nowrap">📷 Logo</button>
+      </div>
+      <img id="coeditorLogoPreview" style="display:none;max-height:40px;margin-top:6px;border:1px solid var(--border);padding:4px;background:#111" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Lien coéditeur (optionnel)</label>
+      <input type="text" class="form-input" id="coeditorLink" placeholder="https://..." autocomplete="off" />
+    </div>
+  </div>
+
   <button class="submit-btn" id="submitBtn">⚡ Créer la fiche</button>
   <button class="submit-btn cancel-btn" id="cancelBtn" style="display:none">Annuler la modification</button>
   <button class="submit-btn delete-btn" id="deleteBtn" style="display:none">🗑 Supprimer cette fiche</button>
@@ -472,7 +493,7 @@ function addMajor(artist, title, artwork, link, displayOnFiche, source) {
   document.getElementById('majorList').appendChild(div);
 }
 document.getElementById('addMajor').addEventListener('click', () => {
-  if (document.querySelectorAll('#majorList .major-item').length >= 10) { alert('Maximum 10 placements majeurs'); return; }
+  if (document.querySelectorAll('#majorList .major-item').length >= 12) { alert('Maximum 12 placements majeurs'); return; }
   addMajor();
 });
 
@@ -597,6 +618,16 @@ function addCert(type, level, artist, project, artwork, displayOnFiche, source, 
   }
 }
 document.getElementById('addCertSingle').addEventListener('click', () => addCert('Single'));
+
+// ─── Coeditor logo upload ───
+document.getElementById('coeditorLogoBtn').addEventListener('click', () => document.getElementById('coeditorLogoFile').click());
+document.getElementById('coeditorLogoFile').addEventListener('change', ev => {
+  const f = ev.target.files[0]; if (!f) return;
+  const r = new FileReader(); r.onload = e => {
+    const preview = document.getElementById('coeditorLogoPreview');
+    preview.src = e.target.result; preview.style.display = '';
+  }; r.readAsDataURL(f); ev.target.value = '';
+});
 document.getElementById('addCertAlbum').addEventListener('click', () => addCert('Album'));
 
 // ─── Informations spéciales ───
@@ -666,6 +697,10 @@ function gatherData() {
     genius: document.getElementById('linkGenius').value.trim(),
     youtube: document.getElementById('linkYoutube').value.trim(),
     spotifyPlaylist: document.getElementById('linkSpotifyPlaylist').value.trim(),
+    musicStyles: document.getElementById('musicStyles').value.trim(),
+    coeditorName: document.getElementById('coeditorName').value.trim(),
+    coeditorLogo: document.getElementById('coeditorLogoPreview').src || '',
+    coeditorLink: document.getElementById('coeditorLink').value.trim(),
   };
 }
 
@@ -689,6 +724,13 @@ async function loadForEdit(id) {
     document.getElementById('linkGenius').value = d.genius || '';
     document.getElementById('linkYoutube').value = d.youtube || '';
     document.getElementById('linkSpotifyPlaylist').value = d.spotifyPlaylist || '';
+    document.getElementById('musicStyles').value = d.musicStyles || '';
+    document.getElementById('coeditorName').value = d.coeditorName || '';
+    document.getElementById('coeditorLink').value = d.coeditorLink || '';
+    if (d.coeditorLogo) {
+      const preview = document.getElementById('coeditorLogoPreview');
+      preview.src = d.coeditorLogo; preview.style.display = '';
+    }
     selectedTypes = Array.isArray(d.types) ? [...d.types] : d.types ? [d.types] : [];
     document.querySelectorAll('#typeOptions .type-btn').forEach(b => b.classList.toggle('active', selectedTypes.includes(b.dataset.type)));
     selectedSkills = Array.isArray(d.skills) ? [...d.skills] : d.skills ? [d.skills] : [];
@@ -739,6 +781,10 @@ function exitEditMode() {
   document.getElementById('linkYtChannel').value = '';
   document.getElementById('linkYoutube').value = '';
   document.getElementById('linkSpotifyPlaylist').value = '';
+  document.getElementById('musicStyles').value = '';
+  document.getElementById('coeditorName').value = '';
+  document.getElementById('coeditorLink').value = '';
+  document.getElementById('coeditorLogoPreview').src = ''; document.getElementById('coeditorLogoPreview').style.display = 'none';
   selectedTypes = []; selectedSkills = [];
   images.length = 0; bgImages.length = 0;
   document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
