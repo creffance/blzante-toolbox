@@ -7,7 +7,7 @@
 <title>IG Generator — BLZante Toolbox</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Manrope:wght@600;700;800&family=Syne:wght@400;600;700;800&family=Syne+Mono&display=block">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Syne:wght@400;600;700;800&family=Syne+Mono&display=block">
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.13/dist/html-to-image.min.js"></script>
@@ -351,24 +351,32 @@ nav {
   pointer-events: none;
 }
 /* Éditeur de description : mêmes règles bulletproof que le rendu preview
-   pour que l'alignement soit identique en saisie et en rendu. */
+   pour garantir un alignement identique en saisie et en rendu final. */
 .rich-textarea strong,
 .rich-textarea .actu-red {
-  font: inherit;
-  line-height: inherit;
-  letter-spacing: inherit;
-  word-spacing: inherit;
-  text-transform: inherit;
-  text-decoration: inherit;
-  vertical-align: baseline;
-  display: inline;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  background: transparent;
+  font-family: 'Inter', sans-serif !important;
+  font-size: inherit !important;
+  font-style: normal !important;
+  font-synthesis: none !important;
+  line-height: inherit !important;
+  letter-spacing: inherit !important;
+  word-spacing: inherit !important;
+  text-transform: inherit !important;
+  text-decoration: inherit !important;
+  vertical-align: baseline !important;
+  display: inline !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
 }
-.rich-textarea strong { font-weight: 700; }
-.rich-textarea .actu-red { color: var(--accent-color, #FF2D3A); }
+.rich-textarea strong { font-weight: 700 !important; }
+.rich-textarea .actu-red { color: var(--accent-color, #FF2D3A) !important; }
+.rich-textarea strong .actu-red,
+.rich-textarea .actu-red strong {
+  font-weight: 700 !important;
+  color: var(--accent-color, #FF2D3A) !important;
+}
 .form-select {
   cursor: pointer;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23777'/%3E%3C/svg%3E");
@@ -769,7 +777,7 @@ nav {
 /* Artwork container — below the title/artist block */
 .pv-artwork-wrap {
   position: absolute;
-  top: calc(58% + var(--vertical-y, 0px));
+  top: 58%;
   left: 50%;
   transform: translate(-50%, -50%);
   width: 56cqi;
@@ -780,7 +788,7 @@ nav {
 }
 .preview-frame[data-format="9:16"] .pv-artwork-wrap {
   width: 58cqi;
-  top: calc(50% + var(--vertical-y, 0px));
+  top: 50%;
 }
 .pv-artwork {
   width: 100%;
@@ -814,7 +822,7 @@ nav {
   position: absolute;
   left: 5cqi;
   right: 5cqi;
-  bottom: calc(68% - var(--vertical-y, 0px));
+  bottom: 68%;
   max-height: 26cqi;
   z-index: 3;
   display: flex;
@@ -826,7 +834,7 @@ nav {
   overflow: hidden;
 }
 .preview-frame[data-format="9:16"] .pv-info-top {
-  bottom: calc(69% - var(--vertical-y, 0px));
+  bottom: 69%;
   max-height: 41cqi;
 }
 
@@ -856,7 +864,6 @@ nav {
   font-weight: 600;
   line-height: 1.25;
   letter-spacing: 0.04em;
-  text-transform: uppercase;
   opacity: 0.95;
   word-break: break-word;
   color: #fff;
@@ -871,7 +878,7 @@ nav {
    by the preview-frame's overflow: hidden. */
 .pv-credits-block {
   position: absolute;
-  top: calc(84% + var(--vertical-y, 0px));
+  top: 84%;
   left: 5cqi;
   right: 5cqi;
   z-index: 3;
@@ -884,10 +891,10 @@ nav {
   color: #fff;
 }
 .preview-frame[data-format="9:16"] .pv-credits-block {
-  top: calc(69% + var(--vertical-y, 0px));
+  top: 69%;
 }
 .pv-credits-label {
-  font-family: 'Manrope', sans-serif;
+  font-family: 'Syne', sans-serif;
   font-size: 2.2cqi;
   line-height: 1;
   letter-spacing: 0.32em;
@@ -898,7 +905,7 @@ nav {
   text-shadow: 0 0.2cqi 1cqi rgba(0,0,0,0.55);
 }
 .pv-credits-names {
-  font-family: 'Manrope', sans-serif;
+  font-family: 'Syne', sans-serif;
   font-size: 3.8cqi;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -911,124 +918,6 @@ nav {
 .pv-credits-label:empty, .pv-credits-names:empty { display: none; }
 
 /* ═══════════════════════════════════════════════════════════════════
-   SYNCHRO TEMPLATE
-   ═══════════════════════════════════════════════════════════════════ */
-.preview-frame:not([data-type="synchro"]) .pv-synchro-bottom { display: none; }
-.preview-frame[data-type="synchro"] .pv-cert-medallion { display: none !important; }
-
-/* Hide the shared credits block in synchro (credits are in synchro-bottom) */
-.preview-frame[data-type="synchro"] .pv-credits-block { display: none; }
-
-/* Push info-top below logo, anchor from top, move with poster */
-.preview-frame[data-type="synchro"] .pv-info-top {
-  bottom: auto;
-  top: calc(22cqi + var(--vertical-y, 0px));
-  max-height: none;
-  justify-content: flex-start;
-}
-.preview-frame[data-type="synchro"][data-format="9:16"] .pv-info-top {
-  bottom: auto;
-  top: calc(39cqi + var(--vertical-y, 0px));
-  max-height: none;
-}
-
-/* Content title: one line, no wrap, smaller */
-.preview-frame[data-type="synchro"] .pv-info-artist {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  word-break: normal;
-  font-size: 5.5cqi;
-}
-/* Type line: mixed case allowed, smaller */
-.preview-frame[data-type="synchro"] .pv-info-title { text-transform: none; font-size: 2.6cqi; }
-
-/* Poster: same width as sortie artwork, height adapts to image */
-.preview-frame[data-type="synchro"] .pv-artwork-wrap {
-  aspect-ratio: auto;
-  width: 56cqi;
-  height: auto;
-  min-height: 56cqi; /* fallback when no image (placeholder visible) */
-  top: calc(37cqi + var(--vertical-y, 0px));
-  transform: translateX(-50%);
-}
-.preview-frame[data-type="synchro"] .pv-artwork {
-  width: 100%;
-  height: auto;
-  object-fit: initial;
-}
-/* When artwork is loaded, remove min-height so it adapts to image */
-.preview-frame[data-type="synchro"].has-art .pv-artwork-wrap {
-  min-height: 0;
-}
-.preview-frame[data-type="synchro"] .pv-artwork-placeholder {
-  aspect-ratio: 1;
-}
-.preview-frame[data-type="synchro"][data-format="9:16"] .pv-artwork-wrap {
-  width: 58cqi;
-  height: auto;
-  min-height: 58cqi;
-  top: calc(54cqi + var(--vertical-y, 0px));
-  transform: translateX(-50%);
-}
-.preview-frame[data-type="synchro"][data-format="9:16"].has-art .pv-artwork-wrap {
-  min-height: 0;
-}
-
-/* Bottom block: positioned via JS variable --synchro-bottom-top */
-.pv-synchro-bottom {
-  position: absolute;
-  top: var(--synchro-bottom-top, calc(96cqi + var(--vertical-y, 0px)));
-  left: 22%;
-  right: 5cqi;
-  z-index: 3;
-  display: flex;
-  flex-direction: column;
-  gap: 0.4cqi;
-  pointer-events: none;
-}
-.preview-frame[data-format="9:16"] .pv-synchro-bottom {
-  top: var(--synchro-bottom-top, calc(115cqi + var(--vertical-y, 0px)));
-  left: 21%;
-}
-
-.pv-synchro-comment {
-  font-family: 'Syne Mono', monospace;
-  font-size: 2.0cqi;
-  color: rgba(255,255,255,0.7);
-  line-height: 1.3;
-  text-shadow: 0 0.2cqi 1cqi rgba(0,0,0,0.55);
-}
-.pv-synchro-comment:empty { display: none; }
-.pv-synchro-trackline {
-  font-family: 'Syne', sans-serif;
-  font-size: 3.0cqi;
-  font-weight: 700;
-  color: #fff;
-  line-height: 1.25;
-  text-shadow: 0 0.2cqi 1cqi rgba(0,0,0,0.55);
-}
-.pv-synchro-credits-label {
-  font-family: 'Syne', sans-serif;
-  font-size: 2.0cqi;
-  font-weight: 400;
-  letter-spacing: 0.08em;
-  color: rgba(255,255,255,0.6);
-  line-height: 1.2;
-  text-shadow: 0 0.2cqi 1cqi rgba(0,0,0,0.55);
-}
-.pv-synchro-credits-label:empty { display: none; }
-.pv-synchro-credits-names {
-  font-family: 'Syne', sans-serif;
-  font-size: 3.0cqi;
-  font-weight: 700;
-  line-height: 1.25;
-  color: var(--accent-color, #FF2D3A);
-  text-shadow: 0 0.2cqi 1cqi rgba(0,0,0,0.5);
-}
-.pv-synchro-credits-names:empty { display: none; }
-
-/* ═══════════════════════════════════════════════════════════════════
    ACTU TEMPLATE — single centered text block, vertically positionable
    ═══════════════════════════════════════════════════════════════════ */
 
@@ -1036,7 +925,7 @@ nav {
   position: absolute;
   left: 5cqi;
   right: 5cqi;
-  top: calc(50% + var(--vertical-y, 0px));
+  top: calc(50% + var(--actu-y, 0cqi));
   transform: translateY(-50%);
   z-index: 3;
   display: flex;
@@ -1091,32 +980,44 @@ nav {
 .pv-actu-desc:empty { display: none; }
 
 /* Rich text formatting inside the rendered description.
-   - <strong> from execCommand('bold') → weight 700, MÊME police/taille
-   - <span class="actu-red"> from custom toggle → couleur dominante
-   BULLETPROOF : on force TOUTES les propriétés d'inline formatting pour
-   éviter tout décalage de baseline. Inter a des métriques précises et le
-   moindre pixel de shift se voit visuellement. */
+   BULLETPROOF ROUND 2 : au lieu de `font: inherit` (qui fuit parfois vers
+   Syne à cause de la cascade depuis .pv-actu-wrap), on force explicitement
+   'Inter' avec !important sur chaque propriété critique. Sans ça, les
+   spans rouges se rendent en Syne (visible : letter shapes géométriques
+   identiques aux titres artiste) avec des métriques différentes d'Inter,
+   ce qui cause un décalage de baseline de plusieurs pixels. */
 .pv-actu-desc strong,
 .pv-actu-desc .actu-red {
-  font: inherit;
-  line-height: inherit;
-  letter-spacing: inherit;
-  word-spacing: inherit;
-  text-transform: inherit;
-  text-decoration: inherit;
-  text-shadow: inherit;
-  vertical-align: baseline;
-  display: inline;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  background: transparent;
+  font-family: 'Inter', sans-serif !important;
+  font-size: inherit !important;
+  font-style: normal !important;
+  font-variant: normal !important;
+  font-stretch: normal !important;
+  font-synthesis: none !important;
+  line-height: inherit !important;
+  letter-spacing: inherit !important;
+  word-spacing: inherit !important;
+  text-transform: inherit !important;
+  text-decoration: inherit !important;
+  text-shadow: inherit !important;
+  vertical-align: baseline !important;
+  display: inline !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
 }
-.pv-actu-desc strong { font-weight: 700; }
-.pv-actu-desc .actu-red { color: var(--accent-color, #FF2D3A); }
+.pv-actu-desc strong { font-weight: 700 !important; }
+.pv-actu-desc .actu-red { color: var(--accent-color, #FF2D3A) !important; }
+/* Cas nested : <strong><span class="actu-red"> ou l'inverse */
+.pv-actu-desc strong .actu-red,
+.pv-actu-desc .actu-red strong {
+  font-weight: 700 !important;
+  color: var(--accent-color, #FF2D3A) !important;
+}
 
 .pv-actu-credits-label {
-  font-family: 'Manrope', sans-serif;
+  font-family: 'Syne', sans-serif;
   font-size: 2.0cqi;
   line-height: 1;
   letter-spacing: 0.32em;
@@ -1129,7 +1030,7 @@ nav {
 }
 
 .pv-actu-credits-names {
-  font-family: 'Manrope', sans-serif;
+  font-family: 'Syne', sans-serif;
   font-size: 3.2cqi;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -1142,68 +1043,10 @@ nav {
 .pv-actu-credits-label:empty, .pv-actu-credits-names:empty { display: none; }
 
 /* Type-based show/hide — Sortie vs Actu */
-.preview-frame:not([data-type="actu"]) .pv-actu-wrap { display: none; }
+.preview-frame[data-type="sortie"] .pv-actu-wrap { display: none; }
 .preview-frame[data-type="actu"] .pv-info-top,
 .preview-frame[data-type="actu"] .pv-artwork-wrap,
 .preview-frame[data-type="actu"] .pv-credits-block { display: none; }
-
-/* ═══════════════════════════════════════════════════════════════════
-   CERTIF TEMPLATE — médaillon SNEP en bas-gauche, chevauchant l'artwork
-   Réutilise la même structure que Sortie (info-top, artwork, credits).
-   Le médaillon est positionné absolument sur la preview-frame et son
-   ancrage (left + bottom) est calculé pour qu'environ 60% du médaillon
-   recouvre le coin bas-gauche de l'artwork.
-   ═══════════════════════════════════════════════════════════════════ */
-/* ═══════════════════════════════════════════════════════════════════
-   CERTIF TEMPLATE — layout override : tout remonté de ~5% pour laisser
-   plus de place au bloc crédits (écrit/composé avec…) en bas.
-   ═══════════════════════════════════════════════════════════════════ */
-.preview-frame[data-type="certif"] .pv-artwork-wrap {
-  top: 53%;
-}
-.preview-frame[data-type="certif"] .pv-info-top {
-  bottom: 73%;
-}
-.preview-frame[data-type="certif"] .pv-credits-block {
-  top: 79%;
-}
-.preview-frame[data-type="certif"][data-format="9:16"] .pv-artwork-wrap {
-  top: 46%;
-}
-.preview-frame[data-type="certif"][data-format="9:16"] .pv-info-top {
-  bottom: 73%;
-}
-.preview-frame[data-type="certif"][data-format="9:16"] .pv-credits-block {
-  top: 66%;
-}
-
-/* ═══════════════════════════════════════════════════════════════════
-   CERTIF TEMPLATE — médaillon SNEP centré sur l'arête gauche de l'artwork
-   Le translateX(-50%) centre le médaillon horizontalement pile sur le bord
-   gauche de l'artwork (calc(50% - 28cqi) = position du bord gauche quand
-   l'artwork fait 56cqi de large et est centré à left:50%).
-   ═══════════════════════════════════════════════════════════════════ */
-.pv-cert-medallion {
-  position: absolute;
-  height: 22cqi;
-  width: auto;
-  z-index: 5;
-  pointer-events: none;
-  /* 4:5 : artwork bottom ~79% du haut (shifted) → 21% du bas.
-     On place le bottom du médaillon juste au-dessus des crédits. */
-  bottom: 22%;
-  left: calc(50% - 28cqi);
-  transform: translateX(-50%);
-  filter: drop-shadow(0 1.2cqi 2.5cqi rgba(0,0,0,0.6));
-}
-.preview-frame[data-format="9:16"] .pv-cert-medallion {
-  height: 24cqi;
-  width: auto;
-  bottom: 35%;
-  left: calc(50% - 29cqi);
-  transform: translateX(-50%);
-}
-.preview-frame:not([data-type="certif"]) .pv-cert-medallion { display: none !important; }
 
 /* Slider row (used for Actu vertical position) */
 .slider-row {
@@ -1261,17 +1104,14 @@ nav {
           <div class="type-tile-name">Sortie</div>
           <div class="type-tile-desc">Single / EP / Album</div>
         </button>
-        <button class="type-tile" data-type="certif">
+        <button class="type-tile disabled" data-type="certif" disabled>
+          <div class="badge">bientôt</div>
           <div class="type-tile-name">Certification</div>
           <div class="type-tile-desc">Or / Platine / Diamant</div>
         </button>
         <button class="type-tile" data-type="actu">
           <div class="type-tile-name">Actu</div>
           <div class="type-tile-desc">Freestyle, presse, prix</div>
-        </button>
-        <button class="type-tile" data-type="synchro">
-          <div class="type-tile-name">Synchro</div>
-          <div class="type-tile-desc">Film, pub, jeu vidéo</div>
         </button>
         <button class="type-tile disabled" data-type="concert" disabled>
           <div class="badge">bientôt</div>
@@ -1330,74 +1170,14 @@ nav {
             </div>
             <div class="rich-textarea" id="f_actu_desc" contenteditable="true" data-placeholder="Courte description (1 à 3 lignes)…"></div>
           </div>
-        </div>
-
-        <!-- ===== Certif-specific fields ===== -->
-        <div id="formCertifFields" style="display:none">
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">Certification de</label>
-              <select class="form-select" id="f_cert_type">
-                <option value="Single">Single</option>
-                <option value="Album">Album</option>
-              </select>
+          <div class="form-group">
+            <label class="form-label">Position verticale du bloc de texte</label>
+            <div class="slider-row">
+              <button class="size-btn" type="button" id="f_actu_y_minus">↑</button>
+              <input type="range" id="f_actu_y" class="zoom-slider" min="-40" max="60" step="1" value="35" />
+              <button class="size-btn" type="button" id="f_actu_y_plus">↓</button>
+              <span class="zoom-value" id="f_actu_y_val">Bas +35</span>
             </div>
-            <div class="form-group">
-              <label class="form-label">Niveau</label>
-              <select class="form-select" id="f_cert_level">
-                <option value="Or">Or</option>
-                <option value="Platine">Platine</option>
-                <option value="Double platine">Double platine</option>
-                <option value="Triple platine">Triple platine</option>
-                <option value="Diamant">Diamant</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Titre du track / projet</label>
-            <input type="text" class="form-input" id="f_cert_title" placeholder="Titre" autocomplete="off" />
-          </div>
-        </div>
-
-        <!-- ===== Synchro-specific fields ===== -->
-        <div id="formSynchroFields" style="display:none">
-          <div class="form-group">
-            <label class="form-label">Titre du contenu (film, série, pub…)</label>
-            <input type="text" class="form-input" id="f_synchro_title" placeholder="Ex : Emily in Paris, FIFA 26…" autocomplete="off" />
-          </div>
-          <div class="form-group">
-            <label class="form-label">Type de synchro</label>
-            <select class="form-select" id="f_synchro_type">
-              <option value="Film">Film</option>
-              <option value="Série">Série</option>
-              <option value="Court métrage">Court métrage</option>
-              <option value="Publicité">Publicité</option>
-              <option value="Jeu vidéo">Jeu vidéo</option>
-              <option value="Documentaire">Documentaire</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Commentaire (optionnel, après le type)</label>
-            <input type="text" class="form-input" id="f_synchro_comment" placeholder="Ex : Réalisé par X, produit par Y" autocomplete="off" />
-          </div>
-          <div class="form-group">
-            <label class="form-label">Nom de l'artiste</label>
-            <input type="text" class="form-input" id="f_synchro_artist" placeholder="Nom de l'artiste" autocomplete="off" />
-          </div>
-          <div class="form-group">
-            <label class="form-label">Titre du track</label>
-            <input type="text" class="form-input" id="f_synchro_track" placeholder="Titre du morceau" autocomplete="off" />
-          </div>
-        </div>
-
-        <!-- ===== Shared vertical position slider ===== -->
-        <div class="form-group" id="verticalPosGroup">
-          <label class="form-label">Position verticale des éléments</label>
-          <div class="slider-row">
-            <button class="size-btn" type="button" id="f_vpos_minus">↑</button>
-            <input type="range" id="f_vpos" class="zoom-slider" min="-20" max="20" step="1" value="0" />
-            <button class="size-btn" type="button" id="f_vpos_plus">↓</button>
-            <span class="zoom-value" id="f_vpos_val">0</span>
           </div>
         </div>
 
@@ -1451,7 +1231,7 @@ nav {
           <label class="form-label">Tailles de typo</label>
           <div class="size-controls">
             <div class="size-row">
-              <span class="size-row-label" id="sizeArtistLabel">Nom de l'artiste</span>
+              <span class="size-row-label">Nom de l'artiste</span>
               <div class="size-row-buttons">
                 <button class="size-btn" type="button" data-size="artist" data-dir="-1">−</button>
                 <span class="size-row-value" id="sizeArtistVal">100%</span>
@@ -1495,7 +1275,7 @@ nav {
           </label>
           <div class="media-controls" id="bgControls">
             <span class="media-controls-label">Zoom</span>
-            <input type="range" class="zoom-slider" id="bgZoom" min="0.5" max="3" step="0.05" value="1" />
+            <input type="range" class="zoom-slider" id="bgZoom" min="1" max="3" step="0.05" value="1" />
             <span class="zoom-value" id="bgZoomVal">100%</span>
             <button type="button" class="media-delete-btn" id="bgDelete">× Supprimer</button>
           </div>
@@ -1510,7 +1290,7 @@ nav {
           </label>
           <div class="media-controls" id="artControls">
             <span class="media-controls-label">Zoom</span>
-            <input type="range" class="zoom-slider" id="artZoom" min="0.5" max="3" step="0.05" value="1" />
+            <input type="range" class="zoom-slider" id="artZoom" min="1" max="3" step="0.05" value="1" />
             <span class="zoom-value" id="artZoomVal">100%</span>
             <button type="button" class="media-delete-btn" id="artDelete">× Supprimer</button>
           </div>
@@ -1551,17 +1331,6 @@ nav {
             <div class="pv-credits-label" id="pvCreditsLabel"></div>
             <div class="pv-credits-names" id="pvCreditsNames"></div>
           </div>
-
-          <!-- ===== SYNCHRO bottom block (below poster) ===== -->
-          <div class="pv-synchro-bottom">
-            <div class="pv-synchro-comment" id="pvSynchroComment"></div>
-            <div class="pv-synchro-trackline" id="pvSynchroTrackline"></div>
-            <div class="pv-synchro-credits-label" id="pvSynchroCreditsLabel"></div>
-            <div class="pv-synchro-credits-names" id="pvSynchroCreditsNames"></div>
-          </div>
-
-          <!-- ===== CERTIF medallion (overlapping bottom-left of artwork) ===== -->
-          <img class="pv-cert-medallion" id="pvCertMedallion" alt="" style="display:none" />
 
           <!-- ===== ACTU elements ===== -->
           <div class="pv-actu-wrap">
@@ -1607,11 +1376,11 @@ function _waitAuth() {
 // DONNÉES — Songwriters BLZante (synchro avec release_create.html)
 // ═══════════════════════════════════════════════════════════════════
 const SONGWRITERS = [
-  '2B', 'AKATCHE', 'BRÖ', 'CHERI', 'DANI TERREUR', 'EMY JO',
-  'GABRIEL MABILAT', 'HADRIEN MABILAT', 'HUGO LARDENET', 'IVY', 'KEV 117',
-  'LAGOS IN PARIS', 'LAURINA MALAKA', 'LEANDRE PICK', 'LEITH', 'LIONNEL BUZAC', 'LONIR', 'MAB', 'MALAKA', 'MATSHIMOTO', 'NINO VELLA',
-  'NOLAN', 'OZZY', 'PABLO', 'PALMAE', 'PIERRE-LAURENT FAURE', 'RITUAL X', 'ROI LUIS',
-  'SACHA MALAKA', 'SEBASTIEN ROUSSELET', 'VINCHA', 'VJ', 'LE SERI'
+  '2B', 'AKATCHE', 'OZZY', 'BRO', 'CHERI', 'DANI TERREUR', 'EMY JO',
+  'GABRIEL MABILAT', 'HADRIEN MABILAT', 'HUGO LARDENET', 'IGIT', 'IVY', 'KEV 117',
+  'LAURINA MALAKA', 'LEANDRE', 'LEITH', 'MATSHIMOTO', 'NOLAN', 'PABLO',
+  'PALMAE', 'PIERRE-LAURENT FAURE', 'RITUAL X', 'ROI LUIS', 'SACHA MALAKA',
+  'SEBASTIEN ROUSSELET', 'THÉO', 'VINCHA', 'VJ', 'YANNICK SERI'
 ];
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1626,16 +1395,7 @@ const S = {
   // Actu-specific
   actuTitle: '',
   actuDesc: '',
-  // Certif-specific
-  certType: 'Single',
-  certLevel: 'Or',
-  certTitle: '',
-  // Synchro-specific
-  synchroTitle: '',
-  synchroType: 'Film',
-  synchroComment: '',
-  synchroTrack: '',
-  verticalY: 0,
+  actuY: 35,         // vertical offset in cqi, -40..+60 (default: bottom-positioned)
   ecrit: true,
   compose: true,
   realise: false,
@@ -1668,7 +1428,7 @@ function applyStyleVars(el) {
   el.style.setProperty('--art-y', (S.artY * w / 100) + 'px');
   el.style.setProperty('--art-zoom', S.artZoom);
   el.style.setProperty('--accent-color', S.accentColor);
-  el.style.setProperty('--vertical-y', (S.verticalY * w / 100) + 'px');
+  el.style.setProperty('--actu-y', S.actuY + 'cqi');
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1699,35 +1459,16 @@ function applyTypeUI() {
   // Affiche/masque les blocs de formulaire spécifiques au type
   document.getElementById('formSortieFields').style.display = S.type === 'sortie' ? '' : 'none';
   document.getElementById('formActuFields').style.display = S.type === 'actu' ? '' : 'none';
-  document.getElementById('formCertifFields').style.display = S.type === 'certif' ? '' : 'none';
-  document.getElementById('formSynchroFields').style.display = S.type === 'synchro' ? '' : 'none';
 
-  // L'artwork existe pour Sortie, Certif ET Synchro (poster)
+  // L'artwork n'existe que pour Sortie
   const artGroup = document.getElementById('artworkFormGroup');
-  if (artGroup) {
-    artGroup.style.display = (S.type === 'sortie' || S.type === 'certif' || S.type === 'synchro') ? '' : 'none';
-    // Dynamic label for artwork
-    const artLabel = artGroup.querySelector('.form-label');
-    if (artLabel) artLabel.textContent = S.type === 'synchro' ? 'Affiche / Poster' : 'Artwork de la sortie';
-  }
-
-  // Hide shared artist field in synchro (has its own inside synchro section)
-  const artistGroup = document.getElementById('f_artist').closest('.form-group');
-  if (artistGroup) artistGroup.style.display = S.type === 'synchro' ? 'none' : '';
-
-  // Label dynamique du contrôle de taille "Artist" (in synchro = content title)
-  const artistLabel = document.getElementById('sizeArtistLabel');
-  if (artistLabel) artistLabel.textContent =
-    S.type === 'synchro' ? 'Titre du contenu' :
-                           "Nom de l'artiste";
+  if (artGroup) artGroup.style.display = S.type === 'sortie' ? '' : 'none';
 
   // Label dynamique du contrôle de taille "Titre"
   const titleLabel = document.getElementById('sizeTitleLabel');
-  if (titleLabel) titleLabel.textContent =
-    S.type === 'actu'    ? "Titre de l'actu" :
-    S.type === 'certif'  ? 'Titre du track / projet' :
-    S.type === 'synchro' ? 'Type de synchro' :
-                           'Titre de la sortie';
+  if (titleLabel) titleLabel.textContent = S.type === 'actu'
+    ? "Titre de l'actu"
+    : 'Titre de la sortie';
 
   // Ligne de contrôle de taille "Description" : visible seulement en Actu
   const descRow = document.getElementById('sizeDescRow');
@@ -1820,31 +1561,6 @@ bind('f_type', 'releaseType', 'change');
 bind('f_ecrit', 'ecrit', 'change');
 bind('f_compose', 'compose', 'change');
 bind('f_realise', 'realise', 'change');
-
-// ─── Certif bindings ───────────────────────────────────────────────
-bind('f_cert_type', 'certType', 'change');
-bind('f_cert_level', 'certLevel', 'change');
-bind('f_cert_title', 'certTitle');
-
-// ─── Synchro bindings ─────────────────────────────────────────────
-bind('f_synchro_title', 'synchroTitle');
-bind('f_synchro_type', 'synchroType', 'change');
-bind('f_synchro_comment', 'synchroComment');
-bind('f_synchro_artist', 'artist');
-bind('f_synchro_track', 'synchroTrack');
-
-// Shared vertical position slider (all templates)
-const vposSlider = document.getElementById('f_vpos');
-const vposVal = document.getElementById('f_vpos_val');
-function updateVerticalY(val) {
-  S.verticalY = parseInt(val);
-  vposSlider.value = val;
-  vposVal.textContent = val > 0 ? '+' + val : String(val);
-  updatePreview();
-}
-vposSlider.addEventListener('input', () => updateVerticalY(vposSlider.value));
-document.getElementById('f_vpos_minus').addEventListener('click', () => updateVerticalY(Math.max(-20, S.verticalY - 2)));
-document.getElementById('f_vpos_plus').addEventListener('click', () => updateVerticalY(Math.min(20, S.verticalY + 2)));
 
 // ─── Actu bindings ─────────────────────────────────────────────────
 bind('f_actu_title', 'actuTitle');
@@ -1981,6 +1697,35 @@ function refreshRedSwatch() {
   if (sw) sw.style.background = S.accentColor;
 }
 
+// Slider de position verticale du bloc Actu
+const actuYInput = document.getElementById('f_actu_y');
+const actuYVal = document.getElementById('f_actu_y_val');
+
+function updateActuYLabel() {
+  const v = S.actuY;
+  if (v === 0) actuYVal.textContent = 'Centre';
+  else if (v < 0) actuYVal.textContent = 'Haut ' + v;
+  else actuYVal.textContent = 'Bas +' + v;
+}
+
+actuYInput.addEventListener('input', (e) => {
+  S.actuY = parseInt(e.target.value, 10) || 0;
+  updateActuYLabel();
+  applyStyleVars(previewFrame);
+});
+
+document.getElementById('f_actu_y_minus').addEventListener('click', () => {
+  S.actuY = Math.max(-40, S.actuY - 5);
+  actuYInput.value = S.actuY;
+  updateActuYLabel();
+  applyStyleVars(previewFrame);
+});
+document.getElementById('f_actu_y_plus').addEventListener('click', () => {
+  S.actuY = Math.min(60, S.actuY + 5);
+  actuYInput.value = S.actuY;
+  updateActuYLabel();
+  applyStyleVars(previewFrame);
+});
 document.getElementById('f_avec').addEventListener('change', () => { S.relation = 'avec'; updatePreview(); });
 document.getElementById('f_par').addEventListener('change', () => { S.relation = 'par'; updatePreview(); });
 
@@ -2053,7 +1798,6 @@ document.getElementById('artUpload').addEventListener('change', async (e) => {
   const img = document.getElementById('pvArt');
   img.src = dataUrl;
   img.style.display = 'block';
-  img.onload = () => { if (S.type === 'synchro') requestAnimationFrame(repositionSynchroBottom); };
   document.getElementById('artPlaceholder').style.display = 'none';
   document.getElementById('artUploadLabel').classList.add('has-file');
   document.getElementById('artUploadText').textContent = '✓ ' + file.name;
@@ -2244,21 +1988,11 @@ const pvActuCreditsNames = document.getElementById('pvActuCreditsNames');
 
 // Title-case un nom de songwriter en respectant les alias courts (2B, VJ, X…)
 // et les séparateurs (espace, trait d'union).
-// Noms toujours en majuscules (aliases/duos courts)
-const UPPERCASE_NAMES = new Set(['MAB', 'BRÖ', 'CHERI', 'IVY', 'VJ', 'OZZY']);
 function titleCaseName(name) {
-  if (UPPERCASE_NAMES.has(name.toUpperCase())) return name.toUpperCase();
-  const LOWERCASE_WORDS = new Set(['in', 'of', 'the', 'a', 'an', 'de', 'du', 'et', 'le', 'la', 'les', 'des', 'au', 'aux', 'en']);
-  let isFirst = true;
   return name.split(/(\s+|-)/).map(token => {
     if (/^\s+$/.test(token) || token === '-') return token;
-    const isLowWord = LOWERCASE_WORDS.has(token.toLowerCase());
-    if (isLowWord && !isFirst) return token.toLowerCase();
-    if (!isLowWord && !isFirst) {
-      if (token.length === 1) return token;                  // X → X
-      if (token.length === 2 && /^[A-Z]+$/.test(token)) return token; // VJ → VJ
-    }
-    isFirst = false;
+    if (token.length === 1) return token;                  // X → X
+    if (token.length === 2 && /^[A-Z]+$/.test(token)) return token; // VJ → VJ
     if (/^\d/.test(token)) return token;                   // 2B → 2B, 117 → 117
     return token.charAt(0).toUpperCase() + token.slice(1).toLowerCase();
   }).join('');
@@ -2304,132 +2038,16 @@ function updatePreview() {
   applyStyleVars(previewFrame);
   if (S.type === 'actu') {
     updatePreviewActu();
-  } else if (S.type === 'certif') {
-    updatePreviewCertif();
-  } else if (S.type === 'synchro') {
-    updatePreviewSynchro();
   } else {
     updatePreviewSortie();
   }
 }
 
-function updatePreviewSynchro() {
-  // Top block: "NOUVELLE SYNCHRO" + content title (one line) + type + comment
-  pvType.textContent = 'NOUVELLE SYNCHRO';
-  pvArtist.textContent = (S.synchroTitle || 'TITRE DU CONTENU').toUpperCase();
-  // Type + comment on same line
-  let typeLine = (S.synchroType || 'FILM').toUpperCase();
-  if (S.synchroComment) typeLine += ' — ' + S.synchroComment;
-  pvTitle.textContent = typeLine;
-
-  // Bottom block: artist + track + credits (left-aligned)
-  document.getElementById('pvSynchroComment').textContent = '';
-  const artistName = S.artist || '';
-  const trackName = S.synchroTrack || '';
-  let trackline = '';
-  if (artistName && trackName) trackline = artistName + ' — "' + trackName + '"';
-  else if (artistName) trackline = artistName;
-  else if (trackName) trackline = '"' + trackName + '"';
-  document.getElementById('pvSynchroTrackline').textContent = trackline;
-
-  // Credits in synchro bottom block
-  const c = getCreditsLines();
-  document.getElementById('pvSynchroCreditsLabel').textContent = c.label;
-  document.getElementById('pvSynchroCreditsNames').textContent = c.names;
-
-  // Auto-fit: content title (smaller base) and type line
-  const mult = (k) => 1 + S.sizes[k] * SIZE_STEP_PCT;
-  const artistMax  = 5.5 * mult('artist');
-  const titleMax   = 2.6 * mult('title');
-  const creditsMult = mult('credits');
-
-  // Apply credits size multiplier to synchro credits names
-  document.getElementById('pvSynchroCreditsNames').style.fontSize = (3.0 * creditsMult) + 'cqi';
-
-  requestAnimationFrame(() => {
-    autoFitBlock(pvArtist.parentElement, [
-      { el: pvArtist, max: artistMax, min: 3.0 },
-      { el: pvTitle,  max: titleMax,  min: 1.5 }
-    ]);
-    // Position bottom block just below the artwork
-    repositionSynchroBottom();
-  });
-}
-
-// Dynamically position the synchro bottom block below artwork
-function repositionSynchroBottom() {
-  if (S.type !== 'synchro') return;
-  const artWrap = previewFrame.querySelector('.pv-artwork-wrap');
-  const bottom = previewFrame.querySelector('.pv-synchro-bottom');
-  if (!artWrap || !bottom) return;
-  const frameW = previewFrame.offsetWidth;
-  if (!frameW) return;
-  const artRect = artWrap.getBoundingClientRect();
-  const frameRect = previewFrame.getBoundingClientRect();
-  const artBottomPx = artRect.bottom - frameRect.top;
-  const gap = frameW * 0.02; // 2cqi gap
-  previewFrame.style.setProperty('--synchro-bottom-top', (artBottomPx + gap) + 'px');
-}
-
-// Convertit "Double platine" → "double_platine" pour matcher le nom de fichier
-// du médaillon SNEP correspondant (cert_double_platine.png).
-function certLevelSlug(level) {
-  if (!level) return null;
-  return level.toLowerCase().replace(/\s+/g, '_');
-}
-
-function updatePreviewCertif() {
-  // Top label : "CERTIFICATION <TYPE> <NIVEAU>"
-  // (ex : "CERTIFICATION SINGLE OR", "CERTIFICATION ALBUM DOUBLE PLATINE")
-  const type  = (S.certType  || 'SINGLE').toUpperCase();
-  const level = (S.certLevel || 'OR').toUpperCase();
-  pvType.textContent = 'CERTIFICATION ' + type + ' ' + level;
-  pvArtist.textContent = (S.artist || 'NOM ARTISTE').toUpperCase();
-  pvTitle.textContent = '"' + (S.certTitle || 'Titre du track').toUpperCase() + '"';
-
-  // Médaillon : on charge le PNG correspondant au niveau choisi
-  const certImg = document.getElementById('pvCertMedallion');
-  const slug = certLevelSlug(S.certLevel);
-  if (slug) {
-    const newSrc = 'cert_' + slug + '.png';
-    if (!certImg.src.endsWith(newSrc)) certImg.src = newSrc;
-    certImg.style.display = '';
-  } else {
-    certImg.style.display = 'none';
-    certImg.removeAttribute('src');
-  }
-
-  // Crédits — même logique que Sortie
-  const c = getCreditsLines();
-  pvCreditsLabel.textContent = c.label;
-  pvCreditsNames.textContent = c.names;
-
-  // Auto-fit : bases ajustées POUR CERTIF :
-  //   - nom d'artiste : 80% de la base Sortie (ie 7.2 × 0.8 = 5.76)
-  //   - titre du track : 120% de la base Sortie (ie 3.36 × 1.2 = 4.032)
-  // Les boutons +/- restent fonctionnels et partent de cette base.
-  const mult = (k) => 1 + S.sizes[k] * SIZE_STEP_PCT;
-  const artistMax  = 7.2  * 0.8 * mult('artist');
-  const titleMax   = 3.36 * 1.2 * mult('title');
-  const creditsMax = 3.8        * mult('credits');
-
-  requestAnimationFrame(() => {
-    autoFitBlock(pvArtist.parentElement, [
-      { el: pvArtist, max: artistMax, min: 3.0 },
-      { el: pvTitle,  max: titleMax,  min: 1.5 }
-    ]);
-    autoFitBlock(pvCreditsNames.parentElement, [
-      { el: pvCreditsNames, max: creditsMax, min: 1.5 }
-    ]);
-  });
-}
-
 function updatePreviewSortie() {
-  const rType = (S.releaseType || 'SINGLE').toUpperCase();
-  pvType.textContent = (/^[AEIOUYÀÂÉÈÊËÏÎÔÙÛÜ]/i.test(rType) ? 'NOUVEL ' : 'NOUVEAU ') + rType;
+  pvType.textContent = 'NOUVEAU ' + (S.releaseType || 'SINGLE').toUpperCase();
   pvArtist.textContent = (S.artist || 'NOM ARTISTE').toUpperCase();
   // Le titre est automatiquement entouré de guillemets droits
-  pvTitle.textContent = '"' + (S.title || 'Titre du track').toUpperCase() + '"';
+  pvTitle.textContent = '"' + (S.title || 'Titre du track') + '"';
 
   const c = getCreditsLines();
   pvCreditsLabel.textContent = c.label;
@@ -2611,20 +2229,11 @@ function exportFilterNode(node) {
           cls.contains('pv-artwork-wrap') ||
           cls.contains('pv-artwork') ||
           cls.contains('pv-artwork-placeholder') ||
-          cls.contains('pv-credits-block') ||
-          cls.contains('pv-cert-medallion') ||
-          cls.contains('pv-synchro-bottom')) {
+          cls.contains('pv-credits-block')) {
         return false;
       }
-    } else if (S.type === 'certif') {
-      if (cls.contains('pv-actu-wrap') || cls.contains('pv-synchro-bottom')) return false;
-      // Médaillon GARDÉ (visible uniquement pour certif)
-    } else if (S.type === 'synchro') {
-      if (cls.contains('pv-actu-wrap') || cls.contains('pv-cert-medallion') || cls.contains('pv-credits-block')) return false;
-      // synchro-bottom GARDÉ
     } else {
-      // sortie
-      if (cls.contains('pv-actu-wrap') || cls.contains('pv-cert-medallion') || cls.contains('pv-synchro-bottom')) return false;
+      if (cls.contains('pv-actu-wrap')) return false;
     }
   }
 
@@ -2641,14 +2250,12 @@ function cleanupCloneForType(clone) {
   };
 
   if (type === 'actu') {
-    // Retire le template Sortie complet + le médaillon + synchro bottom
+    // Retire le template Sortie complet
     removeAll('.pv-info-top');
     removeAll('.pv-artwork-wrap');
     removeAll('.pv-artwork');
     removeAll('.pv-artwork-placeholder');
     removeAll('.pv-credits-block');
-    removeAll('.pv-cert-medallion');
-    removeAll('.pv-synchro-bottom');
     // Aussi par ID pour être sûr
     removeAll('#pvArt');
     removeAll('#artPlaceholder');
@@ -2657,50 +2264,13 @@ function cleanupCloneForType(clone) {
     removeAll('#pvTitle');
     removeAll('#pvCreditsLabel');
     removeAll('#pvCreditsNames');
-    removeAll('#pvCertMedallion');
-    removeAll('#pvSynchroComment');
-    removeAll('#pvSynchroTrackline');
-    removeAll('#pvSynchroCreditsLabel');
-    removeAll('#pvSynchroCreditsNames');
-  } else if (type === 'certif') {
-    // Garde tous les éléments Sortie + le médaillon, retire Actu + Synchro bottom
-    removeAll('.pv-actu-wrap');
-    removeAll('.pv-synchro-bottom');
-    removeAll('#pvActuArtist');
-    removeAll('#pvActuTitle');
-    removeAll('#pvActuDesc');
-    removeAll('#pvActuCreditsLabel');
-    removeAll('#pvActuCreditsNames');
-    removeAll('#pvSynchroComment');
-    removeAll('#pvSynchroTrackline');
-    removeAll('#pvSynchroCreditsLabel');
-    removeAll('#pvSynchroCreditsNames');
-  } else if (type === 'synchro') {
-    // Garde info-top + artwork + synchro-bottom, retire Actu + médaillon + shared credits
-    removeAll('.pv-actu-wrap');
-    removeAll('.pv-cert-medallion');
-    removeAll('.pv-credits-block');
-    removeAll('#pvActuArtist');
-    removeAll('#pvActuTitle');
-    removeAll('#pvActuDesc');
-    removeAll('#pvActuCreditsLabel');
-    removeAll('#pvActuCreditsNames');
-    removeAll('#pvCertMedallion');
   } else {
-    // sortie : retire Actu + médaillon + synchro bottom
     removeAll('.pv-actu-wrap');
-    removeAll('.pv-cert-medallion');
-    removeAll('.pv-synchro-bottom');
     removeAll('#pvActuArtist');
     removeAll('#pvActuTitle');
     removeAll('#pvActuDesc');
     removeAll('#pvActuCreditsLabel');
     removeAll('#pvActuCreditsNames');
-    removeAll('#pvCertMedallion');
-    removeAll('#pvSynchroComment');
-    removeAll('#pvSynchroTrackline');
-    removeAll('#pvSynchroCreditsLabel');
-    removeAll('#pvSynchroCreditsNames');
   }
   // Safety : supprime TOUT <img> sans src valide restant
   clone.querySelectorAll('img').forEach(img => {
@@ -2774,25 +2344,6 @@ async function buildOverlayLayer(targetW, targetH) {
     autoFitBlock(clone.querySelector('.pv-actu-wrap'), [
       { el: clone.querySelector('.pv-actu-credits-names'), max: 3.2 * _m('credits'), min: 1.5 }
     ]);
-  } else if (S.type === 'synchro') {
-    autoFitBlock(clone.querySelector('.pv-info-top'), [
-      { el: clone.querySelector('.pv-info-artist'), max: 5.5 * _m('artist'), min: 2.5 },
-      { el: clone.querySelector('.pv-info-title'),  max: 2.6 * _m('title'),  min: 1.2 }
-    ]);
-    const synCredits = clone.querySelector('.pv-synchro-credits-names');
-    if (synCredits) synCredits.style.fontSize = (3.0 * _m('credits') * targetW / 100) + 'px';
-
-    // Reposition synchro bottom block on the clone (same logic as preview)
-    await new Promise(r => requestAnimationFrame(r));
-    const cloneArtWrap = clone.querySelector('.pv-artwork-wrap');
-    const cloneBottom = clone.querySelector('.pv-synchro-bottom');
-    if (cloneArtWrap && cloneBottom) {
-      const cloneRect = clone.getBoundingClientRect();
-      const artRect = cloneArtWrap.getBoundingClientRect();
-      const artBottomPx = artRect.bottom - cloneRect.top;
-      const gap = targetW * 0.02;
-      clone.style.setProperty('--synchro-bottom-top', (artBottomPx + gap) + 'px');
-    }
   } else {
     autoFitBlock(clone.querySelector('.pv-info-top'), [
       { el: clone.querySelector('.pv-info-artist'), max: 7.2  * _m('artist'), min: 3.0 },
@@ -2977,25 +2528,6 @@ async function exportPNG(forceFormat) {
       autoFitBlock(clone.querySelector('.pv-actu-wrap'), [
         { el: clone.querySelector('.pv-actu-credits-names'), max: 3.2 * _m2('credits'), min: 1.5 }
       ]);
-    } else if (S.type === 'synchro') {
-      autoFitBlock(clone.querySelector('.pv-info-top'), [
-        { el: clone.querySelector('.pv-info-artist'), max: 5.5 * _m2('artist'), min: 2.5 },
-        { el: clone.querySelector('.pv-info-title'),  max: 2.6 * _m2('title'),  min: 1.2 }
-      ]);
-      const synCredits2 = clone.querySelector('.pv-synchro-credits-names');
-      if (synCredits2) synCredits2.style.fontSize = (3.0 * _m2('credits') * targetW / 100) + 'px';
-
-      // Reposition synchro bottom block on the clone
-      await new Promise(r => requestAnimationFrame(r));
-      const cloneArtWrap2 = clone.querySelector('.pv-artwork-wrap');
-      const cloneBottom2 = clone.querySelector('.pv-synchro-bottom');
-      if (cloneArtWrap2 && cloneBottom2) {
-        const cloneRect2 = clone.getBoundingClientRect();
-        const artRect2 = cloneArtWrap2.getBoundingClientRect();
-        const artBottomPx2 = artRect2.bottom - cloneRect2.top;
-        const gap2 = targetW * 0.02;
-        clone.style.setProperty('--synchro-bottom-top', (artBottomPx2 + gap2) + 'px');
-      }
     } else {
       autoFitBlock(clone.querySelector('.pv-info-top'), [
         { el: clone.querySelector('.pv-info-artist'), max: 7.2  * _m2('artist'), min: 3.0 },
@@ -3485,7 +3017,6 @@ document.getElementById('coverBtn').addEventListener('click', async () => {
 function confirmReset() {
   // Si rien n'a été saisi, pas besoin de confirmer
   const hasContent = S.artist || S.title || S.actuTitle || S.actuDesc ||
-                     S.synchroTitle || S.synchroTrack || S.synchroComment ||
                      S.songwriters.length > 0 || S.bgImageSrc || S.artworkSrc;
   if (!hasContent || confirm('Créer un nouveau post ? Toutes les modifications en cours seront perdues.')) {
     window.location.reload();
@@ -3496,10 +3027,10 @@ document.getElementById('resetBtnBottom').addEventListener('click', confirmReset
 
 function buildFilename(ext, suffix) {
   const slug = (s) => (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
-  const titleField = S.type === 'actu' ? S.actuTitle : S.type === 'synchro' ? S.synchroTitle : S.title;
+  const titleField = S.type === 'actu' ? S.actuTitle : S.title;
   const parts = [
     slug(S.artist) || 'artiste',
-    slug(titleField) || (S.type === 'actu' ? 'actu' : S.type === 'synchro' ? 'synchro' : 'titre'),
+    slug(titleField) || (S.type === 'actu' ? 'actu' : 'titre'),
     S.format === '4:5' ? 'post' : 'reel'
   ];
   if (suffix) parts.push(suffix);
@@ -3521,8 +3052,7 @@ async function waitForFonts() {
     // Force-load les couples poids/famille qu'on utilise dans le preview
     await Promise.all([
       document.fonts.load('800 16px "Syne"'),  // pv-info-artist
-      document.fonts.load('700 16px "Manrope"'),  // pv-credits-names
-      document.fonts.load('600 16px "Manrope"'),  // pv-credits-label
+      document.fonts.load('700 16px "Syne"'),  // pv-credits-names
       document.fonts.load('600 16px "Syne"'),  // pv-info-type, pv-info-title
       document.fonts.load('400 16px "Syne Mono"'),
       document.fonts.load('400 16px "Inter"'), // pv-actu-desc regular
