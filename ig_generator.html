@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Manrope:wght@600;700;800&family=Syne:wght@400;600;700;800&family=Syne+Mono&display=block">
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html-to-image@1.11.13/dist/html-to-image.min.js"></script>
 <style>
 :root {
@@ -910,6 +911,34 @@ nav {
 }
 .pv-credits-label:empty, .pv-credits-names:empty { display: none; }
 
+/* ─── Tracks credits (EP/Album per-track listing) ─── */
+.pv-credits-tracks{font-family:'Manrope',sans-serif;display:flex;flex-direction:column;gap:0.3cqi;width:100%;max-width:92%;margin:0 auto}
+.pv-credits-tracks:empty{display:none}
+.pv-track-line{display:flex;align-items:baseline;justify-content:center;gap:0.5cqi;flex-wrap:wrap;font-size:2cqi;line-height:1.35;text-shadow:0 0.15cqi 0.8cqi rgba(0,0,0,0.5)}
+.pv-track-title{font-weight:700;color:#fff}
+.pv-track-dash{color:rgba(255,255,255,0.5);font-weight:400}
+.pv-track-credit{font-weight:400;font-size:1.7cqi;color:rgba(255,255,255,0.7);font-style:italic}
+.pv-track-sw{font-weight:700;color:var(--accent-color,#FF2D3A)}
+/* ─── Tracks form UI ─── */
+.tracks-section{display:none}.tracks-section.visible{display:block}
+.tracks-import-btn{display:inline-flex;align-items:center;gap:6px;background:none;border:1px solid var(--border);color:var(--muted);font-family:'Syne Mono',monospace;font-size:0.65rem;padding:6px 12px;cursor:pointer;letter-spacing:0.06em;transition:all 0.15s;margin-bottom:10px}
+.tracks-import-btn:hover{border-color:#555;color:#fff}.tracks-import-btn:disabled{opacity:0.4;cursor:wait}
+.tracks-list{display:flex;flex-direction:column;gap:8px}
+.track-card{background:var(--surface);border:1px solid var(--border);padding:10px 12px}
+.track-card-header{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.track-card-name{flex:1;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:'Syne Mono',monospace;font-size:0.72rem;padding:5px 8px;outline:none}
+.track-card-name:focus{border-color:#555}
+.track-card-remove{background:none;border:none;color:var(--muted);font-size:1rem;cursor:pointer;padding:2px 6px;line-height:1;transition:color 0.15s}
+.track-card-remove:hover{color:var(--error)}
+.track-card-sw{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px}
+.track-sw-pill{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border:1px solid var(--border);font-family:'Syne Mono',monospace;font-size:0.58rem;letter-spacing:0.06em;cursor:pointer;transition:all 0.15s;color:var(--muted);user-select:none}
+.track-sw-pill.selected{border-color:var(--accent);color:var(--accent);background:rgba(232,197,71,0.08)}
+.track-card-contribs{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.track-contrib-pill{display:inline-flex;align-items:center;gap:4px;font-family:'Syne Mono',monospace;font-size:0.58rem;color:var(--muted);cursor:pointer;user-select:none}
+.track-contrib-pill input{accent-color:var(--accent)}
+.tracks-add-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;background:none;border:1px dashed var(--border);color:var(--muted);font-family:'Syne Mono',monospace;font-size:0.65rem;padding:8px;cursor:pointer;letter-spacing:0.06em;transition:all 0.15s;margin-top:4px}
+.tracks-add-btn:hover{border-color:#555;color:#fff}
+
 /* ═══════════════════════════════════════════════════════════════════
    SYNCHRO TEMPLATE
    ═══════════════════════════════════════════════════════════════════ */
@@ -1428,6 +1457,14 @@ nav {
           </div>
         </div>
 
+        <!-- ===== Tracks per-track (EP/Album only) ===== -->
+        <div class="tracks-section" id="tracksSection">
+          <div class="section-label">Tracks & crédits par titre</div>
+          <button type="button" class="tracks-import-btn" id="tracksImportBtn">📥 Importer depuis le planning</button>
+          <div class="tracks-list" id="tracksList"></div>
+          <button type="button" class="tracks-add-btn" id="tracksAddBtn">+ Ajouter un track</button>
+        </div>
+
         <div class="section-label">Style</div>
         <div class="form-group">
           <label class="form-label">Couleur de la typo dominante</label>
@@ -1550,6 +1587,7 @@ nav {
           <div class="pv-credits-block">
             <div class="pv-credits-label" id="pvCreditsLabel"></div>
             <div class="pv-credits-names" id="pvCreditsNames"></div>
+            <div class="pv-credits-tracks" id="pvCreditsTracks"></div>
           </div>
 
           <!-- ===== SYNCHRO bottom block (below poster) ===== -->
@@ -1608,10 +1646,10 @@ function _waitAuth() {
 // ═══════════════════════════════════════════════════════════════════
 const SONGWRITERS = [
   '2B', 'AKATCHE', 'BRÖ', 'CHERI', 'DANI TERREUR', 'EMY JO',
-  'GABRIEL MABILAT', 'HADRIEN MABILAT', 'HUGO LARDENET', 'IVY', 'KEV 117',
+  'GABRIEL MABILAT', 'HADRIEN MABILAT', 'HUGO LARDENET', 'IGIT', 'IVY', 'KEV 117',
   'LAGOS IN PARIS', 'LAURINA MALAKA', 'LEANDRE PICK', 'LEITH', 'LIONNEL BUZAC', 'LONIR', 'MAB', 'MALAKA', 'MATSHIMOTO', 'NINO VELLA',
   'NOLAN', 'OZZY', 'PABLO', 'PALMAE', 'PIERRE-LAURENT FAURE', 'RITUAL X', 'ROI LUIS',
-  'SACHA MALAKA', 'SEBASTIEN ROUSSELET', 'VINCHA', 'VJ', 'LE SERI'
+  'SACHA MALAKA', 'SEBASTIEN ROUSSELET', 'THÉO', 'VINCHA', 'VJ', 'LE SERI'
 ];
 
 // ═══════════════════════════════════════════════════════════════════
@@ -1641,6 +1679,7 @@ const S = {
   realise: false,
   relation: 'avec',  // avec | par
   songwriters: [],
+  tracks: [],  // Per-track credits for EP/Album
   bgImageSrc: null,
   bgType: 'image',         // 'image' | 'video'
   artworkSrc: null,
@@ -1732,6 +1771,9 @@ function applyTypeUI() {
   // Ligne de contrôle de taille "Description" : visible seulement en Actu
   const descRow = document.getElementById('sizeDescRow');
   if (descRow) descRow.style.display = S.type === 'actu' ? '' : 'none';
+
+  // Tracks section : visible seulement pour EP/Album en mode Sortie
+  applyTracksUI();
 }
 
 document.querySelectorAll('.type-tile').forEach(tile => {
@@ -1806,6 +1848,123 @@ function renderTags() {
 }
 
 // ═══════════════════════════════════════════════════════════════════
+// TRACKS PER-TRACK CREDITS (EP / ALBUM)
+// ═══════════════════════════════════════════════════════════════════
+const DB = FIREBASE_CONFIG.databaseURL;
+let _fbToken = '';
+async function dbFetch(path) {
+  if (!_fbToken) { const u = firebase.auth().currentUser; if (u) _fbToken = await u.getIdToken(); }
+  const sep = path.includes('?') ? '&' : '?';
+  return (await fetch(DB + path + sep + 'auth=' + _fbToken)).json();
+}
+
+const tracksListEl = document.getElementById('tracksList');
+const tracksSection = document.getElementById('tracksSection');
+
+function applyTracksUI() {
+  const show = S.type === 'sortie' && (S.releaseType === 'EP' || S.releaseType === 'Album');
+  tracksSection.classList.toggle('visible', show);
+}
+function makeTrack(name) {
+  return { name: name || '', songwriters: [], ecrit: true, compose: true, realise: false, relation: 'avec' };
+}
+function renderTracksUI() {
+  tracksListEl.innerHTML = '';
+  S.tracks.forEach((track, ti) => {
+    const card = document.createElement('div'); card.className = 'track-card';
+    // Header
+    const header = document.createElement('div'); header.className = 'track-card-header';
+    const nameIn = document.createElement('input'); nameIn.type = 'text'; nameIn.className = 'track-card-name';
+    nameIn.placeholder = 'Nom du track'; nameIn.value = track.name;
+    nameIn.addEventListener('input', () => { track.name = nameIn.value; updatePreview(); });
+    const rmBtn = document.createElement('button'); rmBtn.type = 'button'; rmBtn.className = 'track-card-remove';
+    rmBtn.textContent = '×';
+    rmBtn.addEventListener('click', () => { S.tracks.splice(ti, 1); renderTracksUI(); updatePreview(); });
+    header.appendChild(nameIn); header.appendChild(rmBtn); card.appendChild(header);
+    // SW pills
+    const swW = document.createElement('div'); swW.className = 'track-card-sw';
+    SONGWRITERS.forEach(sw => {
+      const pill = document.createElement('span');
+      pill.className = 'track-sw-pill' + (track.songwriters.includes(sw) ? ' selected' : '');
+      pill.textContent = sw;
+      pill.addEventListener('click', () => {
+        const idx = track.songwriters.indexOf(sw);
+        if (idx >= 0) track.songwriters.splice(idx, 1); else track.songwriters.push(sw);
+        pill.classList.toggle('selected'); updatePreview();
+      });
+      swW.appendChild(pill);
+    });
+    card.appendChild(swW);
+    // Contribs
+    const cW = document.createElement('div'); cW.className = 'track-card-contribs';
+    [['ecrit','Écrit'],['compose','Composé'],['realise','Réalisé']].forEach(([k,l]) => {
+      const lbl = document.createElement('label'); lbl.className = 'track-contrib-pill';
+      const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = track[k];
+      cb.addEventListener('change', () => { track[k] = cb.checked; updatePreview(); });
+      lbl.appendChild(cb); lbl.appendChild(document.createTextNode(' ' + l)); cW.appendChild(lbl);
+    });
+    const relSel = document.createElement('select');
+    relSel.style.cssText = 'background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:inherit;font-size:inherit;padding:1px 4px;';
+    ['avec','par'].forEach(v => { const o = document.createElement('option'); o.value=v; o.textContent=v; o.selected=track.relation===v; relSel.appendChild(o); });
+    relSel.addEventListener('change', () => { track.relation = relSel.value; updatePreview(); });
+    cW.appendChild(relSel); card.appendChild(cW);
+    tracksListEl.appendChild(card);
+  });
+}
+document.getElementById('tracksAddBtn').addEventListener('click', () => {
+  S.tracks.push(makeTrack('')); renderTracksUI();
+  const inputs = tracksListEl.querySelectorAll('.track-card-name');
+  if (inputs.length) inputs[inputs.length - 1].focus();
+});
+// Import from Firebase
+document.getElementById('tracksImportBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('tracksImportBtn');
+  btn.disabled = true; btn.textContent = '⏳ Chargement…';
+  try {
+    const data = await dbFetch('/releases.json');
+    if (!data) { alert('Aucun event dans le planning.'); return; }
+    const epAlbums = Object.values(data).filter(r =>
+      (r.type === 'EP' || r.type === 'Album') && r.epTrackNames && r.epTrackNames.trim()
+    ).sort((a, b) => (b.dateSortable || '').localeCompare(a.dateSortable || ''));
+    if (!epAlbums.length) { alert('Aucun EP/Album avec des tracks trouvé dans le planning.'); return; }
+    const choice = await new Promise(resolve => {
+      const ov = document.createElement('div');
+      ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;display:flex;align-items:center;justify-content:center;';
+      const md = document.createElement('div');
+      md.style.cssText = 'background:#141414;border:1px solid #333;padding:20px;max-width:420px;width:90%;max-height:70vh;overflow-y:auto;font-family:"Syne Mono",monospace;color:#e8e8e8;';
+      md.innerHTML = '<div style="font-family:Syne,sans-serif;font-weight:700;font-size:0.95rem;margin-bottom:14px;">Choisir un EP / Album</div>';
+      epAlbums.forEach(r => {
+        const b = document.createElement('button');
+        b.style.cssText = 'display:block;width:100%;text-align:left;background:none;border:1px solid #333;color:#e8e8e8;padding:10px 12px;margin-bottom:6px;cursor:pointer;font-family:inherit;font-size:0.7rem;transition:border-color 0.15s;';
+        const tc = r.epTrackNames ? r.epTrackNames.split('\n').filter(t=>t.trim()).length : 0;
+        const sw = r.songwriters && r.songwriters.length ? r.songwriters.join(', ') : '—';
+        b.innerHTML = '<strong style="color:#fff;font-size:0.78rem;">'+(r.artist||'')+' — '+(r.project||r.title||'')+'</strong><br><span style="color:#777;">'+(r.type||'')+' · '+(r.date||'')+' · '+tc+' tracks · SW: '+sw+'</span>';
+        b.onmouseenter = () => b.style.borderColor='#666';
+        b.onmouseleave = () => b.style.borderColor='#333';
+        b.addEventListener('click', () => { document.body.removeChild(ov); resolve(r); });
+        md.appendChild(b);
+      });
+      const cb = document.createElement('button');
+      cb.style.cssText = 'display:block;width:100%;background:none;border:1px solid #333;color:#777;padding:8px;margin-top:8px;cursor:pointer;font-family:inherit;font-size:0.65rem;';
+      cb.textContent = 'Annuler';
+      cb.addEventListener('click', () => { document.body.removeChild(ov); resolve(null); });
+      md.appendChild(cb); ov.appendChild(md);
+      ov.addEventListener('click', e => { if (e.target===ov) { document.body.removeChild(ov); resolve(null); } });
+      document.body.appendChild(ov);
+    });
+    if (!choice) return;
+    const trackNames = choice.epTrackNames.split('\n').map(t => t.trim()).filter(Boolean);
+    if (!trackNames.length) { alert('Pas de noms de tracks dans cet event.'); return; }
+    if (!S.artist && choice.artist) { S.artist = choice.artist; document.getElementById('f_artist').value = choice.artist; }
+    if (!S.title && choice.project) { S.title = choice.project; document.getElementById('f_title').value = choice.project; }
+    const eventSw = choice.songwriters || [];
+    S.tracks = trackNames.map(name => { const t = makeTrack(name); t.songwriters = [...eventSw]; return t; });
+    renderTracksUI(); updatePreview();
+  } catch(e) { console.error('Import error:', e); alert('Erreur : ' + e.message); }
+  finally { btn.disabled = false; btn.textContent = '📥 Importer depuis le planning'; }
+});
+
+// ═══════════════════════════════════════════════════════════════════
 // FORM INPUTS → STATE → PREVIEW
 // ═══════════════════════════════════════════════════════════════════
 const bind = (id, key, event = 'input') => {
@@ -1816,7 +1975,11 @@ const bind = (id, key, event = 'input') => {
 };
 bind('f_artist', 'artist');
 bind('f_title', 'title');
-bind('f_type', 'releaseType', 'change');
+document.getElementById('f_type').addEventListener('change', (e) => {
+  S.releaseType = e.target.value;
+  applyTracksUI();
+  updatePreview();
+});
 bind('f_ecrit', 'ecrit', 'change');
 bind('f_compose', 'compose', 'change');
 bind('f_realise', 'realise', 'change');
@@ -2234,6 +2397,7 @@ const pvTitle = document.getElementById('pvTitle');
 const pvArtist = document.getElementById('pvArtist');
 const pvCreditsLabel = document.getElementById('pvCreditsLabel');
 const pvCreditsNames = document.getElementById('pvCreditsNames');
+const pvCreditsTracks = document.getElementById('pvCreditsTracks');
 
 // Actu element refs
 const pvActuArtist = document.getElementById('pvActuArtist');
@@ -2298,6 +2462,17 @@ function getCreditsLines() {
     label: action + ' ' + rel,
     names: formatNames(S.songwriters)
   };
+}
+
+function trackAction(t) {
+  const v = [];
+  if (t.ecrit) v.push('écrit'); if (t.compose) v.push('composé'); if (t.realise) v.push('réalisé');
+  if (!v.length) return '';
+  const act = v.length === 1 ? v[0] : v.length === 2 ? v.join(' & ') : v.slice(0,-1).join(', ') + ' & ' + v[v.length-1];
+  return act + ' ' + (t.relation === 'par' ? 'par' : 'avec');
+}
+function isMultiTrackMode() {
+  return (S.releaseType === 'EP' || S.releaseType === 'Album') && S.tracks.length > 0 && S.tracks.some(t => t.songwriters.length > 0);
 }
 
 function updatePreview() {
@@ -2429,34 +2604,49 @@ function updatePreviewSortie() {
   pvType.textContent = (/^[AEIOUYÀÂÉÈÊËÏÎÔÙÛÜ]/i.test(rType) ? 'NOUVEL ' : 'NOUVEAU ') + rType;
   pvArtist.textContent = (S.artist || 'NOM ARTISTE').toUpperCase();
   // Le titre est automatiquement entouré de guillemets droits
-  pvTitle.textContent = '"' + (S.title || 'Titre du track').toUpperCase() + '"';
+  // Le titre respecte la casse saisie (fix Lagos in Paris / Le Seri)
+  pvTitle.textContent = '"' + (S.title || 'Titre du track') + '"';
 
-  const c = getCreditsLines();
-  pvCreditsLabel.textContent = c.label;
-  pvCreditsNames.textContent = c.names;
+  // ─── Credits : global (Single) ou per-track (EP/Album) ───
+  if (isMultiTrackMode()) {
+    pvCreditsLabel.textContent = '';
+    pvCreditsNames.textContent = '';
+    pvCreditsTracks.innerHTML = '';
+    S.tracks.forEach(t => {
+      if (!t.songwriters.length || !t.name) return;
+      const line = document.createElement('div'); line.className = 'pv-track-line';
+      const ts = document.createElement('span'); ts.className = 'pv-track-title';
+      ts.textContent = '"' + t.name + '"'; line.appendChild(ts);
+      const dash = document.createElement('span'); dash.className = 'pv-track-dash';
+      dash.textContent = '—'; line.appendChild(dash);
+      const act = trackAction(t);
+      if (act) { const cs = document.createElement('span'); cs.className = 'pv-track-credit'; cs.textContent = act; line.appendChild(cs); }
+      const sw = document.createElement('span'); sw.className = 'pv-track-sw';
+      sw.textContent = formatNames(t.songwriters); line.appendChild(sw);
+      pvCreditsTracks.appendChild(line);
+    });
+  } else {
+    pvCreditsTracks.innerHTML = '';
+    const c = getCreditsLines();
+    pvCreditsLabel.textContent = c.label;
+    pvCreditsNames.textContent = c.names;
+  }
 
-  // Bases de taille (nouvelles valeurs par défaut, plus petites qu'avant).
-  // artist 7.2 = 80% de l'ancien 9, title 3.36 = 70% de l'ancien 4.8 (choix
-  // de Pierre après tests Mac/Windows pour un rendu cohérent). Les boutons
-  // +/- multiplient ces bases par (1 + step * 0.1), range [50%, 150%].
   const mult = (k) => 1 + S.sizes[k] * SIZE_STEP_PCT;
   const artistMax  = 7.2  * mult('artist');
   const titleMax   = 3.36 * mult('title');
   const creditsMax = 3.8  * mult('credits');
-
-  // La max-height de .pv-info-top est fixée en CSS (26cqi en 4:5, 41cqi en
-  // 9:16), juste sous le logo spirale. Quand les ajustements utilisateur
-  // poussent le contenu au-delà du cap, autoFitBlock vertical-fit shrinkera
-  // l'artiste/titre pour faire tenir le contenu. Plus besoin de JS variable.
 
   requestAnimationFrame(() => {
     autoFitBlock(pvArtist.parentElement, [
       { el: pvArtist, max: artistMax, min: 3.0 },
       { el: pvTitle,  max: titleMax,  min: 1.5 }
     ]);
-    autoFitBlock(pvCreditsNames.parentElement, [
-      { el: pvCreditsNames, max: creditsMax, min: 1.5 }
-    ]);
+    if (!isMultiTrackMode()) {
+      autoFitBlock(pvCreditsNames.parentElement, [
+        { el: pvCreditsNames, max: creditsMax, min: 1.5 }
+      ]);
+    }
   });
 }
 
@@ -2657,6 +2847,7 @@ function cleanupCloneForType(clone) {
     removeAll('#pvTitle');
     removeAll('#pvCreditsLabel');
     removeAll('#pvCreditsNames');
+    removeAll('#pvCreditsTracks');
     removeAll('#pvCertMedallion');
     removeAll('#pvSynchroComment');
     removeAll('#pvSynchroTrackline');
@@ -2798,9 +2989,11 @@ async function buildOverlayLayer(targetW, targetH) {
       { el: clone.querySelector('.pv-info-artist'), max: 7.2  * _m('artist'), min: 3.0 },
       { el: clone.querySelector('.pv-info-title'),  max: 3.36 * _m('title'),  min: 1.5 }
     ]);
-    autoFitBlock(clone.querySelector('.pv-credits-block'), [
-      { el: clone.querySelector('.pv-credits-names'), max: 3.8 * _m('credits'), min: 1.5 }
-    ]);
+    if (!isMultiTrackMode()) {
+      autoFitBlock(clone.querySelector('.pv-credits-block'), [
+        { el: clone.querySelector('.pv-credits-names'), max: 3.8 * _m('credits'), min: 1.5 }
+      ]);
+    }
   }
 
   // Rendu en PNG à fond transparent — fixes Safari identiques à exportPNG
@@ -3001,9 +3194,11 @@ async function exportPNG(forceFormat) {
         { el: clone.querySelector('.pv-info-artist'), max: 7.2  * _m2('artist'), min: 3.0 },
         { el: clone.querySelector('.pv-info-title'),  max: 3.36 * _m2('title'),  min: 1.5 }
       ]);
-      autoFitBlock(clone.querySelector('.pv-credits-block'), [
-        { el: clone.querySelector('.pv-credits-names'), max: 3.8 * _m2('credits'), min: 1.5 }
-      ]);
+      if (!isMultiTrackMode()) {
+        autoFitBlock(clone.querySelector('.pv-credits-block'), [
+          { el: clone.querySelector('.pv-credits-names'), max: 3.8 * _m2('credits'), min: 1.5 }
+        ]);
+      }
     }
 
     // === Rendu via html-to-image ===
@@ -3486,7 +3681,7 @@ function confirmReset() {
   // Si rien n'a été saisi, pas besoin de confirmer
   const hasContent = S.artist || S.title || S.actuTitle || S.actuDesc ||
                      S.synchroTitle || S.synchroTrack || S.synchroComment ||
-                     S.songwriters.length > 0 || S.bgImageSrc || S.artworkSrc;
+                     S.songwriters.length > 0 || S.tracks.length > 0 || S.bgImageSrc || S.artworkSrc;
   if (!hasContent || confirm('Créer un nouveau post ? Toutes les modifications en cours seront perdues.')) {
     window.location.reload();
   }
