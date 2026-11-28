@@ -921,6 +921,10 @@ nav {
 .pv-track-sw{font-weight:700;color:var(--accent-color,#FF2D3A)}
 /* ─── Tracks form UI ─── */
 .tracks-section{display:none}.tracks-section.visible{display:block}
+/* ─── Global import button ─── */
+.global-import-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:var(--surface);border:1px dashed var(--accent);color:var(--accent);font-family:'Syne',sans-serif;font-weight:700;font-size:0.78rem;padding:14px 20px;cursor:pointer;letter-spacing:0.06em;transition:all 0.2s;margin-bottom:18px}
+.global-import-btn:hover{background:var(--surface-2);border-style:solid;color:#fff}
+.global-import-btn:disabled{opacity:0.4;cursor:wait;border-style:dashed}
 .tracks-import-btn{display:inline-flex;align-items:center;gap:6px;background:none;border:1px solid var(--border);color:var(--muted);font-family:'Syne Mono',monospace;font-size:0.65rem;padding:6px 12px;cursor:pointer;letter-spacing:0.06em;transition:all 0.15s;margin-bottom:10px}
 .tracks-import-btn:hover{border-color:#555;color:#fff}.tracks-import-btn:disabled{opacity:0.4;cursor:wait}
 .tracks-list{display:flex;flex-direction:column;gap:8px}
@@ -1284,6 +1288,7 @@ nav {
   <div class="main-grid">
     <!-- ========== LEFT : FORM ========== -->
     <div>
+      <button type="button" class="global-import-btn" id="globalImportBtn">📥 Importer depuis le planning</button>
       <div class="section-label">Type de post</div>
       <div class="type-grid">
         <button class="type-tile active" data-type="sortie">
@@ -1961,6 +1966,168 @@ document.getElementById('tracksImportBtn').addEventListener('click', async () =>
     S.tracks = trackNames.map(name => { const t = makeTrack(name); t.songwriters = [...eventSw]; return t; });
     renderTracksUI(); updatePreview();
   } catch(e) { console.error('Import error:', e); alert('Erreur : ' + e.message); }
+  finally { btn.disabled = false; btn.textContent = '📥 Importer depuis le planning'; }
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// GLOBAL IMPORT FROM PLANNING — auto-detect type, pre-fill all fields
+// ═══════════════════════════════════════════════════════════════════
+document.getElementById('globalImportBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('globalImportBtn');
+  btn.disabled = true; btn.textContent = '⏳ Chargement…';
+  try {
+    const data = await dbFetch('/releases.json');
+    if (!data) { alert('Aucun event dans le planning.'); return; }
+    const releases = Object.values(data)
+      .filter(r => r.type && r.type !== 'Live') // exclude Live (concert) for now
+      .sort((a, b) => (b.dateSortable || '').localeCompare(a.dateSortable || ''));
+    if (!releases.length) { alert('Aucun event trouvé dans le planning.'); return; }
+
+    // Show picker modal with ALL events
+    const choice = await new Promise(resolve => {
+      const ov = document.createElement('div');
+      ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;display:flex;align-items:center;justify-content:center;';
+      const md = document.createElement('div');
+      md.style.cssText = 'background:#141414;border:1px solid #333;padding:20px;max-width:480px;width:92%;max-height:75vh;overflow-y:auto;font-family:"Syne Mono",monospace;color:#e8e8e8;';
+      md.innerHTML = '<div style="font-family:Syne,sans-serif;font-weight:700;font-size:0.95rem;margin-bottom:14px;">📥 Importer depuis le planning</div>';
+
+      // Type badges
+      const typeBadge = (t) => {
+        const colors = { Single:'#4ade80', EP:'#60a5fa', Album:'#c084fc', Certification:'#e8c547', Synchro:'#f97316', Actu:'#f472b6' };
+        return '<span style="display:inline-block;background:'+(colors[t]||'#555')+';color:#000;font-size:0.55rem;font-weight:700;padding:1px 6px;letter-spacing:0.08em;">'+(t||'?').toUpperCase()+'</span>';
+      };
+
+      releases.forEach(r => {
+        const b = document.createElement('button');
+        b.style.cssText = 'display:block;width:100%;text-align:left;background:none;border:1px solid #333;color:#e8e8e8;padding:10px 12px;margin-bottom:6px;cursor:pointer;font-family:inherit;font-size:0.7rem;transition:border-color 0.15s;';
+        const label = r.type === 'Certification'
+          ? (r.artist||'') + ' — ' + (r.certLevel||'') + ' ' + (r.certType||'') + ' · ' + (r.track||r.project||'')
+          : r.type === 'Synchro'
+            ? (r.artist||'') + ' — ' + (r.track||'') + ' dans ' + (r.project||r.title||'')
+            : r.type === 'Actu'
+              ? (r.artist||'') + ' — ' + (r.title||r.track||'')
+              : (r.artist||'') + ' — ' + (r.project||r.title||r.track||'');
+        b.innerHTML = typeBadge(r.type) + ' <strong style="color:#fff;font-size:0.78rem;margin-left:6px;">' + label + '</strong><br><span style="color:#777;">' + (r.date||'') + '</span>';
+        b.onmouseenter = () => b.style.borderColor='#666';
+        b.onmouseleave = () => b.style.borderColor='#333';
+        b.addEventListener('click', () => { document.body.removeChild(ov); resolve(r); });
+        md.appendChild(b);
+      });
+      const cb = document.createElement('button');
+      cb.style.cssText = 'display:block;width:100%;background:none;border:1px solid #333;color:#777;padding:8px;margin-top:8px;cursor:pointer;font-family:inherit;font-size:0.65rem;';
+      cb.textContent = 'Annuler';
+      cb.addEventListener('click', () => { document.body.removeChild(ov); resolve(null); });
+      md.appendChild(cb); ov.appendChild(md);
+      ov.addEventListener('click', e => { if (e.target===ov) { document.body.removeChild(ov); resolve(null); } });
+      document.body.appendChild(ov);
+    });
+    if (!choice) return;
+
+    // ─── Detect IG type from planning event type ───
+    const typeMap = { Single:'sortie', EP:'sortie', Album:'sortie', Certification:'certif', Synchro:'synchro', Actu:'actu' };
+    const igType = typeMap[choice.type] || 'sortie';
+    S.type = igType;
+
+    // Activate the correct type tile in the UI
+    document.querySelectorAll('.type-tile').forEach(t => t.classList.remove('active'));
+    const targetTile = document.querySelector('.type-tile[data-type="'+igType+'"]');
+    if (targetTile) targetTile.classList.add('active');
+
+    // ─── Pre-fill fields based on type ───
+    // Helper: set songwriters in state + UI
+    function setSongwriters(swArr) {
+      S.songwriters = (swArr || []).filter(n => SONGWRITERS.includes(n));
+      swDropdown.querySelectorAll('.sw-option').forEach(o => o.classList.remove('selected'));
+      S.songwriters.forEach(name => {
+        const opt = swDropdown.querySelector('[data-name="'+CSS.escape(name)+'"]');
+        if (opt) opt.classList.add('selected');
+      });
+      renderTags();
+    }
+
+    if (igType === 'sortie') {
+      // Set release sub-type (Single/EP/Album)
+      S.releaseType = choice.type; // Single, EP, or Album
+      document.getElementById('f_type').value = choice.type;
+
+      // Artist
+      if (choice.artist) { S.artist = choice.artist; document.getElementById('f_artist').value = choice.artist; }
+
+      // Title — for Single use track name, for EP/Album use project name
+      if (choice.type === 'Single') {
+        if (choice.track) { S.title = choice.track; document.getElementById('f_title').value = choice.track; }
+      } else {
+        if (choice.project || choice.title) { S.title = choice.project || choice.title; document.getElementById('f_title').value = choice.project || choice.title; }
+      }
+
+      // Global songwriters
+      setSongwriters(Array.isArray(choice.songwriters) ? choice.songwriters : []);
+
+      // For EP/Album: import tracks with per-track songwriters
+      if (choice.type === 'EP' || choice.type === 'Album') {
+        const trackNames = choice.epTrackNames ? choice.epTrackNames.split('\n').map(t => t.trim()).filter(Boolean) : [];
+        const blzTracks = Array.isArray(choice.blzTracks) ? choice.blzTracks : [];
+        const globalSw = Array.isArray(choice.songwriters) ? choice.songwriters : [];
+
+        S.tracks = trackNames.map(name => {
+          const t = makeTrack(name);
+          // Try to find per-track songwriters from blzTracks
+          const bt = blzTracks.find(b => b.title === name);
+          t.songwriters = bt && bt.songwriters && bt.songwriters.length ? [...bt.songwriters] : [...globalSw];
+          return t;
+        });
+        renderTracksUI();
+      } else {
+        S.tracks = [];
+      }
+
+    } else if (igType === 'certif') {
+      // Artist
+      if (choice.artist) { S.artist = choice.artist; document.getElementById('f_artist').value = choice.artist; }
+      // Cert type & level
+      if (choice.certType) { S.certType = choice.certType; document.getElementById('f_cert_type').value = choice.certType; }
+      if (choice.certLevel) { S.certLevel = choice.certLevel; document.getElementById('f_cert_level').value = choice.certLevel; }
+      // Title
+      const certTitle = choice.track || choice.project || choice.title || '';
+      if (certTitle) { S.certTitle = certTitle; document.getElementById('f_cert_title').value = certTitle; }
+      // Songwriters
+      setSongwriters(Array.isArray(choice.songwriters) ? choice.songwriters : []);
+
+    } else if (igType === 'synchro') {
+      // Synchro title (content name: film, series…)
+      const synchroTitle = choice.project || choice.title || '';
+      if (synchroTitle) { S.synchroTitle = synchroTitle; document.getElementById('f_synchro_title').value = synchroTitle; }
+      // Artist
+      if (choice.artist) { S.artist = choice.artist; document.getElementById('f_synchro_artist').value = choice.artist; }
+      // Track name
+      if (choice.track) { S.synchroTrack = choice.track; document.getElementById('f_synchro_track').value = choice.track; }
+      // Songwriters
+      setSongwriters(Array.isArray(choice.songwriters) ? choice.songwriters : []);
+
+    } else if (igType === 'actu') {
+      // Artist
+      if (choice.artist) { S.artist = choice.artist; document.getElementById('f_artist').value = choice.artist; }
+      // Actu title
+      const actuTitle = choice.title || choice.track || '';
+      if (actuTitle) { S.actuTitle = actuTitle; document.getElementById('f_actu_title').value = actuTitle; }
+      // Songwriters
+      setSongwriters(Array.isArray(choice.songwriters) ? choice.songwriters : []);
+    }
+
+    // Artwork from planning (if exists as data URL or external URL)
+    if (choice.artwork) {
+      S.artworkSrc = choice.artwork;
+      S.bgType = 'image';
+      const pvArt = document.getElementById('pvArt');
+      pvArt.src = choice.artwork;
+      pvArt.style.display = '';
+      document.getElementById('artPlaceholder').style.display = 'none';
+    }
+
+    applyTypeUI();
+    updatePreview();
+
+  } catch(e) { console.error('Global import error:', e); alert('Erreur : ' + e.message); }
   finally { btn.disabled = false; btn.textContent = '📥 Importer depuis le planning'; }
 });
 
