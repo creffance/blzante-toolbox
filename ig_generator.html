@@ -1928,8 +1928,9 @@ document.getElementById('tracksImportBtn').addEventListener('click', async () =>
   try {
     const data = await dbFetch('/releases.json');
     if (!data) { alert('Aucun event dans le planning.'); return; }
+    const todayEP = new Date().toISOString().slice(0, 10);
     const epAlbums = Object.values(data).filter(r =>
-      (r.type === 'EP' || r.type === 'Album') && r.epTrackNames && r.epTrackNames.trim()
+      (r.type === 'EP' || r.type === 'Album') && r.epTrackNames && r.epTrackNames.trim() && (r.dateSortable || '') <= todayEP
     ).sort((a, b) => (b.dateSortable || '').localeCompare(a.dateSortable || ''));
     if (!epAlbums.length) { alert('Aucun EP/Album avec des tracks trouvé dans le planning.'); return; }
     const choice = await new Promise(resolve => {
@@ -1958,12 +1959,17 @@ document.getElementById('tracksImportBtn').addEventListener('click', async () =>
       document.body.appendChild(ov);
     });
     if (!choice) return;
-    const trackNames = choice.epTrackNames.split('\n').map(t => t.trim()).filter(Boolean);
-    if (!trackNames.length) { alert('Pas de noms de tracks dans cet event.'); return; }
+    const blzT = Array.isArray(choice.blzTracks) ? choice.blzTracks.filter(b => b.title) : [];
+    const epN = choice.epTrackNames ? choice.epTrackNames.split('\n').map(t => t.trim()).filter(Boolean) : [];
+    if (!blzT.length && !epN.length) { alert('Pas de tracks dans cet event.'); return; }
     if (!S.artist && choice.artist) { S.artist = choice.artist; document.getElementById('f_artist').value = choice.artist; }
     if (!S.title && choice.project) { S.title = choice.project; document.getElementById('f_title').value = choice.project; }
     const eventSw = choice.songwriters || [];
-    S.tracks = trackNames.map(name => { const t = makeTrack(name); t.songwriters = [...eventSw]; return t; });
+    if (blzT.length) {
+      S.tracks = blzT.map(bt => { const t = makeTrack(bt.title); t.songwriters = bt.songwriters && bt.songwriters.length ? [...bt.songwriters] : [...eventSw]; return t; });
+    } else {
+      S.tracks = epN.map(name => { const t = makeTrack(name); t.songwriters = [...eventSw]; return t; });
+    }
     renderTracksUI(); updatePreview();
   } catch(e) { console.error('Import error:', e); alert('Erreur : ' + e.message); }
   finally { btn.disabled = false; btn.textContent = '📥 Importer depuis le planning'; }
@@ -1978,10 +1984,11 @@ document.getElementById('globalImportBtn').addEventListener('click', async () =>
   try {
     const data = await dbFetch('/releases.json');
     if (!data) { alert('Aucun event dans le planning.'); return; }
+    const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
     const releases = Object.values(data)
-      .filter(r => r.type && r.type !== 'Live') // exclude Live (concert) for now
+      .filter(r => r.type && r.type !== 'Live' && (r.dateSortable || '') <= today)
       .sort((a, b) => (b.dateSortable || '').localeCompare(a.dateSortable || ''));
-    if (!releases.length) { alert('Aucun event trouvé dans le planning.'); return; }
+    if (!releases.length) { alert('Aucun event passé ou du jour trouvé dans le planning.'); return; }
 
     // Show picker modal with ALL events
     const choice = await new Promise(resolve => {
@@ -2065,17 +2072,27 @@ document.getElementById('globalImportBtn').addEventListener('click', async () =>
 
       // For EP/Album: import tracks with per-track songwriters
       if (choice.type === 'EP' || choice.type === 'Album') {
-        const trackNames = choice.epTrackNames ? choice.epTrackNames.split('\n').map(t => t.trim()).filter(Boolean) : [];
-        const blzTracks = Array.isArray(choice.blzTracks) ? choice.blzTracks : [];
+        const blzTracks = Array.isArray(choice.blzTracks) ? choice.blzTracks.filter(b => b.title) : [];
+        const epNames = choice.epTrackNames ? choice.epTrackNames.split('\n').map(t => t.trim()).filter(Boolean) : [];
         const globalSw = Array.isArray(choice.songwriters) ? choice.songwriters : [];
 
-        S.tracks = trackNames.map(name => {
-          const t = makeTrack(name);
-          // Try to find per-track songwriters from blzTracks
-          const bt = blzTracks.find(b => b.title === name);
-          t.songwriters = bt && bt.songwriters && bt.songwriters.length ? [...bt.songwriters] : [...globalSw];
-          return t;
-        });
+        // Use blzTracks as primary source (has per-track songwriters)
+        // Fall back to epTrackNames if blzTracks is empty
+        if (blzTracks.length) {
+          S.tracks = blzTracks.map(bt => {
+            const t = makeTrack(bt.title);
+            t.songwriters = bt.songwriters && bt.songwriters.length ? [...bt.songwriters] : [...globalSw];
+            return t;
+          });
+        } else if (epNames.length) {
+          S.tracks = epNames.map(name => {
+            const t = makeTrack(name);
+            t.songwriters = [...globalSw];
+            return t;
+          });
+        } else {
+          S.tracks = [];
+        }
         renderTracksUI();
       } else {
         S.tracks = [];
