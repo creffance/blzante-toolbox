@@ -917,8 +917,12 @@ nav {
 .pv-track-line{display:flex;align-items:baseline;justify-content:center;gap:0.5cqi;flex-wrap:wrap;font-size:2cqi;line-height:1.35;text-shadow:0 0.15cqi 0.8cqi rgba(0,0,0,0.5)}
 .pv-track-title{font-weight:700;color:#fff}
 .pv-track-dash{color:rgba(255,255,255,0.5);font-weight:400}
-.pv-track-credit{font-weight:400;font-size:1.7cqi;color:rgba(255,255,255,0.7);font-style:italic}
-.pv-track-sw{font-weight:700;color:var(--accent-color,#FF2D3A)}
+.pv-track-credit{font-weight:400;font-size:inherit;color:rgba(255,255,255,0.7);font-style:italic}
+.pv-track-sw{font-weight:700;font-size:inherit;color:var(--accent-color,#FF2D3A)}
+/* Grouped tracks (same credits) */
+.pv-track-group{text-align:center;margin-bottom:0.8cqi}
+.pv-track-group-title{font-weight:700;color:#fff;font-size:2cqi;line-height:1.4;text-shadow:0 0.15cqi 0.8cqi rgba(0,0,0,0.5)}
+.pv-track-group-credit{font-size:1.7cqi;line-height:1.35;text-shadow:0 0.15cqi 0.8cqi rgba(0,0,0,0.5);display:flex;align-items:baseline;justify-content:center;gap:0.3cqi;flex-wrap:wrap}
 /* ─── Tracks form UI ─── */
 .tracks-section{display:none}.tracks-section.visible{display:block}
 /* ─── Global import button ─── */
@@ -1909,7 +1913,7 @@ function renderTracksUI() {
       lbl.appendChild(cb); lbl.appendChild(document.createTextNode(' ' + l)); cW.appendChild(lbl);
     });
     const relSel = document.createElement('select');
-    relSel.style.cssText = 'background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:inherit;font-size:inherit;padding:1px 4px;';
+    relSel.style.cssText = 'background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:inherit;font-size:0.6rem;padding:1px 4px;height:22px;';
     ['avec','par'].forEach(v => { const o = document.createElement('option'); o.value=v; o.textContent=v; o.selected=track.relation===v; relSel.appendChild(o); });
     relSel.addEventListener('change', () => { track.relation = relSel.value; updatePreview(); });
     cW.appendChild(relSel); card.appendChild(cW);
@@ -2796,19 +2800,64 @@ function updatePreviewSortie() {
     pvCreditsLabel.textContent = '';
     pvCreditsNames.textContent = '';
     pvCreditsTracks.innerHTML = '';
-    S.tracks.forEach(t => {
-      if (!t.songwriters.length || !t.name) return;
-      const line = document.createElement('div'); line.className = 'pv-track-line';
-      const ts = document.createElement('span'); ts.className = 'pv-track-title';
-      ts.textContent = '"' + t.name + '"'; line.appendChild(ts);
-      const dash = document.createElement('span'); dash.className = 'pv-track-dash';
-      dash.textContent = '—'; line.appendChild(dash);
-      const act = trackAction(t);
-      if (act) { const cs = document.createElement('span'); cs.className = 'pv-track-credit'; cs.textContent = act; line.appendChild(cs); }
-      const sw = document.createElement('span'); sw.className = 'pv-track-sw';
-      sw.textContent = formatNames(t.songwriters); line.appendChild(sw);
-      pvCreditsTracks.appendChild(line);
+
+    // Group tracks that share exact same credits (songwriters + action + relation)
+    const validTracks = S.tracks.filter(t => t.songwriters.length && t.name);
+    const trackKey = t => {
+      const sw = [...t.songwriters].sort().join('|');
+      return sw + '::' + trackAction(t);
+    };
+    const groups = [];
+    const groupMap = {};
+    validTracks.forEach(t => {
+      const k = trackKey(t);
+      if (groupMap[k] !== undefined) {
+        groups[groupMap[k]].tracks.push(t);
+      } else {
+        groupMap[k] = groups.length;
+        groups.push({ tracks: [t], action: trackAction(t), songwriters: t.songwriters });
+      }
     });
+
+    // Check if all tracks can be grouped (all share same credits)
+    const allGrouped = groups.length === 1 && validTracks.length > 1;
+    // Check if some groups have multiple tracks
+    const hasGroups = groups.some(g => g.tracks.length > 1);
+
+    if (hasGroups) {
+      // Grouped display: track names on separate lines, then shared credit below
+      groups.forEach(g => {
+        const grp = document.createElement('div'); grp.className = 'pv-track-group';
+        g.tracks.forEach(t => {
+          const titleDiv = document.createElement('div'); titleDiv.className = 'pv-track-group-title';
+          titleDiv.textContent = '"' + t.name + '"';
+          grp.appendChild(titleDiv);
+        });
+        const creditLine = document.createElement('div'); creditLine.className = 'pv-track-group-credit';
+        const act = g.action;
+        if (act) {
+          const cs = document.createElement('span'); cs.className = 'pv-track-credit'; cs.textContent = act + ' '; creditLine.appendChild(cs);
+        }
+        const sw = document.createElement('span'); sw.className = 'pv-track-sw';
+        sw.textContent = formatNames(g.songwriters); creditLine.appendChild(sw);
+        grp.appendChild(creditLine);
+        pvCreditsTracks.appendChild(grp);
+      });
+    } else {
+      // No grouping possible — each track on its own line with individual credits
+      validTracks.forEach(t => {
+        const line = document.createElement('div'); line.className = 'pv-track-line';
+        const ts = document.createElement('span'); ts.className = 'pv-track-title';
+        ts.textContent = '"' + t.name + '"'; line.appendChild(ts);
+        const dash = document.createElement('span'); dash.className = 'pv-track-dash';
+        dash.textContent = '—'; line.appendChild(dash);
+        const act = trackAction(t);
+        if (act) { const cs = document.createElement('span'); cs.className = 'pv-track-credit'; cs.textContent = act; line.appendChild(cs); }
+        const sw = document.createElement('span'); sw.className = 'pv-track-sw';
+        sw.textContent = formatNames(t.songwriters); line.appendChild(sw);
+        pvCreditsTracks.appendChild(line);
+      });
+    }
   } else {
     pvCreditsTracks.innerHTML = '';
     const c = getCreditsLines();
